@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("satinalma")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+110193efe4a4b2c8ce85c3d3ee4790a5519e36d9")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f76b25bfcf4579802ce85075654055ccfca49635")]
 [assembly: System.Reflection.AssemblyProductAttribute("satinalma")]
 [assembly: System.Reflection.AssemblyTitleAttribute("satinalma")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
