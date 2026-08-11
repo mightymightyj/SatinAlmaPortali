@@ -1,0 +1,543 @@
+/* 
+   Tedarik Portalı - Custom Design Styles
+   Import modern font 
+*/
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* Header Styles */
+.blue-top-header {
+    background-color: #ffffff;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.header-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 40px;
+}
+
+.brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+}
+
+.logo-badge {
+    background-color: #3b82f6;
+    color: #ffffff;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.logo-blue-dot {
+    color: #3b82f6;
+}
+
+.center-nav {
+    display: flex;
+    gap: 25px;
+}
+
+.nav-link {
+    color: #64748b;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.nav-link:hover {
+    color: #3b82f6;
+}
+
+.right-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.btn-royal-pill {
+    background-color: #3b82f6;
+    color: #ffffff;
+    border-radius: 30px;
+    padding: 10px 24px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.btn-royal-pill:hover {
+    background-color: #2563eb;
+    color: #ffffff;
+}
+
+.lang-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f1f5f9;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #334155;
+    cursor: pointer;
+}
+
+.profile-avatar-btn {
+    background: #f1f5f9;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.profile-avatar-btn:hover {
+    background: #e2e8f0;
+    color: #3b82f6;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+    background-color: #f8fafc;
+    color: #334155;
+    box-sizing: border-box;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+*, *::before, *::after {
+    box-sizing: inherit;
+}
+
+/* Base Wrapper */
+.blue-portal-wrapper {
+    position: relative;
+    flex: 1;
+    padding-left: 90px; /* Space for the floating sidebar */
+    padding-bottom: 0px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 1. Left Floating Icon Bar */
+.floating-icon-bar {
+    position: fixed;
+    top: 50%;
+    left: 20px;
+    transform: translateY(-50%);
+    z-index: 100;
+}
+
+.vertical-icon-pill {
+    background: #ffffff;
+    border-radius: 40px;
+    padding: 15px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+.icon-nav-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.icon-nav-btn:hover {
+    color: #3b82f6;
+    background: #eff6ff;
+}
+
+.icon-nav-btn.active {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+/* 2. Top Hero Area */
+.blue-hero-container {
+    padding: 60px 20px 40px;
+    text-align: center;
+}
+
+.hero-inner {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.hero-heading {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 15px;
+}
+
+.hero-subtext {
+    font-size: 1rem;
+    color: #64748b;
+    line-height: 1.6;
+    max-width: 600px;
+    margin-bottom: 35px;
+}
+
+.hero-control-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.btn-create-pill {
+    background-color: #0f172a;
+    color: #ffffff;
+    border: none;
+    border-radius: 30px;
+    padding: 12px 24px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-create-pill:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(15, 23, 42, 0.3);
+}
+
+.plus-symbol {
+    color: #60a5fa;
+    font-size: 1.2rem;
+}
+
+.white-search-pill {
+    background: #ffffff;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    padding: 5px 5px 5px 20px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.white-search-pill input {
+    border: none;
+    outline: none;
+    background: transparent;
+    flex: 1;
+    font-size: 0.95rem;
+    color: #334155;
+}
+
+.white-search-pill input::placeholder {
+    color: #94a3b8;
+}
+
+.blue-search-btn {
+    background-color: #3b82f6;
+    color: #ffffff;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.blue-search-btn:hover {
+    background-color: #2563eb;
+}
+
+/* 3. Common Cards Grid (Sections 2 & 3) */
+.cards-grid-section {
+    padding: 0 20px;
+    margin-bottom: 25px;
+}
+
+.cards-grid-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 25px;
+}
+
+.column-white-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+}
+
+.column-white-card.min-h-300 {
+    min-height: 350px;
+}
+
+.col-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+}
+
+.col-head-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.blue-accent-x {
+    color: #3b82f6;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.col-head-title h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.link-all {
+    color: #3b82f6;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.link-all:hover {
+    text-decoration: underline;
+}
+
+.cards-stack.empty-container-area {
+    flex: 1;
+}
+
+/* 4. Stats Section */
+.stats-section {
+    padding: 20px;
+    margin-bottom: 40px;
+}
+
+.stats-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+}
+
+.metric-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.metric-icon-badge {
+    background: #eff6ff;
+    color: #3b82f6;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.metric-number {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.metric-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #64748b;
+}
+
+/* 5. Floating Live Support */
+.blue-live-support-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    z-index: 100;
+}
+
+.support-circle {
+    background: #3b82f6;
+    color: #ffffff;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.blue-live-support-btn:hover .support-circle {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
+}
+
+.support-text {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #1e3a8a;
+    background: #ffffff;
+    padding: 4px 10px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Utility classes */
+.mt-4 { margin-top: 1.5rem; }
+.mt-5 { margin-top: 3rem; }
+
+/* 6. Footer */
+.dark-footer {
+    background-color: #0a1128;
+    color: #94a3b8;
+    padding: 60px 40px;
+    margin-top: auto;
+    margin-left: -90px; /* Counteract wrapper padding */
+    padding-left: 130px; /* Add it back plus 40px */
+}
+
+.footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 40px;
+}
+
+.footer-left {
+    max-width: 500px;
+}
+
+.footer-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.footer-logo .logo-icon {
+    background-color: #3b82f6;
+    color: #ffffff;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.footer-logo h2 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.footer-logo h2 span {
+    color: #3b82f6;
+}
+
+.footer-desc {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.footer-right {
+    display: flex;
+    align-items: center;
+}
+
+.footer-links {
+    display: flex;
+    gap: 25px;
+    flex-wrap: wrap;
+}
+
+.footer-links a {
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.footer-links a:hover {
+    color: #ffffff;
+}

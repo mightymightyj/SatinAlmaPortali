@@ -1,18 +1,15 @@
-@page
-@using System.Diagnostics
+﻿@model ErrorViewModel
 @{
     ViewData["Title"] = "Error";
-    var RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier;
-    var ShowRequestId = !string.IsNullOrEmpty(RequestId);
 }
 
 <h1 class="text-danger">Error.</h1>
 <h2 class="text-danger">An error occurred while processing your request.</h2>
 
-@if (ShowRequestId)
+@if (Model.ShowRequestId)
 {
     <p>
-        <strong>Request ID:</strong> <code>@RequestId</code>
+        <strong>Request ID:</strong> <code>@Model.RequestId</code>
     </p>
 }
 

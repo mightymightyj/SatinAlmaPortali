@@ -1,19 +1,23 @@
-.blue-portal-wrapper {
+﻿.blue-portal-wrapper {
     position: relative;
     width: 100%;
     min-height: calc(100vh - 72px);
     background: linear-gradient(180deg, #eff6ff 0%, #f8fafc 40%, #f1f5f9 100%);
-    padding-bottom: 60px;
 }
 
-.mt-4 { margin-top: 24px; }
-.mt-5 { margin-top: 40px; }
+.mt-4 {
+    margin-top: 24px;
+}
+
+.mt-5 {
+    margin-top: 40px;
+}
 
 /* LEFT FLOATING CATEGORY ICON BAR */
 .floating-icon-bar {
     position: fixed;
     left: 20px;
-    top: 110px;
+    top: 50%;
     z-index: 900;
 }
 
@@ -169,7 +173,8 @@
 .cards-grid-section {
     width: min(1340px, 94%);
     margin: 0 auto;
-    padding-left: 50px; /* Offset for left fixed sidebar */
+    padding-left: 50px;
+    /* Offset for left fixed sidebar */
 }
 
 .cards-grid-container {
@@ -222,7 +227,6 @@
     font-weight: 800;
     color: #0f172a;
     margin: 0;
-
 }
 
 .link-all {
@@ -354,9 +358,12 @@
     .cards-grid-container {
         grid-template-columns: 1fr;
     }
-    .cards-grid-section, .stats-section {
+
+    .cards-grid-section,
+    .stats-section {
         padding-left: 0;
     }
+
     .floating-icon-bar {
         display: none;
     }
