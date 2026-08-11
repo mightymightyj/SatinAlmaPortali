@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("satinalmaportali")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3300e91e972a8d87d66c817562679a4cd9ce7440")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+131a79fb8f3b26a7ca822cdbacafa9d9b287311f")]
 [assembly: System.Reflection.AssemblyProductAttribute("satinalmaportali")]
 [assembly: System.Reflection.AssemblyTitleAttribute("satinalmaportali")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
