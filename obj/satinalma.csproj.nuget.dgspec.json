@@ -1,24 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "D:\\aidatmobil\\satinalma\\satinalma\\satinalma.csproj": {}
+    "C:\\Users\\Barış Doğan\\Documents\\GitHub\\SatinAlmaPortali\\satinalma.csproj": {}
   },
   "projects": {
-    "D:\\aidatmobil\\satinalma\\satinalma\\satinalma.csproj": {
+    "C:\\Users\\Barış Doğan\\Documents\\GitHub\\SatinAlmaPortali\\satinalma.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\aidatmobil\\satinalma\\satinalma\\satinalma.csproj",
+        "projectUniqueName": "C:\\Users\\Barış Doğan\\Documents\\GitHub\\SatinAlmaPortali\\satinalma.csproj",
         "projectName": "satinalma",
-        "projectPath": "D:\\aidatmobil\\satinalma\\satinalma\\satinalma.csproj",
-        "packagesPath": "C:\\Users\\Polat\\.nuget\\packages\\",
-        "outputPath": "D:\\aidatmobil\\satinalma\\satinalma\\obj\\",
+        "projectPath": "C:\\Users\\Barış Doğan\\Documents\\GitHub\\SatinAlmaPortali\\satinalma.csproj",
+        "packagesPath": "C:\\Users\\Barış Doğan\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Barış Doğan\\Documents\\GitHub\\SatinAlmaPortali\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\Polat\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Users\\Barış Doğan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -26,7 +22,6 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "c:\\program files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -79,7 +74,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "c:\\program files\\dotnet\\sdk\\10.0.302/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.302/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",

@@ -1,10 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "1eg7fb3c2UE=",
+  "dgSpecHash": "dml1Kwt4tdA=",
   "success": true,
-  "projectFilePath": "D:\\aidatmobil\\satinalma\\satinalma\\satinalma.csproj",
+  "projectFilePath": "C:\\Users\\Barış Doğan\\Documents\\GitHub\\SatinAlmaPortali\\satinalma.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\Polat\\.nuget\\packages\\microsoft.aspnetcore.app.internal.assets\\10.0.10\\microsoft.aspnetcore.app.internal.assets.10.0.10.nupkg.sha512"
+    "C:\\Users\\Barış Doğan\\.nuget\\packages\\microsoft.aspnetcore.app.internal.assets\\10.0.10\\microsoft.aspnetcore.app.internal.assets.10.0.10.nupkg.sha512"
   ],
   "logs": []
 }
