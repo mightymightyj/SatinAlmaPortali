@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "ajKZAf0DVsY=",
+  "dgSpecHash": "1eg7fb3c2UE=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Polat\\Documents\\GitHub\\SatinAlmaPortali\\satinalmaportali\\satinalmaportali\\satinalmaportali.csproj",
-  "expectedPackageFiles": [],
+  "projectFilePath": "D:\\aidatmobil\\satinalma\\satinalma\\satinalma.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Polat\\.nuget\\packages\\microsoft.aspnetcore.app.internal.assets\\10.0.10\\microsoft.aspnetcore.app.internal.assets.10.0.10.nupkg.sha512"
+  ],
   "logs": []
 }
