@@ -27,12 +27,12 @@
 
             <!-- Navigation Links -->
             <nav class="center-nav">
-                <a href="#kurumsal" class="nav-link">Kurumsal</a>
-                <a href="#kategoriler" class="nav-link">Ürün Kategorileri</a>
-                <a href="#neden-portal" class="nav-link">Neden Portal?</a>
-                <a href="#fiyatlandirma" class="nav-link">Fiyatlandırma</a>
-                <a href="#medya" class="nav-link">Medya & Duyurular</a>
-                <a href="#iletisim" class="nav-link">İletişim</a>
+                <a asp-controller="Home" asp-action="Kurumsal" class="nav-link">Kurumsal</a>
+                <a asp-controller="Home" asp-action="UrunKategorileri" class="nav-link">Ürün Kategorileri</a>
+                <a asp-controller="Home" asp-action="NedenPortal" class="nav-link">Neden Portal?</a>
+                <a asp-controller="Home" asp-action="Fiyatlandirma" class="nav-link">Fiyatlandırma</a>
+                <a asp-controller="Home" asp-action="MedyaDuyurular" class="nav-link">Medya & Duyurular</a>
+                <a asp-controller="Home" asp-action="Iletisim" class="nav-link">İletişim</a>
             </nav>
 
             <!-- Header Right Actions -->
@@ -49,12 +49,13 @@
                     </svg>
                 </div>
 
-                <button class="profile-avatar-btn" title="Hesabım">
+                <a href="#auth-section" class="profile-avatar-btn" title="Hesabım">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
-                </button>
+                    <span>Hesabım</span>
+                </a>
             </div>
         </div>
     </header>

@@ -1,4 +1,18 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
+﻿document.addEventListener('DOMContentLoaded', () => {
+    const tabs = document.querySelectorAll('.auth-tab');
 
-// Write your JavaScript code.
+    tabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+            const target = tab.getAttribute('data-target');
+
+            document.querySelectorAll('.auth-tab').forEach((item) => item.classList.remove('active'));
+            document.querySelectorAll('.auth-panel').forEach((panel) => panel.classList.remove('active'));
+
+            tab.classList.add('active');
+            const activePanel = document.getElementById(target);
+            if (activePanel) {
+                activePanel.classList.add('active');
+            }
+        });
+    });
+});
