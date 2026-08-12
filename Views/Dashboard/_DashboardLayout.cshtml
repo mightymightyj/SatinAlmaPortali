@@ -1,0 +1,149 @@
+@*
+    Panelin kendi kabuğu. Sitenin ortak _Layout dosyası bilerek kullanılmıyor:
+    panel koyu sidebar + kendi üst çubuğuyla ayrı bir uygulama gibi çalışıyor ve
+    böylece ana sayfanın hiçbir dosyasına dokunmak gerekmiyor.
+*@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Tedarik Portalı</title>
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+</head>
+<body class="app-body">
+
+    <a class="skip-link" href="#dash-main">İçeriğe atla</a>
+
+    <!-- SOL KENAR ÇUBUĞU -->
+    <aside class="app-sidebar" aria-label="Panel menüsü">
+        <a class="side-brand" href="~/">
+            <span class="side-brand-mark">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+            </span>
+            <span class="side-brand-text">tedarik<span>.portal</span></span>
+        </a>
+
+        <nav class="side-nav">
+            <a class="side-link is-active" href="#" aria-current="page">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <rect x="3" y="3" width="7" height="9"></rect>
+                    <rect x="14" y="3" width="7" height="5"></rect>
+                    <rect x="14" y="12" width="7" height="9"></rect>
+                    <rect x="3" y="16" width="7" height="5"></rect>
+                </svg>
+                <span>Genel Bakış</span>
+            </a>
+
+            <a class="side-link" href="#">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="9" y1="15" x2="15" y2="15"></line>
+                </svg>
+                <span>Talepler</span>
+            </a>
+
+            <a class="side-link" href="#">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                <span>Onaylar</span>
+                @if (ViewData["PendingCount"] is int pending && pending > 0) {
+                    <span class="side-count">@pending</span>
+                }
+            </a>
+
+            <a class="side-link" href="#">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <polyline points="3 17 9 11 13 15 21 7"></polyline>
+                    <polyline points="14 7 21 7 21 14"></polyline>
+                </svg>
+                <span>RFQ / İhaleler</span>
+            </a>
+
+            <a class="side-link" href="#">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                </svg>
+                <span>Tedarikçiler</span>
+            </a>
+
+            <a class="side-link" href="#">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                <span>Analitik</span>
+            </a>
+        </nav>
+
+        <div class="side-foot">
+            <a class="side-link" href="~/">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M19 12H5"></path>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                <span>Siteye dön</span>
+            </a>
+        </div>
+    </aside>
+
+    <div class="app-shell">
+
+        <!-- ÜST ÇUBUK -->
+        <header class="app-topbar">
+            <form class="top-search" role="search" onsubmit="return false;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="search" placeholder="Talep, tedarikçi veya sipariş ara..." aria-label="Ara" />
+            </form>
+
+            <div class="top-actions">
+                <button class="top-icon-btn" type="button" aria-label="Bildirimler">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    @if (ViewData["UrgentCount"] is int urgent && urgent > 0) {
+                        <span class="top-badge">@urgent</span>
+                    }
+                </button>
+
+                <button class="btn-primary" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Yeni Satın Alma Talebi
+                </button>
+
+                <div class="top-profile">
+                    <span class="top-avatar" aria-hidden="true">ÖC</span>
+                    <span class="top-profile-text">
+                        <strong>Ömer Cengiz</strong>
+                        <small>Satın Alma Müdürü</small>
+                    </span>
+                </div>
+            </div>
+        </header>
+
+        <main class="app-content" id="dash-main">
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="~/js/dashboard.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

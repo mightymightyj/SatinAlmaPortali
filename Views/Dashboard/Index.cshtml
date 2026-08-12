@@ -1,0 +1,628 @@
+@using satinalmaportali2.Helpers
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Genel Bakış";
+    Layout = "~/Views/Dashboard/_DashboardLayout.cshtml";
+    ViewData["PendingCount"] = Model.PendingApprovalCount;
+    ViewData["UrgentCount"] = Model.UrgentApprovalCount;
+
+    // Seri renkleri doğrulanmış referans paletin slotları. İpucu balonundaki
+    // örnek kareler de aynı değerleri kullanır, o yüzden burada tek yerde durur.
+    const string cBudget = "#86b6ef";   // mavi, açık ton — bütçe (bağlam)
+    const string cActual = "#2a78d6";   // mavi, koyu ton — gerçekleşen (vurgu)
+    const string cSale = "#eb6834";     // turuncu — satış
+
+    // Donut dilimleri: slot 1-4 + dilim içi yazının rengi (dolgunun parlaklığına göre).
+    var sliceColors = new[] { "#2a78d6", "#eb6834", "#1baf7a", "#eda100" };
+    var sliceInks = new[] { "#ffffff", "#ffffff", "#ffffff", "#0b0b0b" };
+}
+
+<!-- BAŞLIK + TEK FİLTRE SATIRI (altındaki her şeyi birlikte kapsar) -->
+<div class="page-head">
+    <div>
+        <h1>Satın Alma ve Harcama Analitiği</h1>
+        <p>
+            @Model.PeriodLabel · tüm kartlar ve grafikler seçili döneme göre hesaplanır
+            @if (Model.IsPartialYear) {
+                <span class="partial-flag">yıl henüz tamamlanmadı</span>
+            }
+        </p>
+    </div>
+
+    @if (Model.AvailableYears.Count > 0) {
+        <nav class="year-filter" aria-label="Dönem seçimi">
+            @foreach (var year in Model.AvailableYears.OrderByDescending(y => y)) {
+                <a class="year-pill @(year == Model.SelectedYear ? "is-active" : "")"
+                   asp-action="Index" asp-route-yil="@year"
+                   aria-current="@(year == Model.SelectedYear ? "page" : null)">@year</a>
+            }
+        </nav>
+    }
+</div>
+
+<!-- 1) ÜST GÖSTERGE KARTLARI -->
+<section class="kpi-row" aria-label="Özet göstergeler">
+
+    <article class="card kpi-card">
+        <div class="kpi-top">
+            <span class="kpi-label">Toplam Harcama</span>
+            <span class="kpi-icon accent">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+            </span>
+        </div>
+        <p class="kpi-value">@ChartHelper.Compact(Model.PurchaseTotal)</p>
+        @if (Model.PurchaseChangePercent is decimal spendChange) {
+            // Harcamanın artması olumlu değil: renk yönü değil "iyi mi" durumunu gösterir.
+            var spendClass = spendChange > 0 ? "is-bad" : spendChange < 0 ? "is-good" : "is-flat";
+            <p class="kpi-delta @spendClass">
+                <span aria-hidden="true">@(spendChange > 0 ? "▲" : spendChange < 0 ? "▼" : "■")</span>
+                @ChartHelper.SignedPercent(spendChange)
+                <span class="kpi-delta-note">@Model.ComparisonNote</span>
+            </p>
+        } else {
+            <p class="kpi-delta is-flat"><span class="kpi-delta-note">karşılaştırılacak önceki yıl yok</span></p>
+        }
+    </article>
+
+    <article class="card kpi-card">
+        <div class="kpi-top">
+            <span class="kpi-label">Onay Bekleyen</span>
+            <span class="kpi-icon warn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <polyline points="12 7 12 12 15 14"></polyline>
+                </svg>
+            </span>
+        </div>
+        <p class="kpi-value">@Model.PendingApprovalCount</p>
+        @if (Model.UrgentApprovalCount > 0) {
+            <p class="kpi-delta">
+                <span class="urgency-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    @Model.UrgentApprovalCount acil
+                </span>
+                <span class="kpi-delta-note">5 günden uzun süredir bekliyor</span>
+            </p>
+        } else {
+            <p class="kpi-delta is-flat"><span class="kpi-delta-note">geciken talep yok</span></p>
+        }
+    </article>
+
+    <article class="card kpi-card">
+        <div class="kpi-top">
+            <span class="kpi-label">Açık RFQ / İhale</span>
+            <span class="kpi-icon accent">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+            </span>
+        </div>
+        <p class="kpi-value">@Model.ActiveRfqCount</p>
+        <p class="kpi-delta is-flat">
+            <span class="kpi-delta-note">@Model.RfqClosingSoonCount tanesi bu hafta kapanıyor</span>
+        </p>
+    </article>
+
+    <article class="card kpi-card">
+        <div class="kpi-top">
+            <span class="kpi-label">Tahmini Tasarruf</span>
+            <span class="kpi-icon good">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                    <polyline points="17 6 23 6 23 12"></polyline>
+                </svg>
+            </span>
+        </div>
+        <p class="kpi-value">@ChartHelper.Compact(Model.EstimatedSavings)</p>
+        <p class="kpi-delta is-good">
+            <span aria-hidden="true">▲</span>
+            @ChartHelper.SignedPercent(Model.SavingsRatePercent)
+            <span class="kpi-delta-note">bütçenin altında kalan departmanlar</span>
+        </p>
+    </article>
+</section>
+
+<!-- 2) BÜTÇE / GERÇEKLEŞEN + 3) KATEGORİ KIRILIMI -->
+<section class="grid-wide-narrow">
+
+    <article class="card chart-card">
+        <div class="card-head">
+            <div>
+                <h2>Bütçe ve Gerçekleşen Harcama</h2>
+                <p class="card-sub">En çok harcayan 6 departman · @Model.SelectedYear</p>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-dot" style="background:@cBudget"></span>Bütçe</span>
+                <span class="legend-item"><span class="legend-dot" style="background:@cActual"></span>Gerçekleşen</span>
+            </div>
+        </div>
+
+        @{
+            var departments = Model.Departments;
+            const double dW = 720, dRowH = 54, dNameW = 168, dValueW = 108, dBarH = 11;
+            var dTrackW = dW - dNameW - dValueW;
+            var dHeight = Math.Max(1, departments.Count) * dRowH;
+            var dMax = departments.Count == 0
+                ? 1.0
+                : ChartHelper.NiceCeiling(departments.Max(d => Math.Max((double)d.Budgeted, (double)d.Actual)));
+        }
+
+        <div class="chart-frame">
+            <svg class="chart-svg" viewBox="0 0 @ChartHelper.N(dW) @ChartHelper.N(dHeight)"
+                 preserveAspectRatio="xMidYMid meet" role="img"
+                 aria-label="Departman bazında bütçe ve gerçekleşen harcama karşılaştırması">
+
+                @for (var i = 0; i < departments.Count; i++) {
+                    var dept = departments[i];
+                    var rowTop = i * dRowH;
+                    var budgetW = dTrackW * (double)dept.Budgeted / dMax;
+                    var actualW = dTrackW * (double)dept.Actual / dMax;
+
+                    @ChartHelper.SvgText(0, rowTop + 26, dept.Name, "mark-name", "start")
+
+                    <path fill="@cBudget" d="@ChartHelper.BarPath(dNameW, rowTop + 12, Math.Max(budgetW, 0.5), dBarH, 3)" />
+                    <path fill="@cActual" d="@ChartHelper.BarPath(dNameW, rowTop + 25, Math.Max(actualW, 0.5), dBarH, 3)" />
+
+                    @ChartHelper.SvgText(dW, rowTop + 21, ChartHelper.Compact(dept.Actual), "mark-value", "end")
+
+                    if (dept.VariancePercent is decimal variance) {
+                        var varianceClass = dept.IsOverBudget ? "mark-bad" : "mark-good";
+                        var varianceText = (dept.IsOverBudget ? "▲ " : "▼ ") + ChartHelper.SignedPercent(variance);
+                        @ChartHelper.SvgText(dW, rowTop + 36, varianceText, varianceClass, "end")
+                    }
+
+                    <rect class="hit-area" x="0" y="@ChartHelper.N(rowTop)"
+                          width="@ChartHelper.N(dW)" height="@ChartHelper.N(dRowH)"
+                          data-tip-title="@dept.Name"
+                          data-tip-rows="@($"{cBudget};Bütçe;{ChartHelper.Money(dept.Budgeted)}|{cActual};Gerçekleşen;{ChartHelper.Money(dept.Actual)}")" />
+                }
+            </svg>
+        </div>
+
+        <details class="table-view">
+            <summary>Tablo görünümü</summary>
+            <div class="table-scroll">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Departman</th>
+                            <th class="num">Bütçe</th>
+                            <th class="num">Gerçekleşen</th>
+                            <th class="num">Fark</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var dept in departments) {
+                            <tr>
+                                <td>@dept.Name</td>
+                                <td class="num">@ChartHelper.Money(dept.Budgeted)</td>
+                                <td class="num">@ChartHelper.Money(dept.Actual)</td>
+                                <td class="num">
+                                    @ChartHelper.Money(dept.Variance)
+                                    @if (dept.VariancePercent is decimal v) {
+                                        <span class="@(dept.IsOverBudget ? "text-bad" : "text-good")">
+                                            (@ChartHelper.SignedPercent(v))
+                                        </span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </details>
+    </article>
+
+    <article class="card chart-card">
+        <div class="card-head">
+            <div>
+                <h2>Kategoriye Göre Harcama</h2>
+                <p class="card-sub">@Model.SelectedYear toplamının dağılımı</p>
+            </div>
+        </div>
+
+        @{
+            var categories = Model.Categories;
+            const double donutSize = 250, donutOuter = 104, donutInner = 66, sliceGap = 1.6;
+            var donutCenter = donutSize / 2;
+            var categoryTotal = (double)Model.CategoryTotal;
+            var sweepStart = 0.0;
+        }
+
+        <div class="donut-wrap">
+            <svg class="donut-svg" viewBox="0 0 @ChartHelper.N(donutSize) @ChartHelper.N(donutSize)"
+                 role="img" aria-label="Harcamanın kategorilere göre dağılımı">
+
+                @for (var i = 0; i < categories.Count; i++) {
+                    var category = categories[i];
+                    var share = categoryTotal <= 0 ? 0 : (double)category.Amount / categoryTotal;
+                    var sweep = share * 360.0;
+                    var color = sliceColors[i % sliceColors.Length];
+
+                    // Dilimler arası ayrım açısal boşlukla yapılır, kenarlık çizilmez.
+                    var arcStart = sweepStart + sliceGap / 2;
+                    var arcEnd = sweepStart + sweep - sliceGap / 2;
+
+                    if (arcEnd > arcStart) {
+                        <path fill="@color"
+                              d="@ChartHelper.DonutArc(donutCenter, donutCenter, donutOuter, donutInner, arcStart, arcEnd)"
+                              data-tip-title="@category.Name"
+                              data-tip-rows="@($"{color};Tutar;{ChartHelper.Money(category.Amount)}|{color};Pay;{ChartHelper.SignedPercent(category.SharePercent).TrimStart('+')}")" />
+                    }
+
+                    // Dilim yeterince genişse yüzdeyi doğrudan üstüne yaz.
+                    if (sweep >= 28) {
+                        var midAngle = sweepStart + sweep / 2;
+                        var labelPoint = ChartHelper.PointOnCircle(donutCenter, donutCenter, (donutOuter + donutInner) / 2, midAngle);
+                        <g class="slice-label" style="fill:@sliceInks[i % sliceInks.Length]">
+                            @ChartHelper.SvgText(labelPoint.X, labelPoint.Y + 4, ChartHelper.Percent((double)category.SharePercent, 0), "slice-label-text")
+                        </g>
+                    }
+
+                    sweepStart += sweep;
+                }
+
+                @ChartHelper.SvgText(donutCenter, donutCenter - 4, ChartHelper.Compact(Model.CategoryTotal), "donut-center-value")
+                @ChartHelper.SvgText(donutCenter, donutCenter + 16, "toplam harcama", "donut-center-label")
+            </svg>
+
+            <ul class="donut-legend">
+                @for (var i = 0; i < categories.Count; i++) {
+                    var category = categories[i];
+                    <li>
+                        <span class="legend-dot" style="background:@sliceColors[i % sliceColors.Length]"></span>
+                        <span class="legend-name">@category.Name</span>
+                        <span class="legend-value">@ChartHelper.Compact(category.Amount)</span>
+                        <span class="legend-share">@ChartHelper.Percent((double)category.SharePercent, 1)</span>
+                    </li>
+                }
+            </ul>
+        </div>
+    </article>
+</section>
+
+<!-- 4) SON ONAY TALEPLERİ + 5) TEDARİKÇİ PERFORMANSI -->
+<section class="grid-wide-narrow">
+
+    <article class="card">
+        <div class="card-head">
+            <div>
+                <h2>Son Onay Talepleri</h2>
+                <p class="card-sub">@Model.PendingApprovalCount talep karar bekliyor</p>
+            </div>
+            <a class="card-link" href="#">Tümünü gör</a>
+        </div>
+
+        <div class="table-scroll">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Talep No</th>
+                        <th>Tedarikçi</th>
+                        <th class="num">Tutar</th>
+                        <th>Durum</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var request in Model.RecentApprovals) {
+                        <tr>
+                            <td>
+                                <span class="req-id">@request.RequestId</span>
+                                <span class="req-meta">@request.Department · @ChartHelper.ShortDate(request.RequestedOn)</span>
+                            </td>
+                            <td>@request.Vendor</td>
+                            <td class="num">@ChartHelper.Money(request.Amount)</td>
+                            <td>
+                                @* Durum rengi tek başına anlam taşımasın diye rozet ikon + yazı taşır. *@
+                                <span class="status-chip is-@request.StatusKey">
+                                    @if (request.Status == ApprovalStatus.Approved) {
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                    } else if (request.Status == ApprovalStatus.Pending) {
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
+                                            <circle cx="12" cy="12" r="9"></circle>
+                                            <polyline points="12 7 12 12 15 14"></polyline>
+                                        </svg>
+                                    } else {
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    }
+                                    @request.StatusText
+                                </span>
+                                @if (request.IsUrgent) {
+                                    <span class="urgency-badge small">acil</span>
+                                }
+                            </td>
+                            <td>
+                                @if (request.Status == ApprovalStatus.Pending) {
+                                    <span class="row-actions">
+                                        <button class="btn-mini primary" type="button">Onayla</button>
+                                        <button class="btn-mini ghost" type="button">Reddet</button>
+                                    </span>
+                                } else {
+                                    <button class="btn-mini ghost" type="button">Görüntüle</button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </article>
+
+    <article class="card">
+        <div class="card-head">
+            <div>
+                <h2>Tedarikçi Performansı</h2>
+                <p class="card-sub">Zamanında teslim oranına göre ilk 5</p>
+            </div>
+        </div>
+
+        <ul class="vendor-list">
+            @foreach (var vendor in Model.TopVendors) {
+                <li class="vendor-row">
+                    <div class="vendor-head">
+                        <span class="vendor-name">@vendor.Name</span>
+                        <span class="vendor-otd">@ChartHelper.Percent(vendor.OnTimeDeliveryPercent)</span>
+                    </div>
+
+                    @* Ölçer dolgusu durumu, altındaki kanal aynı rampanın açık tonu. *@
+                    <div class="meter" role="img"
+                         aria-label="@vendor.Name zamanında teslim oranı @ChartHelper.Percent(vendor.OnTimeDeliveryPercent)">
+                        <span class="meter-fill is-@vendor.PerformanceKey"
+                              style="width:@ChartHelper.N(vendor.OnTimeDeliveryPercent)%"></span>
+                    </div>
+
+                    <div class="vendor-foot">
+                        <span class="vendor-flag is-@vendor.PerformanceKey">@vendor.PerformanceText</span>
+                        <span class="vendor-meta">Kalite @ChartHelper.Score(vendor.QualityScore)/5 · @vendor.OrderCount sipariş</span>
+                    </div>
+                </li>
+            }
+        </ul>
+    </article>
+</section>
+
+<!-- 6) DÖNEMSEL SEYİR -->
+<section class="grid-equal">
+
+    <article class="card chart-card">
+        <div class="card-head">
+            <div>
+                <h2>Aylık Alış ve Satış</h2>
+                <p class="card-sub">@Model.SelectedYear yılı, ay bazında</p>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-dot" style="background:@cActual"></span>Alış</span>
+                <span class="legend-item"><span class="legend-dot" style="background:@cSale"></span>Satış</span>
+            </div>
+        </div>
+
+        @{
+            var monthly = Model.Monthly;
+            const double mW = 720, mH = 280, mPadL = 62, mPadR = 10, mPadT = 14, mPadB = 40;
+            var mPlotW = mW - mPadL - mPadR;
+            var mPlotH = mH - mPadT - mPadB;
+            var mBand = mPlotW / 12.0;
+            var mBarW = Math.Min(18.0, (mBand - 16) / 2);
+            var mGroupW = mBarW * 2 + 2;
+            var mTop = monthly.Count == 0
+                ? 1.0
+                : ChartHelper.NiceCeiling(monthly.Max(m => Math.Max((double)m.Purchase, (double)m.Sale)));
+            Func<double, double> mY = v => mPadT + mPlotH * (1 - v / mTop);
+        }
+
+        <div class="chart-frame">
+            <svg class="chart-svg" viewBox="0 0 @ChartHelper.N(mW) @ChartHelper.N(mH)"
+                 preserveAspectRatio="xMidYMid meet" role="img"
+                 aria-label="@Model.SelectedYear yılında ay bazında alış ve satış">
+
+                @foreach (var tick in ChartHelper.Ticks(mTop)) {
+                    <line class="grid-line" x1="@ChartHelper.N(mPadL)" x2="@ChartHelper.N(mPadL + mPlotW)"
+                          y1="@ChartHelper.N(mY(tick))" y2="@ChartHelper.N(mY(tick))" />
+                    @ChartHelper.SvgText(mPadL - 10, mY(tick) + 4, ChartHelper.Compact((decimal)tick), "axis-text", "end")
+                }
+
+                <line class="axis-line" x1="@ChartHelper.N(mPadL)" x2="@ChartHelper.N(mPadL + mPlotW)"
+                      y1="@ChartHelper.N(mY(0))" y2="@ChartHelper.N(mY(0))" />
+
+                @for (var i = 0; i < monthly.Count; i++) {
+                    var item = monthly[i];
+                    var bandStart = mPadL + i * mBand;
+                    var groupX = bandStart + (mBand - mGroupW) / 2;
+
+                    if (item.Purchase > 0) {
+                        <path fill="@cActual" d="@ChartHelper.ColumnPath(groupX, mY((double)item.Purchase), mBarW, mPlotH * (double)item.Purchase / mTop)" />
+                    }
+                    if (item.Sale > 0) {
+                        <path fill="@cSale" d="@ChartHelper.ColumnPath(groupX + mBarW + 2, mY((double)item.Sale), mBarW, mPlotH * (double)item.Sale / mTop)" />
+                    }
+
+                    @ChartHelper.SvgText(bandStart + mBand / 2, mPadT + mPlotH + 20, item.Label, "axis-text")
+
+                    <rect class="hit-area" x="@ChartHelper.N(bandStart)" y="@ChartHelper.N(mPadT)"
+                          width="@ChartHelper.N(mBand)" height="@ChartHelper.N(mPlotH)"
+                          data-tip-title="@item.Label @Model.SelectedYear"
+                          data-tip-rows="@($"{cActual};Alış;{ChartHelper.Money(item.Purchase)}|{cSale};Satış;{ChartHelper.Money(item.Sale)}")" />
+                }
+            </svg>
+        </div>
+
+        <details class="table-view">
+            <summary>Tablo görünümü</summary>
+            <div class="table-scroll">
+                <table class="data-table">
+                    <thead><tr><th>Ay</th><th class="num">Alış</th><th class="num">Satış</th></tr></thead>
+                    <tbody>
+                        @foreach (var item in monthly) {
+                            <tr>
+                                <td>@item.Label</td>
+                                <td class="num">@ChartHelper.Money(item.Purchase)</td>
+                                <td class="num">@ChartHelper.Money(item.Sale)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </details>
+    </article>
+
+    <article class="card chart-card">
+        <div class="card-head">
+            <div>
+                <h2>Yıllara Göre Harcama</h2>
+                <p class="card-sub">
+                    Her yıl tedarikçilere ödenen toplam
+                    @if (Model.IsPartialYear) {
+                        <span class="partial-flag">@Model.SelectedYear kısmi — @Model.PeriodLabel</span>
+                    }
+                </p>
+            </div>
+        </div>
+
+        @{
+            var yearly = Model.Yearly;
+            const double yW = 720, yH = 280, yPadL = 62, yPadR = 10, yPadT = 28, yPadB = 40;
+            var yPlotW = yW - yPadL - yPadR;
+            var yPlotH = yH - yPadT - yPadB;
+            var yBand = yearly.Count == 0 ? yPlotW : yPlotW / yearly.Count;
+            var yBarW = Math.Min(24.0, Math.Max(8.0, yBand - 34));
+            var yTop = yearly.Count == 0 ? 1.0 : ChartHelper.NiceCeiling(yearly.Max(y => (double)y.Purchase));
+            Func<double, double> yY = v => yPadT + yPlotH * (1 - v / yTop);
+        }
+
+        <div class="chart-frame">
+            <svg class="chart-svg" viewBox="0 0 @ChartHelper.N(yW) @ChartHelper.N(yH)"
+                 preserveAspectRatio="xMidYMid meet" role="img"
+                 aria-label="Yıllara göre toplam harcama">
+
+                @foreach (var tick in ChartHelper.Ticks(yTop)) {
+                    <line class="grid-line" x1="@ChartHelper.N(yPadL)" x2="@ChartHelper.N(yPadL + yPlotW)"
+                          y1="@ChartHelper.N(yY(tick))" y2="@ChartHelper.N(yY(tick))" />
+                    @ChartHelper.SvgText(yPadL - 10, yY(tick) + 4, ChartHelper.Compact((decimal)tick), "axis-text", "end")
+                }
+
+                <line class="axis-line" x1="@ChartHelper.N(yPadL)" x2="@ChartHelper.N(yPadL + yPlotW)"
+                      y1="@ChartHelper.N(yY(0))" y2="@ChartHelper.N(yY(0))" />
+
+                @for (var i = 0; i < yearly.Count; i++) {
+                    var item = yearly[i];
+                    var bandStart = yPadL + i * yBand;
+                    var barX = bandStart + (yBand - yBarW) / 2;
+
+                    if (item.Purchase > 0) {
+                        <path fill="@cActual" d="@ChartHelper.ColumnPath(barX, yY((double)item.Purchase), yBarW, yPlotH * (double)item.Purchase / yTop)" />
+                        @ChartHelper.SvgText(bandStart + yBand / 2, yY((double)item.Purchase) - 9, ChartHelper.Compact(item.Purchase), "mark-value")
+                    }
+
+                    @ChartHelper.SvgText(bandStart + yBand / 2, yPadT + yPlotH + 20, item.Year.ToString(), "axis-text")
+
+                    <rect class="hit-area" x="@ChartHelper.N(bandStart)" y="@ChartHelper.N(yPadT)"
+                          width="@ChartHelper.N(yBand)" height="@ChartHelper.N(yPlotH)"
+                          data-tip-title="@item.Year"
+                          data-tip-rows="@($"{cActual};Alış;{ChartHelper.Money(item.Purchase)}|{cSale};Satış;{ChartHelper.Money(item.Sale)}")" />
+                }
+            </svg>
+        </div>
+
+        <details class="table-view">
+            <summary>Tablo görünümü</summary>
+            <div class="table-scroll">
+                <table class="data-table">
+                    <thead><tr><th>Yıl</th><th class="num">Alış</th><th class="num">Satış</th></tr></thead>
+                    <tbody>
+                        @foreach (var item in yearly) {
+                            <tr>
+                                <td>@item.Year</td>
+                                <td class="num">@ChartHelper.Money(item.Purchase)</td>
+                                <td class="num">@ChartHelper.Money(item.Sale)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </details>
+    </article>
+</section>
+
+<!-- 7) İŞ BİRLİĞİ GEÇMİŞİ -->
+<section class="card">
+    <div class="card-head">
+        <div>
+            <h2>İş Birliği Yapılan Firmalar</h2>
+            <p class="card-sub">
+                Kuruluştan bugüne tüm firmalar — @Model.ActivePartnerCount aktif,
+                @Model.PastPartnerCount geçmiş. Tutarlar tüm zamanların toplamıdır.
+            </p>
+        </div>
+    </div>
+
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Firma</th>
+                    <th>Durum</th>
+                    <th class="num">Toplam Alış</th>
+                    <th class="num">Toplam Satış</th>
+                    <th class="num">İşlem</th>
+                    <th>Başlangıç</th>
+                    <th>Son Hareket</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.AllPartners) {
+                    var isActive = row.Partner.Status == PartnershipStatus.Active;
+                    <tr>
+                        <td>
+                            <span class="req-id">@row.Partner.Name</span>
+                            <span class="req-meta">@row.Partner.Sector · @row.Partner.City</span>
+                        </td>
+                        <td>
+                            <span class="status-chip is-@(isActive ? "approved" : "neutral")">
+                                @if (isActive) {
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                } else {
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="9"></circle>
+                                        <polyline points="12 7 12 12 15 14"></polyline>
+                                    </svg>
+                                }
+                                @row.Partner.StatusText
+                            </span>
+                        </td>
+                        <td class="num">@ChartHelper.Money(row.Purchase)</td>
+                        <td class="num">@ChartHelper.Money(row.Sale)</td>
+                        <td class="num">@row.TransactionCount.ToString("N0", ChartHelper.Tr)</td>
+                        <td>@ChartHelper.MonthYear(row.Partner.StartDate)</td>
+                        <td>
+                            @if (row.Partner.EndDate is DateOnly ended) {
+                                <span>@ChartHelper.MonthYear(ended) <span class="req-meta">sonlandı</span></span>
+                            } else if (row.LastTransactionDate is DateOnly last) {
+                                @ChartHelper.ShortDate(last)
+                            } else {
+                                <span class="req-meta">hareket yok</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
