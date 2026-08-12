@@ -130,6 +130,109 @@
     font-size: 0.92rem;
 }
 
+/* Profile Dropdown Styling */
+.profile-dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.profile-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 210px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 10px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.profile-dropdown-wrapper:hover .profile-dropdown-menu,
+.profile-dropdown-menu:hover {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-user-header {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 4px;
+}
+
+.user-email-badge {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #3b82f6;
+    word-break: break-all;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+/* Oturum Kapat Kırmızı Buton */
+.dropdown-item.btn-logout-red {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.dropdown-item.btn-logout-red:hover {
+    background: #dc2626;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+}
+
+/* Hesabım Butonu */
+.dropdown-item.btn-account {
+    background: #f8fafc;
+    color: #0f172a;
+}
+
+.dropdown-item.btn-account:hover {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+/* Oturum Aç Mavi Buton */
+.dropdown-item.btn-login {
+    background: linear-gradient(135deg, #2563eb, #3b82f6);
+    color: #ffffff;
+}
+
+.dropdown-item.btn-login:hover {
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+/* Üye Ol Butonu */
+.dropdown-item.btn-register {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.dropdown-item.btn-register:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
 html, body {
     scroll-behavior: smooth;
     margin: 0;
@@ -200,7 +303,27 @@ html, body {
     color: #3b82f6;
 }
 
-/* 2. Auth Area (from akin) */
+.account-page-wrapper {
+    padding: 60px 20px 80px;
+    min-height: calc(100vh - 200px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.account-page-wrapper .auth-section {
+    width: 100%;
+    max-width: 850px;
+    padding: 0;
+}
+
+.auth-help-text {
+    font-size: 0.88rem;
+    color: #64748b;
+    margin: 4px 0 8px;
+    line-height: 1.5;
+}
+
 .auth-section {
     padding: 40px 20px 10px;
 }

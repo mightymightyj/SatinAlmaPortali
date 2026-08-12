@@ -1,0 +1,88 @@
+@{
+    ViewData["Title"] = "Giriş Yap / Üye Ol";
+    var activeTab = (ViewData["ActiveTab"] as string) ?? "user-login";
+}
+
+<div class="account-page-wrapper">
+    <section id="auth-section" class="auth-section">
+        <div class="auth-shell">
+            <div class="auth-intro">
+                <span class="auth-badge">Hızlı Giriş</span>
+                <h2>Satın alma portalına giriş yapın</h2>
+                <p>Üye girişi, admin panel erişimi veya yeni hesap oluşturma işlemlerini tek ekrandan yönetin.</p>
+            </div>
+
+            <div class="auth-tabs" role="tablist" aria-label="Giriş seçenekleri">
+                <button class="auth-tab @(activeTab == "user-login" ? "active" : "")" data-target="user-login" type="button">Kullanıcı Girişi</button>
+                <button class="auth-tab @(activeTab == "admin-login" ? "active" : "")" data-target="admin-login" type="button">Admin Girişi</button>
+                <button class="auth-tab @(activeTab == "register" ? "active" : "")" data-target="register" type="button">Üye Ol</button>
+                <button class="auth-tab @(activeTab == "forgot-password" ? "active" : "")" data-target="forgot-password" type="button">Şifremi Unuttum</button>
+            </div>
+
+            <!-- Kullanıcı Girişi Panel -->
+            <div class="auth-panel @(activeTab == "user-login" ? "active" : "")" id="user-login">
+                <form class="auth-form" method="post" asp-action="Login">
+                    <input type="hidden" name="userType" value="user" />
+                    <label>
+                        E-posta
+                        <input type="email" name="email" placeholder="ornek@firma.com" required />
+                    </label>
+                    <label>
+                        Şifre
+                        <input type="password" name="password" placeholder="••••••••" required />
+                    </label>
+                    <button type="submit" class="auth-submit">Giriş Yap</button>
+                    <a href="#" class="auth-link switch-tab-link" data-target="forgot-password">Şifremi unuttum</a>
+                </form>
+            </div>
+
+            <!-- Admin Girişi Panel -->
+            <div class="auth-panel @(activeTab == "admin-login" ? "active" : "")" id="admin-login">
+                <form class="auth-form" method="post" asp-action="Login">
+                    <input type="hidden" name="userType" value="admin" />
+                    <label>
+                        Yönetici E-posta
+                        <input type="email" name="email" placeholder="admin@tedarikportal.com" required />
+                    </label>
+                    <label>
+                        Şifre
+                        <input type="password" name="password" placeholder="••••••••" required />
+                    </label>
+                    <button type="submit" class="auth-submit">Admin Girişi</button>
+                </form>
+            </div>
+
+            <!-- Üye Ol Panel -->
+            <div class="auth-panel @(activeTab == "register" ? "active" : "")" id="register">
+                <form class="auth-form" method="post" asp-action="Login">
+                    <label>
+                        Ad Soyad
+                        <input type="text" name="fullname" placeholder="Ahmet Yılmaz" required />
+                    </label>
+                    <label>
+                        E-posta
+                        <input type="email" name="email" placeholder="ahmet@firma.com" required />
+                    </label>
+                    <label>
+                        Şifre
+                        <input type="password" name="password" placeholder="En az 8 karakter" required />
+                    </label>
+                    <button type="submit" class="auth-submit">Üye Ol</button>
+                </form>
+            </div>
+
+            <!-- Şifremi Unuttum Panel -->
+            <div class="auth-panel @(activeTab == "forgot-password" ? "active" : "")" id="forgot-password">
+                <form class="auth-form" method="post" asp-action="Login">
+                    <label>
+                        Kayıtlı E-posta Adresiniz
+                        <input type="email" name="email" placeholder="ornek@firma.com" required />
+                    </label>
+                    <p class="auth-help-text">Hesabınıza ait e-posta adresinizi girdiğinizde şifre sıfırlama bağlantısı gönderilecektir.</p>
+                    <button type="submit" class="auth-submit">Sıfırlama Bağlantısı Gönder</button>
+                    <a href="#" class="auth-link switch-tab-link" data-target="user-login">Giriş ekranına dön</a>
+                </form>
+            </div>
+        </div>
+    </section>
+</div>

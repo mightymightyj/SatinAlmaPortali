@@ -1,17 +1,39 @@
-﻿document.addEventListener('DOMContentLoaded', () => {
-    const tabs = document.querySelectorAll('.auth-tab');
+document.addEventListener('DOMContentLoaded', () => {
+    function activateTab(targetId) {
+        document.querySelectorAll('.auth-tab').forEach((item) => {
+            if (item.getAttribute('data-target') === targetId) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
 
+        document.querySelectorAll('.auth-panel').forEach((panel) => {
+            if (panel.id === targetId) {
+                panel.classList.add('active');
+            } else {
+                panel.classList.remove('active');
+            }
+        });
+    }
+
+    const tabs = document.querySelectorAll('.auth-tab');
     tabs.forEach((tab) => {
         tab.addEventListener('click', () => {
             const target = tab.getAttribute('data-target');
+            if (target) {
+                activateTab(target);
+            }
+        });
+    });
 
-            document.querySelectorAll('.auth-tab').forEach((item) => item.classList.remove('active'));
-            document.querySelectorAll('.auth-panel').forEach((panel) => panel.classList.remove('active'));
-
-            tab.classList.add('active');
-            const activePanel = document.getElementById(target);
-            if (activePanel) {
-                activePanel.classList.add('active');
+    const switchLinks = document.querySelectorAll('.switch-tab-link');
+    switchLinks.forEach((link) => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const target = link.getAttribute('data-target');
+            if (target) {
+                activateTab(target);
             }
         });
     });
