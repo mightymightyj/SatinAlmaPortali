@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using satinalma.Models;
+using satinalmaportali2.Models;
 
-namespace satinalma.Data
+namespace satinalmaportali2.Data
 {
     public class ApplicationDbContext : DbContext
     {

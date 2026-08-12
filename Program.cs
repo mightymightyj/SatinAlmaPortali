@@ -1,3 +1,7 @@
+using Microsoft.EntityFrameworkCore;
+using satinalmaportali2.Data;
+using satinalmaportali2.Models;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.

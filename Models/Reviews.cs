@@ -6,6 +6,6 @@ namespace satinalmaportali2.Models
         public int? RequestID { get; set;}
         public float? ReviewScore { get; set;}
         public int? CompanyID { get; set;}
-        public string ReviewText { get; set;}
+        public string? ReviewText { get; set;}
     }
 }

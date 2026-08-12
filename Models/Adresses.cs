@@ -1,6 +1,6 @@
 namespace satinalmaportali2.Models
 {
-    public class adresses
+    public class Adresses
     {
       public int? AdressID { get; set;}
       public string? AdressText {get; set;}
