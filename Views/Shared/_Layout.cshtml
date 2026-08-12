@@ -63,7 +63,7 @@
                             <div class="dropdown-user-header">
                                 <span class="user-email-badge">@User.Identity.Name</span>
                             </div>
-                            <a asp-controller="Account" asp-action="Login" class="dropdown-item btn-account">
+                            <a href="javascript:void(0)" class="dropdown-item btn-account">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <circle cx="12" cy="8" r="4.5"></circle>
                                     <path d="M4 21c0-4 3.5-6.5 8-6.5s8 2.5 8 6.5"></path>
@@ -89,7 +89,7 @@
                                 </svg>
                                 Oturum Aç
                             </a>
-                            <a asp-controller="Account" asp-action="Login" asp-route-tab="register" class="dropdown-item btn-register">
+                            <a asp-controller="Account" asp-action="Register" class="dropdown-item btn-register">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                                     <circle cx="8.5" cy="7" r="4"></circle>
@@ -164,19 +164,13 @@
             <span class="support-text">Canlı Destek</span>
         </a>
 
-        <!-- FOOTER -->
+        <!-- Footer -->
         <footer class="dark-footer">
             <div class="footer-container">
                 <div class="footer-left">
                     <div class="footer-logo">
-                        <div class="logo-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                                <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                            </svg>
-                        </div>
-                        <h2>tedarik<span>.portal</span></h2>
+                        <div class="logo-icon">T</div>
+                        <span class="logo-text">Tedarik <span class="highlight">Portalı</span></span>
                     </div>
                     <p class="footer-desc">
                         Türkiye'nin 81 ilindeki kurumsal alıcılar ve doğrulanmış tedarikçileri tek çatı altında toplayan B2B satın alma portalı.
@@ -193,6 +187,92 @@
             </div>
         </footer>
     </div>
+
+    <!-- GİRİŞ BAŞARILI MODAL -->
+    @if (TempData["LoginSuccess"] != null)
+    {
+        <div id="loginSuccessModal" class="blur-modal-overlay">
+            <div class="blur-modal-box">
+                <div class="blur-modal-tag blur-tag-login">GİRİŞ BAŞARILI</div>
+                <div class="blur-modal-icon-badge blur-modal-icon-badge-login">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                        <polyline points="10 17 15 12 10 7"></polyline>
+                        <line x1="15" y1="12" x2="3" y2="12"></line>
+                    </svg>
+                </div>
+                <h3 class="blur-modal-title">Tekrar Hoş Geldiniz!</h3>
+                <p class="blur-modal-desc">
+                    Portal hesabınıza başarıyla giriş yapıldı. İşletmeniz için tanımlı tüm satın alma taleplerini ve tedarik süreçlerini yönetmeye başlayabilirsiniz.
+                </p>
+                <button type="button" class="blur-modal-btn" onclick="closeModal('loginSuccessModal')">
+                    Portala Devam Et
+                </button>
+            </div>
+        </div>
+    }
+
+    <!-- KAYIT BAŞARILI MODAL -->
+    @if (TempData["RegisterSuccess"] != null)
+    {
+        <div id="registerSuccessModal" class="blur-modal-overlay">
+            <div class="blur-modal-box">
+                <div class="blur-modal-tag">KURUMSAL ÜYELİK AKTİF</div>
+                <div class="blur-modal-icon-badge">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <h3 class="blur-modal-title">Aramıza Hoş Geldiniz!</h3>
+                <p class="blur-modal-desc">
+                    Satın alma portalı hesabınız başarıyla oluşturuldu ve oturumunuz açıldı. Tüm tedarikçi ağına, teklif yönetimine ve dijital satın alma araçlarına anında erişebilirsiniz.
+                </p>
+                <button type="button" class="blur-modal-btn" onclick="closeModal('registerSuccessModal')">
+                    Portalı Keşfetmeye Başla
+                </button>
+            </div>
+        </div>
+    }
+
+    <!-- OTURUM KAPATILDI MODAL -->
+    @if (TempData["LogoutSuccess"] != null)
+    {
+        <div id="logoutSuccessModal" class="blur-modal-overlay">
+            <div class="blur-modal-box">
+                <div class="blur-modal-tag blur-tag-logout">GÜVENLİ ÇIKIŞ</div>
+                <div class="blur-modal-icon-badge blur-modal-icon-badge-logout">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <path d="m9 12 2 2 4-4"></path>
+                    </svg>
+                </div>
+                <h3 class="blur-modal-title">Oturumunuz Güvenle Kapatıldı</h3>
+                <p class="blur-modal-desc">
+                    Portal hesabınızdan başarıyla çıkış yapıldı. İşletmenizin tüm verileri ve oturum bilgileriniz koruma altındadır. Dilediğiniz zaman tekrar giriş yapabilirsiniz.
+                </p>
+                <button type="button" class="blur-modal-btn blur-modal-btn-dark" onclick="closeModal('logoutSuccessModal')">
+                    Ana Sayfaya Dön
+                </button>
+            </div>
+        </div>
+    }
+
+    <script>
+        function closeModal(modalId) {
+            var modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.opacity = "0";
+                modal.style.transition = "opacity 0.3s ease";
+                setTimeout(function () { modal.remove(); }, 300);
+            }
+        }
+        setTimeout(function () {
+            closeModal('loginSuccessModal');
+            closeModal('registerSuccessModal');
+            closeModal('logoutSuccessModal');
+        }, 6000);
+    </script>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

@@ -1,0 +1,648 @@
+@{
+    ViewData["Title"] = "Kurumsal Üye Ol";
+}
+
+<div class="account-page-wrapper">
+    <section id="register-section" class="auth-section">
+        <div class="auth-shell register-wizard-shell">
+            
+            <div class="auth-intro text-center">
+                <span class="auth-badge">Kurumsal Kayıt</span>
+                <h2>Tedarik Portalına Katılın</h2>
+                <p>3 adımda kolayca hesabınızı oluşturun ve Türkiye genelindeki kurumsal satın alma ağına erişin.</p>
+            </div>
+
+            <!-- 3 ADIMLI PROGRESS BAR -->
+            <div class="wizard-steps-bar">
+                <div class="wizard-step active" id="step-tab-1">
+                    <div class="step-num">1</div>
+                    <span class="step-label">Hesap Bilgileri</span>
+                </div>
+                <div class="step-connector"></div>
+                <div class="wizard-step" id="step-tab-2">
+                    <div class="step-num">2</div>
+                    <span class="step-label">Konum & Adres</span>
+                </div>
+                <div class="step-connector"></div>
+                <div class="wizard-step" id="step-tab-3">
+                    <div class="step-num">3</div>
+                    <span class="step-label">Şirket & Vergi</span>
+                </div>
+            </div>
+
+            @if (ViewData["ErrorMessage"] != null)
+            {
+                <div class="auth-error-msg">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <span>@ViewData["ErrorMessage"]</span>
+                </div>
+            }
+
+            <div id="regErrorAlert" class="auth-error-msg" style="display: none;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <span id="regErrorText">Lütfen gerekli alanları doldurunuz!</span>
+            </div>
+
+            <form class="auth-form register-wizard-form" id="registerWizardForm" method="post" asp-action="RegisterSubmit" novalidate>
+                
+                <!-- AŞAMA 1: TEMEL HESAP BİLGİLERİ -->
+                <div class="wizard-pane active" id="pane-step-1">
+                    <h4 class="pane-title">1. Aşama: Temel Hesap Bilgileri</h4>
+                    
+                    <label>
+                        Ad Soyad / Firma Yetkilisi *
+                        <input type="text" name="fullname" id="regFullname" placeholder="Ahmet Yılmaz" required />
+                    </label>
+
+                    <label>
+                        E-posta Adresi *
+                        <input type="email" name="email" id="regEmail" placeholder="ahmet@firma.com" required />
+                    </label>
+
+                    <label>
+                        Şifre *
+                        <input type="password" name="password" id="regPassword" placeholder="Örn: Pa$$word123" required />
+                    </label>
+
+                    <!-- ŞİFRE GÜVENLİK DUVARI -->
+                    <div class="password-firewall-box">
+                        <div class="firewall-header">
+                            <span class="firewall-title">Güvenlik Seviyesi:</span>
+                            <span class="firewall-status" id="strengthStatus">Henüz Girilmedi</span>
+                        </div>
+                        <div class="firewall-bar-track">
+                            <div class="firewall-bar-fill" id="strengthBar"></div>
+                        </div>
+                        <ul class="firewall-rules-list">
+                            <li id="rule-length" class="rule-item"><span class="rule-icon">✕</span> En az 8 karakter</li>
+                            <li id="rule-upper" class="rule-item"><span class="rule-icon">✕</span> Büyük harf (A-Z)</li>
+                            <li id="rule-lower" class="rule-item"><span class="rule-icon">✕</span> Küçük harf (a-z)</li>
+                            <li id="rule-digit" class="rule-item"><span class="rule-icon">✕</span> Rakam (0-9)</li>
+                            <li id="rule-symbol" class="rule-item"><span class="rule-icon">✕</span> Özel sembol (!@@#$%)</li>
+                        </ul>
+                    </div>
+
+                    <label>
+                        Şifreyi Tekrar Gir *
+                        <input type="password" name="confirmPassword" id="regConfirmPassword" placeholder="Şifrenizi tekrar girin" required />
+                    </label>
+
+                    <div class="wizard-actions">
+                        <button type="button" class="auth-submit btn-next" onclick="goToStep(2)">Devam Et (2. Adıma Geç) →</button>
+                    </div>
+                </div>
+
+                <!-- AŞAMA 2: KONUM VE ADRES BİLGİLERİ -->
+                <div class="wizard-pane" id="pane-step-2">
+                    <h4 class="pane-title">2. Aşama: Konum & Adres Bilgileri</h4>
+
+                    <div class="form-row-grid">
+                        <label>
+                            Ülke *
+                            <input type="text" name="country" id="regCountry" value="Türkiye" placeholder="Türkiye" required />
+                        </label>
+
+                        <label>
+                            Şehir / İl *
+                            <select name="city" id="regCity" class="auth-select" required>
+                                <option value="">Şehir Seçiniz (81 İl)</option>
+                                <option value="Adana">01 - Adana</option>
+                                <option value="Adıyaman">02 - Adıyaman</option>
+                                <option value="Afyonkarahisar">03 - Afyonkarahisar</option>
+                                <option value="Ağrı">04 - Ağrı</option>
+                                <option value="Amasya">05 - Amasya</option>
+                                <option value="Ankara">06 - Ankara</option>
+                                <option value="Antalya">07 - Antalya</option>
+                                <option value="Artvin">08 - Artvin</option>
+                                <option value="Aydın">09 - Aydın</option>
+                                <option value="Balıkesir">10 - Balıkesir</option>
+                                <option value="Bilecik">11 - Bilecik</option>
+                                <option value="Bingöl">12 - Bingöl</option>
+                                <option value="Bitlis">13 - Bitlis</option>
+                                <option value="Bolu">14 - Bolu</option>
+                                <option value="Burdur">15 - Burdur</option>
+                                <option value="Bursa">16 - Bursa</option>
+                                <option value="Çanakkale">17 - Çanakkale</option>
+                                <option value="Çankırı">18 - Çankırı</option>
+                                <option value="Çorum">19 - Çorum</option>
+                                <option value="Denizli">20 - Denizli</option>
+                                <option value="Diyarbakır">21 - Diyarbakır</option>
+                                <option value="Edirne">22 - Edirne</option>
+                                <option value="Elazığ">23 - Elazığ</option>
+                                <option value="Erzincan">24 - Erzincan</option>
+                                <option value="Erzurum">25 - Erzurum</option>
+                                <option value="Eskişehir">26 - Eskişehir</option>
+                                <option value="Gaziantep">27 - Gaziantep</option>
+                                <option value="Giresun">28 - Giresun</option>
+                                <option value="Gümüşhane">29 - Gümüşhane</option>
+                                <option value="Hakkari">30 - Hakkari</option>
+                                <option value="Hatay">31 - Hatay</option>
+                                <option value="Isparta">32 - Isparta</option>
+                                <option value="Mersin">33 - Mersin (İçel)</option>
+                                <option value="İstanbul">34 - İstanbul</option>
+                                <option value="İzmir">35 - İzmir</option>
+                                <option value="Kars">36 - Kars</option>
+                                <option value="Kastamonu">37 - Kastamonu</option>
+                                <option value="Kayseri">38 - Kayseri</option>
+                                <option value="Kırklareli">39 - Kırklareli</option>
+                                <option value="Kırşehir">40 - Kırşehir</option>
+                                <option value="Kocaeli">41 - Kocaeli</option>
+                                <option value="Konya">42 - Konya</option>
+                                <option value="Kütahya">43 - Kütahya</option>
+                                <option value="Malatya">44 - Malatya</option>
+                                <option value="Manisa">45 - Manisa</option>
+                                <option value="Kahramanmaraş">46 - Kahramanmaraş</option>
+                                <option value="Mardin">47 - Mardin</option>
+                                <option value="Muğla">48 - Muğla</option>
+                                <option value="Muş">49 - Muş</option>
+                                <option value="Nevşehir">50 - Nevşehir</option>
+                                <option value="Niğde">51 - Niğde</option>
+                                <option value="Ordu">52 - Ordu</option>
+                                <option value="Rize">53 - Rize</option>
+                                <option value="Sakarya">54 - Sakarya</option>
+                                <option value="Samsun">55 - Samsun</option>
+                                <option value="Siirt">56 - Siirt</option>
+                                <option value="Sinop">57 - Sinop</option>
+                                <option value="Sivas">58 - Sivas</option>
+                                <option value="Tekirdağ">59 - Tekirdağ</option>
+                                <option value="Tokat">60 - Tokat</option>
+                                <option value="Trabzon">61 - Trabzon</option>
+                                <option value="Tunceli">62 - Tunceli</option>
+                                <option value="Şanlıurfa">63 - Şanlıurfa</option>
+                                <option value="Uşak">64 - Uşak</option>
+                                <option value="Van">65 - Van</option>
+                                <option value="Yozgat">66 - Yozgat</option>
+                                <option value="Zonguldak">67 - Zonguldak</option>
+                                <option value="Aksaray">68 - Aksaray</option>
+                                <option value="Bayburt">69 - Bayburt</option>
+                                <option value="Karaman">70 - Karaman</option>
+                                <option value="Kırıkkale">71 - Kırıkkale</option>
+                                <option value="Batman">72 - Batman</option>
+                                <option value="Şırnak">73 - Şırnak</option>
+                                <option value="Bartın">74 - Bartın</option>
+                                <option value="Ardahan">75 - Ardahan</option>
+                                <option value="Iğdır">76 - Iğdır</option>
+                                <option value="Yalova">77 - Yalova</option>
+                                <option value="Karabük">78 - Karabük</option>
+                                <option value="Kilis">79 - Kilis</option>
+                                <option value="Osmaniye">80 - Osmaniye</option>
+                                <option value="Düzce">81 - Düzce</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <label>
+                        İlçe *
+                        <select name="district" id="regDistrict" class="auth-select" required>
+                            <option value="">Önce şehir seçiniz</option>
+                        </select>
+                    </label>
+
+                    <label>
+                        Açık Adres Metni *
+                        <textarea name="addressText" id="regAddressText" rows="3" placeholder="Mahalle, sokak, bina ve kapı numarası bilgileriniz..." required></textarea>
+                    </label>
+
+                    <div class="wizard-actions flex-between">
+                        <button type="button" class="auth-submit-secondary" onclick="goToStep(1)">← Geri</button>
+                        <button type="button" class="auth-submit btn-next" onclick="goToStep(3)">Devam Et (3. Adıma Geç) →</button>
+                    </div>
+                </div>
+
+                <!-- AŞAMA 3: ŞİRKET VE VERGİ BİLGİLERİ -->
+                <div class="wizard-pane" id="pane-step-3">
+                    <h4 class="pane-title">3. Aşama: Şirket & Vergi Bilgileri</h4>
+
+                    <!-- KÜÇÜK KUTUCUK DROPDOWN SEÇİMİ -->
+                    <label>
+                        Firma / Üyelik Tipi *
+                        <select name="companyTypeID" id="regCompanyType" class="auth-select" required>
+                            <option value="1" selected>Tedarikçi Firma (Ürün & hizmet satan kurumsal firma)</option>
+                            <option value="2">Alıcı / Müşteri (Satın alma talebi açan kurumsal alıcı)</option>
+                            <option value="3">Hem Alıcı Hem Tedarikçi (Tüm işlemleri tek hesaptan yönetin)</option>
+                        </select>
+                    </label>
+
+                    <div class="form-row-grid">
+                        <label>
+                            T.C. Kimlik / Vergi Kimlik No *
+                            <input type="text" name="tcno" id="regTcno" placeholder="10 veya 11 haneli numara" maxlength="11" required />
+                        </label>
+
+                        <label>
+                            Telefon Numarası *
+                            <input type="tel" name="companyPhone" id="regPhone" placeholder="05XXXXXXXXX (11 haneli numara)" maxlength="11" required />
+                        </label>
+                    </div>
+
+                    <label>
+                        Vergi Dairesi *
+                        <input type="text" name="taxOffice" id="regTaxOffice" placeholder="Bağlı olduğunuz vergi dairesi" required />
+                    </label>
+
+                    <!-- BÜYÜTÜLMÜŞ ŞİRKET DETAYI TEXTAREA -->
+                    <label>
+                        Şirket / Firma Detayı <span>(İsteğe Bağlı)</span>
+                        <textarea name="companyDetailText" id="regCompanyDetail" rows="6" class="auth-textarea-large" placeholder="Şirketinizin faaliyet alanları, ana ürün grupları ve hizmet detayları hakkında ayrıntılı bilgi verebilirsiniz..."></textarea>
+                    </label>
+
+                    <div class="wizard-actions flex-between">
+                        <button type="button" class="auth-submit-secondary" onclick="goToStep(2)">← Geri</button>
+                        <button type="submit" class="auth-submit btn-finish">Kaydı Tamamla ve Üye Ol ✓</button>
+                    </div>
+                </div>
+
+            </form>
+
+            <div class="register-footer-link">
+                <span>Zaten hesabınız var mı?</span>
+                <a asp-controller="Account" asp-action="Login">Giriş Yap</a>
+            </div>
+
+        </div>
+    </section>
+</div>
+
+<script>
+    let currentStep = 1;
+
+    function goToStep(targetStep) {
+        const errorAlert = document.getElementById("regErrorAlert");
+        const errorText = document.getElementById("regErrorText");
+        
+        if (errorAlert) errorAlert.style.display = "none";
+
+        // Validate Step 1 before proceeding to Step 2
+        if (targetStep === 2 && currentStep === 1) {
+            const fullname = document.getElementById("regFullname");
+            const email = document.getElementById("regEmail");
+            const passInput = document.getElementById("regPassword");
+            const confirmInput = document.getElementById("regConfirmPassword");
+
+            let hasError = false;
+            let msg = "";
+
+            if (!fullname.value || !email.value) {
+                hasError = true;
+                msg = "Lütfen Ad Soyad ve E-posta adresinizi doldurun.";
+            } else {
+                const val = passInput.value;
+                const hasLength = val.length >= 8;
+                const hasUpper = /[A-Z]/.test(val);
+                const hasLower = /[a-z]/.test(val);
+                const hasDigit = /[0-9]/.test(val);
+                const hasSymbol = /[!@@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]/.test(val);
+
+                if (!hasLength || !hasUpper || !hasLower || !hasDigit || !hasSymbol) {
+                    hasError = true;
+                    msg = "Lütfen tüm şifre güvenlik duvarı kurallarını karşılayan güçlü bir şifre belirleyin!";
+                    passInput.classList.add("input-error", "shake-error");
+                } else if (passInput.value !== confirmInput.value) {
+                    hasError = true;
+                    msg = "Şifreler birbiriyle uyuşmuyor! Lütfen tekrar kontrol edin.";
+                    passInput.classList.add("input-error", "shake-error");
+                    confirmInput.classList.add("input-error", "shake-error");
+                }
+            }
+
+            if (hasError) {
+                if (errorAlert && errorText) {
+                    errorText.textContent = msg;
+                    errorAlert.style.display = "flex";
+                }
+                setTimeout(() => {
+                    if (passInput) passInput.classList.remove("shake-error");
+                    if (confirmInput) confirmInput.classList.remove("shake-error");
+                }, 500);
+                return;
+            }
+        }
+
+        // Validate Step 2 before proceeding to Step 3
+        if (targetStep === 3 && currentStep === 2) {
+            const city = document.getElementById("regCity");
+            const district = document.getElementById("regDistrict");
+            const address = document.getElementById("regAddressText");
+
+            if (!city.value || !district.value || !address.value) {
+                if (errorAlert && errorText) {
+                    errorText.textContent = "Lütfen şehir, ilçe ve açık adres alanlarını eksiksiz doldurun.";
+                    errorAlert.style.display = "flex";
+                }
+                return;
+            }
+        }
+
+        // Update active pane & step indicator bar
+        currentStep = targetStep;
+        document.querySelectorAll(".wizard-pane").forEach((pane, idx) => {
+            pane.classList.toggle("active", idx + 1 === currentStep);
+        });
+
+        document.querySelectorAll(".wizard-step").forEach((step, idx) => {
+            if (idx + 1 < currentStep) {
+                step.className = "wizard-step completed";
+            } else if (idx + 1 === currentStep) {
+                step.className = "wizard-step active";
+            } else {
+                step.className = "wizard-step";
+            }
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const passInput = document.getElementById("regPassword");
+        const strengthBar = document.getElementById("strengthBar");
+        const strengthStatus = document.getElementById("strengthStatus");
+
+        const ruleLength = document.getElementById("rule-length");
+        const ruleUpper = document.getElementById("rule-upper");
+        const ruleLower = document.getElementById("rule-lower");
+        const ruleDigit = document.getElementById("rule-digit");
+        const ruleSymbol = document.getElementById("rule-symbol");
+
+        const regTcno = document.getElementById("regTcno");
+        const regPhone = document.getElementById("regPhone");
+        const form = document.getElementById("registerWizardForm");
+
+        // =============================================
+        // TÜRKİYE İLÇELERİ VERİ TABANI (81 İL)
+        // =============================================
+        var turkiyeIlceleri = {
+            "Adana": ["Aladağ","Ceyhan","Çukurova","Feke","İmamoğlu","Karaisalı","Karataş","Kozan","Pozantı","Saimbeyli","Sarıçam","Seyhan","Tufanbeyli","Yumurtalık","Yüreğir"],
+            "Adıyaman": ["Besni","Çelikhan","Gerger","Gölbaşı","Kahta","Merkez","Samsat","Sincik","Tut"],
+            "Afyonkarahisar": ["Başmakçı","Bayat","Bolvadin","Çay","Çobanlar","Dazkırı","Dinar","Emirdağ","Evciler","Hocalar","İhsaniye","İscehisar","Kızılören","Merkez","Sandıklı","Sinanpaşa","Sultandağı","Şuhut"],
+            "Ağrı": ["Diyadin","Doğubayazıt","Eleşkirt","Hamur","Merkez","Patnos","Taşlıçay","Tutak"],
+            "Amasya": ["Göynücek","Gümüşhacıköy","Hamamözü","Merkez","Merzifon","Suluova","Taşova"],
+            "Ankara": ["Akyurt","Altındağ","Ayaş","Bala","Beypazarı","Çamlıdere","Çankaya","Çubuk","Elmadağ","Etimesgut","Evren","Gölbaşı","Güdül","Haymana","Kalecik","Kahramankazan","Keçiören","Kızılcahamam","Mamak","Nallıhan","Polatlı","Pursaklar","Sincan","Şereflikoçhisar","Yenimahalle"],
+            "Antalya": ["Akseki","Aksu","Alanya","Demre","Döşemealtı","Elmalı","Finike","Gazipaşa","Gündoğmuş","İbradı","Kaş","Kemer","Kepez","Konyaaltı","Korkuteli","Kumluca","Manavgat","Muratpaşa","Serik"],
+            "Artvin": ["Ardanuç","Arhavi","Borçka","Hopa","Kemalpaşa","Merkez","Murgul","Şavşat","Yusufeli"],
+            "Aydın": ["Bozdoğan","Buharkent","Çine","Didim","Efeler","Germencik","İncirliova","Karacasu","Karpuzlu","Koçarlı","Köşk","Kuşadası","Kuyucak","Nazilli","Söke","Sultanhisar","Yenipazar"],
+            "Balıkesir": ["Altıeylül","Ayvalık","Balya","Bandırma","Bigadiç","Burhaniye","Dursunbey","Edremit","Erdek","Gömeç","Gönen","Havran","İvrindi","Karesi","Kepsut","Manyas","Marmara","Savaştepe","Sındırgı","Susurluk"],
+            "Bilecik": ["Bozüyük","Gölpazarı","İnhisar","Merkez","Osmaneli","Pazaryeri","Söğüt","Yenipazar"],
+            "Bingöl": ["Adaklı","Genç","Karlıova","Kiğı","Merkez","Solhan","Yayladere","Yedisu"],
+            "Bitlis": ["Adilcevaz","Ahlat","Güroymak","Hizan","Merkez","Mutki","Tatvan"],
+            "Bolu": ["Dörtdivan","Gerede","Göynük","Kıbrıscık","Mengen","Merkez","Mudurnu","Seben","Yeniçağa"],
+            "Burdur": ["Ağlasun","Altınyayla","Bucak","Çavdır","Çeltikçi","Gölhisar","Karamanlı","Kemer","Merkez","Tefenni","Yeşilova"],
+            "Bursa": ["Büyükorhan","Gemlik","Gürsu","Harmancık","İnegöl","İznik","Karacabey","Keles","Kestel","Mudanya","Mustafakemalpaşa","Nilüfer","Orhaneli","Orhangazi","Osmangazi","Yenişehir","Yıldırım"],
+            "Çanakkale": ["Ayvacık","Bayramiç","Biga","Bozcaada","Çan","Eceabat","Ezine","Gelibolu","Gökçeada","Lapseki","Merkez","Yenice"],
+            "Çankırı": ["Atkaracalar","Bayramören","Çerkeş","Eldivan","Ilgaz","Kızılırmak","Korgun","Kurşunlu","Merkez","Orta","Şabanözü","Yapraklı"],
+            "Çorum": ["Alaca","Bayat","Boğazkale","Dodurga","İskilip","Kargı","Laçin","Mecitözü","Merkez","Oğuzlar","Ortaköy","Osmancık","Sungurlu","Uğurludağ"],
+            "Denizli": ["Acıpayam","Babadağ","Baklan","Bekilli","Beyağaç","Bozkurt","Buldan","Çal","Çameli","Çardak","Çivril","Güney","Honaz","Kale","Merkezefendi","Pamukkale","Sarayköy","Serinhisar","Tavas"],
+            "Diyarbakır": ["Bağlar","Bismil","Çermik","Çınar","Çüngüş","Dicle","Eğil","Ergani","Hani","Hazro","Kayapınar","Kocaköy","Kulp","Lice","Silvan","Sur","Yenişehir"],
+            "Edirne": ["Enez","Havsa","İpsala","Keşan","Lalapaşa","Meriç","Merkez","Süloğlu","Uzunköprü"],
+            "Elazığ": ["Ağın","Alacakaya","Arıcak","Baskil","Karakoçan","Keban","Kovancılar","Maden","Merkez","Palu","Sivrice"],
+            "Erzincan": ["Çayırlı","İliç","Kemah","Kemaliye","Merkez","Otlukbeli","Refahiye","Tercan","Üzümlü"],
+            "Erzurum": ["Aşkale","Aziziye","Çat","Hınıs","Horasan","İspir","Karaçoban","Karayazı","Köprüköy","Narman","Oltu","Olur","Palandöken","Pasinler","Pazaryolu","Şenkaya","Tekman","Tortum","Uzundere","Yakutiye"],
+            "Eskişehir": ["Alpu","Beylikova","Çifteler","Günyüzü","Han","İnönü","Mahmudiye","Mihalgazi","Mihalıççık","Odunpazarı","Sarıcakaya","Seyitgazi","Sivrihisar","Tepebaşı"],
+            "Gaziantep": ["Araban","İslahiye","Karkamış","Nizip","Nurdağı","Oğuzeli","Şahinbey","Şehitkâmil","Yavuzeli"],
+            "Giresun": ["Alucra","Bulancak","Çamoluk","Çanakçı","Dereli","Doğankent","Espiye","Eynesil","Görele","Güce","Keşap","Merkez","Piraziz","Şebinkarahisar","Tirebolu","Yağlıdere"],
+            "Gümüşhane": ["Kelkit","Köse","Kürtün","Merkez","Şiran","Torul"],
+            "Hakkari": ["Çukurca","Derecik","Merkez","Şemdinli","Yüksekova"],
+            "Hatay": ["Altınözü","Antakya","Arsuz","Belen","Defne","Dörtyol","Erzin","Hassa","İskenderun","Kırıkhan","Kumlu","Payas","Reyhanlı","Samandağ","Yayladağı"],
+            "Isparta": ["Aksu","Atabey","Eğirdir","Gelendost","Gönen","Keçiborlu","Merkez","Senirkent","Sütçüler","Şarkikaraağaç","Uluborlu","Yalvaç","Yenişarbademli"],
+            "Mersin": ["Akdeniz","Anamur","Aydıncık","Bozyazı","Çamlıyayla","Erdemli","Gülnar","Mezitli","Mut","Silifke","Tarsus","Toroslar","Yenişehir"],
+            "İstanbul": ["Adalar","Arnavutköy","Ataşehir","Avcılar","Bağcılar","Bahçelievler","Bakırköy","Başakşehir","Bayrampaşa","Beşiktaş","Beykoz","Beylikdüzü","Beyoğlu","Büyükçekmece","Çatalca","Çekmeköy","Esenler","Esenyurt","Eyüpsultan","Fatih","Gaziosmanpaşa","Güngören","Kadıköy","Kağıthane","Kartal","Küçükçekmece","Maltepe","Pendik","Sancaktepe","Sarıyer","Silivri","Sultanbeyli","Sultangazi","Şile","Şişli","Tuzla","Ümraniye","Üsküdar","Zeytinburnu"],
+            "İzmir": ["Aliağa","Balçova","Bayındır","Bayraklı","Bergama","Beydağ","Bornova","Buca","Çeşme","Çiğli","Dikili","Foça","Gaziemir","Güzelbahçe","Karabağlar","Karaburun","Karşıyaka","Kemalpaşa","Kınık","Kiraz","Konak","Menderes","Menemen","Narlıdere","Ödemiş","Seferihisar","Selçuk","Tire","Torbalı","Urla"],
+            "Kars": ["Akyaka","Arpaçay","Digor","Kağızman","Merkez","Sarıkamış","Selim","Susuz"],
+            "Kastamonu": ["Abana","Ağlı","Araç","Azdavay","Bozkurt","Cide","Çatalzeytin","Daday","Devrekani","Doğanyurt","Hanönü","İhsangazi","İnebolu","Küre","Merkez","Pınarbaşı","Seydiler","Şenpazar","Taşköprü","Tosya"],
+            "Kayseri": ["Akkışla","Bünyan","Develi","Felahiye","Hacılar","İncesu","Kocasinan","Melikgazi","Özvatan","Pınarbaşı","Sarıoğlan","Sarız","Talas","Tomarza","Yahyalı","Yeşilhisar"],
+            "Kırklareli": ["Babaeski","Demirköy","Kofçaz","Lüleburgaz","Merkez","Pehlivanköy","Pınarhisar","Vize"],
+            "Kırşehir": ["Akçakent","Akpınar","Boztepe","Çiçekdağı","Kaman","Merkez","Mucur"],
+            "Kocaeli": ["Başiskele","Çayırova","Darıca","Derince","Dilovası","Gebze","Gölcük","İzmit","Kandıra","Karamürsel","Kartepe","Körfez"],
+            "Konya": ["Ahırlı","Akören","Akşehir","Altınekin","Beyşehir","Bozkır","Cihanbeyli","Çeltik","Çumra","Derbent","Derebucak","Doğanhisar","Emirgazi","Ereğli","Güneysınır","Hadım","Halkapınar","Hüyük","Ilgın","Kadınhanı","Karapınar","Karatay","Kulu","Meram","Sarayönü","Selçuklu","Seydişehir","Taşkent","Tuzlukçu","Yalıhüyük","Yunak"],
+            "Kütahya": ["Altıntaş","Aslanapa","Çavdarhisar","Domaniç","Dumlupınar","Emet","Gediz","Hisarcık","Merkez","Pazarlar","Simav","Şaphane","Tavşanlı"],
+            "Malatya": ["Akçadağ","Arapgir","Arguvan","Battalgazi","Darende","Doğanşehir","Doğanyol","Hekimhan","Kale","Kuluncak","Pütürge","Yazıhan","Yeşilyurt"],
+            "Manisa": ["Ahmetli","Akhisar","Alaşehir","Demirci","Gölmarmara","Gördes","Kırkağaç","Köprübaşı","Kula","Salihli","Sarıgöl","Saruhanlı","Selendi","Soma","Şehzadeler","Turgutlu","Yunusemre"],
+            "Kahramanmaraş": ["Afşin","Andırın","Çağlayancerit","Dulkadiroğlu","Ekinözü","Elbistan","Göksun","Nurhak","Onikişubat","Pazarcık","Türkoğlu"],
+            "Mardin": ["Artuklu","Dargeçit","Derik","Kızıltepe","Mazıdağı","Midyat","Nusaybin","Ömerli","Savur","Yeşilli"],
+            "Muğla": ["Bodrum","Dalaman","Datça","Fethiye","Kavaklıdere","Köyceğiz","Marmaris","Menteşe","Milas","Ortaca","Seydikemer","Ula","Yatağan"],
+            "Muş": ["Bulanık","Hasköy","Korkut","Malazgirt","Merkez","Varto"],
+            "Nevşehir": ["Acıgöl","Avanos","Derinkuyu","Gülşehir","Hacıbektaş","Kozaklı","Merkez","Ürgüp"],
+            "Niğde": ["Altunhisar","Bor","Çamardı","Çiftlik","Merkez","Ulukışla"],
+            "Ordu": ["Akkuş","Altınordu","Aybastı","Çamaş","Çatalpınar","Çaybaşı","Fatsa","Gölköy","Gülyalı","Gürgentepe","İkizce","Kabadüz","Kabataş","Korgan","Kumru","Mesudiye","Perşembe","Ulubey","Ünye"],
+            "Rize": ["Ardeşen","Çamlıhemşin","Çayeli","Derepazarı","Fındıklı","Güneysu","Hemşin","İkizdere","İyidere","Kalkandere","Merkez","Pazar"],
+            "Sakarya": ["Adapazarı","Akyazı","Arifiye","Erenler","Ferizli","Geyve","Hendek","Karapürçek","Karasu","Kaynarca","Kocaali","Pamukova","Sapanca","Serdivan","Söğütlü","Taraklı"],
+            "Samsun": ["Alaçam","Asarcık","Atakum","Ayvacık","Bafra","Canik","Çarşamba","Havza","İlkadım","Kavak","Ladik","Salıpazarı","Tekkeköy","Terme","Vezirköprü","Yakakent"],
+            "Siirt": ["Baykan","Eruh","Kurtalan","Merkez","Pervari","Şirvan","Tillo"],
+            "Sinop": ["Ayancık","Boyabat","Dikmen","Durağan","Erfelek","Gerze","Merkez","Saraydüzü","Türkeli"],
+            "Sivas": ["Akıncılar","Altınyayla","Divriği","Doğanşar","Gemerek","Gölova","Güneykaya","Gürün","Hafik","İmranlı","Kangal","Koyulhisar","Merkez","Suşehri","Şarkışla","Ulaş","Yıldızeli","Zara"],
+            "Tekirdağ": ["Çerkezköy","Çorlu","Ergene","Hayrabolu","Kapaklı","Malkara","Marmaraereğlisi","Muratlı","Saray","Süleymanpaşa","Şarköy"],
+            "Tokat": ["Almus","Artova","Başçiftlik","Erbaa","Merkez","Niksar","Pazar","Reşadiye","Sulusaray","Turhal","Yeşilyurt","Zile"],
+            "Trabzon": ["Akçaabat","Araklı","Arsin","Beşikdüzü","Çarşıbaşı","Çaykara","Dernekpazarı","Düzköy","Hayrat","Köprübaşı","Maçka","Of","Ortahisar","Sürmene","Şalpazarı","Tonya","Vakfıkebir","Yomra"],
+            "Tunceli": ["Çemişgezek","Hozat","Mazgirt","Merkez","Nazımiye","Ovacık","Pertek","Pülümür"],
+            "Şanlıurfa": ["Akçakale","Birecik","Bozova","Ceylanpınar","Eyyübiye","Halfeti","Haliliye","Harran","Hilvan","Karaköprü","Siverek","Suruç","Viranşehir"],
+            "Uşak": ["Banaz","Eşme","Karahallı","Merkez","Sivaslı","Ulubey"],
+            "Van": ["Bahçesaray","Başkale","Çaldıran","Çatak","Edremit","Erciş","Gevaş","Gürpınar","İpekyolu","Muradiye","Özalp","Saray","Tuşba"],
+            "Yozgat": ["Akdağmadeni","Aydıncık","Boğazlıyan","Çandır","Çayıralan","Çekerek","Kadışehri","Merkez","Saraykent","Sarıkaya","Sorgun","Şefaatli","Yenifakılı","Yerköy"],
+            "Zonguldak": ["Alaplı","Çaycuma","Devrek","Ereğli","Gökçebey","Kilimli","Kozlu","Merkez"],
+            "Aksaray": ["Ağaçören","Eskil","Gülağaç","Güzelyurt","Merkez","Ortaköy","Sarıyahşi","Sultanhanı"],
+            "Bayburt": ["Aydıntepe","Demirözü","Merkez"],
+            "Karaman": ["Ayrancı","Başyayla","Ermenek","Kazımkarabekir","Merkez","Sarıveliler"],
+            "Kırıkkale": ["Bahşılı","Balışeyh","Çelebi","Delice","Karakeçili","Keskin","Merkez","Sulakyurt","Yahşihan"],
+            "Batman": ["Beşiri","Gercüş","Hasankeyf","Kozluk","Merkez","Sason"],
+            "Şırnak": ["Beytüşşebap","Cizre","Güçlükonak","İdil","Merkez","Silopi","Uludere"],
+            "Bartın": ["Amasra","Kurucaşile","Merkez","Ulus"],
+            "Ardahan": ["Çıldır","Damal","Göle","Hanak","Merkez","Posof"],
+            "Iğdır": ["Aralık","Karakoyunlu","Merkez","Tuzluca"],
+            "Yalova": ["Altınova","Armutlu","Çınarcık","Çiftlikköy","Merkez","Termal"],
+            "Karabük": ["Eflani","Eskipazar","Merkez","Ovacık","Safranbolu","Yenice"],
+            "Kilis": ["Elbeyli","Merkez","Musabeyli","Polateli"],
+            "Osmaniye": ["Bahçe","Düziçi","Hasanbeyli","Kadirli","Merkez","Sumbas","Toprakkale"],
+            "Düzce": ["Akçakoca","Cumayeri","Çilimli","Gölyaka","Gümüşova","Kaynaşlı","Merkez","Yığılca"]
+        };
+
+        // =============================================
+        // CASCADING ŞEHİR → İLÇE DROPDOWN (Vanilla JS)
+        // =============================================
+        var citySelect = document.getElementById("regCity");
+        var districtSelect = document.getElementById("regDistrict");
+
+        if (citySelect && districtSelect) {
+            citySelect.addEventListener("change", function () {
+                var selectedCity = this.value;
+                districtSelect.innerHTML = "";
+
+                if (!selectedCity || !turkiyeIlceleri[selectedCity]) {
+                    var defaultOpt = document.createElement("option");
+                    defaultOpt.value = "";
+                    defaultOpt.textContent = "Önce şehir seçiniz";
+                    districtSelect.appendChild(defaultOpt);
+                    return;
+                }
+
+                var placeholder = document.createElement("option");
+                placeholder.value = "";
+                placeholder.textContent = "İlçe Seçiniz";
+                districtSelect.appendChild(placeholder);
+
+                var districts = turkiyeIlceleri[selectedCity];
+                for (var i = 0; i < districts.length; i++) {
+                    var opt = document.createElement("option");
+                    opt.value = districts[i];
+                    opt.textContent = districts[i];
+                    districtSelect.appendChild(opt);
+                }
+            });
+        }
+
+        // STRICT INPUT RESTRICTION: Only allow digits 0-9 for TCNO and Phone
+        [regTcno, regPhone].forEach(input => {
+            if (input) {
+                input.addEventListener("input", function () {
+                    this.value = this.value.replace(/[^0-9]/g, '');
+                });
+            }
+        });
+
+        if (form) {
+            form.addEventListener("submit", function (e) {
+                e.preventDefault();
+                const errorAlert = document.getElementById("regErrorAlert");
+                const errorText = document.getElementById("regErrorText");
+
+                if (errorAlert) errorAlert.style.display = "none";
+
+                // Step 1 Validation
+                const fullname = document.getElementById("regFullname");
+                const email = document.getElementById("regEmail");
+                const passInput = document.getElementById("regPassword");
+                const confirmInput = document.getElementById("regConfirmPassword");
+
+                if (!fullname || !fullname.value.trim() || !email || !email.value.trim()) {
+                    goToStep(1);
+                    if (errorAlert && errorText) {
+                        errorText.textContent = "Lütfen 1. Adımdaki Ad Soyad ve E-posta alanlarını doldurun!";
+                        errorAlert.style.display = "flex";
+                    }
+                    return;
+                }
+
+                const passVal = passInput ? passInput.value : "";
+                const hasLength = passVal.length >= 8;
+                const hasUpper = /[A-Z]/.test(passVal);
+                const hasLower = /[a-z]/.test(passVal);
+                const hasDigit = /[0-9]/.test(passVal);
+                const hasSymbol = /[!@@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]/.test(passVal);
+
+                if (!hasLength || !hasUpper || !hasLower || !hasDigit || !hasSymbol || passVal !== confirmInput?.value) {
+                    goToStep(1);
+                    if (errorAlert && errorText) {
+                        errorText.textContent = passVal !== confirmInput?.value
+                            ? "Şifreler birbiriyle uyuşmuyor!"
+                            : "Lütfen 1. Adımda kurallara uygun güçlü bir şifre girin!";
+                        errorAlert.style.display = "flex";
+                    }
+                    return;
+                }
+
+                // Step 2 Validation
+                const city = document.getElementById("regCity");
+                const district = document.getElementById("regDistrict");
+                const address = document.getElementById("regAddressText");
+
+                if (!city || !city.value || !district || !district.value || !address || !address.value.trim()) {
+                    goToStep(2);
+                    if (errorAlert && errorText) {
+                        errorText.textContent = "Lütfen 2. Adımdaki Şehir, İlçe ve Açık Adres alanlarını doldurun!";
+                        errorAlert.style.display = "flex";
+                    }
+                    return;
+                }
+
+                // Step 3 Validation
+                const tcnoVal = regTcno ? regTcno.value.trim() : "";
+                const phoneVal = regPhone ? regPhone.value.trim() : "";
+                const taxOffice = document.getElementById("regTaxOffice");
+
+                if (!tcnoVal || tcnoVal.length < 10 || tcnoVal.length > 11) {
+                    goToStep(3);
+                    if (errorAlert && errorText) {
+                        errorText.textContent = "T.C. Kimlik / Vergi Kimlik No 10 veya 11 haneli olmalıdır!";
+                        errorAlert.style.display = "flex";
+                    }
+                    if (regTcno) {
+                        regTcno.classList.add("input-error", "shake-error");
+                        setTimeout(() => regTcno.classList.remove("shake-error"), 500);
+                    }
+                    return;
+                }
+
+                if (!phoneVal || phoneVal.length < 10 || phoneVal.length > 11) {
+                    goToStep(3);
+                    if (errorAlert && errorText) {
+                        errorText.textContent = "Telefon Numarası 10 veya 11 haneli olmalıdır (Örn: 05512345678 veya 5512345678)!";
+                        errorAlert.style.display = "flex";
+                    }
+                    if (regPhone) {
+                        regPhone.classList.add("input-error", "shake-error");
+                        setTimeout(() => regPhone.classList.remove("shake-error"), 500);
+                    }
+                    return;
+                }
+
+                if (!taxOffice || !taxOffice.value.trim()) {
+                    goToStep(3);
+                    if (errorAlert && errorText) {
+                        errorText.textContent = "Lütfen Vergi Dairesi alanını doldurun!";
+                        errorAlert.style.display = "flex";
+                    }
+                    return;
+                }
+
+                // All validations passed! Submit form programmatically
+                form.submit();
+            });
+        }
+
+        function updateRule(elem, isValid) {
+            if (!elem) return;
+            const icon = elem.querySelector(".rule-icon");
+            if (isValid) {
+                elem.classList.add("rule-passed");
+                if (icon) icon.textContent = "✓";
+            } else {
+                elem.classList.remove("rule-passed");
+                if (icon) icon.textContent = "✕";
+            }
+        }
+
+        if (passInput) {
+            passInput.addEventListener("input", function () {
+                const val = passInput.value;
+                const hasLength = val.length >= 8;
+                const hasUpper = /[A-Z]/.test(val);
+                const hasLower = /[a-z]/.test(val);
+                const hasDigit = /[0-9]/.test(val);
+                const hasSymbol = /[!@@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]/.test(val);
+
+                updateRule(ruleLength, hasLength);
+                updateRule(ruleUpper, hasUpper);
+                updateRule(ruleLower, hasLower);
+                updateRule(ruleDigit, hasDigit);
+                updateRule(ruleSymbol, hasSymbol);
+
+                let score = 0;
+                if (hasLength) score++;
+                if (hasUpper) score++;
+                if (hasLower) score++;
+                if (hasDigit) score++;
+                if (hasSymbol) score++;
+
+                if (val.length === 0) {
+                    if (strengthBar) { strengthBar.style.width = "0%"; strengthBar.className = "firewall-bar-fill"; }
+                    if (strengthStatus) { strengthStatus.textContent = "Henüz Girilmedi"; strengthStatus.style.color = "#94a3b8"; }
+                } else if (score <= 2) {
+                    if (strengthBar) { strengthBar.style.width = "33%"; strengthBar.className = "firewall-bar-fill strength-weak"; }
+                    if (strengthStatus) { strengthStatus.textContent = "Zayıf Şifre"; strengthStatus.style.color = "#ef4444"; }
+                } else if (score <= 4) {
+                    if (strengthBar) { strengthBar.style.width = "66%"; strengthBar.className = "firewall-bar-fill strength-medium"; }
+                    if (strengthStatus) { strengthStatus.textContent = "Orta Güvenlik"; strengthStatus.style.color = "#f59e0b"; }
+                } else {
+                    if (strengthBar) { strengthBar.style.width = "100%"; strengthBar.className = "firewall-bar-fill strength-strong"; }
+                    if (strengthStatus) { strengthStatus.textContent = "Güçlü Güvenlik Duvarı Geçildi ✓"; strengthStatus.style.color = "#16a34a"; }
+                }
+            });
+        }
+    });
+</script>

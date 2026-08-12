@@ -1,7 +1,12 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace satinalmaportali2.Models
 {
     public class Company
     {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int CompanyID { get; set; }
 
         public int? CompanyTypeID { get; set; }
@@ -27,7 +32,5 @@ namespace satinalmaportali2.Models
         public int? AddressID { get; set; }
 
         public string? CompanyPassword { get; set; }
-
-        
     }
 }

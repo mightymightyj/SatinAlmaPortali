@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Giriş Yap / Üye Ol";
+    ViewData["Title"] = "Giriş Yap";
     var activeTab = (ViewData["ActiveTab"] as string) ?? "user-login";
 }
 
@@ -9,65 +9,41 @@
             <div class="auth-intro">
                 <span class="auth-badge">Hızlı Giriş</span>
                 <h2>Satın alma portalına giriş yapın</h2>
-                <p>Üye girişi, admin panel erişimi veya yeni hesap oluşturma işlemlerini tek ekrandan yönetin.</p>
+                <p>Üye girişi yapın veya yeni kurumsal hesap oluşturarak satın alma süreçlerinizi yönetin.</p>
             </div>
 
             <div class="auth-tabs" role="tablist" aria-label="Giriş seçenekleri">
                 <button class="auth-tab @(activeTab == "user-login" ? "active" : "")" data-target="user-login" type="button">Kullanıcı Girişi</button>
-                <button class="auth-tab @(activeTab == "admin-login" ? "active" : "")" data-target="admin-login" type="button">Admin Girişi</button>
-                <button class="auth-tab @(activeTab == "register" ? "active" : "")" data-target="register" type="button">Üye Ol</button>
                 <button class="auth-tab @(activeTab == "forgot-password" ? "active" : "")" data-target="forgot-password" type="button">Şifremi Unuttum</button>
             </div>
 
             <!-- Kullanıcı Girişi Panel -->
             <div class="auth-panel @(activeTab == "user-login" ? "active" : "")" id="user-login">
-                <form class="auth-form" method="post" asp-action="Login">
+                @if (ViewData["ErrorMessage"] != null && activeTab == "user-login")
+                {
+                    <div class="auth-error-msg">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        <span>@ViewData["ErrorMessage"]</span>
+                    </div>
+                }
+
+                <form class="auth-form" id="userLoginForm" method="post" asp-action="Login">
                     <input type="hidden" name="userType" value="user" />
                     <label>
                         E-posta
-                        <input type="email" name="email" placeholder="ornek@firma.com" required />
+                        <input type="email" name="email" id="userEmail" placeholder="ornek@firma.com" required />
                     </label>
                     <label>
                         Şifre
-                        <input type="password" name="password" placeholder="••••••••" required />
+                        <input type="password" name="password" id="userPass" placeholder="••••••••" required />
                     </label>
-                    <button type="submit" class="auth-submit">Giriş Yap</button>
+                    
+                    <div class="auth-actions-group">
+                        <button type="submit" class="auth-submit">Giriş Yap</button>
+                        <a asp-controller="Account" asp-action="Register" class="auth-submit-secondary">Hesabınız Yok Mu? Üye Ol</a>
+                    </div>
+                    
                     <a href="#" class="auth-link switch-tab-link" data-target="forgot-password">Şifremi unuttum</a>
-                </form>
-            </div>
-
-            <!-- Admin Girişi Panel -->
-            <div class="auth-panel @(activeTab == "admin-login" ? "active" : "")" id="admin-login">
-                <form class="auth-form" method="post" asp-action="Login">
-                    <input type="hidden" name="userType" value="admin" />
-                    <label>
-                        Yönetici E-posta
-                        <input type="email" name="email" placeholder="admin@tedarikportal.com" required />
-                    </label>
-                    <label>
-                        Şifre
-                        <input type="password" name="password" placeholder="••••••••" required />
-                    </label>
-                    <button type="submit" class="auth-submit">Admin Girişi</button>
-                </form>
-            </div>
-
-            <!-- Üye Ol Panel -->
-            <div class="auth-panel @(activeTab == "register" ? "active" : "")" id="register">
-                <form class="auth-form" method="post" asp-action="Login">
-                    <label>
-                        Ad Soyad
-                        <input type="text" name="fullname" placeholder="Ahmet Yılmaz" required />
-                    </label>
-                    <label>
-                        E-posta
-                        <input type="email" name="email" placeholder="ahmet@firma.com" required />
-                    </label>
-                    <label>
-                        Şifre
-                        <input type="password" name="password" placeholder="En az 8 karakter" required />
-                    </label>
-                    <button type="submit" class="auth-submit">Üye Ol</button>
                 </form>
             </div>
 
@@ -86,3 +62,44 @@
         </div>
     </section>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const tabBtns = document.querySelectorAll(".auth-tab");
+        const panels = document.querySelectorAll(".auth-panel");
+        const switchLinks = document.querySelectorAll(".switch-tab-link");
+
+        function activateTab(targetId) {
+            tabBtns.forEach(btn => {
+                if (btn.dataset.target === targetId) {
+                    btn.classList.add("active");
+                } else {
+                    btn.classList.remove("active");
+                }
+            });
+            panels.forEach(panel => {
+                if (panel.id === targetId) {
+                    panel.classList.add("active");
+                    panel.style.display = "block";
+                } else {
+                    panel.classList.remove("active");
+                    panel.style.display = "none";
+                }
+            });
+        }
+
+        // Initialize with default active tab (user-login)
+        activateTab("@activeTab");
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener("click", () => activateTab(btn.dataset.target));
+        });
+
+        switchLinks.forEach(link => {
+            link.addEventListener("click", (e) => {
+                e.preventDefault();
+                activateTab(link.dataset.target);
+            });
+        });
+    });
+</script>
