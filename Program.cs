@@ -1,17 +1,29 @@
 using Microsoft.EntityFrameworkCore;
 using satinalmaportali2.Data;
 using satinalmaportali2.Models;
+using satinalmaportali2.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<satinalmaportali2.Services.EmailService>();
 
-// EF Core DbContext Registration
+// Entity Framework Core DbContext Kaydı
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    var connectionString = builder.Configuration.GetConnectionString("TedarikDb")
+        ?? builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? "Server=(localdb)\\mssqllocaldb;Database=TedarikDb;Trusted_Connection=True;MultipleActiveResultSets=true";
 
+    options.UseSqlServer(connectionString);
+});
+
+// Dashboard Servis Kaydı
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+
+// Kimlik Doğrulama (Cookie Authentication)
 builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options => {
         options.LoginPath = "/Account/Login";
@@ -20,7 +32,7 @@ builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.Cookies.C
 
 var app = builder.Build();
 
-// Auto Seed Initial Data to Database via EF Core
+// Otomatik Veritabanı Başlangıç Verisi (Seed Data)
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -36,9 +48,9 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment()) {
+if (!app.Environment.IsDevelopment())
+{
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -54,6 +66,5 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
-
 
 app.Run();
