@@ -71,6 +71,7 @@ namespace satinalmaportali2.Services
             var flows = await GetFlowsAsync(startDate, endDate, cancellationToken);
             var formTopics = await GetFormTopicsAsync(startDate, endDate, cancellationToken);
             var brands = await GetBrandsAsync(cancellationToken);
+            var (categoryTree, allCategories) = await GetCategoryTreeAsync(cancellationToken);
 
             var model = new DashboardViewModel
             {
@@ -87,7 +88,9 @@ namespace satinalmaportali2.Services
                 Regions = regions,
                 Flows = flows,
                 FormTopics = formTopics,
-                Brands = brands
+                Brands = brands,
+                CategoryTree = categoryTree,
+                AllCategories = allCategories
             };
 
             var trendRows = await GetRequestTrendAsync(startDate, endDate, cancellationToken);
@@ -605,6 +608,74 @@ namespace satinalmaportali2.Services
                 new TrendSeries { Name = "Lojistik & Nakliye", Values = new[] { 18, 20, 22, 25, 28, 30, 32, 35, 38, 40, 42, 45 } },
                 new TrendSeries { Name = "BT & Hizmet", Values = new[] { 10, 12, 14, 15, 18, 20, 22, 24, 25, 28, 30, 32 } }
             };
+        }
+
+        private async Task<(IReadOnlyList<CategoryTreeItemDto> Tree, IReadOnlyList<CategoryTreeItemDto> All)> GetCategoryTreeAsync(CancellationToken cancellationToken)
+        {
+            var categories = await _context.Category.AsNoTracking().ToListAsync(cancellationToken);
+            
+            var dict = categories.ToDictionary(c => c.CategoryID, c => c.CategoryName ?? "");
+            var existingIds = new HashSet<int>(categories.Select(c => c.CategoryID));
+
+            var allDtos = categories.Select(c => new CategoryTreeItemDto
+            {
+                CategoryID = c.CategoryID,
+                CategoryName = c.CategoryName ?? "Kategorisiz",
+                ParentCategoryID = c.ParentCategoryID,
+                ParentCategoryName = c.ParentCategoryID.HasValue && dict.TryGetValue(c.ParentCategoryID.Value, out var pName) ? pName : null
+            }).ToList();
+
+            var lookup = allDtos.ToLookup(c => c.ParentCategoryID);
+
+            void PopulateChildrenRecursive(CategoryTreeItemDto item)
+            {
+                var children = lookup[item.CategoryID].ToList();
+                item.SubCategories = children;
+                foreach (var child in children)
+                {
+                    PopulateChildrenRecursive(child);
+                }
+            }
+
+            // Kök kategoriler: ParentCategoryID null, 0 veya veritabanında karşılığı olmayan üst kategoriler
+            var roots = allDtos.Where(c => !c.ParentCategoryID.HasValue || c.ParentCategoryID == 0 || !existingIds.Contains(c.ParentCategoryID.Value)).ToList();
+
+            foreach (var root in roots)
+            {
+                PopulateChildrenRecursive(root);
+            }
+
+            return (roots, allDtos);
+        }
+
+        public async Task<Category> CreateCategoryAsync(string categoryName, int? parentCategoryId, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(categoryName))
+            {
+                throw new ArgumentException("Kategori adı boş olamaz.", nameof(categoryName));
+            }
+
+            if (parentCategoryId.HasValue && parentCategoryId.Value <= 0)
+            {
+                parentCategoryId = null;
+            }
+
+            var newCategory = new Category
+            {
+                CategoryName = categoryName.Trim(),
+                ParentCategoryID = parentCategoryId
+            };
+
+            _context.Category.Add(newCategory);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            // Yeni kategori eklendiğinde dashboard önbelleğini temizle (Anında listede gözükmesi için)
+            for (int y = 2020; y <= DateTime.Today.Year + 5; y++)
+            {
+                _cache.Remove($"dashboard_data_{y}");
+            }
+
+            return newCategory;
         }
     }
 }

@@ -652,4 +652,153 @@
             </div>
         </article>
     </section>
+
+    <!-- ============ KATEGORİ YÖNETİMİ & HİYERARŞİ LİSTESİ (N-SEVİYE) ============ -->
+    <section class="grid-wide-narrow category-mgmt-wrapper" id="kategori-yonetimi" style="grid-template-columns: 1fr; margin-top: 24px;">
+
+        <article class="card chart-card">
+            <div class="card-head" style="align-items: center;">
+                <div>
+                    <h2>📁 Kategori Hiyerarşisi (Sınırsız Alt Kategori Derinliği)</h2>
+                    <p class="card-sub">
+                        @{
+                            var totalCount = Model.AllCategories?.Count ?? 0;
+                            var rootCount = Model.CategoryTree?.Count ?? 0;
+                        }
+                        Sistemde toplam <strong>@totalCount Kategori</strong> (<strong>@rootCount Kök Kategori</strong>) tanımlı. Altına kategori eklemek istediğiniz elemanın üzerine veya <code>+ Alt Kategori</code> butonuna tıklayın.
+                    </p>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <!-- ARAMA KUTUSU -->
+                    <div class="cat-search-box" style="margin-bottom: 0;">
+                        <svg class="cat-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" id="catSearchInput" onkeyup="filterCatTree()" placeholder="Kategori ara..." class="cat-search-input" style="width: 200px;" />
+                    </div>
+
+                    <!-- KÖK KATEGORİ EKLE BUTONU (SAĞ ÜST) -->
+                    <button type="button" class="btn-primary" onclick="openCatModal(null, 'Kök Kategori')" style="height: 36px; padding: 0 14px; font-size: 0.85rem; flex: none;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        + Kök Kategori Ekle
+                    </button>
+                </div>
+            </div>
+
+            @if (TempData["CategorySuccess"] != null)
+            {
+                <div class="alert alert-success" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); color: #34D399; padding: 10px 14px; border-radius: 8px; margin: 0 0 16px 0; font-size: 0.88rem; font-weight: 500;">
+                    ✅ @TempData["CategorySuccess"]
+                </div>
+            }
+            @if (TempData["CategoryError"] != null)
+            {
+                <div class="alert alert-danger" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #F87171; padding: 10px 14px; border-radius: 8px; margin: 0 0 16px 0; font-size: 0.88rem; font-weight: 500;">
+                    ⚠️ @TempData["CategoryError"]
+                </div>
+            }
+
+            <!-- RECURSIVE TREE RENDERER -->
+            <div class="cat-tree-container" style="max-height: 520px;">
+                @if (Model.CategoryTree == null || Model.CategoryTree.Count == 0)
+                {
+                    <div style="text-align: center; color: #64748B; padding: 50px 0; font-size: 0.92rem;">
+                        Henüz veritabanında kategori bulunmuyor.<br />
+                        Sağ üstteki <strong>+ Kök Kategori Ekle</strong> butonuna basarak ilk kategorinizi oluşturabilirsiniz.
+                    </div>
+                }
+                else
+                {
+                    @foreach (var root in Model.CategoryTree)
+                    {
+                        <partial name="_CategoryNodePartial" model="(Node: root, Level: 0)" />
+                    }
+                }
+            </div>
+        </article>
+    </section>
+
+    <!-- ============ POPUP KUTUCUK (MODAL DIALOG) FOR KATEGORİ OLUŞTURMA ============ -->
+    <div class="cat-modal-backdrop" id="categoryModal" onclick="if(event.target === this) closeCatModal();">
+        <div class="cat-modal-dialog">
+            <div class="cat-modal-header">
+                <h3 class="cat-modal-title" id="modalTitleText">Yeni Kategori Ekle</h3>
+                <button type="button" class="cat-modal-close" onclick="closeCatModal()">&times;</button>
+            </div>
+
+            <form asp-controller="Dashboard" asp-action="CreateCategory" method="post" id="modalCategoryForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="parentCategoryId" id="modalParentCategoryId" value="" />
+
+                <div class="cat-modal-body">
+                    <div class="cat-form-group">
+                        <label class="cat-form-label">
+                            Kategori Adı *
+                        </label>
+                        <input type="text" name="categoryName" id="modalCategoryNameInput" required placeholder="Kategori adını girin..." class="cat-form-input" />
+                    </div>
+
+                    <div style="margin-top: 12px; padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; font-size: 0.78rem; color: #94A3B8;">
+                        <span id="modalHelpText">💡 Üst kategori seçilmedi. Bu kayıt <code>ParentCategoryID = NULL</code> (Kök Kategori) olarak eklenecektir.</span>
+                    </div>
+                </div>
+
+                <div class="cat-modal-footer">
+                    <button type="button" class="btn-secondary-pill" onclick="closeCatModal()">İptal</button>
+                    <button type="submit" class="btn-primary" style="height: 38px; padding: 0 16px;">
+                        Kategori Kaydet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openCatModal(parentId, parentName) {
+            var modal = document.getElementById('categoryModal');
+            var inputParentId = document.getElementById('modalParentCategoryId');
+            var titleText = document.getElementById('modalTitleText');
+            var helpText = document.getElementById('modalHelpText');
+            var inputName = document.getElementById('modalCategoryNameInput');
+
+            if (parentId) {
+                inputParentId.value = parentId;
+                titleText.innerHTML = "➕ '" + parentName + "' Altına Kategori Ekle";
+                helpText.innerHTML = "💡 Yeni eklenecek kategori <strong>" + parentName + "</strong> (ID: " + parentId + ") kategorisinin alt kategorisi (<code>ParentCategoryID = " + parentId + "</code>) olacaktır.";
+                inputName.placeholder = parentName + " altına eklenecek kategori adı...";
+            } else {
+                inputParentId.value = "";
+                titleText.innerHTML = "➕ Yeni Kök Kategori Ekle";
+                helpText.innerHTML = "💡 Üst kategori seçilmedi. Bu kayıt <code>ParentCategoryID = NULL</code> (Kök Kategori) olarak kaydedilecektir.";
+                inputName.placeholder = "Örn: Sanayi Hammaddeleri, Otomasyon...";
+            }
+
+            inputName.value = "";
+            modal.classList.add('is-open');
+            setTimeout(function() { inputName.focus(); }, 150);
+        }
+
+        function closeCatModal() {
+            var modal = document.getElementById('categoryModal');
+            modal.classList.remove('is-open');
+        }
+
+        function filterCatTree() {
+            var filter = document.getElementById('catSearchInput').value.toLowerCase();
+            var cards = document.querySelectorAll('.cat-tree-card');
+            cards.forEach(function (card) {
+                var text = card.textContent.toLowerCase();
+                if (text.indexOf(filter) > -1) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
 }

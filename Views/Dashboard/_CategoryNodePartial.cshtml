@@ -1,0 +1,50 @@
+@using satinalmaportali2.Models
+@model (CategoryTreeItemDto Node, int Level)
+
+@{
+    var node = Model.Node;
+    var level = Model.Level;
+    var hasChildren = node.SubCategories != null && node.SubCategories.Count > 0;
+    var indentPx = level * 24;
+}
+
+<div class="cat-tree-card" data-cat-name="@node.CategoryName.ToLower()" style="margin-left: @(indentPx)px; margin-bottom: 8px;">
+    <div class="cat-tree-header">
+        <div class="cat-tree-title-group" onclick="openCatModal(@node.CategoryID, '@node.CategoryName')" style="cursor: pointer;" title="Bu kategorinin altına alt kategori eklemek için tıklayın">
+            <div class="cat-icon-box" style="@(level > 0 ? "background: rgba(148, 163, 184, 0.1); color: #94A3B8;" : "")">
+                @(level == 0 ? "📁" : level == 1 ? "📂" : "🏷️")
+            </div>
+            <div>
+                <span class="cat-root-name">@node.CategoryName</span>
+            </div>
+        </div>
+
+        <div class="cat-meta-group">
+            @if (level == 0)
+            {
+                <span class="cat-badge cat-badge-root">KÖK</span>
+                <span class="cat-badge cat-badge-null" title="ParentCategoryID = NULL">Parent: NULL</span>
+            }
+            else
+            {
+                <span class="cat-badge cat-badge-subcount">SEVİYE @level</span>
+                <span class="cat-badge cat-badge-subcount" style="color: #60A5FA;">ParentID: @node.ParentCategoryID</span>
+            }
+
+            <span class="cat-badge cat-badge-subcount">ID: @node.CategoryID</span>
+
+            <button type="button" class="cat-quick-add" onclick="openCatModal(@node.CategoryID, '@node.CategoryName')" title="Bu kategorinin altına alt kategori ekle">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                + Alt Kategori
+            </button>
+        </div>
+    </div>
+</div>
+
+@if (hasChildren)
+{
+    foreach (var child in node.SubCategories!)
+    {
+        <partial name="_CategoryNodePartial" model="(Node: child, Level: level + 1)" />
+    }
+}

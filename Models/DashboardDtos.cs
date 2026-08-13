@@ -118,4 +118,14 @@ namespace satinalmaportali2.Models {
         public int ItemCount { get; set; }
         public decimal? StockValue { get; set; }
     }
+
+    /// <summary>Kategori hiyerarşisi (Ana ve Alt Kategoriler).</summary>
+    public class CategoryTreeItemDto {
+        public int CategoryID { get; set; }
+        public string CategoryName { get; set; } = "";
+        public int? ParentCategoryID { get; set; }
+        public string? ParentCategoryName { get; set; }
+        public List<CategoryTreeItemDto> SubCategories { get; set; } = new();
+        public int ItemCount { get; set; }
+    }
 }

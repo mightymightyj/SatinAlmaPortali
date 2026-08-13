@@ -44,6 +44,8 @@ namespace satinalmaportali2.Models {
         public IReadOnlyList<FlowRow> Flows { get; set; } = Array.Empty<FlowRow>();
         public IReadOnlyList<FormTopicRow> FormTopics { get; set; } = Array.Empty<FormTopicRow>();
         public IReadOnlyList<BrandRow> Brands { get; set; } = Array.Empty<BrandRow>();
+        public IReadOnlyList<CategoryTreeItemDto> CategoryTree { get; set; } = Array.Empty<CategoryTreeItemDto>();
+        public IReadOnlyList<CategoryTreeItemDto> AllCategories { get; set; } = Array.Empty<CategoryTreeItemDto>();
 
         // ---- Görünüm yardımcıları ----
 

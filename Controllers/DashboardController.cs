@@ -29,5 +29,33 @@ namespace satinalmaportali2.Controllers
             var viewModel = await _dashboardService.GetDashboardAsync(yil, cancellationToken);
             return View(viewModel);
         }
+
+        /// <summary>
+        /// Yeni kategori veya alt kategori oluşturur.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateCategory(string categoryName, int? parentCategoryId, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(categoryName))
+            {
+                TempData["CategoryError"] = "Lütfen bir kategori adı girin.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            try
+            {
+                var created = await _dashboardService.CreateCategoryAsync(categoryName, parentCategoryId, cancellationToken);
+                TempData["CategorySuccess"] = parentCategoryId.HasValue && parentCategoryId.Value > 0
+                    ? $"Alt kategori '{created.CategoryName}' başarıyla eklendi!" 
+                    : $"Kök kategori '{created.CategoryName}' (ParentCategoryID = NULL) başarıyla eklendi!";
+            }
+            catch (Exception ex)
+            {
+                TempData["CategoryError"] = "Kategori oluşturulurken hata oluştu: " + ex.Message;
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
     }
 }
