@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using satinalmaportali2.Data;
+using satinalmaportali2.Models;
 using satinalmaportali2.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,10 +19,32 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString);
 });
 
-// Dashboard Uygulama Servis Kaydı
+// Dashboard Servis Kaydı
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
+// Kimlik Doğrulama (Cookie Authentication)
+builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options => {
+        options.LoginPath = "/Account/Login";
+        options.LogoutPath = "/Account/Logout";
+    });
+
 var app = builder.Build();
+
+// Otomatik Veritabanı Başlangıç Verisi (Seed Data)
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var dbContext = services.GetRequiredService<ApplicationDbContext>();
+        await DbInitializer.SeedDataAsync(dbContext);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"DB SEEDING ERROR: {ex.Message}");
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -33,6 +56,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();

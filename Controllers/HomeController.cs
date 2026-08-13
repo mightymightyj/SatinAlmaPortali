@@ -12,6 +12,30 @@ namespace satinalmaportali2.Controllers {
             return View();
         }
 
+        public IActionResult Kurumsal() {
+            return View();
+        }
+
+        public IActionResult UrunKategorileri() {
+            return View();
+        }
+
+        public IActionResult NedenPortal() {
+            return View();
+        }
+
+        public IActionResult Fiyatlandirma() {
+            return View();
+        }
+
+        public IActionResult MedyaDuyurular() {
+            return View();
+        }
+
+        public IActionResult Iletisim() {
+            return View();
+        }
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error() {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
