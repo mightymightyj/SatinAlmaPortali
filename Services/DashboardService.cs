@@ -188,16 +188,16 @@ namespace satinalmaportali2.Services
         {
             var catList = await _context.Items
                 .GroupJoin(
-                    _context.Category1,
-                    i => i.Category1ID,
-                    c1 => c1.Category1ID,
+                    _context.Category,
+                    i => i.CategoryID,
+                    c => c.CategoryID,
                     (i, cGroup) => new { i, cGroup }
                 )
                 .SelectMany(
                     x => x.cGroup.DefaultIfEmpty(),
-                    (x, c1) => new
+                    (x, c) => new
                     {
-                        CategoryName = c1 != null ? c1.Category1Name : "Kategorisiz",
+                        CategoryName = c != null ? c.CategoryName : "Kategorisiz",
                         Price = (decimal)(x.i.ItemPrice ?? 0),
                         Qty = (long)(x.i.Quantity ?? 0)
                     }

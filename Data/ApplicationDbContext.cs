@@ -18,8 +18,7 @@ namespace satinalmaportali2.Data
         public DbSet<Reviews> Reviews { get; set; }
         public DbSet<ItemsModel> Items { get; set; }
         public DbSet<Forms> Forms { get; set; }
-        public DbSet<Category1> Category1 { get; set; }
-        public DbSet<Category2> Category2 { get; set; }
+        public DbSet<Category> Category { get; set; }
         public DbSet<Countries> Countries { get; set; }
         public DbSet<Districts> Districts { get; set; }
         public DbSet<Towns> Towns { get; set; }
@@ -85,16 +84,11 @@ namespace satinalmaportali2.Data
                 entity.Property(e => e.CountryID).ValueGeneratedOnAdd();
             });
 
-            modelBuilder.Entity<Category1>(entity =>
+            modelBuilder.Entity<Category>(entity =>
             {
-                entity.ToTable("Category1");
-                entity.HasKey(e => e.Category1ID);
-            });
-
-            modelBuilder.Entity<Category2>(entity =>
-            {
-                entity.ToTable("Category2");
-                entity.HasKey(e => e.Category2ID);
+                entity.ToTable("Category");
+                entity.HasKey(e => e.CategoryID);
+                entity.Property(e => e.CategoryID).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<Districts>(entity =>
