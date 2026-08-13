@@ -5,14 +5,17 @@ using Microsoft.EntityFrameworkCore;
 using satinalmaportali2.Data;
 using satinalmaportali2.Helpers;
 using satinalmaportali2.Models;
+using satinalmaportali2.Services;
 using System.Security.Claims;
 
 namespace satinalmaportali2.Controllers {
     public class AccountController : Controller {
         private readonly ApplicationDbContext _context;
+        private readonly EmailService _emailService;
 
-        public AccountController(ApplicationDbContext context) {
+        public AccountController(ApplicationDbContext context, EmailService emailService) {
             _context = context;
+            _emailService = emailService;
         }
 
         [HttpGet]
@@ -232,6 +235,107 @@ namespace satinalmaportali2.Controllers {
         [HttpGet]
         public IActionResult ForgotPassword() {
             return RedirectToAction("Login", new { tab = "forgot-password" });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ForgotPassword(string email) {
+            if (string.IsNullOrWhiteSpace(email)) {
+                TempData["ForgotError"] = "Lütfen e-posta adresinizi giriniz.";
+                return RedirectToAction("Login", new { tab = "forgot-password" });
+            }
+
+            try {
+                var user = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail == email);
+
+                if (user == null) {
+                    TempData["ForgotError"] = "Bu e-posta adresi ile kayıtlı bir hesap bulunamadı.";
+                    return RedirectToAction("Login", new { tab = "forgot-password" });
+                }
+
+                // Generate reset token
+                var token = Guid.NewGuid().ToString("N");
+                user.ResetToken = token;
+                user.ResetTokenExpiry = DateTime.UtcNow.AddMinutes(30);
+                await _context.SaveChangesAsync();
+
+                // Build reset link
+                var resetLink = Url.Action("ResetPassword", "Account",
+                    new { token = token, email = email }, Request.Scheme);
+
+                // Send email via Resend API
+                var sent = await _emailService.SendPasswordResetEmailAsync(email, resetLink!);
+
+                if (sent) {
+                    TempData["ForgotSuccess"] = "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. Lütfen gelen kutunuzu kontrol ediniz.";
+                } else {
+                    TempData["ForgotError"] = "E-posta gönderilemedi. Lütfen daha sonra tekrar deneyiniz.";
+                }
+            }
+            catch (Exception ex) {
+                Console.WriteLine($"ForgotPassword Error: {ex.Message}");
+                TempData["ForgotError"] = "Bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.";
+            }
+
+            return RedirectToAction("Login", new { tab = "forgot-password" });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ResetPassword(string token, string email) {
+            if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(email)) {
+                TempData["ErrorMessage"] = "Geçersiz şifre sıfırlama bağlantısı.";
+                return RedirectToAction("Login");
+            }
+
+            var user = await _context.Companies.FirstOrDefaultAsync(
+                c => c.CompanyMail == email && c.ResetToken == token);
+
+            if (user == null || user.ResetTokenExpiry == null || user.ResetTokenExpiry < DateTime.UtcNow) {
+                TempData["ErrorMessage"] = "Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş. Lütfen yeni bir talep oluşturunuz.";
+                return RedirectToAction("Login", new { tab = "forgot-password" });
+            }
+
+            ViewData["Token"] = token;
+            ViewData["Email"] = email;
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ResetPasswordSubmit(string token, string email, string password, string confirmPassword) {
+            if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(email)) {
+                TempData["ErrorMessage"] = "Geçersiz istek.";
+                return RedirectToAction("Login");
+            }
+
+            if (string.IsNullOrWhiteSpace(password) || password != confirmPassword) {
+                ViewData["ResetError"] = "Şifreler uyuşmuyor.";
+                ViewData["Token"] = token;
+                ViewData["Email"] = email;
+                return View("ResetPassword");
+            }
+
+            if (!PasswordHasher.IsStrongPassword(password, out string passError)) {
+                ViewData["ResetError"] = passError;
+                ViewData["Token"] = token;
+                ViewData["Email"] = email;
+                return View("ResetPassword");
+            }
+
+            var user = await _context.Companies.FirstOrDefaultAsync(
+                c => c.CompanyMail == email && c.ResetToken == token);
+
+            if (user == null || user.ResetTokenExpiry == null || user.ResetTokenExpiry < DateTime.UtcNow) {
+                TempData["ErrorMessage"] = "Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş.";
+                return RedirectToAction("Login", new { tab = "forgot-password" });
+            }
+
+            // Update password
+            user.CompanyPassword = PasswordHasher.HashPassword(password);
+            user.ResetToken = null;
+            user.ResetTokenExpiry = null;
+            await _context.SaveChangesAsync();
+
+            TempData["LoginSuccess"] = "Şifreniz başarıyla güncellendi. Yeni şifrenizle giriş yapabilirsiniz.";
+            return RedirectToAction("Login");
         }
     }
 }

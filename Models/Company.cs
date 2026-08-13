@@ -32,5 +32,9 @@ namespace satinalmaportali2.Models
         public int? AddressID { get; set; }
 
         public string? CompanyPassword { get; set; }
+
+        public string? ResetToken { get; set; }
+
+        public DateTime? ResetTokenExpiry { get; set; }
     }
 }

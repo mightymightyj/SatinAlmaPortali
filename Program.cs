@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddSingleton<satinalmaportali2.Services.EmailService>();
 
 // EF Core DbContext Registration
 builder.Services.AddDbContext<ApplicationDbContext>(options =>

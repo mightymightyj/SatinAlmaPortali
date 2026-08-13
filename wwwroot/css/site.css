@@ -3711,6 +3711,20 @@ html, body {
     gap: 8px;
 }
 
+.auth-success-msg {
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 /* ========================================
    REGISTER SUCCESS BLUR MODAL BOX
    ======================================== */
