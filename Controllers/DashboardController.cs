@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using satinalmaportali2.Services;
 
@@ -7,6 +8,7 @@ namespace satinalmaportali2.Controllers
     /// Satın alma ve talep analitiği gösterge paneli denetleyicisi.
     /// Tüm veri çekme, haritalama ve önbellekleme işlemleri IDashboardService tarafından yürütülür.
     /// </summary>
+    [Authorize]
     public class DashboardController : Controller
     {
         public const string ConnectionName = "TedarikDb";

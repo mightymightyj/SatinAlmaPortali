@@ -13,9 +13,9 @@
 
         <!-- Hero Action Controls -->
         <div class="hero-control-row">
-            <button class="btn-create-pill">
+            <a asp-controller="Dashboard" asp-action="Index" class="btn-create-pill">
                 <span class="plus-symbol">+</span> Yeni Talep Oluştur
-            </button>
+            </a>
 
             <div class="white-search-pill">
                 <input type="text" placeholder="Ürünler içerisinde ara..." />
@@ -41,7 +41,7 @@
                     <span class="blue-accent-x">✕</span>
                     <h2>Yeni Alış Talepleri</h2>
                 </div>
-                <a href="#tum-alis" class="link-all">Tüm Talepler</a>
+                <a asp-controller="Dashboard" asp-action="Index" class="link-all">Tüm Talepler</a>
             </div>
 
             <!-- Empty Container Body -->
@@ -56,7 +56,7 @@
                     <span class="blue-accent-x">✕</span>
                     <h2>Yeni Satış Talepleri</h2>
                 </div>
-                <a href="#tum-satis" class="link-all">Tüm Talepler</a>
+                <a asp-controller="Dashboard" asp-action="Index" class="link-all">Tüm Talepler</a>
             </div>
 
             <!-- Empty Container Body -->

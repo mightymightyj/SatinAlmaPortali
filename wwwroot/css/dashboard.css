@@ -87,12 +87,19 @@
     height: 100vh;
 }
 
+.side-brand-container {
+    padding: 0 4px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 .side-brand {
     display: flex;
     align-items: center;
     gap: 11px;
     text-decoration: none;
-    padding: 0 8px 22px;
+    padding: 0 4px;
 }
 
 .side-brand-mark {
@@ -112,9 +119,38 @@
     font-size: 1.05rem;
     font-weight: 700;
     letter-spacing: -0.01em;
+    white-space: nowrap;
 }
 
 .side-brand-text span { color: #7EA6F5; }
+
+.side-company-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    padding: 6px 10px;
+    border-radius: 8px;
+    color: #94A3B8;
+    font-size: 0.78rem;
+    transition: background-color 0.15s;
+}
+
+.side-company-pill svg {
+    width: 14px;
+    height: 14px;
+    color: #60A5FA;
+    flex: none;
+}
+
+.side-company-pill .company-name-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #E2E8F0;
+    font-weight: 600;
+}
 
 .side-nav {
     display: flex;

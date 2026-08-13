@@ -1,8 +1,18 @@
-@*
-    Panelin kendi kabuğu. Sitenin ortak _Layout dosyası bilerek kullanılmıyor:
-    panel koyu sidebar + kendi üst çubuğuyla ayrı bir uygulama gibi çalışıyor ve
-    böylece ana sayfanın hiçbir dosyasına dokunmak gerekmiyor.
-*@
+@{
+    var companyName = User.FindFirst("CompanyName")?.Value 
+                   ?? User.Identity?.Name 
+                   ?? "Kaya Sanayi Ltd. Şti.";
+
+    var officialName = User.Identity?.Name ?? "Ömer Cengiz";
+    var userRole = User.FindFirst("UserType")?.Value ?? "Satın Alma Müdürü";
+
+    var parts = companyName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+    var initials = parts.Length >= 2 
+        ? $"{parts[0][0]}{parts[1][0]}".ToUpper() 
+        : companyName.Length >= 2 
+            ? companyName.Substring(0, 2).ToUpper() 
+            : "TP";
+}
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -17,16 +27,24 @@
 
     <!-- SOL KENAR ÇUBUĞU -->
     <aside class="app-sidebar" aria-label="Panel menüsü">
-        <a class="side-brand" href="~/">
-            <span class="side-brand-mark">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+        <div class="side-brand-container">
+            <a class="side-brand" href="~/">
+                <span class="side-brand-mark">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                </span>
+                <span class="side-brand-text">tedarik<span>.portal</span></span>
+            </a>
+            <div class="side-company-pill" title="@companyName">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M3 21h18M3 7v14M21 7v14M6 3h12v4H6zM9 11h2v2H9zM13 11h2v2h-2zM9 15h2v2H9zM13 15h2v2h-2z"></path>
                 </svg>
-            </span>
-            <span class="side-brand-text">tedarik<span>.portal</span></span>
-        </a>
+                <span class="company-name-text">@companyName</span>
+            </div>
+        </div>
 
         <nav class="side-nav">
             <a class="side-link is-active" href="#" aria-current="page">
@@ -129,10 +147,10 @@
                 </button>
 
                 <div class="top-profile">
-                    <span class="top-avatar" aria-hidden="true">ÖC</span>
+                    <span class="top-avatar" aria-hidden="true">@initials</span>
                     <span class="top-profile-text">
-                        <strong>Ömer Cengiz</strong>
-                        <small>Satın Alma Müdürü</small>
+                        <strong>@companyName</strong>
+                        <small>@officialName (@userRole)</small>
                     </span>
                 </div>
             </div>

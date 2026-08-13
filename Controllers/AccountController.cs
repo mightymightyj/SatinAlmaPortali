@@ -47,11 +47,13 @@ namespace satinalmaportali2.Controllers {
                     return View();
                 }
 
+                string companyName = dbUser.CompanyName ?? dbUser.CompanyOfficial ?? email.Split('@')[0];
                 string displayName = dbUser.CompanyOfficial ?? dbUser.CompanyName ?? email.Split('@')[0];
 
                 var claims = new List<Claim> {
                     new Claim(ClaimTypes.Name, displayName),
                     new Claim(ClaimTypes.Email, email),
+                    new Claim("CompanyName", companyName),
                     new Claim("UserType", userType ?? "User")
                 };
 
@@ -61,7 +63,7 @@ namespace satinalmaportali2.Controllers {
                 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
                 
                 TempData["LoginSuccess"] = "Başarıyla giriş yapıldı!";
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction("Index", "Dashboard");
             }
             catch (Exception ex) {
                 var innerMsg = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
@@ -197,6 +199,7 @@ namespace satinalmaportali2.Controllers {
                 var claims = new List<Claim> {
                     new Claim(ClaimTypes.Name, fullname ?? email),
                     new Claim(ClaimTypes.Email, email),
+                    new Claim("CompanyName", fullname ?? email),
                     new Claim("UserType", "User")
                 };
 
@@ -204,7 +207,7 @@ namespace satinalmaportali2.Controllers {
                 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
 
                 TempData["RegisterSuccess"] = "Hesabınız başarıyla oluşturuldu ve veritabanına kaydedildi!";
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction("Index", "Dashboard");
             }
             catch (Exception ex) {
                 var innerMsg = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
