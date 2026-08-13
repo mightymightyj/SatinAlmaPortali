@@ -1,140 +1,155 @@
 using Microsoft.AspNetCore.Mvc;
-using satinalmaportali2.Helpers;
 using satinalmaportali2.Models;
 using satinalmaportali2.Services;
 
 namespace satinalmaportali2.Controllers {
-    /// <summary>Şirket sahibinin alış, satış ve iş ortağı özetini gördüğü panel.</summary>
+
+    /// <summary>
+    /// Satın alma gösterge paneli. Tüm veriler mevcut veritabanından SALT OKUNUR
+    /// çekilir; veritabanına ulaşılamadığında sahte sayı gösterilmez, durum bildirilir.
+    /// </summary>
     public class DashboardController : Controller {
-        // Program.cs'de servis kaydı gerekmesin diye veri doğrudan buradan alınıyor.
-        // DI'ya geçirmek istersen: Program.cs'e AddSingleton ekleyip bunu
-        // constructor parametresine çevirmen yeterli.
-        private readonly IProcurementDataService _data = ProcurementDataService.Instance;
 
-        /// <param name="yil">Gösterilecek yıl; verilmezse en güncel yıl seçilir.</param>
-        public IActionResult Index(int? yil) {
-            var partners = _data.GetPartners();
-            var transactions = _data.GetTransactions();
+        /// <summary>appsettings.json &gt; ConnectionStrings altındaki anahtar.</summary>
+        public const string ConnectionName = "TedarikDb";
 
-            var years = transactions.Select(t => t.Date.Year).Distinct().OrderBy(y => y).ToList();
-            if (years.Count == 0) return View("Empty");
+        /// <summary>Trend grafiğinde ayrı çizgi olarak gösterilecek en fazla tür sayısı.</summary>
+        private const int MaxTrendSeries = 4;
 
-            var selectedYear = yil is int requested && years.Contains(requested) ? requested : years[^1];
-            var inYear = transactions.Where(t => t.Date.Year == selectedYear).ToList();
+        private readonly IConfiguration _configuration;
+        private readonly IWebHostEnvironment _environment;
+        private readonly ILogger<DashboardController> _logger;
 
-            // Seçili yıl henüz bitmediyse önceki yılı da aynı ay aralığına kısıtla.
-            // Aksi hâlde 8 aylık veri, 12 aylık veriyle kıyaslanır ve gerçekte
-            // olmayan bir düşüş görünür.
-            var lastMonth = inYear.Count == 0 ? 12 : inYear.Max(t => t.Date.Month);
-            var inPreviousYear = transactions
-                .Where(t => t.Date.Year == selectedYear - 1 && t.Date.Month <= lastMonth)
-                .ToList();
+        public DashboardController(
+            IConfiguration configuration,
+            IWebHostEnvironment environment,
+            ILogger<DashboardController> logger) {
+            _configuration = configuration;
+            _environment = environment;
+            _logger = logger;
+        }
 
-            var periodLabel = lastMonth >= 12
-                ? $"{selectedYear} tam yıl"
-                : $"{ChartHelper.MonthLabel(1)}–{ChartHelper.MonthLabel(lastMonth)} {selectedYear}";
+        /// <param name="yil">Gösterilecek yıl; verilmezse veri bulunan en güncel yıl seçilir.</param>
+        public async Task<IActionResult> Index(int? yil) {
+            var connectionString = _configuration.GetConnectionString(ConnectionName);
+
+            if (string.IsNullOrWhiteSpace(connectionString)) {
+                return View(new DashboardViewModel {
+                    State = DataState.NotConfigured,
+                    StateMessage =
+                        $"Veritabanı bağlantısı tanımlı değil. appsettings.json içine " +
+                        $"\"ConnectionStrings\": {{ \"{ConnectionName}\": \"...\" }} eklendiğinde " +
+                        "panel mevcut veriyi okumaya başlar."
+                });
+            }
+
+            var queries = new SqlDashboardQueries(connectionString);
+
+            try {
+                return View(await BuildModelAsync(queries, yil));
+            }
+            catch (Exception ex) {
+                // Bağlantı kurulamadı ya da bir sütun/tablo beklenenden farklı.
+                // Bu durumda tahmini veri üretmek yerine ne olduğunu söylüyoruz.
+                _logger.LogError(ex, "Gösterge paneli verisi okunamadı.");
+                return View(new DashboardViewModel {
+                    State = DataState.Failed,
+                    StateMessage =
+                        "Veritabanına ulaşılamadı ya da sorgu çalıştırılamadı. " +
+                        "Bağlantı dizesi, sunucu erişimi ve tablo adları kontrol edilmeli.",
+                    StateDetail = _environment.IsDevelopment() ? ex.Message : null
+                });
+            }
+        }
+
+        private async Task<DashboardViewModel> BuildModelAsync(IDashboardQueries queries, int? requestedYear) {
+            var years = await queries.GetAvailableYearsAsync();
+
+            // Hiç talep kaydı yoksa içinde bulunulan yıla düşüyoruz; sorgular boş döner.
+            var selectedYear = requestedYear is int wanted && years.Contains(wanted)
+                ? wanted
+                : years.Count > 0 ? years[0] : DateTime.Today.Year;
+
+            var from = new DateTime(selectedYear, 1, 1);
+            var to = from.AddYears(1);
+            var filter = new DashboardFilter(from, to);
 
             var model = new DashboardViewModel {
                 SelectedYear = selectedYear,
                 AvailableYears = years,
-                LastMonthWithData = lastMonth,
-                PeriodLabel = periodLabel,
-                ComparisonNote = lastMonth >= 12
-                    ? $"{selectedYear - 1} yılına göre"
-                    : $"{selectedYear - 1} yılının aynı dönemine göre",
-                PurchaseTotal = SumOf(inYear, TransactionType.Purchase),
-                SaleTotal = SumOf(inYear, TransactionType.Sale),
-                PreviousPurchaseTotal = SumOf(inPreviousYear, TransactionType.Purchase),
-                PreviousSaleTotal = SumOf(inPreviousYear, TransactionType.Sale),
-                TransactionCount = inYear.Count,
-                ActivePartnerCount = partners.Count(p => p.Status == PartnershipStatus.Active),
-                PastPartnerCount = partners.Count(p => p.Status == PartnershipStatus.Past),
-                Monthly = BuildMonthly(inYear),
-                Yearly = BuildYearly(transactions, years),
-                AllPartners = BuildPartnerSummaries(partners, transactions)
+                From = from,
+                To = to,
+                Summary = await queries.GetSummaryAsync(filter),
+                RequestTypes = await queries.GetRequestTypesAsync(filter),
+                Categories = await queries.GetCategoryBreakdownAsync(),
+                Vendors = await queries.GetVendorScorecardAsync(filter),
+                CompanyMix = await queries.GetCompanyMixAsync(),
+                Regions = await queries.GetRegionsAsync(),
+                Flows = await queries.GetFlowsAsync(filter),
+                FormTopics = await queries.GetFormTopicsAsync(filter),
+                Brands = await queries.GetBrandsAsync()
             };
 
-            model.TopPartners = BuildPartnerSummaries(partners, inYear)
-                .Where(s => s.Volume > 0)
-                .OrderByDescending(s => s.Volume)
-                .Take(6)
-                .ToList();
-
-            FillSpendAnalytics(model, selectedYear);
-            return View(model);
+            BuildTrend(model, await queries.GetRequestTrendAsync(filter), from, to);
+            return model;
         }
 
-        /// <summary>Üst şerit göstergelerini, departman/kategori kırılımlarını ve listeleri doldurur.</summary>
-        private void FillSpendAnalytics(DashboardViewModel model, int year) {
-            var departments = _data.GetDepartments(year);
-            var categories = _data.GetCategories(year);
-            var approvals = _data.GetApprovals();
-            var (activeRfq, closingSoon) = _data.GetRfqCounts();
+        /// <summary>
+        /// Trend satırlarını çizgi grafiğe uygun hâle getirir.
+        /// Kritik nokta: hiç talep olmayan ay sorgudan satır olarak GELMEZ.
+        /// Doldurulmazsa çizgi o ayı atlar ve yanlış bir eğim çizer.
+        /// </summary>
+        private static void BuildTrend(
+            DashboardViewModel model, IReadOnlyList<RequestTrendRow> rows, DateTime from, DateTime to) {
 
-            // Pay yüzdeleri donut dilim açılarıyla aynı toplamdan hesaplansın.
-            var categoryTotal = categories.Sum(c => c.Amount);
-            foreach (var category in categories) {
-                category.SharePercent = categoryTotal <= 0 ? 0 : category.Amount / categoryTotal * 100m;
+            // Dönem ekseni: aralıktaki her ay, veri olsun olmasın.
+            var periods = new List<DateTime>();
+            for (var cursor = new DateTime(from.Year, from.Month, 1); cursor < to; cursor = cursor.AddMonths(1)) {
+                periods.Add(cursor);
+            }
+            model.TrendPeriods = periods;
+
+            if (rows.Count == 0) {
+                model.TrendSeriesList = Array.Empty<TrendSeries>();
+                return;
             }
 
-            // Tasarruf = yalnızca bütçesinin altında kalan departmanların farkı.
-            var savings = departments.Where(d => !d.IsOverBudget).Sum(d => -d.Variance);
-            var totalBudget = departments.Sum(d => d.Budgeted);
+            // Tür sayısı fazlaysa kuyruğu "Diğer" altında topluyoruz — yeni renk üretmiyoruz.
+            var rankedTypes = rows
+                .GroupBy(r => string.IsNullOrWhiteSpace(r.RequestType) ? "Belirtilmemiş" : r.RequestType!)
+                .OrderByDescending(g => g.Sum(r => r.RequestCount))
+                .Select(g => g.Key)
+                .ToList();
 
-            model.Departments = departments;
-            model.Categories = categories;
-            model.CategoryTotal = categoryTotal;
-            model.RecentApprovals = approvals;
-            model.TopVendors = _data.GetVendorScores();
-            model.PendingApprovalCount = approvals.Count(a => a.Status == ApprovalStatus.Pending);
-            model.UrgentApprovalCount = approvals.Count(a => a.IsUrgent);
-            model.ActiveRfqCount = activeRfq;
-            model.RfqClosingSoonCount = closingSoon;
-            model.EstimatedSavings = savings;
-            model.SavingsRatePercent = totalBudget <= 0 ? 0 : savings / totalBudget * 100m;
-        }
+            var namedTypes = rankedTypes.Take(MaxTrendSeries).ToList();
+            var hasOther = rankedTypes.Count > namedTypes.Count;
 
-        private static decimal SumOf(IEnumerable<Transaction> source, TransactionType type) =>
-            source.Where(t => t.Type == type).Sum(t => t.Amount);
+            var index = periods
+                .Select((period, i) => new { period, i })
+                .ToDictionary(x => x.period, x => x.i);
 
-        /// <summary>12 ayın hepsini üretir — işlem olmayan ay sıfır olarak çizilir.</summary>
-        private static List<MonthlyTotals> BuildMonthly(IReadOnlyList<Transaction> yearTransactions) {
-            var byMonth = yearTransactions.ToLookup(t => t.Date.Month);
-            return Enumerable.Range(1, 12).Select(month => new MonthlyTotals {
-                Month = month,
-                Label = ChartHelper.MonthLabel(month),
-                Purchase = SumOf(byMonth[month], TransactionType.Purchase),
-                Sale = SumOf(byMonth[month], TransactionType.Sale)
-            }).ToList();
-        }
+            var series = new List<TrendSeries>();
+            foreach (var typeName in namedTypes) {
+                series.Add(new TrendSeries { Name = typeName, Values = Fill(typeName, false) });
+            }
+            if (hasOther) {
+                series.Add(new TrendSeries { Name = "Diğer", Values = Fill(null, true) });
+            }
 
-        private static List<YearlyTotals> BuildYearly(IReadOnlyList<Transaction> all, IReadOnlyList<int> years) {
-            var byYear = all.ToLookup(t => t.Date.Year);
-            return years.Select(year => new YearlyTotals {
-                Year = year,
-                Purchase = SumOf(byYear[year], TransactionType.Purchase),
-                Sale = SumOf(byYear[year], TransactionType.Sale)
-            }).ToList();
-        }
+            model.TrendSeriesList = series;
 
-        /// <summary>Aktif firmalar üstte, her grup içinde hacme göre büyükten küçüğe.</summary>
-        private static List<PartnerSummary> BuildPartnerSummaries(
-            IReadOnlyList<Partner> partners, IReadOnlyList<Transaction> scope) {
+            int[] Fill(string? typeName, bool isOther) {
+                var values = new int[periods.Count];
+                foreach (var row in rows) {
+                    var key = string.IsNullOrWhiteSpace(row.RequestType) ? "Belirtilmemiş" : row.RequestType!;
+                    var belongs = isOther ? !namedTypes.Contains(key) : key == typeName;
+                    if (!belongs) continue;
 
-            var byPartner = scope.ToLookup(t => t.PartnerId);
-            return partners.Select(partner => {
-                var rows = byPartner[partner.Id].ToList();
-                return new PartnerSummary {
-                    Partner = partner,
-                    Purchase = SumOf(rows, TransactionType.Purchase),
-                    Sale = SumOf(rows, TransactionType.Sale),
-                    TransactionCount = rows.Count,
-                    LastTransactionDate = rows.Count == 0 ? null : rows.Max(t => t.Date)
-                };
-            })
-            .OrderBy(s => s.Partner.Status)
-            .ThenByDescending(s => s.Volume)
-            .ToList();
+                    var month = new DateTime(row.Period.Year, row.Period.Month, 1);
+                    if (index.TryGetValue(month, out var slot)) values[slot] += row.RequestCount;
+                }
+                return values;
+            }
         }
     }
 }

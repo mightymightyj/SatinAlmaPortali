@@ -490,20 +490,6 @@
     color: var(--muted);
 }
 
-.urgency-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    background: var(--coral-wash);
-    color: var(--coral-ink);
-    padding: 3px 9px;
-    border-radius: 20px;
-    font-size: 0.72rem;
-    font-weight: 700;
-}
-
-.urgency-badge svg { width: 12px; height: 12px; }
-.urgency-badge.small { padding: 2px 8px; font-size: 0.68rem; margin-left: 6px; }
 
 /* ============ IZGARALAR ============ */
 .grid-wide-narrow {
@@ -680,88 +666,39 @@
 .status-chip.is-rejected { background: var(--coral-wash); color: var(--coral-ink); }
 .status-chip.is-neutral { background: var(--hairline); color: var(--ink-soft); }
 
-.row-actions { display: inline-flex; gap: 6px; }
 
-.btn-mini {
-    border: none;
-    border-radius: 7px;
-    padding: 6px 12px;
-    font: inherit;
-    font-size: 0.75rem;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background-color 0.15s, color 0.15s;
+/* ============ VERİ KAYNAĞI DURUM KARTI ============ */
+/* Veritabanına ulaşılamadığında tahmini sayı göstermek yerine bu kart çıkar. */
+.state-card { border-left: 3px solid var(--blue); }
+.state-card.is-error { border-left-color: var(--coral); }
+
+.state-card h2 {
+    font-size: 1.05rem;
+    font-weight: 650;
+    color: var(--ink);
+    margin: 0 0 8px;
 }
 
-.btn-mini.primary { background: var(--blue); color: #fff; }
-.btn-mini.primary:hover { background: var(--blue-dark); }
-.btn-mini.ghost { background: var(--plane); color: var(--ink-soft); }
-.btn-mini.ghost:hover { background: var(--hairline); color: var(--ink); }
+.state-card p { margin: 0 0 12px; max-width: 74ch; font-size: 0.9rem; }
+.state-card p:last-child { margin-bottom: 0; }
+.state-note { color: var(--muted); font-size: 0.84rem !important; }
 
-/* ============ TEDARİKÇİ PERFORMANSI ============ */
-.vendor-list {
-    list-style: none;
+.code-block {
+    background: var(--navy);
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 0 0 14px;
+}
+
+.code-block pre {
     margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
+    padding: 14px 16px;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: #E2E8F0;
+    white-space: pre;
 }
-
-.vendor-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 12px;
-    margin-bottom: 7px;
-}
-
-.vendor-name {
-    font-size: 0.83rem;
-    font-weight: 600;
-    color: var(--ink);
-}
-
-.vendor-otd {
-    font-size: 0.88rem;
-    font-weight: 700;
-    color: var(--ink);
-    font-variant-numeric: tabular-nums;
-}
-
-/* Ölçer: dolgu durumu taşır, kanal aynı rampanın açık tonu */
-.meter {
-    height: 7px;
-    background: #E4EBF5;
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.meter-fill {
-    display: block;
-    height: 100%;
-    border-radius: 4px;
-}
-
-.meter-fill.is-good { background: var(--emerald); }
-.meter-fill.is-watch { background: var(--blue); }
-.meter-fill.is-critical { background: var(--coral); }
-
-.vendor-foot {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    margin-top: 7px;
-}
-
-.vendor-flag { font-size: 0.72rem; font-weight: 700; }
-.vendor-flag.is-good { color: var(--emerald-ink); }
-.vendor-flag.is-watch { color: var(--blue-dark); }
-.vendor-flag.is-critical { color: var(--coral-ink); }
-
-.vendor-meta { font-size: 0.74rem; color: var(--muted); }
 
 /* ============ TABLO GÖRÜNÜMÜ (grafiklerin erişilebilir karşılığı) ============ */
 .table-view {
