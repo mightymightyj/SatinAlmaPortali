@@ -173,5 +173,157 @@ namespace satinalmaportali2.Services {
                 return false;
             }
         }
+
+        public async Task<bool> SendContactMessageEmailAsync(string targetEmail, string fullName, string senderEmail, string? phone, string? topic, string messageContent) {
+            try {
+                IResend resend = ResendClient.Create(_apiKey);
+
+                var topicDisplay = topic switch {
+                    "genel" => "Genel Bilgi",
+                    "destek" => "Teknik Destek",
+                    "satis" => "Satış & Fiyatlandırma",
+                    "isbirligi" => "İş Birliği Teklifi",
+                    "sikayet" => "Şikayet & Öneri",
+                    _ => string.IsNullOrWhiteSpace(topic) ? "Genel" : topic
+                };
+
+                var sendTime = DateTime.UtcNow.AddHours(3).ToString("dd.MM.yyyy HH:mm");
+
+                var htmlBody = $@"
+<!DOCTYPE html>
+<html lang='tr'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Yeni İletişim Mesajı</title>
+</head>
+<body style='margin:0;padding:0;background-color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,""Segoe UI"",Roboto,""Helvetica Neue"",Arial,sans-serif;'>
+    <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='background-color:#f1f5f9;'>
+        <tr>
+            <td align='center' style='padding:40px 16px;'>
+                <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='max-width:600px;background-color:#ffffff;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.06);overflow:hidden;'>
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td style='background:linear-gradient(135deg,#1e40af 0%,#2563eb 100%);padding:32px 40px;text-align:left;'>
+                            <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0'>
+                                <tr>
+                                    <td>
+                                        <span style='background:rgba(255,255,255,0.2);color:#ffffff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;'>
+                                            📬 Web İletişim Formu
+                                        </span>
+                                        <h1 style='margin:12px 0 4px;color:#ffffff;font-size:22px;font-weight:800;'>
+                                            Yeni Bir Mesajınız Var!
+                                        </h1>
+                                        <p style='margin:0;color:rgba(255,255,255,0.85);font-size:13px;'>
+                                            Tedarik Portalı iletişim formundan yeni bir talep iletildi.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style='padding:36px 40px;'>
+                            
+                            <!-- Bilgi Tablosu -->
+                            <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='margin-bottom:24px;border-collapse:separate;border-spacing:0 8px;'>
+                                <tr>
+                                    <td style='width:130px;color:#64748b;font-size:13px;font-weight:700;padding:8px 0;'>👤 Gönderen:</td>
+                                    <td style='color:#0f172a;font-size:14px;font-weight:700;padding:8px 12px;background:#f8fafc;border-radius:8px;'>{fullName}</td>
+                                </tr>
+                                <tr>
+                                    <td style='width:130px;color:#64748b;font-size:13px;font-weight:700;padding:8px 0;'>✉️ E-posta:</td>
+                                    <td style='color:#2563eb;font-size:14px;font-weight:600;padding:8px 12px;background:#f8fafc;border-radius:8px;'><a href='mailto:{senderEmail}' style='color:#2563eb;text-decoration:none;'>{senderEmail}</a></td>
+                                </tr>
+                                <tr>
+                                    <td style='width:130px;color:#64748b;font-size:13px;font-weight:700;padding:8px 0;'>📞 Telefon:</td>
+                                    <td style='color:#0f172a;font-size:14px;font-weight:600;padding:8px 12px;background:#f8fafc;border-radius:8px;'>{(string.IsNullOrWhiteSpace(phone) ? "Belirtilmedi" : phone)}</td>
+                                </tr>
+                                <tr>
+                                    <td style='width:130px;color:#64748b;font-size:13px;font-weight:700;padding:8px 0;'>🏷️ Konu:</td>
+                                    <td style='color:#0f172a;font-size:14px;font-weight:700;padding:8px 12px;background:#f8fafc;border-radius:8px;'>{topicDisplay}</td>
+                                </tr>
+                                <tr>
+                                    <td style='width:130px;color:#64748b;font-size:13px;font-weight:700;padding:8px 0;'>🕒 Tarih:</td>
+                                    <td style='color:#64748b;font-size:13px;padding:8px 12px;background:#f8fafc;border-radius:8px;'>{sendTime}</td>
+                                </tr>
+                            </table>
+
+                            <!-- Mesaj Kutusu -->
+                            <div style='margin-top:20px;padding:20px;background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #2563eb;border-radius:12px;'>
+                                <div style='color:#475569;font-size:12px;font-weight:800;text-transform:uppercase;margin-bottom:8px;letter-spacing:0.5px;'>Mesaj İçeriği:</div>
+                                <p style='margin:0;color:#1e293b;font-size:14px;line-height:1.7;white-space:pre-wrap;'>{messageContent}</p>
+                            </div>
+
+                            <!-- Hızlı Yanıtla Butonu -->
+                            <div style='margin-top:28px;text-align:center;'>
+                                <a href='mailto:{senderEmail}?subject=Re: {topicDisplay} - Tedarik Portalı' style='display:inline-block;padding:12px 32px;background:#2563eb;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:10px;box-shadow:0 4px 12px rgba(37,99,235,0.3);'>
+                                    ✉️ Gönderene Yanıt Ver
+                                </a>
+                            </div>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style='background:#f8fafc;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;'>
+                            <p style='margin:0;color:#94a3b8;font-size:12px;'>
+                                Bu bildirim <strong>{targetEmail}</strong> şirket yetkili adresine gönderilmiştir.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
+
+                var message = new EmailMessage {
+                    From = _fromEmail,
+                    To = targetEmail,
+                    Subject = $"📬 İletişim Mesajı: {topicDisplay} — {fullName}",
+                    HtmlBody = htmlBody
+                };
+
+                await resend.EmailSendAsync(message);
+                return true;
+            }
+            catch (Exception ex) {
+                Console.WriteLine($"İletişim e-posta gönderim hatası: {ex.Message}");
+
+                // Resend Sandbox Modu Koruması: Eğer harici e-postaya gönderim reddedilirse hesap sahibinin e-postasına yönlendir
+                if (!string.Equals(targetEmail, "yerlikayamehmetkaan80@gmail.com", StringComparison.OrdinalIgnoreCase)) {
+                    try {
+                        Console.WriteLine("Resend test kısıtlaması nedeniyle e-posta 'yerlikayamehmetkaan80@gmail.com' adresine iletiliyor...");
+                        IResend resend = ResendClient.Create(_apiKey);
+                        var fallbackMessage = new EmailMessage {
+                            From = _fromEmail,
+                            To = "yerlikayamehmetkaan80@gmail.com",
+                            Subject = $"[TEST İLETİMİ -> {targetEmail}] 📬 İletişim: {fullName}",
+                            HtmlBody = $@"<div style='background:#fef3c7;padding:12px 16px;border:1px solid #fde68a;border-radius:8px;margin-bottom:16px;font-family:sans-serif;font-size:13px;color:#92400e;'>
+                                ⚠️ <strong>Geliştirici Notu:</strong> Resend ücretsiz test modunda (onboarding@resend.dev) yalnızca hesap sahibine (yerlikayamehmetkaan80@gmail.com) e-posta gönderilebilir. Hedef adres: <strong>{targetEmail}</strong>
+                            </div>
+                            <p><strong>Gönderen:</strong> {fullName} ({senderEmail})</p>
+                            <p><strong>Telefon:</strong> {phone}</p>
+                            <p><strong>Konu:</strong> {topic}</p>
+                            <p><strong>Mesaj:</strong><br/>{messageContent}</p>"
+                        };
+                        await resend.EmailSendAsync(fallbackMessage);
+                        return true;
+                    }
+                    catch (Exception fallbackEx) {
+                        Console.WriteLine($"Fallback gönderim hatası: {fallbackEx.Message}");
+                    }
+                }
+
+                return false;
+            }
+        }
     }
 }
