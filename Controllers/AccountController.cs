@@ -66,7 +66,7 @@ namespace satinalmaportali2.Controllers {
                 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
                 
                 TempData["LoginSuccess"] = "Başarıyla giriş yapıldı!";
-                return RedirectToAction("Index", "Dashboard");
+                return RedirectToAction("Index", "Home");
             }
             catch (Exception ex) {
                 var innerMsg = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
@@ -210,7 +210,7 @@ namespace satinalmaportali2.Controllers {
                 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
 
                 TempData["RegisterSuccess"] = "Hesabınız başarıyla oluşturuldu ve veritabanına kaydedildi!";
-                return RedirectToAction("Index", "Dashboard");
+                return RedirectToAction("Index", "Home");
             }
             catch (Exception ex) {
                 var innerMsg = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
@@ -226,8 +226,129 @@ namespace satinalmaportali2.Controllers {
         }
 
         [HttpGet]
-        public IActionResult Profile() {
-            return RedirectToAction("Index", "Home");
+        public async Task<IActionResult> Profile() {
+            // Ensure user is authenticated
+            if (User.Identity?.IsAuthenticated != true) {
+                return RedirectToAction("Login");
+            }
+
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(email)) {
+                return RedirectToAction("Login");
+            }
+
+            // Query company from database
+            var company = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail == email);
+            if (company == null) {
+                TempData["ErrorMessage"] = "Hesap bilgileri bulunamadı.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            // Build ProfileViewModel with related data
+            var viewModel = new ProfileViewModel {
+                CompanyID = company.CompanyID,
+                CompanyName = company.CompanyName,
+                CompanyOfficial = company.CompanyOfficial,
+                CompanyMail = company.CompanyMail,
+                CompanyPhone = company.CompanyPhone,
+                TCNO = company.TCNO,
+                TaxOffice = company.TaxOffice,
+                CompanyDetailText = company.CompanyDetailText,
+                CompanyLogo = company.CompanyLogo,
+                CompanyTypeID = company.CompanyTypeID,
+                MembershipTypeID = company.MembershipTypeID,
+                AddressID = company.AddressID
+            };
+
+            // Load CompanyType name
+            if (company.CompanyTypeID.HasValue) {
+                var companyType = await _context.CompanyTypes.FirstOrDefaultAsync(ct => ct.CompanyTypeID == company.CompanyTypeID);
+                viewModel.CompanyTypeName = companyType?.CompanyTypeName;
+            }
+
+            // Load MembershipType name
+            if (company.MembershipTypeID.HasValue) {
+                var membershipType = await _context.MembershipTypes.FirstOrDefaultAsync(mt => mt.MembershipTypeID == company.MembershipTypeID);
+                viewModel.MembershipTypeName = membershipType?.MembershipTypeName;
+            }
+
+            // Load Address and location hierarchy
+            if (company.AddressID.HasValue) {
+                var address = await _context.Addresses.FirstOrDefaultAsync(a => a.AddressID == company.AddressID);
+                if (address != null) {
+                    viewModel.AddressText = address.AddressText;
+                    viewModel.DistrictID = address.DistrictID;
+
+                    if (address.DistrictID.HasValue) {
+                        var district = await _context.Districts.FirstOrDefaultAsync(d => d.DistrictID == address.DistrictID);
+                        if (district != null) {
+                            viewModel.DistrictName = district.DistrictName;
+                            viewModel.TownID = district.TownID;
+
+                            if (district.TownID.HasValue) {
+                                var town = await _context.Towns.FirstOrDefaultAsync(t => t.TownID == district.TownID);
+                                if (town != null) {
+                                    viewModel.TownName = town.TownName;
+                                    viewModel.CountryID = town.CountryID;
+
+                                    if (town.CountryID.HasValue) {
+                                        var country = await _context.Countries.FirstOrDefaultAsync(c => c.CountryID == town.CountryID);
+                                        viewModel.CountryName = country?.CountryName;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RequestPasswordReset() {
+            if (User.Identity?.IsAuthenticated != true) {
+                return RedirectToAction("Login");
+            }
+
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(email)) {
+                TempData["ProfileError"] = "Oturum açmış kullanıcı e-posta adresi bulunamadı.";
+                return RedirectToAction("Profile");
+            }
+
+            try {
+                var user = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail == email);
+                if (user == null) {
+                    TempData["ProfileError"] = "Kullanıcı hesabı veritabanında bulunamadı.";
+                    return RedirectToAction("Profile");
+                }
+
+                // Generate reset token
+                var token = Guid.NewGuid().ToString("N");
+                user.ResetToken = token;
+                user.ResetTokenExpiry = DateTime.UtcNow.AddMinutes(30);
+                await _context.SaveChangesAsync();
+
+                // Build reset link
+                var resetLink = Url.Action("ResetPassword", "Account",
+                    new { token = token, email = email }, Request.Scheme);
+
+                // Send email via Resend API
+                var sent = await _emailService.SendPasswordResetEmailAsync(email, resetLink!);
+
+                if (sent) {
+                    TempData["ProfileSuccess"] = $"Şifre sıfırlama bağlantısı kayıtlı e-posta adresinize ({email}) başarıyla gönderildi. Lütfen gelen kutunuzu kontrol ediniz.";
+                } else {
+                    TempData["ProfileError"] = "E-posta gönderimi başarısız oldu. Lütfen daha sonra tekrar deneyiniz.";
+                }
+            }
+            catch (Exception ex) {
+                var innerMsg = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                TempData["ProfileError"] = $"Şifre sıfırlama talebi oluşturulurken bir hata oluştu: {innerMsg}";
+            }
+
+            return RedirectToAction("Profile");
         }
 
         [HttpGet]
