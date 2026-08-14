@@ -10,6 +10,11 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<satinalmaportali2.Services.EmailService>();
 
+// Cloudinary Görsel Yükleme Servisi
+builder.Services.Configure<CloudinarySettings>(
+    builder.Configuration.GetSection(CloudinarySettings.SectionName));
+builder.Services.AddSingleton<ICloudinaryService, CloudinaryService>();
+
 // Entity Framework Core DbContext Kaydı
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
