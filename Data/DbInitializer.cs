@@ -117,10 +117,70 @@ namespace satinalmaportali2.Data
                 // STEP 4: Fix NULL DistrictID in Addresses table
                 // ====================================================
                 await FixAddressDistrictIdsAsync(context);
+
+                // ====================================================
+                // STEP 5: Ensure Requests table columns exist
+                // ====================================================
+                await EnsureRequestsTableStructureAsync(context);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"DB SEED ERROR: {ex.Message}");
+            }
+        }
+
+        private static async Task EnsureRequestsTableStructureAsync(ApplicationDbContext context)
+        {
+            try
+            {
+                // 1. Tablo yoksa oluştur
+                await context.Database.ExecuteSqlRawAsync(@"
+                    IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Requests')
+                    BEGIN
+                        CREATE TABLE [dbo].[Requests] (
+                            [RequestID] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                            [RequestDate] DATETIME2 NULL,
+                            [SenderID] INT NULL,
+                            [RecieverID] INT NULL,
+                            [RequestType] NVARCHAR(MAX) NULL,
+                            [BuyerInfo] NVARCHAR(MAX) NULL,
+                            [ProductName] NVARCHAR(MAX) NULL,
+                            [Quantity] INT NULL,
+                            [Status] NVARCHAR(MAX) NULL,
+                            [Notes] NVARCHAR(MAX) NULL
+                        );
+                    END
+                ");
+
+                // 2. Eksik sütunları tek tek dinamik SQL ile ekle
+                await context.Database.ExecuteSqlRawAsync(@"
+                    IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Requests' AND COLUMN_NAME = 'BuyerInfo')
+                        EXEC('ALTER TABLE [dbo].[Requests] ADD [BuyerInfo] NVARCHAR(MAX) NULL');
+
+                    IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Requests' AND COLUMN_NAME = 'ProductName')
+                        EXEC('ALTER TABLE [dbo].[Requests] ADD [ProductName] NVARCHAR(MAX) NULL');
+
+                    IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Requests' AND COLUMN_NAME = 'Quantity')
+                        EXEC('ALTER TABLE [dbo].[Requests] ADD [Quantity] INT NULL');
+
+                    IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Requests' AND COLUMN_NAME = 'Status')
+                        EXEC('ALTER TABLE [dbo].[Requests] ADD [Status] NVARCHAR(MAX) NULL');
+
+                    IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Requests' AND COLUMN_NAME = 'Notes')
+                        EXEC('ALTER TABLE [dbo].[Requests] ADD [Notes] NVARCHAR(MAX) NULL');
+                ");
+
+                // 3. Varsa sahte/demo verileri temizle
+                await context.Database.ExecuteSqlRawAsync(@"
+                    IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Requests' AND COLUMN_NAME = 'BuyerInfo')
+                    BEGIN
+                        EXEC('DELETE FROM [dbo].[Requests] WHERE [RequestID] IN (101, 102, 103, 104) OR [BuyerInfo] LIKE ''%Kaya Endüstriyel Otomasyon%'' OR [BuyerInfo] LIKE ''%Anadolu Çelik%'' OR [BuyerInfo] LIKE ''%Boğaziçi Medikal%''');
+                    END
+                ");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Requests table structure ensure note: {ex.Message}");
             }
         }
 

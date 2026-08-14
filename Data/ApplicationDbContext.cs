@@ -57,6 +57,7 @@ namespace satinalmaportali2.Data
             {
                 entity.ToTable("Requests");
                 entity.HasKey(e => e.RequestID);
+                entity.Property(e => e.RequestID).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<Reviews>(entity =>

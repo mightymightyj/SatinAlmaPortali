@@ -46,8 +46,12 @@
             </div>
         </div>
 
+        @{
+            var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+        }
+
         <nav class="side-nav">
-            <a class="side-link is-active" href="#" aria-current="page">
+            <a class="side-link @(currentController == "Dashboard" ? "is-active" : "")" asp-controller="Dashboard" asp-action="Index">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <rect x="3" y="3" width="7" height="9"></rect>
                     <rect x="14" y="3" width="7" height="5"></rect>
@@ -57,7 +61,7 @@
                 <span>Genel Bakış</span>
             </a>
 
-            <a class="side-link" href="#">
+            <a class="side-link @(currentController == "Requests" ? "is-active" : "")" asp-controller="Requests" asp-action="Index">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                     <polyline points="14 2 14 8 20 8"></polyline>
@@ -138,13 +142,26 @@
                     }
                 </button>
 
-                <button class="btn-primary" type="button">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    Yeni Satın Alma Talebi
-                </button>
+                @if (currentController == "Requests")
+                {
+                    <button class="btn-primary" type="button" onclick="openRequestModal()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Yeni Satın Alma Talebi
+                    </button>
+                }
+                else
+                {
+                    <a class="btn-primary" asp-controller="Requests" asp-action="Index" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Yeni Satın Alma Talebi
+                    </a>
+                }
 
                 <div class="top-profile">
                     <span class="top-avatar" aria-hidden="true">@initials</span>

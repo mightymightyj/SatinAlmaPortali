@@ -1,0 +1,814 @@
+@model satinalmaportali2.Models.RequestListViewModel
+@{
+    ViewData["Title"] = "Satın Alma Talepleri";
+    Layout = "~/Views/Dashboard/_DashboardLayout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+
+<style>
+    /* ============ TALEPLER SAYFASI ÖZEL TASARIM GELİŞTİRMELERİ ============ */
+    
+    /* Bildirim Kutuları */
+    .req-alert {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 18px;
+        border-radius: var(--radius);
+        font-size: 0.88rem;
+        font-weight: 500;
+        margin-bottom: 8px;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .req-alert-success {
+        background: var(--emerald-wash);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        color: var(--emerald-ink);
+    }
+
+    .req-alert-error {
+        background: var(--coral-wash);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: var(--coral-ink);
+    }
+
+    .req-alert-close {
+        background: transparent;
+        border: none;
+        font-size: 1.2rem;
+        font-weight: 700;
+        cursor: pointer;
+        color: inherit;
+        line-height: 1;
+        opacity: 0.7;
+        transition: opacity 0.15s;
+    }
+
+    .req-alert-close:hover { opacity: 1; }
+
+    /* Filtreleme ve Arama Barı */
+    .requests-filter-card {
+        background: var(--surface);
+        border-radius: var(--radius);
+        padding: 14px 18px;
+        box-shadow: var(--shadow);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 14px;
+    }
+
+    .req-search-form {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
+        min-width: 260px;
+    }
+
+    .req-search-wrap {
+        position: relative;
+        flex: 1;
+    }
+
+    .req-search-wrap svg {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted);
+        pointer-events: none;
+    }
+
+    .req-search-input {
+        width: 100%;
+        background: var(--plane);
+        border: 1px solid var(--grid);
+        border-radius: 9px;
+        padding: 9px 14px 9px 38px;
+        font-size: 0.85rem;
+        color: var(--ink);
+        transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+    }
+
+    .req-search-input:focus {
+        outline: none;
+        background: var(--surface);
+        border-color: var(--blue);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .req-btn-filter-submit {
+        background: var(--plane);
+        border: 1px solid var(--grid);
+        color: var(--ink-soft);
+        padding: 9px 16px;
+        border-radius: 9px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.15s, color 0.15s;
+    }
+
+    .req-btn-filter-submit:hover {
+        background: var(--blue-wash);
+        color: var(--blue);
+        border-color: rgba(37, 99, 235, 0.25);
+    }
+
+    /* Tablo Öğeleri */
+    .buyer-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .buyer-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        background: var(--blue-wash);
+        color: var(--blue);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.82rem;
+        font-weight: 700;
+        flex: none;
+    }
+
+    .buyer-name-text {
+        font-weight: 600;
+        color: var(--ink);
+        font-size: 0.85rem;
+    }
+
+    .product-cell-title {
+        font-weight: 600;
+        color: var(--blue);
+        font-size: 0.87rem;
+    }
+
+    .product-cell-notes {
+        font-size: 0.76rem;
+        color: var(--muted);
+        max-width: 240px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin-top: 2px;
+    }
+
+    .qty-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 9px;
+        border-radius: 6px;
+        background: var(--plane);
+        border: 1px solid var(--grid);
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--ink);
+    }
+
+    .type-tag {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 6px;
+        background: var(--plane);
+        color: var(--ink-soft);
+        font-size: 0.75rem;
+        font-weight: 600;
+        border: 1px solid var(--grid);
+    }
+
+    .action-btn-group {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 6px;
+    }
+
+    .btn-detail {
+        background: var(--blue-wash);
+        color: var(--blue);
+        border: 1px solid rgba(37, 99, 235, 0.2);
+        padding: 5px 12px;
+        border-radius: 7px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.15s;
+    }
+
+    .btn-detail:hover {
+        background: var(--blue);
+        color: #fff;
+    }
+
+    .btn-delete-row {
+        background: var(--coral-wash);
+        color: var(--coral-ink);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        padding: 5px 10px;
+        border-radius: 7px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.15s;
+    }
+
+    .btn-delete-row:hover {
+        background: var(--coral);
+        color: #fff;
+    }
+
+    /* Boş Liste Durumu */
+    .empty-state-box {
+        text-align: center;
+        padding: 56px 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .empty-state-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 18px;
+        background: var(--blue-wash);
+        color: var(--blue);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 4px;
+    }
+
+    .empty-state-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0;
+    }
+
+    .empty-state-desc {
+        font-size: 0.85rem;
+        color: var(--muted);
+        max-width: 420px;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    /* ============ MODAL PENCERE TASARIMI ============ */
+    .custom-modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(4px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+
+    .custom-modal-backdrop.is-open {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .custom-modal-dialog {
+        background: var(--surface);
+        border: 1px solid var(--grid);
+        border-radius: 16px;
+        width: 100%;
+        max-width: 540px;
+        box-shadow: var(--shadow-lift);
+        transform: translateY(12px);
+        transition: transform 0.2s ease;
+        overflow: hidden;
+    }
+
+    .custom-modal-backdrop.is-open .custom-modal-dialog {
+        transform: translateY(0);
+    }
+
+    .custom-modal-header {
+        padding: 18px 22px;
+        border-bottom: 1px solid var(--hairline);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--plane);
+    }
+
+    .custom-modal-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .custom-modal-close {
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        font-size: 1.3rem;
+        cursor: pointer;
+        padding: 2px 6px;
+        border-radius: 6px;
+        line-height: 1;
+        transition: background-color 0.15s, color 0.15s;
+    }
+
+    .custom-modal-close:hover {
+        background: var(--grid);
+        color: var(--ink);
+    }
+
+    .custom-modal-body {
+        padding: 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .modal-form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .modal-form-label {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--ink);
+    }
+
+    .modal-form-label span {
+        color: var(--coral-ink);
+    }
+
+    .modal-form-input, .modal-form-select, .modal-form-textarea {
+        width: 100%;
+        background: var(--surface);
+        border: 1px solid var(--axis);
+        border-radius: 9px;
+        padding: 10px 13px;
+        font-size: 0.88rem;
+        color: var(--ink);
+        font-family: inherit;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .modal-form-input:focus, .modal-form-select:focus, .modal-form-textarea:focus {
+        outline: none;
+        border-color: var(--blue);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    .modal-form-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 12px;
+    }
+
+    .custom-modal-footer {
+        padding: 14px 22px;
+        background: var(--plane);
+        border-top: 1px solid var(--hairline);
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .btn-modal-cancel {
+        background: var(--surface);
+        border: 1px solid var(--axis);
+        color: var(--ink-soft);
+        padding: 9px 18px;
+        border-radius: 8px;
+        font-size: 0.84rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.15s;
+    }
+
+    .btn-modal-cancel:hover {
+        background: var(--grid);
+        color: var(--ink);
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+<!-- ============ BİLDİRİM MESAJLARI (ALERTS) ============ -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="req-alert req-alert-success" role="alert">
+        <span>✅ @TempData["SuccessMessage"]</span>
+        <button type="button" class="req-alert-close" onclick="this.parentElement.remove()">&times;</button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="req-alert req-alert-error" role="alert">
+        <span>⚠️ @TempData["ErrorMessage"]</span>
+        <button type="button" class="req-alert-close" onclick="this.parentElement.remove()">&times;</button>
+    </div>
+}
+
+<!-- ============ SAYFA BAŞLIĞI & AKSİYON BUTONU ============ -->
+<div class="page-head">
+    <div>
+        <h1>Satın Alma Talepleri</h1>
+        <p>Kurumsal alıcıların güncel ürün taleplerini inceleyin ve doğrudan yeni satın alma talebi oluşturun</p>
+    </div>
+
+    <button type="button" class="btn-primary" onclick="openRequestModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Yeni Talep Oluştur
+    </button>
+</div>
+
+<!-- ============ ÖZET GÖSTERGE KARTLARI (KPIS) ============ -->
+<section class="kpi-row" aria-label="Talep özet göstergeleri">
+    <article class="card kpi-card">
+        <div class="kpi-top">
+            <span class="kpi-label">Toplam Talep</span>
+            <span class="kpi-icon accent">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+            </span>
+        </div>
+        <p class="kpi-value">@Model.TotalRequestsCount</p>
+        <p class="kpi-delta is-flat">
+            <span class="kpi-delta-note">Sistemde kayıtlı toplam talep sayısı</span>
+        </p>
+    </article>
+
+    <article class="card kpi-card">
+        <div class="kpi-top">
+            <span class="kpi-label">Bekleyen Talepler</span>
+            <span class="kpi-icon warn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+            </span>
+        </div>
+        <p class="kpi-value">@Model.PendingRequestsCount</p>
+        <p class="kpi-delta is-flat">
+            <span class="kpi-delta-note">Tedarikçi teklifi bekleyenler</span>
+        </p>
+    </article>
+
+    <article class="card kpi-card">
+        <div class="kpi-top">
+            <span class="kpi-label">Onaylanan / Tamamlanan</span>
+            <span class="kpi-icon good">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </span>
+        </div>
+        <p class="kpi-value">@Model.ApprovedRequestsCount</p>
+        <p class="kpi-delta is-good">
+            <span class="kpi-delta-note">Süreç tamamlanan talepler</span>
+        </p>
+    </article>
+
+    <article class="card kpi-card">
+        <div class="kpi-top">
+            <span class="kpi-label">Toplam İstenen Adet</span>
+            <span class="kpi-icon accent">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                </svg>
+            </span>
+        </div>
+        <p class="kpi-value">@Model.TotalQuantityCount.ToString("N0")</p>
+        <p class="kpi-delta is-flat">
+            <span class="kpi-delta-note">Kümülatif talep miktarı</span>
+        </p>
+    </article>
+</section>
+
+<!-- ============ FİLTRE VE ARAMA KARTI ============ -->
+<div class="requests-filter-card">
+    <form asp-action="Index" method="get" class="req-search-form">
+        <div class="req-search-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" name="search" value="@Model.SearchQuery" placeholder="Alıcı adı, aranan ürün veya talep tipi ara..." class="req-search-input" />
+        </div>
+        @if (!string.IsNullOrEmpty(Model.SelectedStatus))
+        {
+            <input type="hidden" name="status" value="@Model.SelectedStatus" />
+        }
+        <button type="submit" class="req-btn-filter-submit">Filtrele</button>
+    </form>
+
+    <nav class="year-filter" aria-label="Talep durum filtresi">
+        <a class="year-pill @(string.IsNullOrEmpty(Model.SelectedStatus) || Model.SelectedStatus == "Tümü" ? "is-active" : "")"
+           asp-action="Index" asp-route-search="@Model.SearchQuery">Tümü</a>
+        <a class="year-pill @(Model.SelectedStatus == "Beklemede" ? "is-active" : "")"
+           asp-action="Index" asp-route-status="Beklemede" asp-route-search="@Model.SearchQuery">Bekleyenler</a>
+        <a class="year-pill @(Model.SelectedStatus == "Onaylandı" ? "is-active" : "")"
+           asp-action="Index" asp-route-status="Onaylandı" asp-route-search="@Model.SearchQuery">Onaylananlar</a>
+        <a class="year-pill @(Model.SelectedStatus == "Tamamlandı" ? "is-active" : "")"
+           asp-action="Index" asp-route-status="Tamamlandı" asp-route-search="@Model.SearchQuery">Tamamlananlar</a>
+    </nav>
+</div>
+
+<!-- ============ MEVCUT TALEPLER LİSTESİ ============ -->
+<article class="card">
+    <div class="card-head">
+        <div>
+            <h2>Talep Listesi</h2>
+            <p class="card-sub">Veritabanına kaydedilen aktif satın alma ve tedarik talepleri</p>
+        </div>
+    </div>
+
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Talep No & Tarih</th>
+                    <th>Alıcı Bilgileri</th>
+                    <th>Aranan Ürün</th>
+                    <th class="num">Talep Miktarı</th>
+                    <th>Talep Tipi</th>
+                    <th>Durum</th>
+                    <th style="text-align: right;">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Requests == null || !Model.Requests.Any())
+                {
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state-box">
+                                <div class="empty-state-icon">
+                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <line x1="12" y1="18" x2="12" y2="12"></line>
+                                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                                    </svg>
+                                </div>
+                                <h3 class="empty-state-title">Henüz Talep Kaydı Bulunmuyor</h3>
+                                <p class="empty-state-desc">
+                                    Veritabanında henüz listelenecek satın alma talebi mevcut değil. Yukarıdaki <strong>Yeni Talep Oluştur</strong> butonuna basarak ilk satın alma talebinizi ekleyebilirsiniz.
+                                </p>
+                                <button type="button" class="btn-primary" onclick="openRequestModal()" style="margin-top: 6px;">
+                                    + İlk Talebi Oluştur
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var item in Model.Requests)
+                    {
+                        var initial = !string.IsNullOrEmpty(item.BuyerInfo) ? item.BuyerInfo[0].ToString().ToUpper() : "A";
+                        <tr>
+                            <td>
+                                <span class="req-id">#REQ-@item.RequestID</span>
+                                <span class="req-meta">@item.RequestDate.ToString("dd.MM.yyyy HH:mm")</span>
+                            </td>
+                            <td>
+                                <div class="buyer-cell">
+                                    <div class="buyer-avatar">@initial</div>
+                                    <div>
+                                        <span class="buyer-name-text">@item.BuyerInfo</span>
+                                        <span class="req-meta">Doğrulanmış Alıcı</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="product-cell-title">@item.ProductName</div>
+                                @if (!string.IsNullOrEmpty(item.Notes))
+                                {
+                                    <div class="product-cell-notes" title="@item.Notes">@item.Notes</div>
+                                }
+                            </td>
+                            <td class="num">
+                                <span class="qty-tag">@item.Quantity.ToString("N0") Adet</span>
+                            </td>
+                            <td>
+                                <span class="type-tag">@item.RequestType</span>
+                            </td>
+                            <td>
+                                @if (item.Status == "Beklemede")
+                                {
+                                    <span class="status-chip is-pending">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
+                                            <circle cx="12" cy="12" r="9"></circle>
+                                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                        </svg>
+                                        Beklemede
+                                    </span>
+                                }
+                                else if (item.Status == "Onaylandı")
+                                {
+                                    <span class="status-chip is-approved">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                        Onaylandı
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="status-chip is-neutral">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
+                                            <circle cx="12" cy="12" r="9"></circle>
+                                            <polyline points="12 6 12 12 14 14"></polyline>
+                                        </svg>
+                                        @item.Status
+                                    </span>
+                                }
+                            </td>
+                            <td style="text-align: right;">
+                                <div class="action-btn-group">
+                                    <button type="button" class="btn-detail"
+                                            onclick="showDetailsModal('@item.RequestID', '@Html.Raw(item.BuyerInfo)', '@Html.Raw(item.ProductName)', '@item.Quantity', '@item.RequestType', '@item.Status', '@Html.Raw(item.Notes ?? "")')">
+                                        Detay
+                                    </button>
+                                    <form asp-action="Delete" asp-route-id="@item.RequestID" method="post" onsubmit="return confirm('#REQ-@item.RequestID numaralı talebi veritabanından silmek istediğinize emin misiniz?');" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn-delete-row">Sil</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</article>
+
+<!-- ============ YENİ TALEP OLUŞTURMA MODAL POPUP DIALOG ============ -->
+<div class="custom-modal-backdrop" id="createRequestModal" onclick="if(event.target === this) closeRequestModal();">
+    <div class="custom-modal-dialog">
+        <div class="custom-modal-header">
+            <h3 class="custom-modal-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Yeni Satın Alma Talebi Ekle
+            </h3>
+            <button type="button" class="custom-modal-close" onclick="closeRequestModal()">&times;</button>
+        </div>
+
+        <form asp-action="Create" method="post" id="createRequestForm">
+            @Html.AntiForgeryToken()
+
+            <div class="custom-modal-body">
+                <!-- 1. ALICI BİLGİLERİ -->
+                <div class="modal-form-group">
+                    <label class="modal-form-label">
+                        Alıcı Bilgileri <span>*</span>
+                    </label>
+                    <input type="text" asp-for="NewRequest.BuyerInfo" name="BuyerInfo" required placeholder="Örn: Aksa Elektrik Sanayi A.Ş. / Ahmet Yılmaz" class="modal-form-input" />
+                </div>
+
+                <!-- 2. ARANAN ÜRÜN & 3. ADET -->
+                <div class="modal-form-row">
+                    <div class="modal-form-group">
+                        <label class="modal-form-label">
+                            Alıcı Hangi Ürünü Arıyor? <span>*</span>
+                        </label>
+                        <input type="text" asp-for="NewRequest.ProductName" name="ProductName" required placeholder="Örn: Siemens PLC Modülü" class="modal-form-input" />
+                    </div>
+
+                    <div class="modal-form-group">
+                        <label class="modal-form-label">
+                            Kaç Adet Arıyor? <span>*</span>
+                        </label>
+                        <input type="number" asp-for="NewRequest.Quantity" name="Quantity" min="1" required placeholder="Örn: 100" class="modal-form-input" />
+                    </div>
+                </div>
+
+                <!-- 4. TALEP TİPİ -->
+                <div class="modal-form-group">
+                    <label class="modal-form-label">Talep Tipi</label>
+                    <select asp-for="NewRequest.RequestType" name="RequestType" class="modal-form-select">
+                        <option value="Satın Alma">Satın Alma</option>
+                        <option value="Hammadde">Hammadde</option>
+                        <option value="Makine & Ekipman">Makine & Ekipman</option>
+                        <option value="Yedek Parça">Yedek Parça</option>
+                        <option value="Sarf Malzemesi">Sarf Malzemesi</option>
+                        <option value="Hizmet Tedariği">Hizmet Tedariği</option>
+                    </select>
+                </div>
+
+                <!-- 5. AÇIKLAMA / NOTLAR -->
+                <div class="modal-form-group">
+                    <label class="modal-form-label">Açıklama / Detaylar</label>
+                    <textarea asp-for="NewRequest.Notes" name="Notes" rows="3" placeholder="Teknik şartname, marka tercihi, teslimat tarihi vb..." class="modal-form-textarea"></textarea>
+                </div>
+            </div>
+
+            <div class="custom-modal-footer">
+                <button type="button" class="btn-modal-cancel" onclick="closeRequestModal()">İptal</button>
+                <button type="submit" class="btn-primary">
+                    Talebi Yayınla
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============ DETAY GÖRÜNTÜLEME MODAL POPUP DIALOG ============ -->
+<div class="custom-modal-backdrop" id="detailRequestModal" onclick="if(event.target === this) closeDetailModal();">
+    <div class="custom-modal-dialog">
+        <div class="custom-modal-header">
+            <h3 class="custom-modal-title" id="detailModalTitle">Talep Detayları</h3>
+            <button type="button" class="custom-modal-close" onclick="closeDetailModal()">&times;</button>
+        </div>
+        <div class="custom-modal-body" style="gap: 12px;">
+            <div style="padding: 12px 14px; background: var(--plane); border-radius: 9px; border: 1px solid var(--grid);">
+                <span class="req-meta" style="margin-bottom: 2px;">Alıcı Bilgisi</span>
+                <strong style="color: var(--ink); font-size: 0.95rem;" id="detailBuyer"></strong>
+            </div>
+            <div style="padding: 12px 14px; background: var(--plane); border-radius: 9px; border: 1px solid var(--grid);">
+                <span class="req-meta" style="margin-bottom: 2px;">Aranan Ürün</span>
+                <strong style="color: var(--blue); font-size: 0.95rem;" id="detailProduct"></strong>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div style="padding: 12px 14px; background: var(--plane); border-radius: 9px; border: 1px solid var(--grid);">
+                    <span class="req-meta" style="margin-bottom: 2px;">Talep Miktarı</span>
+                    <strong style="color: var(--ink); font-size: 0.92rem;" id="detailQty"></strong>
+                </div>
+                <div style="padding: 12px 14px; background: var(--plane); border-radius: 9px; border: 1px solid var(--grid);">
+                    <span class="req-meta" style="margin-bottom: 2px;">Talep Tipi</span>
+                    <strong style="color: var(--ink); font-size: 0.92rem;" id="detailType"></strong>
+                </div>
+            </div>
+            <div style="padding: 12px 14px; background: var(--plane); border-radius: 9px; border: 1px solid var(--grid);">
+                <span class="req-meta" style="margin-bottom: 2px;">Açıklama / Notlar</span>
+                <p id="detailNotes" style="margin: 4px 0 0 0; color: var(--ink-soft); font-size: 0.85rem; line-height: 1.5;"></p>
+            </div>
+        </div>
+        <div class="custom-modal-footer">
+            <button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openRequestModal() {
+        document.getElementById('createRequestModal').classList.add('is-open');
+    }
+
+    function closeRequestModal() {
+        document.getElementById('createRequestModal').classList.remove('is-open');
+    }
+
+    function showDetailsModal(id, buyer, product, qty, type, status, notes) {
+        document.getElementById('detailModalTitle').innerText = "📋 Talep Detayı #" + id;
+        document.getElementById('detailBuyer').innerText = buyer;
+        document.getElementById('detailProduct').innerText = product;
+        document.getElementById('detailQty').innerText = qty + " Adet";
+        document.getElementById('detailType').innerText = type;
+        document.getElementById('detailNotes').innerText = notes && notes.trim().length > 0 ? notes : "Özel not belirtilmemiş.";
+        document.getElementById('detailRequestModal').classList.add('is-open');
+    }
+
+    function closeDetailModal() {
+        document.getElementById('detailRequestModal').classList.remove('is-open');
+    }
+</script>
