@@ -50,12 +50,24 @@
                 </div>
 
                 <div class="profile-dropdown-wrapper">
-                    <a asp-controller="Account" asp-action="Login" class="profile-avatar-btn" title="Hesabım / Oturum İşlemleri" aria-label="Hesabım">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="8" r="4.5"></circle>
-                            <path d="M4 21c0-4 3.5-6.5 8-6.5s8 2.5 8 6.5"></path>
-                        </svg>
-                    </a>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <a asp-controller="Account" asp-action="Profile" class="profile-avatar-btn" title="Hesabım" aria-label="Hesabım">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="8" r="4.5"></circle>
+                                <path d="M4 21c0-4 3.5-6.5 8-6.5s8 2.5 8 6.5"></path>
+                            </svg>
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" class="profile-avatar-btn" title="Oturum İşlemleri" aria-label="Oturum Aç">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="8" r="4.5"></circle>
+                                <path d="M4 21c0-4 3.5-6.5 8-6.5s8 2.5 8 6.5"></path>
+                            </svg>
+                        </a>
+                    }
 
                     <div class="profile-dropdown-menu">
                         @if (User.Identity?.IsAuthenticated == true)

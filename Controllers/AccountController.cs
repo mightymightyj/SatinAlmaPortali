@@ -12,10 +12,12 @@ namespace satinalmaportali2.Controllers {
     public class AccountController : Controller {
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public AccountController(ApplicationDbContext context, EmailService emailService) {
+        public AccountController(ApplicationDbContext context, EmailService emailService, ICloudinaryService cloudinaryService) {
             _context = context;
             _emailService = emailService;
+            _cloudinaryService = cloudinaryService;
         }
 
         [HttpGet]
@@ -460,6 +462,187 @@ namespace satinalmaportali2.Controllers {
 
             TempData["LoginSuccess"] = "Şifreniz başarıyla güncellendi. Yeni şifrenizle giriş yapabilirsiniz.";
             return RedirectToAction("Login");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UploadProfilePhoto(IFormFile? profilePhoto) {
+            bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
+                          (Request.Headers.Accept.ToString().Contains("application/json") && !Request.Headers.Accept.ToString().Contains("text/html"));
+
+            if (User.Identity?.IsAuthenticated != true) {
+                if (isAjax) {
+                    return Json(new { success = false, message = "Lütfen önce oturum açınız." });
+                }
+                return RedirectToAction("Login");
+            }
+
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(email)) {
+                if (isAjax) {
+                    return Json(new { success = false, message = "Oturum açmış kullanıcı e-posta adresi bulunamadı." });
+                }
+                TempData["ProfileError"] = "Kullanıcı bilgisi bulunamadı.";
+                return RedirectToAction("Profile");
+            }
+
+            // Single file validation
+            if (profilePhoto == null || profilePhoto.Length == 0) {
+                var msg = "Lütfen tek bir görsel dosyası seçiniz.";
+                if (isAjax) {
+                    return Json(new { success = false, message = msg });
+                }
+                TempData["ProfileError"] = msg;
+                return RedirectToAction("Profile");
+            }
+
+            // Format validation
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+            var extension = Path.GetExtension(profilePhoto.FileName)?.ToLowerInvariant();
+            if (string.IsNullOrEmpty(extension) || !allowedExtensions.Contains(extension)) {
+                var msg = $"Geçersiz dosya formatı ({extension}). Sadece JPG, PNG, WEBP veya GIF formatında tek bir görsel seçebilirsiniz.";
+                if (isAjax) {
+                    return Json(new { success = false, message = msg });
+                }
+                TempData["ProfileError"] = msg;
+                return RedirectToAction("Profile");
+            }
+
+            // Size validation (Max 5 MB)
+            const long maxFileSize = 5 * 1024 * 1024;
+            if (profilePhoto.Length > maxFileSize) {
+                var msg = $"Dosya boyutu çok büyük ({Math.Round(profilePhoto.Length / (1024.0 * 1024.0), 2)} MB). Maksimum izin verilen boyut: 5 MB.";
+                if (isAjax) {
+                    return Json(new { success = false, message = msg });
+                }
+                TempData["ProfileError"] = msg;
+                return RedirectToAction("Profile");
+            }
+
+            try {
+                var user = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail == email);
+                if (user == null) {
+                    var msg = "Kullanıcı hesabı veritabanında bulunamadı.";
+                    if (isAjax) {
+                        return Json(new { success = false, message = msg });
+                    }
+                    TempData["ProfileError"] = msg;
+                    return RedirectToAction("Profile");
+                }
+
+                // Delete previous image from Cloudinary if one exists
+                if (!string.IsNullOrWhiteSpace(user.CompanyLogo)) {
+                    try {
+                        await _cloudinaryService.DeleteImageAsync(user.CompanyLogo);
+                    }
+                    catch (Exception deleteEx) {
+                        // Non-critical, continue with upload
+                        Console.WriteLine($"Eski profil görseli Cloudinary'den silinirken uyarı: {deleteEx.Message}");
+                    }
+                }
+
+                // Upload to Cloudinary under satinalmaportali/profiles folder with 500px width limit
+                var uploadResult = await _cloudinaryService.UploadImageAsync(
+                    profilePhoto,
+                    folder: "satinalmaportali/profiles",
+                    width: 500
+                );
+
+                if (!uploadResult.Success || string.IsNullOrWhiteSpace(uploadResult.SecureUrl)) {
+                    var msg = uploadResult.Error ?? "Görsel Cloudinary sunucularına yüklenemedi.";
+                    if (isAjax) {
+                        return Json(new { success = false, message = msg });
+                    }
+                    TempData["ProfileError"] = msg;
+                    return RedirectToAction("Profile");
+                }
+
+                // Update database entity with Cloudinary Secure URL
+                user.CompanyLogo = uploadResult.SecureUrl;
+                await _context.SaveChangesAsync();
+
+                var successMsg = "Profil fotoğrafınız Cloudinary'ye başarıyla yüklendi ve profilinize kaydedildi!";
+                if (isAjax) {
+                    return Json(new { success = true, message = successMsg, imageUrl = uploadResult.SecureUrl });
+                }
+
+                TempData["ProfileSuccess"] = successMsg;
+                return RedirectToAction("Profile");
+            }
+            catch (Exception ex) {
+                var innerMsg = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                var errorMsg = $"Profil fotoğrafı yükleme sırasında bir hata oluştu: {innerMsg}";
+                if (isAjax) {
+                    return Json(new { success = false, message = errorMsg });
+                }
+                TempData["ProfileError"] = errorMsg;
+                return RedirectToAction("Profile");
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteProfilePhoto() {
+            bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
+                          (Request.Headers.Accept.ToString().Contains("application/json") && !Request.Headers.Accept.ToString().Contains("text/html"));
+
+            if (User.Identity?.IsAuthenticated != true) {
+                if (isAjax) {
+                    return Json(new { success = false, message = "Lütfen önce oturum açınız." });
+                }
+                return RedirectToAction("Login");
+            }
+
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(email)) {
+                if (isAjax) {
+                    return Json(new { success = false, message = "Kullanıcı bilgisi bulunamadı." });
+                }
+                return RedirectToAction("Profile");
+            }
+
+            try {
+                var user = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail == email);
+                if (user == null) {
+                    var msg = "Kullanıcı hesabı bulunamadı.";
+                    if (isAjax) {
+                        return Json(new { success = false, message = msg });
+                    }
+                    TempData["ProfileError"] = msg;
+                    return RedirectToAction("Profile");
+                }
+
+                if (!string.IsNullOrWhiteSpace(user.CompanyLogo)) {
+                    // Delete from Cloudinary
+                    await _cloudinaryService.DeleteImageAsync(user.CompanyLogo);
+
+                    // Clear database field
+                    user.CompanyLogo = null;
+                    await _context.SaveChangesAsync();
+
+                    var successMsg = "Profil fotoğrafınız başarıyla kaldırıldı.";
+                    if (isAjax) {
+                        return Json(new { success = true, message = successMsg });
+                    }
+                    TempData["ProfileSuccess"] = successMsg;
+                } else {
+                    var msg = "Kaldırılacak bir profil fotoğrafı bulunmamaktadır.";
+                    if (isAjax) {
+                        return Json(new { success = false, message = msg });
+                    }
+                    TempData["ProfileSuccess"] = msg;
+                }
+            }
+            catch (Exception ex) {
+                var innerMsg = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                var errorMsg = $"Profil fotoğrafı silinirken hata oluştu: {innerMsg}";
+                if (isAjax) {
+                    return Json(new { success = false, message = errorMsg });
+                }
+                TempData["ProfileError"] = errorMsg;
+            }
+
+            return RedirectToAction("Profile");
         }
     }
 }

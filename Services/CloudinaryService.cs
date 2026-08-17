@@ -120,12 +120,17 @@ namespace satinalmaportali2.Services
             {
                 await using var stream = file.OpenReadStream();
 
+                // Dosya adını ve PublicId'yi anonim GUID ile oluştur (Kullanıcı cihaz/dosya adı bilgisi dışarı sızmaz)
+                var anonymousId = $"img_{Guid.NewGuid():N}";
+                var anonymousFileName = $"{anonymousId}{extension}";
+
                 var uploadParams = new ImageUploadParams
                 {
-                    File = new FileDescription(file.FileName, stream),
+                    File = new FileDescription(anonymousFileName, stream),
+                    PublicId = anonymousId,
                     Folder = string.IsNullOrWhiteSpace(folder) ? _settings.DefaultFolder : folder,
-                    UseFilename = true,
-                    UniqueFilename = true,
+                    UseFilename = false,
+                    UniqueFilename = false,
                     Overwrite = false
                 };
 
