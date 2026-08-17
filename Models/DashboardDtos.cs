@@ -128,4 +128,143 @@ namespace satinalmaportali2.Models {
         public List<CategoryTreeItemDto> SubCategories { get; set; } = new();
         public int ItemCount { get; set; }
     }
+
+    // =========================================================================
+    // ALICI (BUYER) DASHBOARD DTO VE VIEW MODELLERİ
+    // =========================================================================
+
+    public class BuyerDashboardViewModel {
+        public DataState State { get; set; } = DataState.Ok;
+        public int SelectedYear { get; set; }
+        public IReadOnlyList<int> AvailableYears { get; set; } = Array.Empty<int>();
+        public BuyerSummaryDto Summary { get; set; } = new();
+        public BuyerSpendTrendDto SpendTrend { get; set; } = new();
+        public IReadOnlyList<BuyerRequestItemDto> RecentRequests { get; set; } = Array.Empty<BuyerRequestItemDto>();
+        public IReadOnlyList<BuyerBudgetItemDto> BudgetCategories { get; set; } = Array.Empty<BuyerBudgetItemDto>();
+        public IReadOnlyList<BuyerSupplierScoreDto> TopSuppliers { get; set; } = Array.Empty<BuyerSupplierScoreDto>();
+        public bool IsEmpty => RecentRequests.Count == 0 && Summary.TotalActiveRequests == 0;
+    }
+
+    public class BuyerSummaryDto {
+        public int TotalActiveRequests { get; set; }
+        public int RequestsThisWeek { get; set; }
+        public decimal? RequestChangePercent { get; set; }
+        public int PendingApprovals { get; set; }
+        public int UrgentApprovals { get; set; }
+        public decimal CurrentPeriodSpend { get; set; }
+        public decimal? SpendChangePercent { get; set; }
+        public decimal SupplierPerformanceScore { get; set; }
+        public int TotalReviews { get; set; }
+        public decimal OnTimeDeliveryRate { get; set; }
+    }
+
+    public class BuyerSpendTrendDto {
+        public IReadOnlyList<string> Months { get; set; } = Array.Empty<string>();
+        public IReadOnlyList<decimal> MonthlySpend { get; set; } = Array.Empty<decimal>();
+        public IReadOnlyList<decimal> MonthlyBudget { get; set; } = Array.Empty<decimal>();
+        public decimal MaxSpendValue { get; set; }
+    }
+
+    public class BuyerRequestItemDto {
+        public string RequestCode { get; set; } = "";
+        public string ProductName { get; set; } = "";
+        public string CategoryName { get; set; } = "";
+        public int ReceivedBidsCount { get; set; }
+        public DateTime RequestDate { get; set; }
+        public DateTime? Deadline { get; set; }
+        public decimal EstimatedBudget { get; set; }
+        public string Status { get; set; } = "Açık"; // Açık, Beklemede, Onaylandı, Kazanıldı
+        public string Priority { get; set; } = "Normal";
+        public string? BuyerNotes { get; set; }
+    }
+
+    public class BuyerBudgetItemDto {
+        public string CategoryName { get; set; } = "";
+        public decimal AllocatedBudget { get; set; }
+        public decimal SpentAmount { get; set; }
+        public decimal SpentPercent => AllocatedBudget > 0 ? Math.Round(SpentAmount * 100m / AllocatedBudget, 1) : 0;
+    }
+
+    public class BuyerSupplierScoreDto {
+        public int CompanyId { get; set; }
+        public string CompanyName { get; set; } = "";
+        public string Category { get; set; } = "";
+        public decimal Score { get; set; }
+        public int ReviewCount { get; set; }
+        public decimal OnTimeRate { get; set; }
+        public int CompletedOrders { get; set; }
+    }
+
+    // =========================================================================
+    // TEDARİKÇİ (SUPPLIER) DASHBOARD DTO VE VIEW MODELLERİ
+    // =========================================================================
+
+    public class SupplierDashboardViewModel {
+        public DataState State { get; set; } = DataState.Ok;
+        public int SelectedYear { get; set; }
+        public IReadOnlyList<int> AvailableYears { get; set; } = Array.Empty<int>();
+        public SupplierSummaryDto Summary { get; set; } = new();
+        public IReadOnlyList<SupplierRfqItemDto> OpenRfqs { get; set; } = Array.Empty<SupplierRfqItemDto>();
+        public SupplierEarningsTrendDto EarningsTrend { get; set; } = new();
+        public IReadOnlyList<SupplierActionItemDto> ActionItems { get; set; } = Array.Empty<SupplierActionItemDto>();
+        public IReadOnlyList<SupplierCatalogItemDto> FeaturedProducts { get; set; } = Array.Empty<SupplierCatalogItemDto>();
+        public bool IsEmpty => OpenRfqs.Count == 0 && Summary.NewIncomingRfqs == 0;
+    }
+
+    public class SupplierSummaryDto {
+        public int NewIncomingRfqs { get; set; }
+        public int NewRfqsThisWeek { get; set; }
+        public int RfqsAwaitingResponse { get; set; }
+        public int ActiveBids { get; set; }
+        public decimal ActiveBidsValue { get; set; }
+        public int WonAuctions { get; set; }
+        public decimal WinRatePercent { get; set; }
+        public decimal WonTotalRevenue { get; set; }
+        public decimal CatalogStockValue { get; set; }
+        public int ActiveSkuCount { get; set; }
+        public int LowStockAlertCount { get; set; }
+    }
+
+    public class SupplierRfqItemDto {
+        public string RfqCode { get; set; } = "";
+        public string BuyerCompany { get; set; } = "";
+        public string ProductName { get; set; } = "";
+        public string Category { get; set; } = "";
+        public int Quantity { get; set; }
+        public string Unit { get; set; } = "Adet";
+        public DateTime Deadline { get; set; }
+        public int DaysLeft { get; set; }
+        public decimal BudgetEstimate { get; set; }
+        public string Status { get; set; } = "Cevap Bekliyor"; // Cevap Bekliyor, Teklif Verildi, İncelemede
+        public bool HasMyBid { get; set; }
+        public decimal? MyBidAmount { get; set; }
+    }
+
+    public class SupplierEarningsTrendDto {
+        public IReadOnlyList<string> Months { get; set; } = Array.Empty<string>();
+        public IReadOnlyList<decimal> MonthlyEarnings { get; set; } = Array.Empty<decimal>();
+        public IReadOnlyList<decimal> MonthlyPendingPipeline { get; set; } = Array.Empty<decimal>();
+        public decimal MaxEarningsValue { get; set; }
+    }
+
+    public class SupplierActionItemDto {
+        public string Id { get; set; } = "";
+        public string Type { get; set; } = ""; // pricing, stock, urgent_rfq, review
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string BadgeText { get; set; } = "";
+        public string BadgeType { get; set; } = "amber"; // amber, danger, blue, green
+        public string ActionUrl { get; set; } = "#";
+        public string ActionText { get; set; } = "İncele";
+    }
+
+    public class SupplierCatalogItemDto {
+        public int ItemId { get; set; }
+        public string ItemName { get; set; } = "";
+        public string Sku { get; set; } = "";
+        public string Category { get; set; } = "";
+        public int Stock { get; set; }
+        public decimal UnitPrice { get; set; }
+        public string Status { get; set; } = "Stokta";
+    }
 }

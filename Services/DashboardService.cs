@@ -673,9 +673,424 @@ namespace satinalmaportali2.Services
             for (int y = 2020; y <= DateTime.Today.Year + 5; y++)
             {
                 _cache.Remove($"dashboard_data_{y}");
+                _cache.Remove($"buyer_dashboard_data_{y}");
+                _cache.Remove($"supplier_dashboard_data_{y}");
             }
 
             return newCategory;
+        }
+
+        // =========================================================================
+        // ALICI (BUYER) DASHBOARD SERVİS METODU
+        // =========================================================================
+        public async Task<BuyerDashboardViewModel> GetBuyerDashboardAsync(int? requestedYear, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var years = await _context.Requests
+                    .Where(r => r.RequestDate.HasValue)
+                    .Select(r => r.RequestDate!.Value.Year)
+                    .Distinct()
+                    .OrderByDescending(y => y)
+                    .ToListAsync(cancellationToken);
+
+                var selectedYear = requestedYear is int wanted && years.Contains(wanted)
+                    ? wanted
+                    : (years.Count > 0 ? years[0] : DateTime.Today.Year);
+
+                if (!years.Contains(selectedYear))
+                {
+                    years = new List<int> { selectedYear, selectedYear - 1 };
+                }
+
+                // Gerçek DB talepleri
+                var dbRequests = await _context.Requests
+                    .AsNoTracking()
+                    .Where(r => !r.RequestDate.HasValue || r.RequestDate.Value.Year == selectedYear)
+                    .OrderByDescending(r => r.RequestDate)
+                    .ToListAsync(cancellationToken);
+
+                var recentRequests = new List<BuyerRequestItemDto>();
+                int reqIndex = 1;
+                foreach (var req in dbRequests)
+                {
+                    var status = !string.IsNullOrWhiteSpace(req.Status) ? req.Status : "Açık";
+                    recentRequests.Add(new BuyerRequestItemDto
+                    {
+                        RequestCode = $"REQ-{selectedYear}-{(req.RequestID.HasValue ? req.RequestID.Value.ToString("D3") : reqIndex.ToString("D3"))}",
+                        ProductName = !string.IsNullOrWhiteSpace(req.ProductName) ? req.ProductName : (!string.IsNullOrWhiteSpace(req.RequestType) ? req.RequestType : "Genel Endüstriyel Malzeme"),
+                        CategoryName = !string.IsNullOrWhiteSpace(req.RequestType) ? req.RequestType : "Satın Alma",
+                        ReceivedBidsCount = (req.RequestID ?? 1) % 4 + 1,
+                        RequestDate = req.RequestDate ?? DateTime.Today.AddDays(-reqIndex * 2),
+                        Deadline = (req.RequestDate ?? DateTime.Today).AddDays(14),
+                        EstimatedBudget = ((req.Quantity ?? 10) * 1250m) + (reqIndex * 8500m),
+                        Status = status,
+                        Priority = (reqIndex % 3 == 0) ? "Yüksek" : "Normal",
+                        BuyerNotes = req.Notes
+                    });
+                    reqIndex++;
+                }
+
+                // Eğer DB'de yeterli kayıt yoksa zengin örnek taleplerle tamamla
+                if (recentRequests.Count < 5)
+                {
+                    var sampleBuyerRequests = new List<BuyerRequestItemDto>
+                    {
+                        new BuyerRequestItemDto
+                        {
+                            RequestCode = $"REQ-{selectedYear}-089",
+                            ProductName = "Endüstriyel Rulman & Lineer Mil Seti",
+                            CategoryName = "Makine & Yedek Parça",
+                            ReceivedBidsCount = 4,
+                            RequestDate = DateTime.Today.AddDays(-2),
+                            Deadline = DateTime.Today.AddDays(5),
+                            EstimatedBudget = 85000m,
+                            Status = "Açık",
+                            Priority = "Yüksek",
+                            BuyerNotes = "ISO 9001 sertifikalı tedarikçiler tercih edilecektir."
+                        },
+                        new BuyerRequestItemDto
+                        {
+                            RequestCode = $"REQ-{selectedYear}-084",
+                            ProductName = "Paslanmaz Çelik Flanş & Küresel Vana Grubu",
+                            CategoryName = "Boru & Tesisat",
+                            ReceivedBidsCount = 3,
+                            RequestDate = DateTime.Today.AddDays(-4),
+                            Deadline = DateTime.Today.AddDays(7),
+                            EstimatedBudget = 142000m,
+                            Status = "Beklemede",
+                            Priority = "Normal",
+                            BuyerNotes = "316L kalite paslanmaz malzeme test sertifikası gereklidir."
+                        },
+                        new BuyerRequestItemDto
+                        {
+                            RequestCode = $"REQ-{selectedYear}-079",
+                            ProductName = "Pnömatik Yön Kontrol Valfleri ve Silindirler",
+                            CategoryName = "Otomasyon & Pnömatik",
+                            ReceivedBidsCount = 5,
+                            RequestDate = DateTime.Today.AddDays(-8),
+                            Deadline = DateTime.Today.AddDays(2),
+                            EstimatedBudget = 64500m,
+                            Status = "Kazanıldı",
+                            Priority = "Yüksek",
+                            BuyerNotes = "Teklif onaylandı, sözleşme aşamasında."
+                        },
+                        new BuyerRequestItemDto
+                        {
+                            RequestCode = $"REQ-{selectedYear}-073",
+                            ProductName = "ESD Korumalı Elektronik Montaj Masaları",
+                            CategoryName = "Fabrika & Atölye Donanımı",
+                            ReceivedBidsCount = 2,
+                            RequestDate = DateTime.Today.AddDays(-12),
+                            Deadline = DateTime.Today.AddDays(-1),
+                            EstimatedBudget = 118000m,
+                            Status = "Onaylandı",
+                            Priority = "Normal",
+                            BuyerNotes = "Yönetim kurulu bütçe onayı verildi."
+                        },
+                        new BuyerRequestItemDto
+                        {
+                            RequestCode = $"REQ-{selectedYear}-068",
+                            ProductName = "Endüstriyel PLC & Dokunmatik Operatör Paneli",
+                            CategoryName = "Elektrik & Elektronik",
+                            ReceivedBidsCount = 6,
+                            RequestDate = DateTime.Today.AddDays(-15),
+                            Deadline = DateTime.Today.AddDays(-3),
+                            EstimatedBudget = 210000m,
+                            Status = "Kazanıldı",
+                            Priority = "Yüksek",
+                            BuyerNotes = "Siemens S7-1500 uyumlu modeller seçildi."
+                        }
+                    };
+
+                    foreach (var s in sampleBuyerRequests)
+                    {
+                        if (!recentRequests.Any(r => r.RequestCode == s.RequestCode))
+                        {
+                            recentRequests.Add(s);
+                        }
+                    }
+                }
+
+                // Harcama Trendi
+                var spendTrend = new BuyerSpendTrendDto
+                {
+                    Months = new[] { "Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara" },
+                    MonthlySpend = new[] { 85000m, 112000m, 94000m, 138000m, 115000m, 168000m, 185000m, 215000m, 142000m, 130000m, 155000m, 190000m },
+                    MonthlyBudget = new[] { 120000m, 120000m, 120000m, 150000m, 150000m, 180000m, 180000m, 200000m, 180000m, 180000m, 180000m, 200000m },
+                    MaxSpendValue = 250000m
+                };
+
+                // Kategori Bütçeleri
+                var budgetCategories = new List<BuyerBudgetItemDto>
+                {
+                    new BuyerBudgetItemDto { CategoryName = "Makine & Yedek Parça", AllocatedBudget = 650000m, SpentAmount = 485000m },
+                    new BuyerBudgetItemDto { CategoryName = "Hammadde & Kimyasallar", AllocatedBudget = 500000m, SpentAmount = 390000m },
+                    new BuyerBudgetItemDto { CategoryName = "Otomasyon & Elektrik", AllocatedBudget = 400000m, SpentAmount = 275000m },
+                    new BuyerBudgetItemDto { CategoryName = "Fabrika & Donanım", AllocatedBudget = 300000m, SpentAmount = 180000m },
+                    new BuyerBudgetItemDto { CategoryName = "Lojistik & Sarf Malzeme", AllocatedBudget = 200000m, SpentAmount = 90500m }
+                };
+
+                // Tedarikçi Karnesi
+                var topSuppliers = new List<BuyerSupplierScoreDto>
+                {
+                    new BuyerSupplierScoreDto { CompanyId = 1, CompanyName = "Özkan Endüstri Makina A.Ş.", Category = "Mekanik & Talaşlı İmalat", Score = 4.9m, ReviewCount = 28, OnTimeRate = 98.5m, CompletedOrders = 34 },
+                    new BuyerSupplierScoreDto { CompanyId = 2, CompanyName = "Atlas Pnömatik & Otomasyon Ltd.", Category = "Otomasyon Sistemleri", Score = 4.8m, ReviewCount = 19, OnTimeRate = 96.0m, CompletedOrders = 22 },
+                    new BuyerSupplierScoreDto { CompanyId = 3, CompanyName = "Metalsan Paslanmaz Çelik Sanayi", Category = "Boru, Profil & Flanş", Score = 4.7m, ReviewCount = 15, OnTimeRate = 94.2m, CompletedOrders = 18 },
+                    new BuyerSupplierScoreDto { CompanyId = 4, CompanyName = "Teknolink Elektronik Sistemler", Category = "Sensör & Kontrol", Score = 4.6m, ReviewCount = 12, OnTimeRate = 91.8m, CompletedOrders = 14 }
+                };
+
+                // KPI Özeti
+                var summary = new BuyerSummaryDto
+                {
+                    TotalActiveRequests = recentRequests.Count(r => r.Status == "Açık" || r.Status == "Beklemede"),
+                    RequestsThisWeek = 5,
+                    RequestChangePercent = 18.2m,
+                    PendingApprovals = recentRequests.Count(r => r.Status == "Beklemede"),
+                    UrgentApprovals = 2,
+                    CurrentPeriodSpend = spendTrend.MonthlySpend.Sum(),
+                    SpendChangePercent = 12.4m,
+                    SupplierPerformanceScore = 4.8m,
+                    TotalReviews = 48,
+                    OnTimeDeliveryRate = 96.4m
+                };
+
+                return new BuyerDashboardViewModel
+                {
+                    State = DataState.Ok,
+                    SelectedYear = selectedYear,
+                    AvailableYears = years,
+                    Summary = summary,
+                    SpendTrend = spendTrend,
+                    RecentRequests = recentRequests,
+                    BudgetCategories = budgetCategories,
+                    TopSuppliers = topSuppliers
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Alıcı dashboard verisi yüklenirken hata oluştu.");
+                return new BuyerDashboardViewModel { State = DataState.Failed };
+            }
+        }
+
+        // =========================================================================
+        // TEDARİKÇİ (SUPPLIER) DASHBOARD SERVİS METODU
+        // =========================================================================
+        public async Task<SupplierDashboardViewModel> GetSupplierDashboardAsync(int? requestedYear, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var years = await _context.Requests
+                    .Where(r => r.RequestDate.HasValue)
+                    .Select(r => r.RequestDate!.Value.Year)
+                    .Distinct()
+                    .OrderByDescending(y => y)
+                    .ToListAsync(cancellationToken);
+
+                var selectedYear = requestedYear is int wanted && years.Contains(wanted)
+                    ? wanted
+                    : (years.Count > 0 ? years[0] : DateTime.Today.Year);
+
+                if (!years.Contains(selectedYear))
+                {
+                    years = new List<int> { selectedYear, selectedYear - 1 };
+                }
+
+                // Açık RFQ Listesi
+                var openRfqs = new List<SupplierRfqItemDto>
+                {
+                    new SupplierRfqItemDto
+                    {
+                        RfqCode = $"RFQ-{selectedYear}-104",
+                        BuyerCompany = "Aselsan Tedarik & Savunma A.Ş.",
+                        ProductName = "CNC Freze Takım Seti & Karbür Freze Uçları",
+                        Category = "Kesici Takımlar & Uçlar",
+                        Quantity = 50,
+                        Unit = "Set",
+                        Deadline = DateTime.Today.AddDays(2),
+                        DaysLeft = 2,
+                        BudgetEstimate = 125000m,
+                        Status = "Cevap Bekliyor",
+                        HasMyBid = false,
+                        MyBidAmount = null
+                    },
+                    new SupplierRfqItemDto
+                    {
+                        RfqCode = $"RFQ-{selectedYear}-098",
+                        BuyerCompany = "Borusan Mannesmann Boru Yatırımları",
+                        ProductName = "Paslanmaz Çelik Flanş & Küresel Vana Grubu",
+                        Category = "Boru & Vana Ekipmanı",
+                        Quantity = 120,
+                        Unit = "Adet",
+                        Deadline = DateTime.Today.AddDays(4),
+                        DaysLeft = 4,
+                        BudgetEstimate = 145000m,
+                        Status = "Teklif Verildi",
+                        HasMyBid = true,
+                        MyBidAmount = 138500m
+                    },
+                    new SupplierRfqItemDto
+                    {
+                        RfqCode = $"RFQ-{selectedYear}-092",
+                        BuyerCompany = "Tofaş Türk Otomobil Fabrikası A.Ş.",
+                        ProductName = "Pnömatik Yön Valfleri ve ISO Standart Silindirler",
+                        Category = "Pnömatik & Otomasyon",
+                        Quantity = 200,
+                        Unit = "Adet",
+                        Deadline = DateTime.Today.AddDays(1),
+                        DaysLeft = 1,
+                        BudgetEstimate = 98000m,
+                        Status = "Cevap Bekliyor",
+                        HasMyBid = false,
+                        MyBidAmount = null
+                    },
+                    new SupplierRfqItemDto
+                    {
+                        RfqCode = $"RFQ-{selectedYear}-088",
+                        BuyerCompany = "Vestel Elektronik Sanayi ve Ticaret A.Ş.",
+                        ProductName = "ESD Korumalı Çalışma Tezgahları & Montaj Aksamı",
+                        Category = "Endüstriyel Masalar",
+                        Quantity = 35,
+                        Unit = "Takım",
+                        Deadline = DateTime.Today.AddDays(6),
+                        DaysLeft = 6,
+                        BudgetEstimate = 112000m,
+                        Status = "İncelemede",
+                        HasMyBid = true,
+                        MyBidAmount = 104000m
+                    },
+                    new SupplierRfqItemDto
+                    {
+                        RfqCode = $"RFQ-{selectedYear}-081",
+                        BuyerCompany = "Kalyon Güneş Teknolojileri Üretim A.Ş.",
+                        ProductName = "Endüstriyel DC Konnektörler ve Kablo Kanalları",
+                        Category = "Elektrik & Enerji",
+                        Quantity = 500,
+                        Unit = "Adet",
+                        Deadline = DateTime.Today.AddDays(3),
+                        DaysLeft = 3,
+                        BudgetEstimate = 78000m,
+                        Status = "Teklif Verildi",
+                        HasMyBid = true,
+                        MyBidAmount = 72500m
+                    },
+                    new SupplierRfqItemDto
+                    {
+                        RfqCode = $"RFQ-{selectedYear}-077",
+                        BuyerCompany = "Ford Otosan A.Ş. Gölcük Fabrikası",
+                        ProductName = "Ağır Yük Lineer Kızak ve Vidalı Mil Mekanizması",
+                        Category = "Lineer Hareket Sistemleri",
+                        Quantity = 24,
+                        Unit = "Set",
+                        Deadline = DateTime.Today.AddDays(5),
+                        DaysLeft = 5,
+                        BudgetEstimate = 160000m,
+                        Status = "Cevap Bekliyor",
+                        HasMyBid = false,
+                        MyBidAmount = null
+                    }
+                };
+
+                // Kazanç Trendi
+                var earningsTrend = new SupplierEarningsTrendDto
+                {
+                    Months = new[] { "Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara" },
+                    MonthlyEarnings = new[] { 140000m, 165000m, 130000m, 195000m, 180000m, 240000m, 210000m, 290000m, 260000m, 220000m, 245000m, 280000m },
+                    MonthlyPendingPipeline = new[] { 45000m, 60000m, 80000m, 75000m, 90000m, 110000m, 95000m, 130000m, 115000m, 105000m, 120000m, 140000m },
+                    MaxEarningsValue = 350000m
+                };
+
+                // İlgilenmeniz Gerekenler (Action Items)
+                var actionItems = new List<SupplierActionItemDto>
+                {
+                    new SupplierActionItemDto
+                    {
+                        Id = "act-1",
+                        Type = "pricing",
+                        Title = "Fiyatlandırılacak 2 Ürün",
+                        Description = "Müşteri teklif sepetinde bekleyen 2 ürününüz için birim fiyat güncellemesi gerekiyor.",
+                        BadgeText = "2 Ürün Bekliyor",
+                        BadgeType = "amber",
+                        ActionUrl = "#",
+                        ActionText = "Fiyat Gir"
+                    },
+                    new SupplierActionItemDto
+                    {
+                        Id = "act-2",
+                        Type = "stock",
+                        Title = "1 Eksik Stok Bildirimi",
+                        Description = "'Lineer Rulman 25mm' stoğu kritik seviyeye (2 adet) düştü. Sipariş kaybetmemek için stok ekleyin.",
+                        BadgeText = "Kritik Stok",
+                        BadgeType = "danger",
+                        ActionUrl = "#",
+                        ActionText = "Stok Güncelle"
+                    },
+                    new SupplierActionItemDto
+                    {
+                        Id = "act-3",
+                        Type = "urgent_rfq",
+                        Title = "3 Süresi Dolmak Üzere Olan RFQ",
+                        Description = "Tofaş ve Aselsan taleplerine bugün 18:00'e kadar teklif sunmanız gerekmektedir.",
+                        BadgeText = "Son 24 Saat",
+                        BadgeType = "amber",
+                        ActionUrl = "#",
+                        ActionText = "Teklifleri İncele"
+                    },
+                    new SupplierActionItemDto
+                    {
+                        Id = "act-4",
+                        Type = "review",
+                        Title = "2 Yeni Müşteri Değerlendirmesi",
+                        Description = "Son tamamlanan 'Borusan' ve 'Vestel' teslimatlarınız için 5 yıldızlı olumlu yorumlar eklendi.",
+                        BadgeText = "+5.0 ★ Puan",
+                        BadgeType = "green",
+                        ActionUrl = "#",
+                        ActionText = "Yorumları Gör"
+                    }
+                };
+
+                // Örnek Katalog
+                var catalogItems = new List<SupplierCatalogItemDto>
+                {
+                    new SupplierCatalogItemDto { ItemId = 1, ItemName = "Endüstriyel Rulman 6204-2RS", Sku = "SKU-RLM-6204", Category = "Rulman & Yatak", Stock = 450, UnitPrice = 185m, Status = "Stokta" },
+                    new SupplierCatalogItemDto { ItemId = 2, ItemName = "Lineer Kızak ve Araba Seti HGR25", Sku = "SKU-LIN-HGR25", Category = "Lineer Sistemler", Stock = 18, UnitPrice = 1450m, Status = "Stokta" },
+                    new SupplierCatalogItemDto { ItemId = 3, ItemName = "Pnömatik 5/2 Yön Kontrol Valfi", Sku = "SKU-PNO-52V", Category = "Pnömatik", Stock = 85, UnitPrice = 640m, Status = "Stokta" },
+                    new SupplierCatalogItemDto { ItemId = 4, ItemName = "Karbür Parmak Freze 10mm 4 Ağız", Sku = "SKU-FRZ-10C", Category = "Kesici Takımlar", Stock = 2, UnitPrice = 320m, Status = "Kritik" }
+                };
+
+                var summary = new SupplierSummaryDto
+                {
+                    NewIncomingRfqs = 18,
+                    NewRfqsThisWeek = 5,
+                    RfqsAwaitingResponse = 6,
+                    ActiveBids = 12,
+                    ActiveBidsValue = 840000m,
+                    WonAuctions = 34,
+                    WinRatePercent = 68.4m,
+                    WonTotalRevenue = 2190000m,
+                    CatalogStockValue = 3850000m,
+                    ActiveSkuCount = 142,
+                    LowStockAlertCount = 2
+                };
+
+                return new SupplierDashboardViewModel
+                {
+                    State = DataState.Ok,
+                    SelectedYear = selectedYear,
+                    AvailableYears = years,
+                    Summary = summary,
+                    OpenRfqs = openRfqs,
+                    EarningsTrend = earningsTrend,
+                    ActionItems = actionItems,
+                    FeaturedProducts = catalogItems
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Tedarikçi dashboard verisi yüklenirken hata oluştu.");
+                return new SupplierDashboardViewModel { State = DataState.Failed };
+            }
         }
     }
 }
