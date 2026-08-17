@@ -21,51 +21,13 @@ namespace satinalmaportali2.Controllers
         }
 
         /// <summary>
-        /// Dashboard ana görünümü (Varsayılan olarak Alıcı / Buyer paneline yönlendirir veya seçilen rolü açar).
+        /// Dashboard ana görünümü.
         /// </summary>
         /// <param name="yil">Filtrelenecek yıl (isteğe bağlı).</param>
-        /// <param name="role">Rol seçimi: "buyer" veya "supplier".</param>
-        public async Task<IActionResult> Index(int? yil, string? role, CancellationToken cancellationToken)
+        public async Task<IActionResult> Index(int? yil, CancellationToken cancellationToken)
         {
-            if (string.Equals(role, "supplier", StringComparison.OrdinalIgnoreCase))
-            {
-                return RedirectToAction(nameof(Supplier), new { yil });
-            }
-
-            return RedirectToAction(nameof(Buyer), new { yil });
-        }
-
-        /// <summary>
-        /// Alıcı (Buyer) kullanıcı rolü dashboard görünümü.
-        /// </summary>
-        public async Task<IActionResult> Buyer(int? yil, CancellationToken cancellationToken)
-        {
-            ViewBag.DashboardRole = "Buyer";
-            ViewData["Title"] = "Alıcı Portalı - Genel Bakış";
-            var viewModel = await _dashboardService.GetBuyerDashboardAsync(yil, cancellationToken);
-            return View(viewModel);
-        }
-
-        /// <summary>
-        /// Tedarikçi (Supplier) kullanıcı rolü dashboard görünümü.
-        /// </summary>
-        public async Task<IActionResult> Supplier(int? yil, CancellationToken cancellationToken)
-        {
-            ViewBag.DashboardRole = "Supplier";
-            ViewData["Title"] = "Tedarikçi Portalı - Mağaza Genel Bakış";
-            var viewModel = await _dashboardService.GetSupplierDashboardAsync(yil, cancellationToken);
-            return View(viewModel);
-        }
-
-        /// <summary>
-        /// Sistem genel analitik görünümü.
-        /// </summary>
-        public async Task<IActionResult> Analytics(int? yil, CancellationToken cancellationToken)
-        {
-            ViewBag.DashboardRole = "Buyer";
-            ViewData["Title"] = "Satın Alma ve Talep Analitiği";
             var viewModel = await _dashboardService.GetDashboardAsync(yil, cancellationToken);
-            return View("Analytics", viewModel);
+            return View(viewModel);
         }
 
         /// <summary>
