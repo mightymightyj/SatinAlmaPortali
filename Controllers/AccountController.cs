@@ -33,8 +33,9 @@ namespace satinalmaportali2.Controllers {
             }
 
             try {
-                // Query database via EF Core
-                var dbUser = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail == email);
+                // Query database via EF Core (case-insensitive email matching)
+                var emailTrimmed = email.Trim().ToLower();
+                var dbUser = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail != null && c.CompanyMail.ToLower() == emailTrimmed);
 
                 // User not found in database
                 if (dbUser == null) {
@@ -83,7 +84,7 @@ namespace satinalmaportali2.Controllers {
                 
                 var tables = new List<string>();
                 using (var cmd = _context.Database.GetDbConnection().CreateCommand()) {
-                    cmd.CommandText = "SELECT TABLE_SCHEMA + '.' + TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'";
+                    cmd.CommandText = "SELECT table_schema || '.' || table_name FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema') AND table_type = 'BASE TABLE'";
                     using (var reader = await cmd.ExecuteReaderAsync()) {
                         while (await reader.ReadAsync()) {
                             tables.Add(reader.GetString(0));
@@ -93,7 +94,7 @@ namespace satinalmaportali2.Controllers {
 
                 var columns = new List<string>();
                 using (var cmd = _context.Database.GetDbConnection().CreateCommand()) {
-                    cmd.CommandText = "SELECT TABLE_NAME + '.' + COLUMN_NAME + ' (' + DATA_TYPE + ')' FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME LIKE '%Company%'";
+                    cmd.CommandText = "SELECT table_name || '.' || column_name || ' (' || data_type || ')' FROM information_schema.columns WHERE table_schema = 'public' AND table_name ILIKE '%compan%'";
                     using (var reader = await cmd.ExecuteReaderAsync()) {
                         while (await reader.ReadAsync()) {
                             columns.Add(reader.GetString(0));
@@ -144,7 +145,8 @@ namespace satinalmaportali2.Controllers {
                 await _context.Database.OpenConnectionAsync();
 
                 // Check if user already exists
-                var existingUser = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail == email);
+                var emailTrimmed = email.Trim().ToLower();
+                var existingUser = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail != null && c.CompanyMail.ToLower() == emailTrimmed);
                 if (existingUser != null) {
                     ViewData["ErrorMessage"] = "Bu e-posta adresi ile zaten kayıtlı bir hesap bulunmaktadır!";
                     return View("Register");
@@ -238,7 +240,8 @@ namespace satinalmaportali2.Controllers {
             }
 
             // Query company from database
-            var company = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail == email);
+            var emailTrimmed = email.Trim().ToLower();
+            var company = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail != null && c.CompanyMail.ToLower() == emailTrimmed);
             if (company == null) {
                 TempData["ErrorMessage"] = "Hesap bilgileri bulunamadı.";
                 return RedirectToAction("Index", "Home");
@@ -318,7 +321,8 @@ namespace satinalmaportali2.Controllers {
             }
 
             try {
-                var user = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail == email);
+                var emailTrimmed = email.Trim().ToLower();
+                var user = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail != null && c.CompanyMail.ToLower() == emailTrimmed);
                 if (user == null) {
                     TempData["ProfileError"] = "Kullanıcı hesabı veritabanında bulunamadı.";
                     return RedirectToAction("Profile");
@@ -369,7 +373,8 @@ namespace satinalmaportali2.Controllers {
             }
 
             try {
-                var user = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail == email);
+                var emailTrimmed = email.Trim().ToLower();
+                var user = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail != null && c.CompanyMail.ToLower() == emailTrimmed);
 
                 if (user == null) {
                     TempData["ForgotError"] = "Bu e-posta adresi ile kayıtlı bir hesap bulunamadı.";
@@ -410,8 +415,9 @@ namespace satinalmaportali2.Controllers {
                 return RedirectToAction("Login");
             }
 
+            var emailTrimmed = email.Trim().ToLower();
             var user = await _context.Companies.FirstOrDefaultAsync(
-                c => c.CompanyMail == email && c.ResetToken == token);
+                c => c.CompanyMail != null && c.CompanyMail.ToLower() == emailTrimmed && c.ResetToken == token);
 
             if (user == null || user.ResetTokenExpiry == null || user.ResetTokenExpiry < DateTime.UtcNow) {
                 TempData["ErrorMessage"] = "Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş. Lütfen yeni bir talep oluşturunuz.";
@@ -444,8 +450,9 @@ namespace satinalmaportali2.Controllers {
                 return View("ResetPassword");
             }
 
+            var emailTrimmed = email.Trim().ToLower();
             var user = await _context.Companies.FirstOrDefaultAsync(
-                c => c.CompanyMail == email && c.ResetToken == token);
+                c => c.CompanyMail != null && c.CompanyMail.ToLower() == emailTrimmed && c.ResetToken == token);
 
             if (user == null || user.ResetTokenExpiry == null || user.ResetTokenExpiry < DateTime.UtcNow) {
                 TempData["ErrorMessage"] = "Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş.";

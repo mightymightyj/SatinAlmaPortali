@@ -49,7 +49,7 @@ namespace satinalmaportali2.Controllers
 
                         requestList.Add(new RequestListItemViewModel
                         {
-                            RequestID = req.RequestID ?? 0,
+                            RequestID = req.RequestID,
                             RequestDate = req.RequestDate ?? DateTime.Now,
                             BuyerInfo = buyerName,
                             ProductName = prodName,

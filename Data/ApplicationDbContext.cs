@@ -29,82 +29,131 @@ namespace satinalmaportali2.Data
 
             modelBuilder.Entity<Company>(entity =>
             {
-                entity.ToTable("Companies");
+                entity.ToTable("companies");
                 entity.HasKey(e => e.CompanyID);
                 entity.Property(e => e.CompanyID).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<Addresses>(entity =>
             {
-                entity.ToTable("Addresses");
+                entity.ToTable("addresses");
                 entity.HasKey(e => e.AddressID);
                 entity.Property(e => e.AddressID).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<CompanyTypes>(entity =>
             {
-                entity.ToTable("CompanyTypes");
+                entity.ToTable("companytypes");
                 entity.HasKey(e => e.CompanyTypeID);
             });
 
             modelBuilder.Entity<MembershipTypes>(entity =>
             {
-                entity.ToTable("MembershipTypes");
+                entity.ToTable("membershiptypes");
                 entity.HasKey(e => e.MembershipTypeID);
             });
 
             modelBuilder.Entity<Requests>(entity =>
             {
-                entity.ToTable("Requests");
+                entity.ToTable("requests");
                 entity.HasKey(e => e.RequestID);
                 entity.Property(e => e.RequestID).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<Reviews>(entity =>
             {
-                entity.ToTable("Reviews");
+                entity.ToTable("reviews");
                 entity.HasKey(e => e.ReviewID);
+                entity.Property(e => e.ReviewID).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<ItemsModel>(entity =>
             {
-                entity.ToTable("Items");
+                entity.ToTable("items");
                 entity.HasKey(e => e.ItemID);
+                entity.Property(e => e.ItemID).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<Forms>(entity =>
             {
-                entity.ToTable("Forms");
+                entity.ToTable("forms");
                 entity.HasKey(e => e.FormId);
+                entity.Property(e => e.FormId).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<Countries>(entity =>
             {
-                entity.ToTable("Countries");
+                entity.ToTable("countries");
                 entity.HasKey(e => e.CountryID);
                 entity.Property(e => e.CountryID).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<Category>(entity =>
             {
-                entity.ToTable("Category");
+                entity.ToTable("category");
                 entity.HasKey(e => e.CategoryID);
                 entity.Property(e => e.CategoryID).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<Districts>(entity =>
             {
-                entity.ToTable("District");
+                entity.ToTable("district");
                 entity.HasKey(e => e.DistrictID);
                 entity.Property(e => e.DistrictID).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<Towns>(entity =>
             {
-                entity.ToTable("Towns");
+                entity.ToTable("towns");
                 entity.HasKey(e => e.TownID);
                 entity.Property(e => e.TownID).ValueGeneratedOnAdd();
             });
+
+            // PostgreSQL büyük/küçük harf duyarlılığı için tüm tablo ve kolon adlarını küçük harfe eşle
+            foreach (var entity in modelBuilder.Model.GetEntityTypes())
+            {
+                var tableName = entity.GetTableName();
+                if (!string.IsNullOrEmpty(tableName))
+                {
+                    entity.SetTableName(tableName.ToLowerInvariant());
+                }
+
+                foreach (var property in entity.GetProperties())
+                {
+                    var columnName = property.GetColumnName();
+                    if (!string.IsNullOrEmpty(columnName))
+                    {
+                        property.SetColumnName(columnName.ToLowerInvariant());
+                    }
+                }
+
+                foreach (var key in entity.GetKeys())
+                {
+                    var keyName = key.GetName();
+                    if (!string.IsNullOrEmpty(keyName))
+                    {
+                        key.SetName(keyName.ToLowerInvariant());
+                    }
+                }
+
+                foreach (var key in entity.GetForeignKeys())
+                {
+                    var constraintName = key.GetConstraintName();
+                    if (!string.IsNullOrEmpty(constraintName))
+                    {
+                        key.SetConstraintName(constraintName.ToLowerInvariant());
+                    }
+                }
+
+                foreach (var index in entity.GetIndexes())
+                {
+                    var indexName = index.GetDatabaseName();
+                    if (!string.IsNullOrEmpty(indexName))
+                    {
+                        index.SetDatabaseName(indexName.ToLowerInvariant());
+                    }
+                }
+            }
         }
     }
 }

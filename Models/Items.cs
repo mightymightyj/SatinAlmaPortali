@@ -9,7 +9,7 @@ namespace satinalmaportali2.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int ItemID { get; set; }
         public string? ItemName { get; set; }
-        public float? ItemPrice { get; set; }
+        public double? ItemPrice { get; set; }
         public int? Quantity { get; set; }
         public int? CategoryID { get; set; }
         public string? Properties { get; set; }

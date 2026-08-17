@@ -6,18 +6,21 @@ using satinalmaportali2.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddRazorRuntimeCompilation();
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<satinalmaportali2.Services.EmailService>();
+
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 // Entity Framework Core DbContext Kaydı
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("TedarikDb")
         ?? builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? "Server=(localdb)\\mssqllocaldb;Database=TedarikDb;Trusted_Connection=True;MultipleActiveResultSets=true";
+        ?? "Host=localhost;Port=5432;Database=satinalmaportali;Username=postgres;Password=postgres;";
 
-    options.UseSqlServer(connectionString);
+    options.UseNpgsql(connectionString);
 });
 
 // Dashboard Servis Kaydı

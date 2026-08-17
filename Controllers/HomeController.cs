@@ -60,23 +60,11 @@ namespace satinalmaportali2.Controllers {
                 string firstName = names.Length > 0 ? names[0] : adSoyad;
                 string lastName = names.Length > 1 ? string.Join(" ", names.Skip(1)) : "";
 
-                int? phoneNum = null;
-                if (!string.IsNullOrWhiteSpace(telefon)) {
-                    var digitsOnly = new string(telefon.Where(char.IsDigit).ToArray());
-                    // 32-bit int taşmasını önlemek için son 9 haneyi parse et
-                    if (digitsOnly.Length > 9) {
-                        digitsOnly = digitsOnly.Substring(digitsOnly.Length - 9);
-                    }
-                    if (int.TryParse(digitsOnly, out int parsedPhone)) {
-                        phoneNum = parsedPhone;
-                    }
-                }
-
                 var formRecord = new Forms {
                     Name = firstName,
                     Surname = lastName,
                     Email = eposta.Trim(),
-                    Phone = phoneNum,
+                    Phone = string.IsNullOrWhiteSpace(telefon) ? null : telefon.Trim(),
                     Topic = string.IsNullOrWhiteSpace(konu) ? "Genel" : konu,
                     FormText = mesaj.Trim(),
                     FormDate = DateTime.UtcNow

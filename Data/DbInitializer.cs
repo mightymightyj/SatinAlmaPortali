@@ -14,42 +14,36 @@ namespace satinalmaportali2.Data
         {
             try
             {
-                await context.Database.OpenConnectionAsync();
+                // Ensure Database and Schema exist
+                await context.Database.EnsureCreatedAsync();
 
                 // ====================================================
                 // STEP 0: Seed CompanyTypes (FK dependency for Companies)
                 // ====================================================
                 try
                 {
-                    await context.Database.ExecuteSqlRawAsync(@"
-                        IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'CompanyTypes')
-                            RETURN;
-                        
-                        IF NOT EXISTS (SELECT 1 FROM [dbo].[CompanyTypes] WHERE CompanyTypeID = 1)
-                        BEGIN
-                            TRY_CAST(1 AS INT); -- dummy check
-                            SET IDENTITY_INSERT [dbo].[CompanyTypes] ON;
-                            INSERT INTO [dbo].[CompanyTypes] (CompanyTypeID, CompanyTypeName) VALUES (1, N'Tedarikçi Firma');
-                            INSERT INTO [dbo].[CompanyTypes] (CompanyTypeID, CompanyTypeName) VALUES (2, N'Alıcı / Müşteri');
-                            INSERT INTO [dbo].[CompanyTypes] (CompanyTypeID, CompanyTypeName) VALUES (3, N'Hem Alıcı Hem Tedarikçi');
-                            SET IDENTITY_INSERT [dbo].[CompanyTypes] OFF;
-                        END
-                    ");
-                }
-                catch
-                {
-                    try
+                    if (!await context.CompanyTypes.AnyAsync(ct => ct.CompanyTypeID == 1))
                     {
-                        await context.Database.ExecuteSqlRawAsync(@"
-                            IF NOT EXISTS (SELECT 1 FROM [dbo].[CompanyTypes] WHERE CompanyTypeID = 1)
-                                INSERT INTO [dbo].[CompanyTypes] (CompanyTypeName) VALUES (N'Tedarikçi Firma');
-                            IF NOT EXISTS (SELECT 1 FROM [dbo].[CompanyTypes] WHERE CompanyTypeID = 2)
-                                INSERT INTO [dbo].[CompanyTypes] (CompanyTypeName) VALUES (N'Alıcı / Müşteri');
-                            IF NOT EXISTS (SELECT 1 FROM [dbo].[CompanyTypes] WHERE CompanyTypeID = 3)
-                                INSERT INTO [dbo].[CompanyTypes] (CompanyTypeName) VALUES (N'Hem Alıcı Hem Tedarikçi');
-                        ");
+                        var types = new List<CompanyTypes>
+                        {
+                            new CompanyTypes { CompanyTypeID = 1, CompanyTypeName = "Tedarikçi Firma" },
+                            new CompanyTypes { CompanyTypeID = 2, CompanyTypeName = "Alıcı / Müşteri" },
+                            new CompanyTypes { CompanyTypeID = 3, CompanyTypeName = "Hem Alıcı Hem Tedarikçi" }
+                        };
+
+                        foreach (var type in types)
+                        {
+                            if (!await context.CompanyTypes.AnyAsync(ct => ct.CompanyTypeID == type.CompanyTypeID))
+                            {
+                                await context.CompanyTypes.AddAsync(type);
+                            }
+                        }
+                        await context.SaveChangesAsync();
                     }
-                    catch (Exception ex) { Console.WriteLine("CompanyTypes seed note: " + ex.Message); }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("CompanyTypes seed note: " + ex.Message);
                 }
 
                 // ====================================================
@@ -57,26 +51,27 @@ namespace satinalmaportali2.Data
                 // ====================================================
                 try
                 {
-                    await context.Database.ExecuteSqlRawAsync(@"
-                        IF NOT EXISTS (SELECT 1 FROM [dbo].[MembershipTypes] WHERE MembershipTypeID = 1)
-                        BEGIN
-                            SET IDENTITY_INSERT [dbo].[MembershipTypes] ON;
-                            INSERT INTO [dbo].[MembershipTypes] (MembershipTypeID, MembershipTypeName) VALUES (1, N'Standart Üyelik');
-                            INSERT INTO [dbo].[MembershipTypes] (MembershipTypeID, MembershipTypeName) VALUES (2, N'Premium Üyelik');
-                            SET IDENTITY_INSERT [dbo].[MembershipTypes] OFF;
-                        END
-                    ");
-                }
-                catch
-                {
-                    try
+                    if (!await context.MembershipTypes.AnyAsync(mt => mt.MembershipTypeID == 1))
                     {
-                        await context.Database.ExecuteSqlRawAsync(@"
-                            IF NOT EXISTS (SELECT 1 FROM [dbo].[MembershipTypes] WHERE MembershipTypeID = 1)
-                                INSERT INTO [dbo].[MembershipTypes] (MembershipTypeName) VALUES (N'Standart Üyelik');
-                        ");
+                        var mTypes = new List<MembershipTypes>
+                        {
+                            new MembershipTypes { MembershipTypeID = 1, MembershipTypeName = "Standart Üyelik" },
+                            new MembershipTypes { MembershipTypeID = 2, MembershipTypeName = "Premium Üyelik" }
+                        };
+
+                        foreach (var mt in mTypes)
+                        {
+                            if (!await context.MembershipTypes.AnyAsync(m => m.MembershipTypeID == mt.MembershipTypeID))
+                            {
+                                await context.MembershipTypes.AddAsync(mt);
+                            }
+                        }
+                        await context.SaveChangesAsync();
                     }
-                    catch (Exception ex) { Console.WriteLine("MembershipTypes seed note: " + ex.Message); }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("MembershipTypes seed note: " + ex.Message);
                 }
 
                 // ====================================================
@@ -86,23 +81,14 @@ namespace satinalmaportali2.Data
                 {
                     if (!await context.Countries.AnyAsync())
                     {
-                        try
-                        {
-                            await context.Database.ExecuteSqlRawAsync(@"
-                                SET IDENTITY_INSERT [dbo].[Countries] ON;
-                                INSERT INTO [dbo].[Countries] (CountryID, CountryName) VALUES (1, N'Türkiye');
-                                SET IDENTITY_INSERT [dbo].[Countries] OFF;
-                            ");
-                        }
-                        catch
-                        {
-                            await context.Database.ExecuteSqlRawAsync(@"
-                                INSERT INTO [dbo].[Countries] (CountryName) VALUES (N'Türkiye');
-                            ");
-                        }
+                        await context.Countries.AddAsync(new Countries { CountryName = "Türkiye" });
+                        await context.SaveChangesAsync();
                     }
                 }
-                catch (Exception ex) { Console.WriteLine("Countries seed note: " + ex.Message); }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Countries seed note: " + ex.Message);
+                }
 
                 // Get CountryID for Türkiye (default to 1)
                 var turkeyCountry = await context.Countries.FirstOrDefaultAsync(c => c.CountryName == "Türkiye");
@@ -117,11 +103,6 @@ namespace satinalmaportali2.Data
                 // STEP 4: Fix NULL DistrictID in Addresses table
                 // ====================================================
                 await FixAddressDistrictIdsAsync(context);
-
-                // ====================================================
-                // STEP 5: Ensure Requests table columns exist
-                // ====================================================
-                await EnsureRequestsTableStructureAsync(context);
             }
             catch (Exception ex)
             {
@@ -129,139 +110,61 @@ namespace satinalmaportali2.Data
             }
         }
 
-        private static async Task EnsureRequestsTableStructureAsync(ApplicationDbContext context)
+        private static async Task SeedTownsAndDistrictsAsync(ApplicationDbContext context, int turkeyId)
         {
             try
             {
-                // 1. Tablo yoksa oluştur
-                await context.Database.ExecuteSqlRawAsync(@"
-                    IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Requests')
-                    BEGIN
-                        CREATE TABLE [dbo].[Requests] (
-                            [RequestID] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-                            [RequestDate] DATETIME2 NULL,
-                            [SenderID] INT NULL,
-                            [RecieverID] INT NULL,
-                            [RequestType] NVARCHAR(MAX) NULL,
-                            [BuyerInfo] NVARCHAR(MAX) NULL,
-                            [ProductName] NVARCHAR(MAX) NULL,
-                            [Quantity] INT NULL,
-                            [Status] NVARCHAR(MAX) NULL,
-                            [Notes] NVARCHAR(MAX) NULL
-                        );
-                    END
-                ");
+                var cityDistrictsData = GetCityDistrictsData();
 
-                // 2. Eksik sütunları tek tek dinamik SQL ile ekle
-                await context.Database.ExecuteSqlRawAsync(@"
-                    IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Requests' AND COLUMN_NAME = 'BuyerInfo')
-                        EXEC('ALTER TABLE [dbo].[Requests] ADD [BuyerInfo] NVARCHAR(MAX) NULL');
+                // Check if Towns table is empty
+                bool hasTowns = await context.Towns.AnyAsync();
+                if (!hasTowns)
+                {
+                    var newTowns = cityDistrictsData.Keys.Select(cityName => new Towns
+                    {
+                        TownName = cityName,
+                        CountryID = turkeyId
+                    }).ToList();
 
-                    IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Requests' AND COLUMN_NAME = 'ProductName')
-                        EXEC('ALTER TABLE [dbo].[Requests] ADD [ProductName] NVARCHAR(MAX) NULL');
+                    await context.Towns.AddRangeAsync(newTowns);
+                    await context.SaveChangesAsync();
+                }
 
-                    IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Requests' AND COLUMN_NAME = 'Quantity')
-                        EXEC('ALTER TABLE [dbo].[Requests] ADD [Quantity] INT NULL');
+                // Get mapped Towns from DB to pair TownID with TownName
+                var dbTowns = await context.Towns.Where(t => !string.IsNullOrEmpty(t.TownName)).ToListAsync();
+                var townMap = dbTowns.ToDictionary(t => t.TownName!, t => t.TownID, StringComparer.OrdinalIgnoreCase);
 
-                    IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Requests' AND COLUMN_NAME = 'Status')
-                        EXEC('ALTER TABLE [dbo].[Requests] ADD [Status] NVARCHAR(MAX) NULL');
+                // Check if District table is empty
+                bool hasDistricts = await context.Districts.AnyAsync();
+                if (!hasDistricts)
+                {
+                    var newDistricts = new List<Districts>();
 
-                    IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Requests' AND COLUMN_NAME = 'Notes')
-                        EXEC('ALTER TABLE [dbo].[Requests] ADD [Notes] NVARCHAR(MAX) NULL');
-                ");
+                    foreach (var kvp in cityDistrictsData)
+                    {
+                        string cityName = kvp.Key;
+                        if (!townMap.TryGetValue(cityName, out int townId)) continue;
 
-                // 3. Varsa sahte/demo verileri temizle
-                await context.Database.ExecuteSqlRawAsync(@"
-                    IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Requests' AND COLUMN_NAME = 'BuyerInfo')
-                    BEGIN
-                        EXEC('DELETE FROM [dbo].[Requests] WHERE [RequestID] IN (101, 102, 103, 104) OR [BuyerInfo] LIKE ''%Kaya Endüstriyel Otomasyon%'' OR [BuyerInfo] LIKE ''%Anadolu Çelik%'' OR [BuyerInfo] LIKE ''%Boğaziçi Medikal%''');
-                    END
-                ");
+                        foreach (var distName in kvp.Value)
+                        {
+                            newDistricts.Add(new Districts
+                            {
+                                DistrictName = distName,
+                                TownID = townId
+                            });
+                        }
+                    }
+
+                    if (newDistricts.Any())
+                    {
+                        await context.Districts.AddRangeAsync(newDistricts);
+                        await context.SaveChangesAsync();
+                    }
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Requests table structure ensure note: {ex.Message}");
-            }
-        }
-
-        private static async Task SeedTownsAndDistrictsAsync(ApplicationDbContext context, int turkeyId)
-        {
-            var cityDistrictsData = GetCityDistrictsData();
-
-            // Check if Towns table is empty
-            bool hasTowns = await context.Towns.AnyAsync();
-            if (!hasTowns)
-            {
-                int townIdCounter = 1;
-                foreach (var city in cityDistrictsData.Keys)
-                {
-                    try
-                    {
-                        await context.Database.ExecuteSqlAsync($@"
-                            SET IDENTITY_INSERT [dbo].[Towns] ON;
-                            INSERT INTO [dbo].[Towns] (TownID, TownName, CountryID) VALUES ({townIdCounter}, {city}, {turkeyId});
-                            SET IDENTITY_INSERT [dbo].[Towns] OFF;
-                        ");
-                    }
-                    catch
-                    {
-                        await context.Database.ExecuteSqlAsync($@"
-                            INSERT INTO [dbo].[Towns] (TownName, CountryID) VALUES ({city}, {turkeyId});
-                        ");
-                    }
-                    townIdCounter++;
-                }
-            }
-
-            // Get mapped Towns from DB to pair TownID with TownName
-            var dbTowns = await context.Towns.Where(t => !string.IsNullOrEmpty(t.TownName)).ToListAsync();
-            var townMap = dbTowns.ToDictionary(t => t.TownName!, t => t.TownID, StringComparer.OrdinalIgnoreCase);
-
-            // Check if District table is empty
-            bool hasDistricts = await context.Districts.AnyAsync();
-            if (!hasDistricts)
-            {
-                int districtIdCounter = 1;
-                foreach (var kvp in cityDistrictsData)
-                {
-                    string cityName = kvp.Key;
-                    if (!townMap.TryGetValue(cityName, out int townId)) continue;
-
-                    foreach (var distName in kvp.Value)
-                    {
-                        try
-                        {
-                            await context.Database.ExecuteSqlAsync($@"
-                                SET IDENTITY_INSERT [dbo].[District] ON;
-                                INSERT INTO [dbo].[District] (DistrictID, DistrictName, TownID) VALUES ({districtIdCounter}, {distName}, {townId});
-                                SET IDENTITY_INSERT [dbo].[District] OFF;
-                            ");
-                        }
-                        catch
-                        {
-                            try
-                            {
-                                await context.Database.ExecuteSqlAsync($@"
-                                    INSERT INTO [dbo].[District] (DistrictName, TownID) VALUES ({distName}, {townId});
-                                ");
-                            }
-                            catch
-                            {
-                                try
-                                {
-                                    await context.Database.ExecuteSqlAsync($@"
-                                        INSERT INTO [dbo].[Districts] (DistrictName, TownID) VALUES ({distName}, {townId});
-                                    ");
-                                }
-                                catch (Exception ex)
-                                {
-                                    Console.WriteLine($"District insert error: {ex.Message}");
-                                }
-                            }
-                        }
-                        districtIdCounter++;
-                    }
-                }
+                Console.WriteLine($"SeedTownsAndDistricts error: {ex.Message}");
             }
         }
 
@@ -273,7 +176,6 @@ namespace satinalmaportali2.Data
                 if (nullDistrictAddresses.Any())
                 {
                     var allDistricts = await context.Districts.ToListAsync();
-                    var allTowns = await context.Towns.ToListAsync();
 
                     foreach (var addr in nullDistrictAddresses)
                     {
