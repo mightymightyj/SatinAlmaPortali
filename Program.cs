@@ -11,9 +11,14 @@ builder.Services.AddControllersWithViews()
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<satinalmaportali2.Services.EmailService>();
 
+// Cloudinary Görsel Yükleme Servisi
+builder.Services.Configure<CloudinarySettings>(
+    builder.Configuration.GetSection(CloudinarySettings.SectionName));
+builder.Services.AddSingleton<ICloudinaryService, CloudinaryService>();
+
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
-// Entity Framework Core DbContext Kaydı
+// Entity Framework Core DbContext Kaydı (PostgreSQL)
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("TedarikDb")
