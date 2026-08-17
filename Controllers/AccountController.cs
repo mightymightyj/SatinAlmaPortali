@@ -39,6 +39,25 @@ namespace satinalmaportali2.Controllers {
                 var emailTrimmed = email.Trim().ToLower();
                 var dbUser = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail != null && c.CompanyMail.ToLower() == emailTrimmed);
 
+                // If not found directly, check with Punycode / IDN conversion (e.g. mehmet@yerlikayaa.com vs mehmet@xn--yerlikayaa-n9b.com)
+                if (dbUser == null) {
+                    try {
+                        var parts = emailTrimmed.Split('@');
+                        if (parts.Length == 2) {
+                            var idn = new System.Globalization.IdnMapping();
+                            var asciiDomain = idn.GetAscii(parts[1]);
+                            var asciiEmail = $"{parts[0]}@{asciiDomain}".ToLower();
+                            dbUser = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail != null && c.CompanyMail.ToLower() == asciiEmail);
+
+                            if (dbUser == null) {
+                                var unicodeDomain = idn.GetUnicode(parts[1]);
+                                var unicodeEmail = $"{parts[0]}@{unicodeDomain}".ToLower();
+                                dbUser = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail != null && c.CompanyMail.ToLower() == unicodeEmail);
+                            }
+                        }
+                    } catch { }
+                }
+
                 // User not found in database
                 if (dbUser == null) {
                     ViewData["ErrorMessage"] = "Girdiğiniz e-posta adresi ile kayıtlı bir hesap bulunamadı!";
@@ -46,11 +65,20 @@ namespace satinalmaportali2.Controllers {
                     return View();
                 }
 
-                // Verify password against stored hash
+                // Verify password against stored hash (supporting salted, raw sha256, hex, plaintext, etc.)
                 if (!PasswordHasher.VerifyPassword(password, dbUser.CompanyPassword)) {
                     ViewData["ErrorMessage"] = "Girdiğiniz şifre hatalı!";
                     ViewData["ActiveTab"] = userType == "admin" ? "admin-login" : "user-login";
                     return View();
+                }
+
+                // Auto-upgrade legacy or plaintext passwords to standard Salted SHA-256
+                var standardSaltedHash = PasswordHasher.HashPassword(password.Trim());
+                if (dbUser.CompanyPassword != standardSaltedHash) {
+                    try {
+                        dbUser.CompanyPassword = standardSaltedHash;
+                        await _context.SaveChangesAsync();
+                    } catch { }
                 }
 
                 string companyName = dbUser.CompanyName ?? dbUser.CompanyOfficial ?? email.Split('@')[0];
