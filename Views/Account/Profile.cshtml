@@ -783,13 +783,13 @@
 
         if (isEditMode) {
             viewSec.style.display = 'none';
-            editSec.style.display = 'block';
+            editSec.style.display = 'flex';
             toggleBtn.classList.add('is-editing');
             toggleText.textContent = 'Görüntüleme Modu';
             editSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else {
             editSec.style.display = 'none';
-            viewSec.style.display = 'block';
+            viewSec.style.display = 'flex';
             toggleBtn.classList.remove('is-editing');
             toggleText.textContent = 'Bilgileri Düzenle';
         }

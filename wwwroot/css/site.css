@@ -4401,15 +4401,29 @@ html, body {
 
 /* Profile Content */
 .profile-content-section {
-    padding: 40px 20px 60px;
+    padding: 48px 24px 80px;
 }
 
 .profile-container {
-    max-width: 900px;
+    max-width: 960px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 32px;
+}
+
+.profile-mode-section {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    width: 100%;
+}
+
+#updateProfileForm {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    width: 100%;
 }
 
 /* Profile Card */
@@ -4444,14 +4458,14 @@ html, body {
 .profile-card-header {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 22px 28px;
+    gap: 16px;
+    padding: 24px 32px;
     border-bottom: 1px solid #f1f5f9;
 }
 
 .profile-card-header h2 {
     margin: 0;
-    font-size: 1.15rem;
+    font-size: 1.18rem;
     font-weight: 800;
     color: #0f172a;
 }
@@ -4495,20 +4509,20 @@ html, body {
 }
 
 .profile-card-body {
-    padding: 24px 28px;
+    padding: 28px 32px;
 }
 
 /* Profile Info Grid */
 .profile-info-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    gap: 24px 28px;
 }
 
 .profile-info-item {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
 
 .profile-info-item-full {
@@ -4532,14 +4546,17 @@ html, body {
 }
 
 .info-value {
-    font-size: 1rem;
+    font-size: 0.98rem;
     font-weight: 600;
     color: #0f172a;
-    padding: 10px 16px;
+    padding: 13px 18px;
     background: #f8fafc;
     border-radius: 12px;
     border: 1px solid #f1f5f9;
     word-break: break-word;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
 }
 
 .info-value-mail {
@@ -4656,18 +4673,18 @@ html, body {
 .security-grid-panel {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 24px;
+    gap: 24px;
+    margin-bottom: 28px;
 }
 
 .security-item-card {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 16px;
-    padding: 20px;
+    padding: 24px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
     transition: all 0.25s ease;
 }
 
@@ -4680,12 +4697,12 @@ html, body {
 .security-item-top {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 
 .security-item-icon {
-    width: 34px;
-    height: 34px;
+    width: 38px;
+    height: 38px;
     border-radius: 10px;
     background: #fee2e2;
     color: #dc2626;
@@ -4712,7 +4729,7 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
+    padding: 14px 18px;
     background: #ffffff;
     border: 1px solid #f1f5f9;
     border-radius: 12px;
@@ -4740,7 +4757,7 @@ html, body {
     font-weight: 700;
     color: #15803d;
     background: #dcfce7;
-    padding: 3px 10px;
+    padding: 4px 12px;
     border-radius: 999px;
 }
 
@@ -4769,8 +4786,8 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 24px;
-    padding: 20px 24px;
+    gap: 28px;
+    padding: 24px 30px;
     background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
     border: 1px solid #dbeafe;
     border-radius: 18px;
@@ -5472,14 +5489,14 @@ html, body {
 
 .form-inputs-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px 28px;
 }
 
 .form-group-item {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
 
 .form-group-full {
@@ -5489,10 +5506,11 @@ html, body {
 .form-item-label {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     font-size: 0.88rem;
     font-weight: 700;
     color: #1e293b;
+    margin-bottom: 2px;
 }
 
 .required-star {
@@ -5509,7 +5527,7 @@ html, body {
 
 .form-input-wrap .input-icon {
     position: absolute;
-    left: 14px;
+    left: 15px;
     color: #94a3b8;
     pointer-events: none;
     transition: color 0.2s ease;
@@ -5517,15 +5535,16 @@ html, body {
 
 .profile-form-control {
     width: 100%;
-    padding: 11px 14px 11px 40px;
+    padding: 13px 16px 13px 44px;
     background: #ffffff;
     border: 1.5px solid #cbd5e1;
-    border-radius: 10px;
-    font-size: 0.92rem;
+    border-radius: 12px;
+    font-size: 0.94rem;
     font-family: inherit;
     color: #0f172a;
     transition: all 0.2s ease;
     box-sizing: border-box;
+    height: 48px;
 }
 
 .profile-form-control:focus {
@@ -5544,38 +5563,40 @@ html, body {
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 14px center;
-    padding-right: 38px;
+    background-position: right 16px center;
+    padding-right: 42px;
 }
 
 .profile-textarea {
-    padding: 12px 14px !important;
-    min-height: 90px;
+    padding: 14px 18px !important;
+    min-height: 100px;
+    height: auto;
     resize: vertical;
-    line-height: 1.5;
+    line-height: 1.6;
 }
 
 .form-field-hint {
-    font-size: 0.78rem;
+    font-size: 0.8rem;
     color: #64748b;
     font-weight: 500;
-    margin-top: 2px;
+    margin-top: 4px;
 }
 
 .profile-edit-actions-bar {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 14px;
-    padding: 20px 24px;
+    gap: 16px;
+    padding: 24px 32px;
     background: #ffffff;
     border: 1px solid #e2e8f0;
-    border-radius: 16px;
+    border-radius: 18px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    margin-top: 8px;
 }
 
 .btn-edit-cancel {
-    padding: 11px 24px;
+    padding: 12px 26px;
     background: #f1f5f9;
     color: #475569;
     border: 1px solid #cbd5e1;
@@ -5595,7 +5616,7 @@ html, body {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 11px 30px;
+    padding: 12px 32px;
     background: linear-gradient(135deg, #2563eb, #1d4ed8);
     color: #ffffff;
     border: none;
