@@ -1,13 +1,37 @@
-using Resend;
+using System;
+using System.Threading.Tasks;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using MimeKit;
+using MimeKit.Text;
 
-namespace satinalmaportali2.Services {
-    public class EmailService {
-        private readonly string _apiKey = "re_gyM2f6dc_7fLbehKf6gpDvQosJnFzJr8Y";
-        private readonly string _fromEmail = "onboarding@resend.dev";
+namespace satinalmaportali2.Services
+{
+    public class EmailService
+    {
+        private readonly EmailSettings _settings;
+        private readonly ILogger<EmailService>? _logger;
 
-        public async Task<bool> SendPasswordResetEmailAsync(string toEmail, string resetLink) {
-            try {
-                IResend resend = ResendClient.Create(_apiKey);
+        public EmailService(IOptions<EmailSettings> settings, ILogger<EmailService>? logger = null)
+        {
+            _settings = settings?.Value ?? new EmailSettings();
+            _logger = logger;
+        }
+
+        /// <summary>
+        /// Kullanıcıya şifre sıfırlama bağlantısı içeren modern HTML e-posta gönderir.
+        /// </summary>
+        public async Task<bool> SendPasswordResetEmailAsync(string toEmail, string resetLink)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(toEmail) || string.IsNullOrWhiteSpace(resetLink))
+                {
+                    _logger?.LogWarning("Şifre sıfırlama e-postası için e-posta adresi veya link boş olamaz.");
+                    return false;
+                }
 
                 var htmlBody = $@"
 <!DOCTYPE html>
@@ -158,27 +182,50 @@ namespace satinalmaportali2.Services {
 </body>
 </html>";
 
-                var message = new EmailMessage {
-                    From = _fromEmail,
-                    To = toEmail,
-                    Subject = "🔐 Tedarik Portal — Şifre Sıfırlama Bağlantınız",
-                    HtmlBody = htmlBody
-                };
+                var message = new MimeMessage();
+                message.From.Add(new MailboxAddress(_settings.SenderName, _settings.SenderEmail));
+                message.To.Add(new MailboxAddress("", toEmail.Trim()));
+                message.Subject = "🔐 Tedarik Portal — Şifre Sıfırlama Bağlantınız";
+                message.Body = new TextPart(TextFormat.Html) { Text = htmlBody };
 
-                await resend.EmailSendAsync(message);
+                using var client = new SmtpClient();
+                
+                // Gmail SSL/TLS Sertifika Doğrulaması
+                await client.ConnectAsync(
+                    _settings.SmtpServer,
+                    _settings.SmtpPort,
+                    _settings.EnableSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto
+                );
+
+                // Boşlukları temizlenmiş şifre ile kimlik doğrulama
+                string cleanPassword = _settings.SenderPassword.Replace(" ", "");
+                await client.AuthenticateAsync(_settings.SenderEmail, cleanPassword);
+
+                await client.SendAsync(message);
+                await client.DisconnectAsync(true);
+
+                _logger?.LogInformation("Şifre sıfırlama e-postası başarıyla gönderildi: {Email}", toEmail);
                 return true;
             }
-            catch (Exception ex) {
-                Console.WriteLine($"E-posta gönderim hatası: {ex.Message}");
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Gmail SMTP e-posta gönderim hatası ({ToEmail}): {Message}", toEmail, ex.Message);
+                Console.WriteLine($"Gmail SMTP E-posta Gönderim Hatası: {ex.Message}");
                 return false;
             }
         }
 
-        public async Task<bool> SendContactMessageEmailAsync(string targetEmail, string fullName, string senderEmail, string? phone, string? topic, string messageContent) {
-            try {
-                IResend resend = ResendClient.Create(_apiKey);
+        /// <summary>
+        /// İletişim formu mesajlarını şirket/yönetici adresine iletir.
+        /// </summary>
+        public async Task<bool> SendContactMessageEmailAsync(string targetEmail, string fullName, string senderEmail, string? phone, string? topic, string messageContent)
+        {
+            try
+            {
+                var finalTarget = string.IsNullOrWhiteSpace(targetEmail) ? _settings.SenderEmail : targetEmail.Trim();
 
-                var topicDisplay = topic switch {
+                var topicDisplay = topic switch
+                {
                     "genel" => "Genel Bilgi",
                     "destek" => "Teknik Destek",
                     "satis" => "Satış & Fiyatlandırma",
@@ -272,7 +319,7 @@ namespace satinalmaportali2.Services {
                     <tr>
                         <td style='background:#f8fafc;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;'>
                             <p style='margin:0;color:#94a3b8;font-size:12px;'>
-                                Bu bildirim <strong>{targetEmail}</strong> şirket yetkili adresine gönderilmiştir.
+                                Bu bildirim <strong>{finalTarget}</strong> adresine gönderilmiştir.
                             </p>
                         </td>
                     </tr>
@@ -284,44 +331,40 @@ namespace satinalmaportali2.Services {
 </body>
 </html>";
 
-                var message = new EmailMessage {
-                    From = _fromEmail,
-                    To = targetEmail,
-                    Subject = $"📬 İletişim Mesajı: {topicDisplay} — {fullName}",
-                    HtmlBody = htmlBody
-                };
-
-                await resend.EmailSendAsync(message);
-                return true;
-            }
-            catch (Exception ex) {
-                Console.WriteLine($"İletişim e-posta gönderim hatası: {ex.Message}");
-
-                // Resend Sandbox Modu Koruması: Eğer harici e-postaya gönderim reddedilirse hesap sahibinin e-postasına yönlendir
-                if (!string.Equals(targetEmail, "yerlikayamehmetkaan80@gmail.com", StringComparison.OrdinalIgnoreCase)) {
-                    try {
-                        Console.WriteLine("Resend test kısıtlaması nedeniyle e-posta 'yerlikayamehmetkaan80@gmail.com' adresine iletiliyor...");
-                        IResend resend = ResendClient.Create(_apiKey);
-                        var fallbackMessage = new EmailMessage {
-                            From = _fromEmail,
-                            To = "yerlikayamehmetkaan80@gmail.com",
-                            Subject = $"[TEST İLETİMİ -> {targetEmail}] 📬 İletişim: {fullName}",
-                            HtmlBody = $@"<div style='background:#fef3c7;padding:12px 16px;border:1px solid #fde68a;border-radius:8px;margin-bottom:16px;font-family:sans-serif;font-size:13px;color:#92400e;'>
-                                ⚠️ <strong>Geliştirici Notu:</strong> Resend ücretsiz test modunda (onboarding@resend.dev) yalnızca hesap sahibine (yerlikayamehmetkaan80@gmail.com) e-posta gönderilebilir. Hedef adres: <strong>{targetEmail}</strong>
-                            </div>
-                            <p><strong>Gönderen:</strong> {fullName} ({senderEmail})</p>
-                            <p><strong>Telefon:</strong> {phone}</p>
-                            <p><strong>Konu:</strong> {topic}</p>
-                            <p><strong>Mesaj:</strong><br/>{messageContent}</p>"
-                        };
-                        await resend.EmailSendAsync(fallbackMessage);
-                        return true;
-                    }
-                    catch (Exception fallbackEx) {
-                        Console.WriteLine($"Fallback gönderim hatası: {fallbackEx.Message}");
-                    }
+                var message = new MimeMessage();
+                message.From.Add(new MailboxAddress(_settings.SenderName, _settings.SenderEmail));
+                message.To.Add(new MailboxAddress("", finalTarget));
+                
+                // Cevapla dendiğinde direkt formu dolduran kişiye gitmesi için Reply-To ekle
+                if (!string.IsNullOrWhiteSpace(senderEmail))
+                {
+                    message.ReplyTo.Add(new MailboxAddress(fullName, senderEmail.Trim()));
                 }
 
+                message.Subject = $"📬 İletişim Mesajı: {topicDisplay} — {fullName}";
+                message.Body = new TextPart(TextFormat.Html) { Text = htmlBody };
+
+                using var client = new SmtpClient();
+                
+                await client.ConnectAsync(
+                    _settings.SmtpServer,
+                    _settings.SmtpPort,
+                    _settings.EnableSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto
+                );
+
+                string cleanPassword = _settings.SenderPassword.Replace(" ", "");
+                await client.AuthenticateAsync(_settings.SenderEmail, cleanPassword);
+
+                await client.SendAsync(message);
+                await client.DisconnectAsync(true);
+
+                _logger?.LogInformation("İletişim formu e-postası başarıyla iletildi: {Target}", finalTarget);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "İletişim e-posta gönderim hatası ({Target}): {Message}", targetEmail, ex.Message);
+                Console.WriteLine($"İletişim E-posta Gönderim Hatası: {ex.Message}");
                 return false;
             }
         }

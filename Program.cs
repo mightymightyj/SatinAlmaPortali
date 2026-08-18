@@ -9,7 +9,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews()
     .AddRazorRuntimeCompilation();
 builder.Services.AddMemoryCache();
-builder.Services.AddSingleton<satinalmaportali2.Services.EmailService>();
+
+// E-posta Servisi (Gmail SMTP / MailKit)
+builder.Services.Configure<EmailSettings>(
+    builder.Configuration.GetSection(EmailSettings.SectionName));
+builder.Services.AddSingleton<EmailService>();
 
 // Cloudinary Görsel Yükleme Servisi
 builder.Services.Configure<CloudinarySettings>(
