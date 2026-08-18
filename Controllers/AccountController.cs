@@ -335,7 +335,151 @@ namespace satinalmaportali2.Controllers {
                 }
             }
 
+            // Load available company types for editing
+            viewModel.AvailableCompanyTypes = await _context.CompanyTypes.ToListAsync();
+
             return View(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateProfile(
+            string? companyOfficial,
+            string? companyName,
+            int? companyTypeID,
+            string? companyMail,
+            string? companyPhone,
+            string? tcno,
+            string? taxOffice,
+            string? countryName,
+            string? townName,
+            string? districtName,
+            string? addressText,
+            string? companyDetailText)
+        {
+            if (User.Identity?.IsAuthenticated != true)
+            {
+                return RedirectToAction("Login");
+            }
+
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(email))
+            {
+                TempData["ProfileError"] = "Oturum açmış kullanıcı e-posta adresi bulunamadı.";
+                return RedirectToAction("Profile");
+            }
+
+            if (string.IsNullOrWhiteSpace(companyOfficial) || string.IsNullOrWhiteSpace(companyName) || string.IsNullOrWhiteSpace(companyMail))
+            {
+                TempData["ProfileError"] = "Lütfen zorunlu alanları (Firma Yetkilisi, Firma Adı, E-posta) doldurunuz.";
+                return RedirectToAction("Profile");
+            }
+
+            try
+            {
+                var emailTrimmed = email.Trim().ToLower();
+                var user = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail != null && c.CompanyMail.ToLower() == emailTrimmed);
+                if (user == null)
+                {
+                    TempData["ProfileError"] = "Kullanıcı hesabı veritabanında bulunamadı.";
+                    return RedirectToAction("Profile");
+                }
+
+                var newMailTrimmed = companyMail.Trim().ToLower();
+                // E-posta değiştiyse, başka bir hesapta kullanımda olup olmadığını kontrol et
+                if (newMailTrimmed != emailTrimmed)
+                {
+                    var emailExists = await _context.Companies.AnyAsync(c => c.CompanyID != user.CompanyID && c.CompanyMail != null && c.CompanyMail.ToLower() == newMailTrimmed);
+                    if (emailExists)
+                    {
+                        TempData["ProfileError"] = "Bu e-posta adresi başka bir firma veya kullanıcı tarafından kullanılmaktadır.";
+                        return RedirectToAction("Profile");
+                    }
+                }
+
+                // Kişi ve Firma Bilgilerini Güncelle
+                user.CompanyOfficial = companyOfficial.Trim();
+                user.CompanyName = companyName.Trim();
+                user.CompanyTypeID = companyTypeID ?? user.CompanyTypeID ?? 1;
+                user.CompanyMail = newMailTrimmed;
+                user.CompanyPhone = string.IsNullOrWhiteSpace(companyPhone) ? null : companyPhone.Trim();
+                user.TCNO = string.IsNullOrWhiteSpace(tcno) ? null : tcno.Trim();
+                user.TaxOffice = string.IsNullOrWhiteSpace(taxOffice) ? null : taxOffice.Trim();
+                user.CompanyDetailText = string.IsNullOrWhiteSpace(companyDetailText) ? null : companyDetailText.Trim();
+
+                // Adres Bilgilerini Güncelle / Oluştur
+                Addresses? address = null;
+                if (user.AddressID.HasValue)
+                {
+                    address = await _context.Addresses.FirstOrDefaultAsync(a => a.AddressID == user.AddressID.Value);
+                }
+
+                int? districtId = null;
+                if (!string.IsNullOrWhiteSpace(districtName))
+                {
+                    var matchedDistrict = await _context.Districts.FirstOrDefaultAsync(d => d.DistrictName == districtName.Trim());
+                    districtId = matchedDistrict?.DistrictID;
+                }
+
+                string cleanAddressText = string.IsNullOrWhiteSpace(addressText) ? "" : addressText.Trim();
+                if (string.IsNullOrWhiteSpace(cleanAddressText) && (!string.IsNullOrWhiteSpace(districtName) || !string.IsNullOrWhiteSpace(townName) || !string.IsNullOrWhiteSpace(countryName)))
+                {
+                    cleanAddressText = $"{districtName} / {townName} / {countryName}".Trim(' ', '/');
+                }
+
+                if (address == null)
+                {
+                    if (!string.IsNullOrWhiteSpace(cleanAddressText) || districtId.HasValue)
+                    {
+                        address = new Addresses
+                        {
+                            AddressText = cleanAddressText,
+                            DistrictID = districtId,
+                            CompanyID = user.CompanyID
+                        };
+                        _context.Addresses.Add(address);
+                        await _context.SaveChangesAsync();
+                        user.AddressID = address.AddressID;
+                    }
+                }
+                else
+                {
+                    address.AddressText = cleanAddressText;
+                    if (districtId.HasValue)
+                    {
+                        address.DistrictID = districtId;
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
+                // Kullanıcı Claims ve Auth Cookie Bilgilerini Yenile
+                var userType = User.FindFirst("UserType")?.Value ?? "User";
+                string displayName = user.CompanyOfficial ?? user.CompanyName ?? user.CompanyMail;
+                string compName = user.CompanyName ?? user.CompanyOfficial ?? user.CompanyMail;
+
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, displayName),
+                    new Claim(ClaimTypes.Email, user.CompanyMail),
+                    new Claim("CompanyName", compName),
+                    new Claim("UserType", userType)
+                };
+
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var authProperties = new AuthenticationProperties { IsPersistent = true };
+
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
+
+                TempData["ProfileSuccess"] = "Profil ve kişi bilgileriniz başarıyla güncellendi!";
+            }
+            catch (Exception ex)
+            {
+                var innerMsg = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                TempData["ProfileError"] = $"Bilgiler güncellenirken bir hata oluştu: {innerMsg}";
+            }
+
+            return RedirectToAction("Profile");
         }
 
         [HttpPost]

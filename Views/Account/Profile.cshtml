@@ -10,6 +10,13 @@
             ? $"{words[0][0]}{words[1][0]}".ToUpper()
             : Model.CompanyName.Substring(0, Math.Min(2, Model.CompanyName.Length)).ToUpper();
     }
+    else if (!string.IsNullOrEmpty(Model.CompanyOfficial))
+    {
+        var words = Model.CompanyOfficial.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        initials = words.Length >= 2
+            ? $"{words[0][0]}{words[1][0]}".ToUpper()
+            : Model.CompanyOfficial.Substring(0, Math.Min(2, Model.CompanyOfficial.Length)).ToUpper();
+    }
     else
     {
         initials = "?";
@@ -49,7 +56,8 @@
             </button>
         </div>
 
-        <h1 class="profile-hero-name">@(Model.CompanyName ?? "Firma Adı Belirtilmemiş")</h1>
+        <h1 class="profile-hero-name">@(Model.CompanyName ?? Model.CompanyOfficial ?? "Firma Adı Belirtilmemiş")</h1>
+        
         <div class="profile-hero-badges">
             <span class="profile-badge profile-badge-type">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -59,6 +67,17 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 @(Model.MembershipTypeName ?? "Standart Üyelik")
             </span>
+        </div>
+
+        <!-- Profil Düzenle Aksiyon Butonu -->
+        <div class="profile-hero-actions">
+            <button type="button" class="btn-profile-edit-toggle" id="btnToggleEditMode" onclick="toggleEditProfileMode()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
+                <span id="toggleEditText">Bilgileri Düzenle</span>
+            </button>
         </div>
     </div>
 </section>
@@ -173,163 +192,423 @@
             </div>
         </div>
 
-        <!-- Firma Bilgileri -->
-        <div class="profile-card">
-            <div class="profile-card-header">
-                <div class="profile-card-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                </div>
-                <h2>Firma Bilgileri</h2>
-            </div>
-            <div class="profile-card-body">
-                <div class="profile-info-grid">
-                    <div class="profile-info-item">
-                        <span class="info-label">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                            Firma Adı
-                        </span>
-                        <span class="info-value">@(Model.CompanyName ?? "—")</span>
-                    </div>
-                    <div class="profile-info-item">
-                        <span class="info-label">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                            Firma Yetkilisi
-                        </span>
-                        <span class="info-value">@(Model.CompanyOfficial ?? "—")</span>
-                    </div>
-                    <div class="profile-info-item">
-                        <span class="info-label">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                            Firma Türü
-                        </span>
-                        <span class="info-value">@(Model.CompanyTypeName ?? "—")</span>
-                    </div>
-                    <div class="profile-info-item">
-                        <span class="info-label">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                            Üyelik Tipi
-                        </span>
-                        <span class="info-value">@(Model.MembershipTypeName ?? "—")</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- ========================================================================= -->
+        <!-- 1. GÖRÜNTÜLEME MODU (VIEW MODE)                                           -->
+        <!-- ========================================================================= -->
+        <div id="profileViewMode" class="profile-mode-section">
 
-        <!-- İletişim Bilgileri -->
-        <div class="profile-card">
-            <div class="profile-card-header">
-                <div class="profile-card-icon profile-card-icon-green">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                </div>
-                <h2>İletişim Bilgileri</h2>
-            </div>
-            <div class="profile-card-body">
-                <div class="profile-info-grid">
-                    <div class="profile-info-item">
-                        <span class="info-label">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                            E-posta Adresi
-                        </span>
-                        <span class="info-value info-value-mail">@(Model.CompanyMail ?? "—")</span>
+            <!-- Firma & Yetkili Bilgileri -->
+            <div class="profile-card">
+                <div class="profile-card-header">
+                    <div class="profile-card-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                     </div>
-                    <div class="profile-info-item">
-                        <span class="info-label">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                            Telefon
-                        </span>
-                        <span class="info-value">@(Model.CompanyPhone ?? "—")</span>
+                    <div class="profile-header-text">
+                        <h2>Firma & Yetkili Bilgileri</h2>
+                    </div>
+                    <button type="button" class="btn-card-edit-shortcut" onclick="toggleEditProfileMode()" title="Bilgileri Düzenle">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                        <span>Düzenle</span>
+                    </button>
+                </div>
+                <div class="profile-card-body">
+                    <div class="profile-info-grid">
+                        <div class="profile-info-item">
+                            <span class="info-label">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                Firma Yetkilisi / Ad Soyad
+                            </span>
+                            <span class="info-value font-semibold">@(Model.CompanyOfficial ?? "—")</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="info-label">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                Firma / Kurum Adı
+                            </span>
+                            <span class="info-value">@(Model.CompanyName ?? "—")</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="info-label">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                                Firma Türü
+                            </span>
+                            <span class="info-value">@(Model.CompanyTypeName ?? "Belirtilmemiş")</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="info-label">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                Üyelik Tipi
+                            </span>
+                            <span class="info-value">@(Model.MembershipTypeName ?? "Standart Üyelik")</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Resmi Bilgiler -->
-        <div class="profile-card">
-            <div class="profile-card-header">
-                <div class="profile-card-icon profile-card-icon-amber">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                </div>
-                <h2>Resmi Bilgiler</h2>
-            </div>
-            <div class="profile-card-body">
-                <div class="profile-info-grid">
-                    <div class="profile-info-item">
-                        <span class="info-label">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                            TC Kimlik No / Vergi No
-                        </span>
-                        <span class="info-value info-value-mono">@(Model.TCNO ?? "—")</span>
+            <!-- İletişim Bilgileri -->
+            <div class="profile-card">
+                <div class="profile-card-header">
+                    <div class="profile-card-icon profile-card-icon-green">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                     </div>
-                    <div class="profile-info-item">
-                        <span class="info-label">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                            Vergi Dairesi
-                        </span>
-                        <span class="info-value">@(Model.TaxOffice ?? "—")</span>
+                    <div class="profile-header-text">
+                        <h2>İletişim Bilgileri</h2>
                     </div>
                 </div>
+                <div class="profile-card-body">
+                    <div class="profile-info-grid">
+                        <div class="profile-info-item">
+                            <span class="info-label">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                                E-posta Adresi
+                            </span>
+                            <span class="info-value info-value-mail">@(Model.CompanyMail ?? "—")</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="info-label">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                                Telefon Numarası
+                            </span>
+                            <span class="info-value">@(Model.CompanyPhone ?? "—")</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
 
-        <!-- Adres Bilgileri -->
-        <div class="profile-card">
-            <div class="profile-card-header">
-                <div class="profile-card-icon profile-card-icon-purple">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <!-- Resmi & Vergi Bilgileri -->
+            <div class="profile-card">
+                <div class="profile-card-header">
+                    <div class="profile-card-icon profile-card-icon-amber">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    </div>
+                    <div class="profile-header-text">
+                        <h2>Resmi & Vergi Bilgileri</h2>
+                    </div>
                 </div>
-                <h2>Adres Bilgileri</h2>
-            </div>
-            <div class="profile-card-body">
-                <div class="profile-info-grid">
-                    <div class="profile-info-item profile-info-item-full">
-                        <span class="info-label">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                            Açık Adres
-                        </span>
-                        <span class="info-value">@(Model.AddressText ?? "—")</span>
-                    </div>
-                    <div class="profile-info-item">
-                        <span class="info-label">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                            Ülke
-                        </span>
-                        <span class="info-value">@(Model.CountryName ?? "—")</span>
-                    </div>
-                    <div class="profile-info-item">
-                        <span class="info-label">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                            Şehir
-                        </span>
-                        <span class="info-value">@(Model.TownName ?? "—")</span>
-                    </div>
-                    <div class="profile-info-item">
-                        <span class="info-label">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                            İlçe
-                        </span>
-                        <span class="info-value">@(Model.DistrictName ?? "—")</span>
+                <div class="profile-card-body">
+                    <div class="profile-info-grid">
+                        <div class="profile-info-item">
+                            <span class="info-label">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                TC Kimlik No / Vergi No
+                            </span>
+                            <span class="info-value info-value-mono">@(Model.TCNO ?? "—")</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="info-label">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                Vergi Dairesi
+                            </span>
+                            <span class="info-value">@(Model.TaxOffice ?? "—")</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Firma Açıklaması -->
-        @if (!string.IsNullOrWhiteSpace(Model.CompanyDetailText))
-        {
+            <!-- Adres Bilgileri -->
+            <div class="profile-card">
+                <div class="profile-card-header">
+                    <div class="profile-card-icon profile-card-icon-purple">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    </div>
+                    <div class="profile-header-text">
+                        <h2>Adres & Lokasyon Bilgileri</h2>
+                    </div>
+                </div>
+                <div class="profile-card-body">
+                    <div class="profile-info-grid">
+                        <div class="profile-info-item profile-info-item-full">
+                            <span class="info-label">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                Açık Adres
+                            </span>
+                            <span class="info-value">@(Model.AddressText ?? "—")</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="info-label">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                                Ülke
+                            </span>
+                            <span class="info-value">@(Model.CountryName ?? "Türkiye")</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="info-label">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                Şehir / İl
+                            </span>
+                            <span class="info-value">@(Model.TownName ?? "—")</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="info-label">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                İlçe
+                            </span>
+                            <span class="info-value">@(Model.DistrictName ?? "—")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Firma Açıklaması -->
             <div class="profile-card">
                 <div class="profile-card-header">
                     <div class="profile-card-icon profile-card-icon-teal">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
                     </div>
-                    <h2>Firma Açıklaması</h2>
+                    <div class="profile-header-text">
+                        <h2>Firma / Profil Açıklaması</h2>
+                    </div>
                 </div>
                 <div class="profile-card-body">
-                    <p class="profile-detail-text">@Model.CompanyDetailText</p>
+                    <p class="profile-detail-text">@(string.IsNullOrWhiteSpace(Model.CompanyDetailText) ? "Henüz bir açıklama eklenmemiş. 'Bilgileri Düzenle' butonunu kullanarak firmanız hakkında detaylı bilgi ekleyebilirsiniz." : Model.CompanyDetailText)</p>
                 </div>
             </div>
-        }
 
-        <!-- Güvenlik & Şifre Yönetimi -->
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- 2. DÜZENLEME FORMU (EDIT MODE)                                            -->
+        <!-- ========================================================================= -->
+        <div id="profileEditMode" class="profile-mode-section" style="display: none;">
+            <form asp-controller="Account" asp-action="UpdateProfile" method="post" id="updateProfileForm">
+                @Html.AntiForgeryToken()
+
+                <!-- Kişi ve Firma Bilgileri Düzenleme -->
+                <div class="profile-card profile-card-editing">
+                    <div class="profile-card-header">
+                        <div class="profile-card-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                        <div class="profile-header-text">
+                            <h2>Kişi & Firma Bilgilerini Düzenle</h2>
+                            <span class="profile-header-subtitle">Ad, soyad, firma unvanı ve hesap türü ayarlarınız</span>
+                        </div>
+                    </div>
+                    <div class="profile-card-body">
+                        <div class="form-inputs-grid">
+                            <div class="form-group-item">
+                                <label class="form-item-label" for="editCompanyOfficial">
+                                    <span>Firma Yetkilisi / Kişi Ad Soyad</span>
+                                    <strong class="required-star">*</strong>
+                                </label>
+                                <div class="form-input-wrap">
+                                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    <input type="text" id="editCompanyOfficial" name="companyOfficial" value="@Model.CompanyOfficial" class="profile-form-control" placeholder="Örn: Ahmet Yılmaz" required />
+                                </div>
+                            </div>
+
+                            <div class="form-group-item">
+                                <label class="form-item-label" for="editCompanyName">
+                                    <span>Firma / Kurum Adı</span>
+                                    <strong class="required-star">*</strong>
+                                </label>
+                                <div class="form-input-wrap">
+                                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                    <input type="text" id="editCompanyName" name="companyName" value="@Model.CompanyName" class="profile-form-control" placeholder="Örn: Yılmaz Sanayi A.Ş." required />
+                                </div>
+                            </div>
+
+                            <div class="form-group-item">
+                                <label class="form-item-label" for="editCompanyType">
+                                    <span>Firma Faaliyet Türü</span>
+                                </label>
+                                <div class="form-input-wrap">
+                                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                                    <select id="editCompanyType" name="companyTypeID" class="profile-form-control profile-select-control">
+                                        @if (Model.AvailableCompanyTypes != null && Model.AvailableCompanyTypes.Any())
+                                        {
+                                            @foreach (var ct in Model.AvailableCompanyTypes)
+                                            {
+                                                <!option value="@ct.CompanyTypeID" @(Model.CompanyTypeID == ct.CompanyTypeID ? "selected" : "")>@ct.CompanyTypeName</!option>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <!option value="1" @(Model.CompanyTypeID == 1 ? "selected" : "")>Tedarikçi Firma</!option>
+                                            <!option value="2" @(Model.CompanyTypeID == 2 ? "selected" : "")>Alıcı / Müşteri</!option>
+                                            <!option value="3" @(Model.CompanyTypeID == 3 ? "selected" : "")>Hem Alıcı Hem Tedarikçi</!option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- İletişim Bilgileri Düzenleme -->
+                <div class="profile-card profile-card-editing">
+                    <div class="profile-card-header">
+                        <div class="profile-card-icon profile-card-icon-green">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        </div>
+                        <div class="profile-header-text">
+                            <h2>İletişim Bilgilerini Düzenle</h2>
+                            <span class="profile-header-subtitle">E-posta ve irtibat telefon numaranız</span>
+                        </div>
+                    </div>
+                    <div class="profile-card-body">
+                        <div class="form-inputs-grid">
+                            <div class="form-group-item">
+                                <label class="form-item-label" for="editCompanyMail">
+                                    <span>E-posta Adresi</span>
+                                    <strong class="required-star">*</strong>
+                                </label>
+                                <div class="form-input-wrap">
+                                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                                    <input type="email" id="editCompanyMail" name="companyMail" value="@Model.CompanyMail" class="profile-form-control" placeholder="ad@firma.com" required />
+                                </div>
+                                <span class="form-field-hint">Giriş yaparken ve bildirim alırken bu e-posta kullanılır.</span>
+                            </div>
+
+                            <div class="form-group-item">
+                                <label class="form-item-label" for="editCompanyPhone">
+                                    <span>Telefon Numarası</span>
+                                </label>
+                                <div class="form-input-wrap">
+                                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                                    <input type="tel" id="editCompanyPhone" name="companyPhone" value="@Model.CompanyPhone" class="profile-form-control" placeholder="05XX XXX XX XX" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resmi & Vergi Bilgileri Düzenleme -->
+                <div class="profile-card profile-card-editing">
+                    <div class="profile-card-header">
+                        <div class="profile-card-icon profile-card-icon-amber">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        </div>
+                        <div class="profile-header-text">
+                            <h2>Resmi & Vergi Bilgilerini Düzenle</h2>
+                            <span class="profile-header-subtitle">Vergi kimlik numarası ve vergi dairesi kaydı</span>
+                        </div>
+                    </div>
+                    <div class="profile-card-body">
+                        <div class="form-inputs-grid">
+                            <div class="form-group-item">
+                                <label class="form-item-label" for="editTCNO">
+                                    <span>TC Kimlik No / Vergi No</span>
+                                </label>
+                                <div class="form-input-wrap">
+                                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                    <input type="text" id="editTCNO" name="tcno" value="@Model.TCNO" class="profile-form-control font-mono" placeholder="10 veya 11 haneli numara" maxlength="11" />
+                                </div>
+                            </div>
+
+                            <div class="form-group-item">
+                                <label class="form-item-label" for="editTaxOffice">
+                                    <span>Vergi Dairesi</span>
+                                </label>
+                                <div class="form-input-wrap">
+                                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                    <input type="text" id="editTaxOffice" name="taxOffice" value="@Model.TaxOffice" class="profile-form-control" placeholder="Örn: Beşiktaş Vergi Dairesi" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Adres & Lokasyon Bilgileri Düzenleme -->
+                <div class="profile-card profile-card-editing">
+                    <div class="profile-card-header">
+                        <div class="profile-card-icon profile-card-icon-purple">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        </div>
+                        <div class="profile-header-text">
+                            <h2>Adres & Lokasyon Bilgilerini Düzenle</h2>
+                            <span class="profile-header-subtitle">Şirket / teslimat adresinizi güncelleyin</span>
+                        </div>
+                    </div>
+                    <div class="profile-card-body">
+                        <div class="form-inputs-grid">
+                            <div class="form-group-item">
+                                <label class="form-item-label" for="editCountryName">
+                                    <span>Ülke</span>
+                                </label>
+                                <div class="form-input-wrap">
+                                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                                    <input type="text" id="editCountryName" name="countryName" value="@(Model.CountryName ?? "Türkiye")" class="profile-form-control" placeholder="Türkiye" />
+                                </div>
+                            </div>
+
+                            <div class="form-group-item">
+                                <label class="form-item-label" for="editTownName">
+                                    <span>Şehir / İl</span>
+                                </label>
+                                <div class="form-input-wrap">
+                                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                    <input type="text" id="editTownName" name="townName" value="@Model.TownName" class="profile-form-control" placeholder="Örn: İstanbul" />
+                                </div>
+                            </div>
+
+                            <div class="form-group-item">
+                                <label class="form-item-label" for="editDistrictName">
+                                    <span>İlçe</span>
+                                </label>
+                                <div class="form-input-wrap">
+                                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                    <input type="text" id="editDistrictName" name="districtName" value="@Model.DistrictName" class="profile-form-control" placeholder="Örn: Kadıköy" />
+                                </div>
+                            </div>
+
+                            <div class="form-group-item form-group-full">
+                                <label class="form-item-label" for="editAddressText">
+                                    <span>Açık Adres (Cadde, Mahalle, Sokak, No, Daire)</span>
+                                </label>
+                                <div class="form-input-wrap">
+                                    <textarea id="editAddressText" name="addressText" rows="3" class="profile-form-control profile-textarea" placeholder="Örn: Barbaros Bulvarı No:12 D:4 Beşiktaş">@Model.AddressText</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Firma Açıklaması Düzenleme -->
+                <div class="profile-card profile-card-editing">
+                    <div class="profile-card-header">
+                        <div class="profile-card-icon profile-card-icon-teal">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+                        </div>
+                        <div class="profile-header-text">
+                            <h2>Firma / Profil Açıklaması Düzenle</h2>
+                            <span class="profile-header-subtitle">Firmanızın faaliyetleri, uzmanlıkları veya tedarik notları</span>
+                        </div>
+                    </div>
+                    <div class="profile-card-body">
+                        <div class="form-inputs-grid">
+                            <div class="form-group-item form-group-full">
+                                <label class="form-item-label" for="editCompanyDetailText">
+                                    <span>Firma Hakkında Detaylı Bilgi</span>
+                                </label>
+                                <div class="form-input-wrap">
+                                    <textarea id="editCompanyDetailText" name="companyDetailText" rows="4" class="profile-form-control profile-textarea" placeholder="Firmanızın hizmet verdiği sektörler, ürün yelpazesi veya genel çalışma prensipleri...">@Model.CompanyDetailText</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Alt Aksiyon Butonları -->
+                <div class="profile-edit-actions-bar">
+                    <button type="button" class="btn-edit-cancel" onclick="toggleEditProfileMode()">
+                        <span>İptal / Vazgeç</span>
+                    </button>
+                    <button type="submit" class="btn-edit-save">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        <span>Değişiklikleri Kaydet</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- 3. GÜVENLİK & ŞİFRE YÖNETİMİ                                              -->
+        <!-- ========================================================================= -->
         <div class="profile-card">
             <div class="profile-card-header">
                 <div class="profile-card-icon profile-card-icon-red">
@@ -337,7 +616,7 @@
                 </div>
                 <div class="profile-header-text">
                     <h2>Güvenlik & Şifre Yönetimi</h2>
-                    <span class="profile-header-subtitle">Hesap şifrenizi ve doğrulama ayarlarınızı yönetin</span>
+                    <span class="profile-header-subtitle">Hesap şifrenizi ve e-posta doğrulama bağlantınızı yönetin</span>
                 </div>
             </div>
             <div class="profile-card-body">
@@ -356,7 +635,7 @@
                                 <span class="tag-dot"></span> Korumalı
                             </span>
                         </div>
-                        <span class="security-item-hint">Şifreniz SHA-256 algoritmasıyla şifrelenmiştir</span>
+                        <span class="security-item-hint">Şifreniz Salted SHA-256 algoritmasıyla şifrelenmiştir</span>
                     </div>
 
                     <!-- Sağ: Doğrulama E-Postası -->
@@ -382,7 +661,7 @@
                         </div>
                         <div class="security-notice-text">
                             <strong>Şifrenizi Değiştirmek mi İstiyorsunuz?</strong>
-                            <p>Butona tıkladığınızda e-posta adresinize 30 dakika geçerli tek kullanımlık güvenli bağlantı iletilecektir.</p>
+                            <p>Şifre güvenliğiniz için e-posta adresinize tek kullanımlık şifre sıfırlama linki gönderilir.</p>
                         </div>
                     </div>
                     <form asp-controller="Account" asp-action="RequestPasswordReset" method="post" class="security-action-form">
@@ -493,6 +772,29 @@
 
 @section Scripts {
 <script>
+    let isEditMode = false;
+
+    function toggleEditProfileMode() {
+        isEditMode = !isEditMode;
+        const viewSec = document.getElementById('profileViewMode');
+        const editSec = document.getElementById('profileEditMode');
+        const toggleBtn = document.getElementById('btnToggleEditMode');
+        const toggleText = document.getElementById('toggleEditText');
+
+        if (isEditMode) {
+            viewSec.style.display = 'none';
+            editSec.style.display = 'block';
+            toggleBtn.classList.add('is-editing');
+            toggleText.textContent = 'Görüntüleme Modu';
+            editSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            editSec.style.display = 'none';
+            viewSec.style.display = 'block';
+            toggleBtn.classList.remove('is-editing');
+            toggleText.textContent = 'Bilgileri Düzenle';
+        }
+    }
+
     let selectedSingleFile = null;
     let cropImg = new Image();
     let cropScale = 1.0;
@@ -563,7 +865,6 @@
     }
 
     function initCropper() {
-        // Calculate base scale so image fills the circular canvas
         const isRotated90 = (cropRotation % 180 !== 0);
         const imgW = isRotated90 ? cropImg.height : cropImg.width;
         const imgH = isRotated90 ? cropImg.width : cropImg.height;
@@ -590,7 +891,6 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         ctx.save();
-        // Translate to center of canvas
         ctx.translate(canvas.width / 2 + cropOffsetX, canvas.height / 2 + cropOffsetY);
         ctx.rotate((cropRotation * Math.PI) / 180);
 
@@ -619,7 +919,6 @@
     function rotateCropImage(degrees) {
         cropRotation = (cropRotation + degrees) % 360;
         
-        // Recalculate base scale for new orientation
         const isRotated90 = (cropRotation % 180 !== 0);
         const imgW = isRotated90 ? cropImg.height : cropImg.width;
         const imgH = isRotated90 ? cropImg.width : cropImg.height;
@@ -632,10 +931,9 @@
         initCropper();
     }
 
-    // Canvas Dragging / Panning & Mouse Wheel Zoom
+    // Canvas Dragging / Panning
     const cropContainer = document.getElementById('cropContainer');
     if (cropContainer) {
-        // Mouse events
         cropContainer.addEventListener('mousedown', function(e) {
             isDragging = true;
             dragStartX = e.clientX - cropOffsetX;
@@ -659,7 +957,6 @@
             }
         });
 
-        // Touch events for mobile/tablet
         cropContainer.addEventListener('touchstart', function(e) {
             if (e.touches.length === 1) {
                 isDragging = true;
@@ -685,7 +982,6 @@
             }
         });
 
-        // Wheel Zoom
         cropContainer.addEventListener('wheel', function(e) {
             e.preventDefault();
             const delta = e.deltaY < 0 ? 0.1 : -0.1;
@@ -725,19 +1021,16 @@
             return;
         }
 
-        // Show loading progress UI
         document.getElementById('uploadProgressBox').style.display = 'flex';
         document.getElementById('modalActionsGroup').style.display = 'none';
         document.getElementById('btnConfirmUpload').disabled = true;
 
-        // Render to high-resolution 500x500 output canvas
         const OUTPUT_SIZE = 500;
         const outCanvas = document.createElement('canvas');
         outCanvas.width = OUTPUT_SIZE;
         outCanvas.height = OUTPUT_SIZE;
         const outCtx = outCanvas.getContext('2d');
 
-        // Scale ratio from preview canvas (240) to output (500)
         const exportRatio = OUTPUT_SIZE / CROP_CANVAS_SIZE;
 
         outCtx.save();
@@ -751,7 +1044,6 @@
         outCtx.drawImage(cropImg, -drawW / 2, -drawH / 2, drawW, drawH);
         outCtx.restore();
 
-        // Convert canvas output to JPEG Blob
         outCanvas.toBlob(async function(blob) {
             if (!blob) {
                 showDynamicAlert('Görsel işlenirken bir hata oluştu.', 'error');
@@ -762,7 +1054,6 @@
             const formData = new FormData();
             formData.append('profilePhoto', blob, 'profile-photo.jpg');
 
-            // Antiforgery token
             const tokenInput = document.querySelector('#hiddenPhotoUploadForm input[name="__RequestVerificationToken"]');
             if (tokenInput) {
                 formData.append('__RequestVerificationToken', tokenInput.value);
@@ -783,8 +1074,6 @@
                 if (response.ok && result.success) {
                     closePhotoModal();
                     showDynamicAlert(result.message || 'Profil fotoğrafınız başarıyla güncellendi!', 'success');
-
-                    // Update Hero and Card Avatars
                     updateAvatarUI(result.imageUrl);
                 } else {
                     closePhotoModal();
@@ -801,7 +1090,6 @@
     function updateAvatarUI(imageUrl) {
         if (!imageUrl) return;
 
-        // Update Hero Avatar Circle
         const heroCircle = document.getElementById('profileAvatarDisplay');
         let heroImg = document.getElementById('heroAvatarImg');
         const heroInitials = document.getElementById('heroAvatarInitials');
@@ -815,7 +1103,6 @@
         }
         heroImg.src = imageUrl;
 
-        // Update Card Avatar Circle
         const cardCircle = document.getElementById('cardAvatarDisplay');
         if (cardCircle) {
             let cardImg = document.getElementById('cardAvatarImg');
@@ -830,7 +1117,6 @@
             cardImg.src = imageUrl;
         }
 
-        // Update Status Badge
         const statusBadge = document.getElementById('avatarStatusBadge');
         if (statusBadge) {
             statusBadge.innerHTML = `
@@ -840,7 +1126,6 @@
             `;
         }
 
-        // Add Delete Button if not present
         if (!document.getElementById('deletePhotoForm')) {
             const buttonsContainer = document.querySelector('.avatar-mgmt-buttons');
             if (buttonsContainer) {
@@ -866,7 +1151,6 @@
     }
 
     function showDynamicAlert(message, type) {
-        // Remove existing temp alerts
         const tempSuccess = document.getElementById('tempSuccessAlert');
         if (tempSuccess) tempSuccess.remove();
         const tempError = document.getElementById('tempErrorAlert');

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace satinalmaportali2.Models
 {
     public class ProfileViewModel
@@ -34,5 +36,8 @@ namespace satinalmaportali2.Models
 
         public int? CountryID { get; set; }
         public string? CountryName { get; set; }
+
+        // Dropdown Lists
+        public List<CompanyTypes>? AvailableCompanyTypes { get; set; }
     }
 }
