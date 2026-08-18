@@ -1,0 +1,496 @@
+@using satinalmaportali2.Helpers
+@model satinalmaportali2.Models.SupplierDashboardViewModel
+@{
+    ViewData["Title"] = "Tedarikçi Satış & RFQ Yönetimi";
+    Layout = "~/Views/Dashboard/_DashboardLayout.cshtml";
+    ViewBag.DashboardRole = "Supplier";
+}
+
+<!-- ==================== SAYFA BAŞLIĞI VE DÖNEM SEÇİMİ ==================== -->
+<div class="page-head">
+    <div>
+        <h1>Tedarikçi Satış & RFQ Yönetimi</h1>
+        <p>
+            @if (Model.State == satinalmaportali2.Models.DataState.Ok) {
+                <span>@Model.SelectedYear dönemi · mağaza performansı, teklif ve açık ihaleler</span>
+            } else {
+                <span>Veri kaynağı bağlı değil</span>
+            }
+        </p>
+    </div>
+
+    @if (Model.AvailableYears.Count > 0) {
+        <nav class="year-filter" aria-label="Dönem seçimi">
+            @foreach (var year in Model.AvailableYears) {
+                <a class="year-pill @(year == Model.SelectedYear ? "is-active" : "")"
+                   asp-action="Supplier" asp-route-yil="@year"
+                   aria-current="@(year == Model.SelectedYear ? "page" : null)">@year</a>
+            }
+        </nav>
+    }
+</div>
+
+<!-- ==================== 4 BÜYÜK TEDARİKÇİ KPI KARTI ==================== -->
+<section class="kpi-row" aria-label="Tedarikçi Göstergeleri">
+
+    <!-- KPI 1: Gelen Yeni RFQ -->
+    <article class="card kpi-card">
+        <div class="kpi-top">
+            <span class="kpi-label">Gelen Yeni RFQ</span>
+            <span class="kpi-icon accent">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <polyline points="3 17 9 11 13 15 21 7"></polyline>
+                    <polyline points="14 7 21 7 21 14"></polyline>
+                </svg>
+            </span>
+        </div>
+        <p class="kpi-value">@Model.Summary.NewIncomingRfqs</p>
+        <p class="kpi-delta is-good">
+            <span aria-hidden="true">▲</span>
+            <span>+@Model.Summary.NewRfqsThisWeek bu hafta</span>
+            <span class="kpi-delta-note">· @Model.Summary.RfqsAwaitingResponse cevap bekliyor</span>
+        </p>
+    </article>
+
+    <!-- KPI 2: Aktif Teklifler -->
+    <article class="card kpi-card">
+        <div class="kpi-top">
+            <span class="kpi-label">Aktif Teklifler</span>
+            <span class="kpi-icon accent">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                </svg>
+            </span>
+        </div>
+        <p class="kpi-value">@Model.Summary.ActiveBids</p>
+        <p class="kpi-delta is-flat">
+            <span class="kpi-delta-note">toplam değer: @Model.Summary.ActiveBidsValue.ToString("N0", ChartHelper.Tr) ₺</span>
+        </p>
+    </article>
+
+    <!-- KPI 3: Kazanılan İhaleler -->
+    <article class="card kpi-card">
+        <div class="kpi-top">
+            <span class="kpi-label">Kazanılan İhaleler</span>
+            <span class="kpi-icon good">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="8" r="7"></circle>
+                    <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                </svg>
+            </span>
+        </div>
+        <p class="kpi-value">@Model.Summary.WonAuctions</p>
+        <p class="kpi-delta is-good">
+            <span aria-hidden="true">★</span>
+            <span>%@Model.Summary.WinRatePercent.ToString("0.0") Kazanma Oranı</span>
+            <span class="kpi-delta-note">(@Model.Summary.WonTotalRevenue.ToString("N0", ChartHelper.Tr) ₺ ciro)</span>
+        </p>
+    </article>
+
+    <!-- KPI 4: Katalog Stok Değeri -->
+    <article class="card kpi-card">
+        <div class="kpi-top">
+            <span class="kpi-label">Katalog Stok Değeri</span>
+            <span class="kpi-icon @(Model.Summary.LowStockAlertCount > 0 ? "warn" : "accent")">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                </svg>
+            </span>
+        </div>
+        <p class="kpi-value">@Model.Summary.CatalogStockValue.ToString("N0", ChartHelper.Tr) ₺</p>
+        <p class="kpi-delta is-flat">
+            <span class="kpi-delta-note">@Model.Summary.ActiveSkuCount ürün · harcama değil, katalog değeri</span>
+        </p>
+    </article>
+
+</section>
+
+<!-- ==================== 2 BÜYÜK GÖRSEL MODÜL (AÇIK RFQ'LAR & KAZANÇ TRENDİ) ==================== -->
+<section class="grid-equal mt-4" aria-label="Tedarikçi Modülleri">
+
+    <!-- MODÜL 1: Açık RFQ'lar Tablosu -->
+    <article class="card table-card" id="acik-rfqlar">
+        <header class="card-head">
+            <div>
+                <h2>Açık RFQ'lar (Teklif Bekleyenler)</h2>
+                <p class="card-subhead">Kurumsal alıcıların yayınladığı güncel alım talepleri</p>
+            </div>
+            <div class="table-filter-pills">
+                <button type="button" class="tab-pill is-active" onclick="filterRfqTable('all', this)">Tümü</button>
+                <button type="button" class="tab-pill" onclick="filterRfqTable('Cevap Bekliyor', this)">Cevap Bekleyen</button>
+                <button type="button" class="tab-pill" onclick="filterRfqTable('Teklif Verildi', this)">Teklif Verilen</button>
+            </div>
+        </header>
+
+        <div class="table-scroll-wrap">
+            <table class="dash-table" id="supplierRfqTable">
+                <thead>
+                    <tr>
+                        <th>Alıcı / RFQ</th>
+                        <th>Talep Edilen Ürün</th>
+                        <th>Miktar</th>
+                        <th>Son Tarih</th>
+                        <th>Durum</th>
+                        <th class="text-right">Aksiyon</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var rfq in Model.OpenRfqs)
+                    {
+                        var rfqStatusCls = rfq.Status switch {
+                            "Cevap Bekliyor" => "badge-amber",
+                            "Teklif Verildi" => "badge-blue",
+                            "İncelemede" => "badge-purple",
+                            _ => "badge-gray"
+                        };
+
+                        <tr data-status="@rfq.Status">
+                            <td>
+                                <div class="req-title-cell">
+                                    <strong class="vendor-name">@rfq.BuyerCompany</strong>
+                                    <span class="req-code">@rfq.RfqCode</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="req-name" title="@rfq.ProductName">@rfq.ProductName</span>
+                            </td>
+                            <td>
+                                <strong>@rfq.Quantity @rfq.Unit</strong>
+                            </td>
+                            <td>
+                                <div class="deadline-cell @(rfq.DaysLeft <= 2 ? "is-urgent" : "")">
+                                    <span>@rfq.Deadline.ToString("dd MMM yyyy")</span>
+                                    <small class="days-left-pill">
+                                        @(rfq.DaysLeft == 1 ? "⚠️ Son 1 Gün" : $"{rfq.DaysLeft} gün kaldı")
+                                    </small>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="status-badge @rfqStatusCls">
+                                    <span class="status-dot"></span>
+                                    @rfq.Status
+                                </span>
+                            </td>
+                            <td class="text-right">
+                                @if (rfq.HasMyBid)
+                                {
+                                    <button type="button" class="btn-table-action is-secondary" onclick="openOfferModal('@rfq.RfqCode', '@rfq.ProductName', '@rfq.MyBidAmount')">
+                                        Düzenle
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn-table-action is-primary-action" onclick="openOfferModal('@rfq.RfqCode', '@rfq.ProductName', '')">
+                                        Teklif Ver
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </article>
+
+    <!-- MODÜL 2: Kazanç Trendi Çizgi Grafiği -->
+    <article class="card chart-card" id="kazanclarim">
+        <header class="card-head">
+            <div>
+                <h2>Kazanç Trendi</h2>
+                <p class="card-subhead">@Model.SelectedYear · aylık ciro ve teklif hacmi</p>
+            </div>
+            <div class="chart-legend-box">
+                <span class="chart-legend-item">
+                    <span class="legend-swatch is-blue"></span> Onaylanan Ciro
+                </span>
+                <span class="chart-legend-item">
+                    <span class="legend-swatch is-dashed"></span> Teklif Pipeline
+                </span>
+            </div>
+        </header>
+
+        <div class="chart-body-container">
+            @{
+                var months = Model.EarningsTrend.Months;
+                var earningsValues = Model.EarningsTrend.MonthlyEarnings;
+                var pipelineValues = Model.EarningsTrend.MonthlyPendingPipeline;
+                var maxEarn = Model.EarningsTrend.MaxEarningsValue > 0 ? (double)Model.EarningsTrend.MaxEarningsValue : 350000.0;
+                var eTop = ChartHelper.NiceCeiling(maxEarn);
+
+                const double sW = 600, sH = 220, pL = 50, pR = 20, pT = 20, pB = 35;
+                var cW = sW - pL - pR;
+                var cH = sH - pT - pB;
+
+                int count = months.Count;
+                var stepX = count > 1 ? cW / (count - 1) : 0;
+                Func<int, double> getX = i => pL + stepX * i;
+                Func<double, double> getY = val => pT + cH * (1.0 - (val / eTop));
+
+                var earnPts = new List<(double X, double Y)>();
+                var pipePts = new List<(double X, double Y)>();
+                var earnAreaPts = new List<(double X, double Y)>();
+
+                for (int i = 0; i < count; i++)
+                {
+                    double eVal = i < earningsValues.Count ? (double)earningsValues[i] : 0;
+                    double pVal = i < pipelineValues.Count ? (double)pipelineValues[i] : 0;
+
+                    double px = getX(i);
+                    double pyEarn = getY(eVal);
+                    double pyPipe = getY(pVal);
+
+                    earnPts.Add((px, pyEarn));
+                    pipePts.Add((px, pyPipe));
+                }
+
+                if (earnPts.Count > 0)
+                {
+                    earnAreaPts.Add((earnPts[0].X, pT + cH));
+                    earnAreaPts.AddRange(earnPts);
+                    earnAreaPts.Add((earnPts[^1].X, pT + cH));
+                }
+            }
+
+            <svg viewBox="0 0 @ChartHelper.N(sW) @ChartHelper.N(sH)" class="spend-svg-chart" preserveAspectRatio="none">
+                <defs>
+                    <linearGradient id="earnGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#2563EB" stop-opacity="0.25" />
+                        <stop offset="100%" stop-color="#2563EB" stop-opacity="0.0" />
+                    </linearGradient>
+                </defs>
+
+                <!-- Kılavuz Çizgileri -->
+                @foreach (var tick in ChartHelper.Ticks(eTop, 4))
+                {
+                    var yPos = getY(tick);
+                    <line x1="@ChartHelper.N(pL)" y1="@ChartHelper.N(yPos)" x2="@ChartHelper.N(sW - pR)" y2="@ChartHelper.N(yPos)" class="svg-grid-line" />
+                    @ChartHelper.SvgText(pL - 8, yPos + 4, tick >= 1000 ? (tick / 1000).ToString("0") + "k" : tick.ToString("0"), "svg-axis-text", "end")
+                }
+
+                <!-- Ciro Alan Dolgusu -->
+                @if (earnAreaPts.Count > 0)
+                {
+                    <polygon points="@ChartHelper.PolylinePoints(earnAreaPts)" fill="url(#earnGradient)" />
+                }
+
+                <!-- Pipeline Çizgisi -->
+                @if (pipePts.Count > 0)
+                {
+                    <polyline points="@ChartHelper.PolylinePoints(pipePts)" class="svg-budget-line" fill="none" />
+                }
+
+                <!-- Satış Ciro Eğrisi -->
+                @if (earnPts.Count > 0)
+                {
+                    <polyline points="@ChartHelper.PolylinePoints(earnPts)" class="svg-spend-line" fill="none" />
+                }
+
+                <!-- Noktalar & Tooltipler -->
+                @for (int i = 0; i < count; i++)
+                {
+                    var pt = earnPts[i];
+                    var val = i < earningsValues.Count ? earningsValues[i] : 0;
+                    var mName = months[i];
+
+                    <g class="chart-point-group" tabindex="0">
+                        <circle cx="@ChartHelper.N(pt.X)" cy="@ChartHelper.N(pt.Y)" r="4" class="chart-point-circle" />
+                        @ChartHelper.SvgText(pt.X, sH - 8, mName, "svg-x-text", "middle")
+                        
+                        <g class="chart-tooltip-group">
+                            <rect x="@ChartHelper.N(pt.X - 55)" y="@ChartHelper.N(pt.Y - 36)" width="110" height="24" rx="5" class="tooltip-bg" />
+                            @ChartHelper.SvgText(pt.X, pt.Y - 20, val.ToString("N0", ChartHelper.Tr) + " ₺ Ciro", "tooltip-text", "middle")
+                        </g>
+                    </g>
+                }
+            </svg>
+        </div>
+
+        <div class="chart-foot-summary">
+            <span class="chart-foot-item">Toplam Ciro: <strong>@Model.EarningsTrend.MonthlyEarnings.Sum().ToString("N0", ChartHelper.Tr) ₺</strong></span>
+            <span class="chart-foot-item">Aylık Ortalama: <strong>@((Model.EarningsTrend.MonthlyEarnings.Sum() / 12m).ToString("N0", ChartHelper.Tr)) ₺</strong></span>
+        </div>
+    </article>
+
+</section>
+
+<!-- ==================== 'İLGİLENMENİZ GEREKENLER' VE KATALOG MODÜLÜ ==================== -->
+<section class="grid-equal mt-4" aria-label="Eylem Listesi ve Katalog">
+
+    <!-- MODÜL 3: 'İlgilenmeniz Gerekenler' Eylem Listesi -->
+    <article class="card">
+        <header class="card-head">
+            <div class="head-with-icon">
+                <span class="blue-accent-x">✕</span>
+                <h2>İlgilenmeniz Gerekenler</h2>
+            </div>
+            <span class="badge-count-pill">@Model.ActionItems.Count Görev</span>
+        </header>
+
+        <div class="action-list-body">
+            @foreach (var item in Model.ActionItems)
+            {
+                var badgeCls = item.BadgeType switch {
+                    "danger" => "badge-coral",
+                    "amber" => "badge-amber",
+                    "green" => "badge-emerald",
+                    _ => "badge-blue"
+                };
+
+                <div class="action-row">
+                    <div class="action-left">
+                        <div class="action-icon-box @item.BadgeType">
+                            @if (item.Type == "pricing") {
+                                <span>₺</span>
+                            } else if (item.Type == "stock") {
+                                <span>📦</span>
+                            } else if (item.Type == "urgent_rfq") {
+                                <span>⏳</span>
+                            } else {
+                                <span>★</span>
+                            }
+                        </div>
+                        <div class="action-info">
+                            <div class="action-info-head">
+                                <strong>@item.Title</strong>
+                                <span class="status-badge @badgeCls">@item.BadgeText</span>
+                            </div>
+                            <p class="action-info-desc">@item.Description</p>
+                        </div>
+                    </div>
+                    <div>
+                        @if (item.Type == "pricing" || item.Type == "stock")
+                        {
+                            <button type="button" class="btn-table-action" onclick="openPriceModal()">
+                                @item.ActionText →
+                            </button>
+                        }
+                        else if (item.Type == "urgent_rfq")
+                        {
+                            <a href="#acik-rfqlar" class="btn-table-action">
+                                @item.ActionText →
+                            </a>
+                        }
+                        else
+                        {
+                            <a href="#yorumlar" class="btn-table-action">
+                                @item.ActionText →
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </article>
+
+    <!-- MODÜL 4: Katalog & Stok Tablosu -->
+    <article class="card" id="katalog-yonetimi">
+        <header class="card-head">
+            <div class="head-with-icon">
+                <span class="blue-accent-x">✕</span>
+                <h2>Katalog Özeti</h2>
+            </div>
+            <button type="button" class="link-all-btn" onclick="openPriceModal()">+ Fiyat Güncelle</button>
+        </header>
+
+        <div class="table-scroll-wrap">
+            <table class="dash-table">
+                <thead>
+                    <tr>
+                        <th>Ürün Adı</th>
+                        <th>Kategori</th>
+                        <th>Stok</th>
+                        <th>Birim Fiyat</th>
+                        <th class="text-right">Durum</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var prod in Model.FeaturedProducts)
+                    {
+                        var isCrit = prod.Status == "Kritik";
+                        <tr>
+                            <td>
+                                <div class="req-title-cell">
+                                    <strong>@prod.ItemName</strong>
+                                    <small class="req-code">@prod.Sku</small>
+                                </div>
+                            </td>
+                            <td><span class="category-tag">@prod.Category</span></td>
+                            <td>
+                                <strong class="@(isCrit ? "text-danger" : "")">@prod.Stock Adet</strong>
+                            </td>
+                            <td>
+                                <strong>@prod.UnitPrice.ToString("N0", ChartHelper.Tr) ₺</strong>
+                            </td>
+                            <td class="text-right">
+                                <span class="status-badge @(isCrit ? "badge-coral" : "badge-emerald")">
+                                    <span class="status-dot"></span>
+                                    @prod.Status
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </article>
+
+</section>
+
+<!-- ==================== TEKLİF VERME MODALI ==================== -->
+<div id="offerModal" class="app-modal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-backdrop" onclick="closeOfferModal()"></div>
+    <div class="modal-card">
+        <div class="modal-head">
+            <div class="modal-title-wrap">
+                <span class="modal-badge-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 17 9 11 13 15 21 7"></polyline>
+                        <polyline points="14 7 21 7 21 14"></polyline>
+                    </svg>
+                </span>
+                <div>
+                    <h3 id="offerModalTitle">İhaleye Fiyat Teklifi Ver</h3>
+                    <small id="offerModalSubtitle" class="text-muted"></small>
+                </div>
+            </div>
+            <button type="button" class="modal-close-btn" onclick="closeOfferModal()" aria-label="Kapat">✕</button>
+        </div>
+        <form id="supplierOfferForm" onsubmit="handleOfferSubmit(event)">
+            <div class="modal-body">
+                <input type="hidden" id="offerRfqCode" />
+                
+                <div class="form-group">
+                    <label class="form-label" for="offerAmount">Toplam Teklif Tutarı (₺) <span class="req-star">*</span></label>
+                    <input type="number" id="offerAmount" class="form-control" placeholder="Örn: 125000" step="100" required />
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label class="form-label" for="offerDeliveryDays">Teslimat Süresi (Gün) <span class="req-star">*</span></label>
+                        <input type="number" id="offerDeliveryDays" class="form-control" value="7" min="1" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="offerValidityDays">Geçerlilik Süresi</label>
+                        <select id="offerValidityDays" class="form-control">
+                            <option value="15">15 Gün</option>
+                            <option value="30" selected>30 Gün</option>
+                            <option value="60">60 Gün</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="offerNotes">Teklif Açıklaması</label>
+                    <textarea id="offerNotes" class="form-control" rows="3" placeholder="Nakliye dahil, teslimat şartları..."></textarea>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn-cancel" onclick="closeOfferModal()">Vazgeç</button>
+                <button type="submit" class="btn-primary">Teklifi Gönder</button>
+            </div>
+        </form>
+    </div>
+</div>

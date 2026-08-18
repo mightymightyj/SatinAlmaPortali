@@ -1,17 +1,16 @@
 @{
-    var companyName = User.FindFirst("CompanyName")?.Value 
-                   ?? User.Identity?.Name 
-                   ?? "Kaya Sanayi Ltd. Şti.";
+    var role = (ViewBag.DashboardRole as string) ?? "Buyer";
+    var isSupplier = string.Equals(role, "Supplier", StringComparison.OrdinalIgnoreCase);
 
-    var officialName = User.Identity?.Name ?? "Ömer Cengiz";
-    var userRole = User.FindFirst("UserType")?.Value ?? "Satın Alma Müdürü";
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
 
-    var parts = companyName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-    var initials = parts.Length >= 2 
-        ? $"{parts[0][0]}{parts[1][0]}".ToUpper() 
-        : companyName.Length >= 2 
-            ? companyName.Substring(0, 2).ToUpper() 
-            : "TP";
+    var activeCompany = User.FindFirst("CompanyName")?.Value ?? (User.Identity?.IsAuthenticated == true ? User.Identity.Name : "HEB");
+    var activeUser = User.Identity?.Name ?? "HEB (user)";
+    var userType = User.FindFirst("UserType")?.Value ?? "user";
+    var avatarInitials = !string.IsNullOrEmpty(activeCompany) && activeCompany.Length >= 2 
+        ? activeCompany.Substring(0, 2).ToUpper() 
+        : (!string.IsNullOrEmpty(activeCompany) ? activeCompany.ToUpper() : "HE");
 }
 <!DOCTYPE html>
 <html lang="tr">
@@ -19,18 +18,21 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Tedarik Portalı</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
 </head>
 <body class="app-body">
 
     <a class="skip-link" href="#dash-main">İçeriğe atla</a>
 
-    <!-- SOL KENAR ÇUBUĞU -->
+    <!-- ==================== SOL KENAR ÇUBUĞU (DARK SIDEBAR) ==================== -->
     <aside class="app-sidebar" aria-label="Panel menüsü">
         <div class="side-brand-container">
-            <a class="side-brand" href="~/">
+            <a class="side-brand" asp-controller="Home" asp-action="Index">
                 <span class="side-brand-mark">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
                         <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
                         <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
                         <line x1="12" y1="22.08" x2="12" y2="12"></line>
@@ -38,78 +40,170 @@
                 </span>
                 <span class="side-brand-text">tedarik<span>.portal</span></span>
             </a>
-            <div class="side-company-pill" title="@companyName">
+
+            <!-- Şirket Bilgi Rozeti -->
+            <div class="side-company-pill" title="Aktif Şirket: @activeCompany">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M3 21h18M3 7v14M21 7v14M6 3h12v4H6zM9 11h2v2H9zM13 11h2v2h-2zM9 15h2v2H9zM13 15h2v2h-2z"></path>
                 </svg>
-                <span class="company-name-text">@companyName</span>
+                <span class="company-name-text">@activeCompany</span>
             </div>
         </div>
 
-        @{
-            var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
-        }
-
+        <!-- ==================== MENÜ LİNKLERİ ==================== -->
         <nav class="side-nav">
-            <a class="side-link @(currentController == "Dashboard" ? "is-active" : "")" asp-controller="Dashboard" asp-action="Index">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <rect x="3" y="3" width="7" height="9"></rect>
-                    <rect x="14" y="3" width="7" height="5"></rect>
-                    <rect x="14" y="12" width="7" height="9"></rect>
-                    <rect x="3" y="16" width="7" height="5"></rect>
-                </svg>
-                <span>Genel Bakış</span>
-            </a>
+            @if (!isSupplier)
+            {
+                <!-- ==================== ALICI (BUYER) MENÜSÜ ==================== -->
+                <a class="side-link @(currentAction == "Buyer" || (currentController == "Dashboard" && currentAction == "Index") ? "is-active" : "")" 
+                   asp-controller="Dashboard" asp-action="Buyer">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <rect x="3" y="3" width="7" height="9"></rect>
+                        <rect x="14" y="3" width="7" height="5"></rect>
+                        <rect x="14" y="12" width="7" height="9"></rect>
+                        <rect x="3" y="16" width="7" height="5"></rect>
+                    </svg>
+                    <span>Genel Bakış</span>
+                </a>
 
-            <a class="side-link @(currentController == "Requests" ? "is-active" : "")" asp-controller="Requests" asp-action="Index">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="9" y1="15" x2="15" y2="15"></line>
-                </svg>
-                <span>Talepler</span>
-            </a>
+                <a class="side-link @(currentController == "Requests" ? "is-active" : "")" 
+                   asp-controller="Requests" asp-action="Index">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>
+                    <span>Taleplerim</span>
+                </a>
 
-            <a class="side-link" href="#">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-                <span>Onaylar</span>
-                @if (ViewData["PendingCount"] is int pending && pending > 0) {
-                    <span class="side-count">@pending</span>
-                }
-            </a>
+                <a class="side-link" href="#onaylar" onclick="filterRequestsByStatus('Beklemede')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <span>Onay Bekleyenler</span>
+                    <span class="side-count">4</span>
+                </a>
 
-            <a class="side-link" href="#">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <polyline points="3 17 9 11 13 15 21 7"></polyline>
-                    <polyline points="14 7 21 7 21 14"></polyline>
-                </svg>
-                <span>RFQ / İhaleler</span>
-            </a>
+                <a class="side-link" href="#butce">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    <span>Bütçe</span>
+                </a>
 
-            <a class="side-link" href="#">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                </svg>
-                <span>Tedarikçiler</span>
-            </a>
+                <a class="side-link" href="#tedarikci-karnesi">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                    <span>Tedarikçi Karnesi</span>
+                </a>
 
-            <a class="side-link" href="#">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <line x1="18" y1="20" x2="18" y2="10"></line>
-                    <line x1="12" y1="20" x2="12" y2="4"></line>
-                    <line x1="6" y1="20" x2="6" y2="14"></line>
-                </svg>
-                <span>Analitik</span>
-            </a>
+                <a class="side-link" href="#mesajlar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Mesajlar</span>
+                    <span class="side-count is-muted">2</span>
+                </a>
+                
+                <a class="side-link @(currentAction == "Analytics" ? "is-active" : "")" 
+                   asp-controller="Dashboard" asp-action="Analytics">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <span>Sistem Analitiği</span>
+                </a>
+
+                <a class="side-link" href="#ayarlar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Ayarlar</span>
+                </a>
+            }
+            else
+            {
+                <!-- ==================== TEDARİKÇİ (SUPPLIER) MENÜSÜ ==================== -->
+                <a class="side-link @(currentAction == "Supplier" ? "is-active" : "")" 
+                   asp-controller="Dashboard" asp-action="Supplier">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span>Mağaza Genel Bakış</span>
+                </a>
+
+                <a class="side-link" href="#acik-rfqlar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <polyline points="3 17 9 11 13 15 21 7"></polyline>
+                        <polyline points="14 7 21 7 21 14"></polyline>
+                    </svg>
+                    <span>Açık RFQ'lar</span>
+                    <span class="side-count">6</span>
+                </a>
+
+                <a class="side-link" href="#tekliflerim">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    <span>Tekliflerim</span>
+                    <span class="side-count is-muted">12</span>
+                </a>
+
+                <a class="side-link" href="#katalog-yonetimi">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    </svg>
+                    <span>Katalog Yönetimi</span>
+                </a>
+
+                <a class="side-link" href="#kazanclarim">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <span>Kazançlarım</span>
+                </a>
+
+                <a class="side-link" href="#yorumlar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                    </svg>
+                    <span>Yorumlar</span>
+                </a>
+                
+                <a class="side-link @(currentAction == "Analytics" ? "is-active" : "")" 
+                   asp-controller="Dashboard" asp-action="Analytics">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <span>Sistem Analitiği</span>
+                </a>
+
+                <a class="side-link" href="#ayarlar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Ayarlar</span>
+                </a>
+            }
         </nav>
 
         <div class="side-foot">
-            <a class="side-link" href="~/">
+            <a class="side-link" asp-controller="Home" asp-action="Index">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M19 12H5"></path>
                     <polyline points="12 19 5 12 12 5"></polyline>
@@ -121,62 +215,200 @@
 
     <div class="app-shell">
 
-        <!-- ÜST ÇUBUK -->
+        <!-- ==================== ÜST ÇUBUK (TOPBAR - image_16df7c İLE BİREBİR) ==================== -->
         <header class="app-topbar">
+            <!-- Arama Alanı -->
             <form class="top-search" role="search" onsubmit="return false;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-                <input type="search" placeholder="Talep, tedarikçi veya sipariş ara..." aria-label="Ara" />
+                <input type="search" 
+                       id="topSearchInput"
+                       placeholder="Talep, tedarikçi veya sipariş ara..." 
+                       aria-label="Ara" />
             </form>
 
+            <!-- Sağ Aksiyonlar & Profil -->
             <div class="top-actions">
-                <button class="top-icon-btn" type="button" aria-label="Bildirimler">
+                <!-- Rol Geçiş Segmenti (Alıcı ⇄ Tedarikçi) -->
+                <div class="topbar-role-switcher" role="tablist">
+                    <a asp-controller="Dashboard" asp-action="Buyer" 
+                       class="top-role-btn @(!isSupplier ? "is-active" : "")" 
+                       title="Alıcı (Buyer) Paneline Geç">
+                        Alıcı Modu
+                    </a>
+                    <a asp-controller="Dashboard" asp-action="Supplier" 
+                       class="top-role-btn @(isSupplier ? "is-active" : "")" 
+                       title="Tedarikçi (Supplier) Paneline Geç">
+                        Tedarikçi Modu
+                    </a>
+                </div>
+
+                <!-- Bildirim Zili -->
+                <button class="top-icon-btn" type="button" aria-label="Bildirimler" onclick="toggleNotificationDropdown()" title="Bildirimler">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                     </svg>
-                    @if (ViewData["UrgentCount"] is int urgent && urgent > 0) {
-                        <span class="top-badge">@urgent</span>
-                    }
                 </button>
 
-                @if (currentController == "Requests")
+                <!-- Rol Bazlı Ana CTA Butonu -->
+                @if (!isSupplier)
                 {
                     <button class="btn-primary" type="button" onclick="openRequestModal()">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
-                        Yeni Satın Alma Talebi
+                        <span>+ Yeni Satın Alma Talebi</span>
                     </button>
                 }
                 else
                 {
-                    <a class="btn-primary" asp-controller="Requests" asp-action="Index" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                    <button class="btn-primary" type="button" onclick="openPriceModal()">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
-                        Yeni Satın Alma Talebi
-                    </a>
+                        <span>+ Fiyat Güncelle</span>
+                    </button>
                 }
 
+                <!-- Profil Alanı -->
                 <div class="top-profile">
-                    <span class="top-avatar" aria-hidden="true">@initials</span>
+                    <span class="top-avatar" aria-hidden="true">@avatarInitials</span>
                     <span class="top-profile-text">
-                        <strong>@companyName</strong>
-                        <small>@officialName (@userRole)</small>
+                        <strong>@activeCompany</strong>
+                        <small>@activeUser (@userType)</small>
                     </span>
                 </div>
             </div>
         </header>
 
+        <!-- ==================== ANA İÇERİK ALANI ==================== -->
         <main class="app-content" id="dash-main">
             @RenderBody()
         </main>
     </div>
+
+    <!-- ==================== YENİ SATIN ALMA TALEBİ MODALI (BUYER) ==================== -->
+    <div id="requestModal" class="app-modal" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-backdrop" onclick="closeRequestModal()"></div>
+        <div class="modal-card">
+            <div class="modal-head">
+                <div class="modal-title-wrap">
+                    <span class="modal-badge-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                    </span>
+                    <h3>Yeni Satın Alma Talebi Oluştur</h3>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeRequestModal()" aria-label="Kapat">✕</button>
+            </div>
+            <form id="buyerRequestForm" onsubmit="handleCreateRequestSubmit(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label" for="reqProductName">Ürün veya Hizmet Adı <span class="req-star">*</span></label>
+                        <input type="text" id="reqProductName" class="form-control" placeholder="Örn: Endüstriyel Rulman & Mil Seti" required />
+                    </div>
+
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label class="form-label" for="reqCategory">Kategori <span class="req-star">*</span></label>
+                            <select id="reqCategory" class="form-control" required>
+                                <option value="Makine & Yedek Parça">Makine & Yedek Parça</option>
+                                <option value="Hammadde & Kimyasallar">Hammadde & Kimyasallar</option>
+                                <option value="Otomasyon & Pnömatik">Otomasyon & Pnömatik</option>
+                                <option value="Fabrika & Donanım">Fabrika & Donanım</option>
+                                <option value="Lojistik & Sarf">Lojistik & Sarf</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="reqQuantity">Miktar <span class="req-star">*</span></label>
+                            <input type="number" id="reqQuantity" class="form-control" value="10" min="1" required />
+                        </div>
+                    </div>
+
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label class="form-label" for="reqBudget">Tahmini Bütçe (₺)</label>
+                            <input type="number" id="reqBudget" class="form-control" placeholder="85000" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="reqDeadline">Son Teklif / Termin Tarihi</label>
+                            <input type="date" id="reqDeadline" class="form-control" value="@DateTime.Today.AddDays(7).ToString("yyyy-MM-dd")" />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="reqNotes">Teknik Şartname & Açıklama</label>
+                        <textarea id="reqNotes" class="form-control" rows="3" placeholder="Tedarikçilerin teklif verirken dikkat etmesi gereken teknik kriterler..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-foot">
+                    <button type="button" class="btn-cancel" onclick="closeRequestModal()">Vazgeç</button>
+                    <button type="submit" class="btn-primary">Talebi Yayınla</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== HIZLI FİYAT GÜNCELLEME MODALI (SUPPLIER) ==================== -->
+    <div id="priceModal" class="app-modal" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-backdrop" onclick="closePriceModal()"></div>
+        <div class="modal-card">
+            <div class="modal-head">
+                <div class="modal-title-wrap">
+                    <span class="modal-badge-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                    </span>
+                    <h3>Katalog Ürün Fiyatı Güncelle</h3>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closePriceModal()" aria-label="Kapat">✕</button>
+            </div>
+            <form id="supplierPriceForm" onsubmit="handlePriceUpdateSubmit(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label" for="priceProductSelect">Ürün Seçin <span class="req-star">*</span></label>
+                        <select id="priceProductSelect" class="form-control" required onchange="handleProductPriceSelect(this)">
+                            <option value="185">Endüstriyel Rulman 6204-2RS (Mevcut: 185 ₺)</option>
+                            <option value="1450">Lineer Kızak ve Araba Seti HGR25 (Mevcut: 1.450 ₺)</option>
+                            <option value="640">Pnömatik 5/2 Yön Kontrol Valfi (Mevcut: 640 ₺)</option>
+                            <option value="320">Karbür Parmak Freze 10mm 4 Ağız (Mevcut: 320 ₺)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label class="form-label" for="newUnitPrice">Yeni Birim Fiyat (₺) <span class="req-star">*</span></label>
+                            <input type="number" id="newUnitPrice" class="form-control" value="195" step="0.5" required />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="newStockQty">Güncel Stok Adedi</label>
+                            <input type="number" id="newStockQty" class="form-control" value="450" min="0" />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="priceChangeNote">Güncelleme Gerekçesi / Not</label>
+                        <input type="text" id="priceChangeNote" class="form-control" placeholder="Örn: Hammadde maliyet artışı revizyonu" />
+                    </div>
+                </div>
+                <div class="modal-foot">
+                    <button type="button" class="btn-cancel" onclick="closePriceModal()">İptal</button>
+                    <button type="submit" class="btn-primary">Fiyatı Güncelle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Bildirim Kutusu -->
+    <div id="appToast" class="app-toast" role="alert" aria-live="polite"></div>
 
     <script src="~/js/dashboard.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)

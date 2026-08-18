@@ -44,13 +44,11 @@
             <div class="code-block">
 <pre>"ConnectionStrings": {
   "@satinalmaportali2.Controllers.DashboardController.ConnectionName":
-    "Server=SUNUCU;Database=VERITABANI;User Id=KULLANICI;Password=PAROLA;TrustServerCertificate=True"
+    "Host=SUNUCU;Port=5432;Database=VERITABANI;Username=KULLANICI;Password=PAROLA;"
 }</pre>
             </div>
             <p class="state-note">
-                Panel yalnızca <strong>SELECT</strong> çalıştırır. Güvenlik için bu kullanıcıya
-                sadece <code>db_datareader</code> yetkisi verilmesi önerilir — böylece
-                yanlışlıkla bile veri değiştirmek mümkün olmaz.
+                Panel PostgreSQL veritabanına bağlanır ve verileri güvenli şekilde görüntüler.
             </p>
         }
 
