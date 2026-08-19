@@ -226,6 +226,9 @@ namespace satinalmaportali2.Models {
     }
 
     public class SupplierRfqItemDto {
+        public int RequestID { get; set; }
+        public int? SenderID { get; set; }
+        public bool IsOwner { get; set; }
         public string RfqCode { get; set; } = "";
         public string BuyerCompany { get; set; } = "";
         public string ProductName { get; set; } = "";

@@ -85,10 +85,13 @@ namespace satinalmaportali2.Controllers {
                 string displayName = dbUser.CompanyOfficial ?? dbUser.CompanyName ?? email.Split('@')[0];
 
                 var claims = new List<Claim> {
+                    new Claim(ClaimTypes.NameIdentifier, dbUser.CompanyID.ToString()),
+                    new Claim("CompanyID", dbUser.CompanyID.ToString()),
                     new Claim(ClaimTypes.Name, displayName),
                     new Claim(ClaimTypes.Email, email),
                     new Claim("CompanyName", companyName),
-                    new Claim("UserType", userType ?? "User")
+                    new Claim("UserType", userType ?? "User"),
+                    new Claim(ClaimTypes.Role, userType ?? "User")
                 };
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -232,10 +235,13 @@ namespace satinalmaportali2.Controllers {
 
                 // Authenticate registered user immediately
                 var claims = new List<Claim> {
+                    new Claim(ClaimTypes.NameIdentifier, newCompany.CompanyID.ToString()),
+                    new Claim("CompanyID", newCompany.CompanyID.ToString()),
                     new Claim(ClaimTypes.Name, fullname ?? email),
                     new Claim(ClaimTypes.Email, email),
                     new Claim("CompanyName", fullname ?? email),
-                    new Claim("UserType", "User")
+                    new Claim("UserType", "User"),
+                    new Claim(ClaimTypes.Role, "User")
                 };
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -257,24 +263,77 @@ namespace satinalmaportali2.Controllers {
             return RedirectToAction("Index", "Home");
         }
 
-        [HttpGet]
-        public async Task<IActionResult> Profile() {
-            // Ensure user is authenticated
-            if (User.Identity?.IsAuthenticated != true) {
-                return RedirectToAction("Login");
+        private async Task<Company?> GetCurrentUserCompanyAsync()
+        {
+            if (User.Identity?.IsAuthenticated != true)
+            {
+                return null;
+            }
+
+            var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("CompanyID");
+            if (int.TryParse(idClaim, out int companyId) && companyId > 0)
+            {
+                var byId = await _context.Companies.FindAsync(companyId);
+                if (byId != null)
+                {
+                    return byId;
+                }
             }
 
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
-            if (string.IsNullOrEmpty(email)) {
-                return RedirectToAction("Login");
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                var emailTrimmed = email.Trim().ToLower();
+                var byEmail = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail != null && c.CompanyMail.ToLower() == emailTrimmed);
+                if (byEmail != null)
+                {
+                    return byEmail;
+                }
+
+                try
+                {
+                    var parts = emailTrimmed.Split('@');
+                    if (parts.Length == 2)
+                    {
+                        var idn = new System.Globalization.IdnMapping();
+                        var asciiDomain = idn.GetAscii(parts[1]);
+                        var asciiEmail = $"{parts[0]}@{asciiDomain}".ToLower();
+                        byEmail = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail != null && c.CompanyMail.ToLower() == asciiEmail);
+                        if (byEmail != null)
+                        {
+                            return byEmail;
+                        }
+
+                        var unicodeDomain = idn.GetUnicode(parts[1]);
+                        var unicodeEmail = $"{parts[0]}@{unicodeDomain}".ToLower();
+                        byEmail = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail != null && c.CompanyMail.ToLower() == unicodeEmail);
+                        if (byEmail != null)
+                        {
+                            return byEmail;
+                        }
+                    }
+                }
+                catch { }
             }
 
-            // Query company from database
-            var emailTrimmed = email.Trim().ToLower();
-            var company = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail != null && c.CompanyMail.ToLower() == emailTrimmed);
+            return null;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Profile() {
+            var cookieMode = Request.Cookies["ActiveDashboardMode"];
+            string activeMode = !string.IsNullOrWhiteSpace(cookieMode) && string.Equals(cookieMode, "Supplier", StringComparison.OrdinalIgnoreCase)
+                ? "Supplier"
+                : "Buyer";
+            ViewBag.DashboardRole = activeMode;
+
+            var company = await GetCurrentUserCompanyAsync();
             if (company == null) {
-                TempData["ErrorMessage"] = "Hesap bilgileri bulunamadı.";
-                return RedirectToAction("Index", "Home");
+                if (User.Identity?.IsAuthenticated != true) {
+                    return RedirectToAction("Login", new { returnUrl = "/Account/Profile" });
+                }
+                TempData["ErrorMessage"] = "Hesap bilgileri veritabanında bulunamadı. Lütfen tekrar giriş yapınız.";
+                return RedirectToAction("Login");
             }
 
             // Build ProfileViewModel with related data
@@ -357,16 +416,11 @@ namespace satinalmaportali2.Controllers {
             string? addressText,
             string? companyDetailText)
         {
-            if (User.Identity?.IsAuthenticated != true)
+            var user = await GetCurrentUserCompanyAsync();
+            if (user == null)
             {
+                TempData["ProfileError"] = "Oturum açmış kullanıcı hesabı bulunamadı. Lütfen tekrar giriş yapınız.";
                 return RedirectToAction("Login");
-            }
-
-            var email = User.FindFirst(ClaimTypes.Email)?.Value;
-            if (string.IsNullOrEmpty(email))
-            {
-                TempData["ProfileError"] = "Oturum açmış kullanıcı e-posta adresi bulunamadı.";
-                return RedirectToAction("Profile");
             }
 
             if (string.IsNullOrWhiteSpace(companyOfficial) || string.IsNullOrWhiteSpace(companyName) || string.IsNullOrWhiteSpace(companyMail))
@@ -377,17 +431,10 @@ namespace satinalmaportali2.Controllers {
 
             try
             {
-                var emailTrimmed = email.Trim().ToLower();
-                var user = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail != null && c.CompanyMail.ToLower() == emailTrimmed);
-                if (user == null)
-                {
-                    TempData["ProfileError"] = "Kullanıcı hesabı veritabanında bulunamadı.";
-                    return RedirectToAction("Profile");
-                }
-
                 var newMailTrimmed = companyMail.Trim().ToLower();
+                var currentMailTrimmed = (user.CompanyMail ?? "").Trim().ToLower();
                 // E-posta değiştiyse, başka bir hesapta kullanımda olup olmadığını kontrol et
-                if (newMailTrimmed != emailTrimmed)
+                if (newMailTrimmed != currentMailTrimmed)
                 {
                     var emailExists = await _context.Companies.AnyAsync(c => c.CompanyID != user.CompanyID && c.CompanyMail != null && c.CompanyMail.ToLower() == newMailTrimmed);
                     if (emailExists)
@@ -460,10 +507,13 @@ namespace satinalmaportali2.Controllers {
 
                 var claims = new List<Claim>
                 {
+                    new Claim(ClaimTypes.NameIdentifier, user.CompanyID.ToString()),
+                    new Claim("CompanyID", user.CompanyID.ToString()),
                     new Claim(ClaimTypes.Name, displayName),
                     new Claim(ClaimTypes.Email, user.CompanyMail),
                     new Claim("CompanyName", compName),
-                    new Claim("UserType", userType)
+                    new Claim("UserType", userType),
+                    new Claim(ClaimTypes.Role, userType)
                 };
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -484,23 +534,19 @@ namespace satinalmaportali2.Controllers {
 
         [HttpPost]
         public async Task<IActionResult> RequestPasswordReset() {
-            if (User.Identity?.IsAuthenticated != true) {
+            var user = await GetCurrentUserCompanyAsync();
+            if (user == null) {
+                TempData["ProfileError"] = "Oturum açmış kullanıcı hesabı bulunamadı.";
                 return RedirectToAction("Login");
             }
 
-            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            var email = user.CompanyMail;
             if (string.IsNullOrEmpty(email)) {
-                TempData["ProfileError"] = "Oturum açmış kullanıcı e-posta adresi bulunamadı.";
+                TempData["ProfileError"] = "Kullanıcıya ait geçerli bir e-posta adresi bulunamadı.";
                 return RedirectToAction("Profile");
             }
 
             try {
-                var emailTrimmed = email.Trim().ToLower();
-                var user = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail != null && c.CompanyMail.ToLower() == emailTrimmed);
-                if (user == null) {
-                    TempData["ProfileError"] = "Kullanıcı hesabı veritabanında bulunamadı.";
-                    return RedirectToAction("Profile");
-                }
 
                 // Generate reset token
                 var token = Guid.NewGuid().ToString("N");
@@ -649,20 +695,12 @@ namespace satinalmaportali2.Controllers {
             bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
                           (Request.Headers.Accept.ToString().Contains("application/json") && !Request.Headers.Accept.ToString().Contains("text/html"));
 
-            if (User.Identity?.IsAuthenticated != true) {
+            var user = await GetCurrentUserCompanyAsync();
+            if (user == null) {
                 if (isAjax) {
                     return Json(new { success = false, message = "Lütfen önce oturum açınız." });
                 }
                 return RedirectToAction("Login");
-            }
-
-            var email = User.FindFirst(ClaimTypes.Email)?.Value;
-            if (string.IsNullOrEmpty(email)) {
-                if (isAjax) {
-                    return Json(new { success = false, message = "Oturum açmış kullanıcı e-posta adresi bulunamadı." });
-                }
-                TempData["ProfileError"] = "Kullanıcı bilgisi bulunamadı.";
-                return RedirectToAction("Profile");
             }
 
             // Single file validation
@@ -699,17 +737,6 @@ namespace satinalmaportali2.Controllers {
             }
 
             try {
-                var emailTrimmed = email.Trim().ToLower();
-                var user = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail != null && c.CompanyMail.ToLower() == emailTrimmed);
-                if (user == null) {
-                    var msg = "Kullanıcı hesabı veritabanında bulunamadı.";
-                    if (isAjax) {
-                        return Json(new { success = false, message = msg });
-                    }
-                    TempData["ProfileError"] = msg;
-                    return RedirectToAction("Profile");
-                }
-
                 // Delete previous image from Cloudinary if one exists
                 if (!string.IsNullOrWhiteSpace(user.CompanyLogo)) {
                     try {
@@ -766,33 +793,15 @@ namespace satinalmaportali2.Controllers {
             bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
                           (Request.Headers.Accept.ToString().Contains("application/json") && !Request.Headers.Accept.ToString().Contains("text/html"));
 
-            if (User.Identity?.IsAuthenticated != true) {
+            var user = await GetCurrentUserCompanyAsync();
+            if (user == null) {
                 if (isAjax) {
                     return Json(new { success = false, message = "Lütfen önce oturum açınız." });
                 }
                 return RedirectToAction("Login");
             }
 
-            var email = User.FindFirst(ClaimTypes.Email)?.Value;
-            if (string.IsNullOrEmpty(email)) {
-                if (isAjax) {
-                    return Json(new { success = false, message = "Kullanıcı bilgisi bulunamadı." });
-                }
-                return RedirectToAction("Profile");
-            }
-
             try {
-                var emailTrimmed = email.Trim().ToLower();
-                var user = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail != null && c.CompanyMail.ToLower() == emailTrimmed);
-                if (user == null) {
-                    var msg = "Kullanıcı hesabı bulunamadı.";
-                    if (isAjax) {
-                        return Json(new { success = false, message = msg });
-                    }
-                    TempData["ProfileError"] = msg;
-                    return RedirectToAction("Profile");
-                }
-
                 if (!string.IsNullOrWhiteSpace(user.CompanyLogo)) {
                     // Delete from Cloudinary
                     await _cloudinaryService.DeleteImageAsync(user.CompanyLogo);

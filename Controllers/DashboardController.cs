@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using satinalmaportali2.Services;
@@ -20,14 +21,75 @@ namespace satinalmaportali2.Controllers
             _dashboardService = dashboardService;
         }
 
+        private int GetCurrentCompanyId()
+        {
+            var cidClaim = User.FindFirst("CompanyID")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(cidClaim) && int.TryParse(cidClaim, out int cid))
+            {
+                return cid;
+            }
+            return 0;
+        }
+
+        private void SetDashboardModeCookie(string role)
+        {
+            Response.Cookies.Append("ActiveDashboardMode", role, new CookieOptions
+            {
+                Expires = DateTimeOffset.UtcNow.AddDays(30),
+                HttpOnly = false,
+                IsEssential = true,
+                SameSite = SameSiteMode.Lax
+            });
+        }
+
+        private string GetActiveDashboardMode()
+        {
+            var cookie = Request.Cookies["ActiveDashboardMode"];
+            if (!string.IsNullOrWhiteSpace(cookie) && string.Equals(cookie, "Supplier", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Supplier";
+            }
+            return "Buyer";
+        }
+
         /// <summary>
-        /// Dashboard ana görünümü (Varsayılan olarak Alıcı / Buyer paneline yönlendirir veya seçilen rolü açar).
+        /// Kullanıcının aktif panel modunu (Alıcı / Tedarikçi) kalıcı olarak değiştirir.
+        /// </summary>
+        [HttpGet]
+        public IActionResult SetRole(string role, string? returnUrl = null)
+        {
+            string targetRole = string.Equals(role, "Supplier", StringComparison.OrdinalIgnoreCase) ? "Supplier" : "Buyer";
+            SetDashboardModeCookie(targetRole);
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
+            return targetRole == "Supplier" 
+                ? RedirectToAction(nameof(Supplier)) 
+                : RedirectToAction(nameof(Buyer));
+        }
+
+        /// <summary>
+        /// Dashboard ana görünümü (Kullanıcının aktif moduna göre yönlendirir).
         /// </summary>
         /// <param name="yil">Filtrelenecek yıl (isteğe bağlı).</param>
         /// <param name="role">Rol seçimi: "buyer" veya "supplier".</param>
         public async Task<IActionResult> Index(int? yil, string? role, CancellationToken cancellationToken)
         {
-            if (string.Equals(role, "supplier", StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrEmpty(role))
+            {
+                SetDashboardModeCookie(role);
+                if (string.Equals(role, "supplier", StringComparison.OrdinalIgnoreCase))
+                {
+                    return RedirectToAction(nameof(Supplier), new { yil });
+                }
+                return RedirectToAction(nameof(Buyer), new { yil });
+            }
+
+            var currentMode = GetActiveDashboardMode();
+            if (currentMode == "Supplier")
             {
                 return RedirectToAction(nameof(Supplier), new { yil });
             }
@@ -40,9 +102,11 @@ namespace satinalmaportali2.Controllers
         /// </summary>
         public async Task<IActionResult> Buyer(int? yil, CancellationToken cancellationToken)
         {
+            SetDashboardModeCookie("Buyer");
             ViewBag.DashboardRole = "Buyer";
             ViewData["Title"] = "Alıcı Portalı - Genel Bakış";
-            var viewModel = await _dashboardService.GetBuyerDashboardAsync(yil, cancellationToken);
+            int companyId = GetCurrentCompanyId();
+            var viewModel = await _dashboardService.GetBuyerDashboardAsync(yil, companyId > 0 ? companyId : null, cancellationToken);
             return View(viewModel);
         }
 
@@ -51,9 +115,11 @@ namespace satinalmaportali2.Controllers
         /// </summary>
         public async Task<IActionResult> Supplier(int? yil, CancellationToken cancellationToken)
         {
+            SetDashboardModeCookie("Supplier");
             ViewBag.DashboardRole = "Supplier";
             ViewData["Title"] = "Tedarikçi Portalı - Mağaza Genel Bakış";
-            var viewModel = await _dashboardService.GetSupplierDashboardAsync(yil, cancellationToken);
+            int companyId = GetCurrentCompanyId();
+            var viewModel = await _dashboardService.GetSupplierDashboardAsync(yil, companyId > 0 ? companyId : null, cancellationToken);
             return View(viewModel);
         }
 
@@ -62,7 +128,8 @@ namespace satinalmaportali2.Controllers
         /// </summary>
         public async Task<IActionResult> Analytics(int? yil, CancellationToken cancellationToken)
         {
-            ViewBag.DashboardRole = "Buyer";
+            var currentMode = GetActiveDashboardMode();
+            ViewBag.DashboardRole = currentMode;
             ViewData["Title"] = "Satın Alma ve Talep Analitiği";
             var viewModel = await _dashboardService.GetDashboardAsync(yil, cancellationToken);
             return View("Analytics", viewModel);

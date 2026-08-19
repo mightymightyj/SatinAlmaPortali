@@ -138,57 +138,76 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var rfq in Model.OpenRfqs)
+                    @if (!Model.OpenRfqs.Any())
                     {
-                        var rfqStatusCls = rfq.Status switch {
-                            "Cevap Bekliyor" => "badge-amber",
-                            "Teklif Verildi" => "badge-blue",
-                            "İncelemede" => "badge-purple",
-                            _ => "badge-gray"
-                        };
-
-                        <tr data-status="@rfq.Status">
-                            <td>
-                                <div class="req-title-cell">
-                                    <strong class="vendor-name">@rfq.BuyerCompany</strong>
-                                    <span class="req-code">@rfq.RfqCode</span>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="req-name" title="@rfq.ProductName">@rfq.ProductName</span>
-                            </td>
-                            <td>
-                                <strong>@rfq.Quantity @rfq.Unit</strong>
-                            </td>
-                            <td>
-                                <div class="deadline-cell @(rfq.DaysLeft <= 2 ? "is-urgent" : "")">
-                                    <span>@rfq.Deadline.ToString("dd MMM yyyy")</span>
-                                    <small class="days-left-pill">
-                                        @(rfq.DaysLeft == 1 ? "⚠️ Son 1 Gün" : $"{rfq.DaysLeft} gün kaldı")
-                                    </small>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="status-badge @rfqStatusCls">
-                                    <span class="status-dot"></span>
-                                    @rfq.Status
-                                </span>
-                            </td>
-                            <td class="text-right">
-                                @if (rfq.HasMyBid)
-                                {
-                                    <button type="button" class="btn-table-action is-secondary" onclick="openOfferModal('@rfq.RfqCode', '@rfq.ProductName', '@rfq.MyBidAmount')">
-                                        Düzenle
-                                    </button>
-                                }
-                                else
-                                {
-                                    <button type="button" class="btn-table-action is-primary-action" onclick="openOfferModal('@rfq.RfqCode', '@rfq.ProductName', '')">
-                                        Teklif Ver
-                                    </button>
-                                }
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 36px 16px; color: var(--muted);">
+                                Şu anda açık bir satın alma talebi (RFQ) bulunmuyor.
                             </td>
                         </tr>
+                    }
+                    else
+                    {
+                        @foreach (var rfq in Model.OpenRfqs)
+                        {
+                            var rfqStatusCls = rfq.Status switch {
+                                "Cevap Bekliyor" => "badge-amber",
+                                "Teklif Verildi" => "badge-blue",
+                                "İncelemede" => "badge-purple",
+                                "Onaylandı" => "badge-emerald",
+                                "Kabul Edildi" => "badge-emerald",
+                                _ => "badge-gray"
+                            };
+
+                            <tr data-status="@rfq.Status">
+                                <td>
+                                    <div class="req-title-cell">
+                                        <strong class="vendor-name">@rfq.BuyerCompany</strong>
+                                        <span class="req-code">@rfq.RfqCode</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="req-name" title="@rfq.ProductName">@rfq.ProductName</span>
+                                </td>
+                                <td>
+                                    <strong>@rfq.Quantity @rfq.Unit</strong>
+                                </td>
+                                <td>
+                                    <div class="deadline-cell @(rfq.DaysLeft <= 2 ? "is-urgent" : "")">
+                                        <span>@rfq.Deadline.ToString("dd MMM yyyy")</span>
+                                        <small class="days-left-pill">
+                                            @(rfq.DaysLeft == 1 ? "⚠️ Son 1 Gün" : $"{rfq.DaysLeft} gün kaldı")
+                                        </small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="status-badge @rfqStatusCls">
+                                        <span class="status-dot"></span>
+                                        @rfq.Status
+                                    </span>
+                                </td>
+                                <td class="text-right">
+                                    @if (rfq.IsOwner)
+                                    {
+                                        <span style="display: inline-block; padding: 4px 8px; font-size: 0.75rem; font-weight: 700; color: #2563EB; background: #EFF6FF; border-radius: 6px; border: 1px solid rgba(37, 99, 235, 0.2);">
+                                            Kendi Talebiniz
+                                        </span>
+                                    }
+                                    else if (rfq.HasMyBid)
+                                    {
+                                        <button type="button" class="btn-table-action is-secondary" onclick="openOfferModal('@rfq.RfqCode', '@rfq.ProductName', '@rfq.MyBidAmount')">
+                                            Düzenle
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="btn-table-action is-primary-action" onclick="openOfferModal('@rfq.RfqCode', '@rfq.ProductName', '')">
+                                            Teklif Ver
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
                     }
                 </tbody>
             </table>

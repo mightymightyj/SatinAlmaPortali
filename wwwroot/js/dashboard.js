@@ -135,33 +135,63 @@ function closeRequestModal() {
     }
 }
 
-function handleCreateRequestSubmit(event) {
+async function handleCreateRequestSubmit(event) {
     event.preventDefault();
     var name = document.getElementById('reqProductName')?.value || '';
     var cat = document.getElementById('reqCategory')?.value || '';
-    var qty = document.getElementById('reqQuantity')?.value || '1';
-    var budget = document.getElementById('reqBudget')?.value || '';
+    var qty = parseInt(document.getElementById('reqQuantity')?.value || '1', 10);
+    var budget = document.getElementById('reqBudget')?.value ? parseFloat(document.getElementById('reqBudget').value) : null;
+    var deadline = document.getElementById('reqDeadline')?.value || null;
+    var notes = document.getElementById('reqNotes')?.value || '';
 
-    closeRequestModal();
-    showAppToast('✓ "' + name + '" talebi başarıyla oluşturuldu ve tedarikçilere yayınlandı!');
+    if (!name.trim()) {
+        showAppToast('Lütfen ürün veya hizmet adını giriniz.', false);
+        return;
+    }
 
-    // Tabloya dinamik olarak en üste satır ekle
-    var table = document.getElementById('buyerRequestsTable');
-    if (table) {
-        var tbody = table.querySelector('tbody');
-        if (tbody) {
-            var tr = document.createElement('tr');
-            tr.setAttribute('data-status', 'Açık');
-            tr.style.animation = 'fadeInRow 0.4s ease';
-            var reqCode = 'REQ-' + new Date().getFullYear() + '-' + Math.floor(100 + Math.random() * 900);
-            tr.innerHTML = '<td><div class="req-title-cell"><span class="req-code">' + reqCode + '</span><strong class="req-name">' + name + '</strong><small class="req-date">Bugün</small></div></td>' +
-                '<td><span class="category-tag">' + cat + '</span></td>' +
-                '<td><span class="bids-pill">Yeni Yayınlandı</span></td>' +
-                '<td><strong class="budget-amount">' + (budget ? Number(budget).toLocaleString('tr-TR') + ' ₺' : 'Belirtilmedi') + '</strong></td>' +
-                '<td><span class="status-badge badge-blue"><span class="status-dot"></span>Açık</span></td>' +
-                '<td class="text-right"><a href="/Requests" class="btn-table-action">İncele</a></td>';
-            tbody.insertBefore(tr, tbody.firstChild);
+    try {
+        var response = await fetch('/Requests/CreateAjax', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                productName: name,
+                requestType: cat,
+                quantity: qty,
+                estimatedBudget: budget,
+                targetDeliveryDate: deadline,
+                notes: notes
+            })
+        });
+
+        var result = await response.json();
+        if (result.success) {
+            closeRequestModal();
+            showAppToast('✓ ' + result.message);
+
+            // Tabloya dinamik olarak en üste satır ekle
+            var table = document.getElementById('buyerRequestsTable');
+            if (table) {
+                var tbody = table.querySelector('tbody');
+                if (tbody) {
+                    var tr = document.createElement('tr');
+                    tr.setAttribute('data-status', 'Açık');
+                    tr.style.animation = 'fadeInRow 0.4s ease';
+                    var reqCode = 'REQ-' + (result.requestId ? ('000' + result.requestId).slice(-4) : 'YENI');
+                    tr.innerHTML = '<td><div class="req-title-cell"><span class="req-code">' + reqCode + '</span><strong class="req-name">' + escapeHtml(name) + '</strong><small class="req-date">Bugün</small></div></td>' +
+                        '<td><span class="category-tag">' + escapeHtml(cat) + '</span></td>' +
+                        '<td><strong class="budget-amount">' + (budget ? Number(budget).toLocaleString('tr-TR') + ' ₺' : 'Belirtilmedi') + '</strong></td>' +
+                        '<td><span class="status-badge badge-blue"><span class="status-dot"></span>Açık</span></td>' +
+                        '<td class="text-right"><a href="/Requests" class="btn-table-action">İncele</a></td>';
+                    tbody.insertBefore(tr, tbody.firstChild);
+                }
+            }
+        } else {
+            showAppToast('Hata: ' + (result.message || 'Talep kaydedilemedi.'), false);
         }
+    } catch (err) {
+        showAppToast('Sunucu hatası: ' + err.message, false);
     }
 }
 
@@ -201,7 +231,33 @@ function handlePriceUpdateSubmit(event) {
 }
 
 // --- TEDARİKÇİ (SUPPLIER) TEKLİF VERME MODALI ---
-function openOfferModal(rfqCode, productName, currentBid) {
+function openOfferModal(rfqCodeOrId, productName, currentBid) {
+    // 1. Sayısal ID veya REQ-0001 formatını ayıkla
+    var reqId = 0;
+    if (typeof rfqCodeOrId === 'string' && rfqCodeOrId.indexOf('-') > -1) {
+        var parts = rfqCodeOrId.split('-');
+        reqId = parseInt(parts[parts.length - 1], 10) || 0;
+    } else {
+        reqId = parseInt(rfqCodeOrId, 10) || 0;
+    }
+
+    // A) Requests/Index sayfasındaki modal: supplierBidModal
+    var bidModal = document.getElementById('supplierBidModal');
+    if (bidModal) {
+        var reqInput = document.getElementById('bidRequestID');
+        var prodTitle = document.getElementById('bidProductTitle');
+        var priceInput = document.getElementById('bidOfferedPrice');
+
+        if (reqInput) reqInput.value = reqId;
+        if (prodTitle) prodTitle.textContent = productName || ('Talep #' + reqId);
+        if (priceInput && currentBid) priceInput.value = parseFloat(currentBid);
+
+        bidModal.classList.add('is-open');
+        if (priceInput) setTimeout(function () { priceInput.focus(); }, 50);
+        return;
+    }
+
+    // B) Dashboard/Supplier sayfasındaki modal: offerModal
     var modal = document.getElementById('offerModal');
     if (modal) {
         var title = document.getElementById('offerModalTitle');
@@ -210,8 +266,8 @@ function openOfferModal(rfqCode, productName, currentBid) {
         var bidInput = document.getElementById('offerAmount');
 
         if (title) title.textContent = currentBid ? 'Teklifi Düzenle' : 'İhaleye Fiyat Teklifi Ver';
-        if (subtitle) subtitle.textContent = (rfqCode || '') + ' · ' + (productName || '');
-        if (hiddenCode) hiddenCode.value = rfqCode || '';
+        if (subtitle) subtitle.textContent = (rfqCodeOrId || ('Talep #' + reqId)) + (productName ? ' · ' + productName : '');
+        if (hiddenCode) hiddenCode.value = reqId;
         if (bidInput) bidInput.value = currentBid ? parseFloat(currentBid) : '';
 
         modal.classList.add('is-open');
@@ -226,15 +282,76 @@ function closeOfferModal() {
         modal.classList.remove('is-open');
         modal.setAttribute('aria-hidden', 'true');
     }
+    var bidModal = document.getElementById('supplierBidModal');
+    if (bidModal) {
+        bidModal.classList.remove('is-open');
+    }
 }
 
-function handleOfferSubmit(event) {
+function closeBidModal() {
+    closeOfferModal();
+}
+
+async function handleOfferSubmit(event) {
     event.preventDefault();
     var code = document.getElementById('offerRfqCode')?.value || '';
-    var amount = document.getElementById('offerAmount')?.value || '0';
+    var amount = parseFloat(document.getElementById('offerAmount')?.value || '0');
+    var days = parseInt(document.getElementById('offerDeliveryDays')?.value || '7', 10);
+    var valDays = parseInt(document.getElementById('offerValidityDays')?.value || '30', 10);
+    var notes = document.getElementById('offerNotes')?.value || '';
 
-    closeOfferModal();
-    showAppToast('✓ ' + code + ' talebi için ' + Number(amount).toLocaleString('tr-TR') + ' ₺ tutarındaki teklifiniz alıcıya iletildi!');
+    var reqId = 0;
+    if (typeof code === 'string' && code.indexOf('-') > -1) {
+        var parts = code.split('-');
+        reqId = parseInt(parts[parts.length - 1], 10) || 0;
+    } else {
+        reqId = parseInt(code, 10) || 0;
+    }
+
+    if (reqId <= 0) {
+        showAppToast('Hata: Talep numarası tespit edilemedi.', false);
+        return;
+    }
+
+    if (amount <= 0) {
+        showAppToast('Lütfen geçerli bir teklif tutarı giriniz.', false);
+        return;
+    }
+
+    try {
+        var response = await fetch('/Requests/SubmitOfferAjax', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                requestId: reqId,
+                offeredPrice: amount,
+                deliveryDays: days,
+                validityDays: valDays,
+                supplierNotes: notes
+            })
+        });
+
+        var result = await response.json();
+        if (result.success) {
+            closeOfferModal();
+            showAppToast('✓ ' + result.message, true);
+            setTimeout(function () {
+                window.location.reload();
+            }, 1200);
+        } else {
+            showAppToast('Teklif iletilemedi: ' + (result.message || 'Bilinmeyen hata.'), false);
+        }
+    } catch (err) {
+        showAppToast('Sunucu bağlantı hatası: ' + err.message, false);
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    var map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
 }
 
 // --- TABLO FİLTRELEME İŞLEMLERİ ---
