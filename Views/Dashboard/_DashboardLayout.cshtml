@@ -253,6 +253,16 @@
                     </svg>
                 </button>
 
+                <!-- Sahte Verilerle Test E-postası Gönderme Butonu -->
+                <button class="btn-test-mail" type="button" onclick="openTestEmailModal()" title="Sahte/Örnek verilerle alıcıya test e-postası gönder">
+                    <span class="test-mail-pulse"></span>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                    <span>Test E-posta Gönder</span>
+                </button>
+
                 <!-- Rol Bazlı Ana CTA Butonu -->
                 @if (!isSupplier)
                 {
@@ -402,6 +412,110 @@
                 <div class="modal-foot">
                     <button type="button" class="btn-cancel" onclick="closePriceModal()">İptal</button>
                     <button type="submit" class="btn-primary">Fiyatı Güncelle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== SAHTE VERİLERLE TEST E-POSTA MODALI ==================== -->
+    <div id="testEmailModal" class="app-modal" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-backdrop" onclick="closeTestEmailModal()"></div>
+        <div class="modal-card modal-card-lg">
+            <div class="modal-head" style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color: #fff; border-bottom: none;">
+                <div class="modal-title-wrap">
+                    <span class="modal-badge-icon" style="background: rgba(255,255,255,0.2); color: #fff;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                    </span>
+                    <div>
+                        <h3 style="color:#fff; margin:0; font-size:1.15rem; font-weight:800;">📧 E-posta Bildirim Test Laboratuvarı</h3>
+                        <small style="color:rgba(255,255,255,0.85); font-size:12px;">Sahte veya özel verilerle teklif e-posta şablonunu test edin</small>
+                    </div>
+                </div>
+                <button type="button" class="modal-close-btn" style="color:#fff; opacity:0.85;" onclick="closeTestEmailModal()" aria-label="Kapat">✕</button>
+            </div>
+            <form id="testEmailForm" onsubmit="handleSendTestEmailSubmit(event)">
+                <div class="modal-body">
+                    <!-- Hızlı Rastgele Veri Üretici Bar -->
+                    <div class="test-mail-quick-bar">
+                        <span class="quick-bar-text">🎯 Test Senaryoları:</span>
+                        <button type="button" class="btn-quick-scenario" onclick="fillRandomTestScenario()">🎲 Rastgele Senaryo Doldur</button>
+                        <button type="button" class="btn-quick-preview" onclick="previewCurrentTestEmail()">👁️ Şablonu HTML Önizle</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="testTargetEmail">Hedef Alıcı E-posta <span class="req-star">*</span></label>
+                        <input type="email" id="testTargetEmail" class="form-control" value="navape8857@ittiv.com" required placeholder="ornek@alanadi.com" />
+                        <small class="form-hint">E-postanın gönderileceği adres (Varsayılan: <strong>navape8857@ittiv.com</strong>)</small>
+                    </div>
+
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label class="form-label" for="testBuyerName">Alıcı Müşteri / Kurum</label>
+                            <input type="text" id="testBuyerName" class="form-control" value="TUSAŞ Havacılık ve Savunma Teknolojileri A.Ş." required />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="testSupplierName">Teklif Veren Tedarikçi</label>
+                            <input type="text" id="testSupplierName" class="form-control" value="Endüstriyel Titanyum & Metal Sistemleri Ltd. Şti." required />
+                        </div>
+                    </div>
+
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label class="form-label" for="testRfqCode">Talep / İhale Kodu</label>
+                            <input type="text" id="testRfqCode" class="form-control" value="RFQ-2026-8857" required />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="testProductName">Ürün / Hizmet Başlığı</label>
+                            <input type="text" id="testProductName" class="form-control" value="Endüstriyel Titanyum Bağlantı Elemanları Seti (Grade 5)" required />
+                        </div>
+                    </div>
+
+                    <div class="form-row-3">
+                        <div class="form-group">
+                            <label class="form-label" for="testQuantity">Miktar</label>
+                            <input type="number" id="testQuantity" class="form-control" value="1500" min="1" required />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="testUnit">Birim</label>
+                            <input type="text" id="testUnit" class="form-control" value="Adet" required />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="testOfferPrice">Toplam Teklif Fiyatı (₺)</label>
+                            <input type="number" id="testOfferPrice" class="form-control" value="485000" step="100" required />
+                        </div>
+                    </div>
+
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label class="form-label" for="testDeliveryDays">Teslimat Süresi (İş Günü)</label>
+                            <input type="number" id="testDeliveryDays" class="form-control" value="10" min="1" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="testValidityDays">Teklif Geçerlilik (Gün)</label>
+                            <input type="number" id="testValidityDays" class="form-control" value="45" min="1" />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="testNotes">Satıcı Notu & Şartlar</label>
+                        <textarea id="testNotes" class="form-control" rows="2">Tüm ürünler uluslararası AS9100 ve ISO 9001 sertifikalı tesislerimizde üretilmiş olup 2 yıl garantilidir. Belirtilen fiyata fabrika teslimi ve korozyon korumalı sevk dahildir.</textarea>
+                    </div>
+
+                    <div id="testEmailStatusBox" class="test-email-status-box" style="display:none;"></div>
+                </div>
+                <div class="modal-foot">
+                    <button type="button" class="btn-cancel" onclick="closeTestEmailModal()">Kapat</button>
+                    <button type="button" class="btn-secondary" onclick="fillRandomTestScenario()">🎲 Rastgele Doldur</button>
+                    <button type="submit" class="btn-primary" id="btnSubmitTestEmail" style="background: linear-gradient(135deg,#1e40af,#2563eb);">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                        <span>🚀 E-postayı Gönder (SMTP Test)</span>
+                    </button>
                 </div>
             </form>
         </div>

@@ -19,15 +19,22 @@
         </p>
     </div>
 
-    @if (Model.AvailableYears.Count > 0) {
-        <nav class="year-filter" aria-label="Dönem seçimi">
-            @foreach (var year in Model.AvailableYears) {
-                <a class="year-pill @(year == Model.SelectedYear ? "is-active" : "")"
-                   asp-action="Buyer" asp-route-yil="@year"
-                   aria-current="@(year == Model.SelectedYear ? "page" : null)">@year</a>
-            }
-        </nav>
-    }
+    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <button type="button" class="btn-quick-mail-test" onclick="openTestEmailModal()" title="Sahte/Örnek verilerle e-posta gönderim testi yap">
+            <span class="quick-mail-dot"></span>
+            <span>⚡ E-posta Test Laboratuvarı</span>
+        </button>
+
+        @if (Model.AvailableYears.Count > 0) {
+            <nav class="year-filter" aria-label="Dönem seçimi">
+                @foreach (var year in Model.AvailableYears) {
+                    <a class="year-pill @(year == Model.SelectedYear ? "is-active" : "")"
+                       asp-action="Buyer" asp-route-yil="@year"
+                       aria-current="@(year == Model.SelectedYear ? "page" : null)">@year</a>
+                }
+            </nav>
+        }
+    </div>
 </div>
 
 <!-- ==================== 4 BÜYÜK KPI KARTI (image_16df7c İLE BİREBİR) ==================== -->

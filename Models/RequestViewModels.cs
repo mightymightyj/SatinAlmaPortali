@@ -52,4 +52,19 @@ namespace satinalmaportali2.Models
         public string? SelectedType { get; set; }
         public string? SelectedStatus { get; set; }
     }
+
+    public class SubmitOfferInput
+    {
+        public int? RequestId { get; set; }
+        public string? RfqCode { get; set; }
+        public string? ProductName { get; set; }
+        public string? ProductImageUrl { get; set; }
+        public string? BuyerEmail { get; set; }
+        public int? Quantity { get; set; } = 1;
+        public string? Unit { get; set; } = "Adet";
+        public decimal OfferAmount { get; set; }
+        public int? DeliveryDays { get; set; } = 7;
+        public int? ValidityDays { get; set; } = 30;
+        public string? Notes { get; set; }
+    }
 }
