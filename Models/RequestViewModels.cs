@@ -162,4 +162,62 @@ namespace satinalmaportali2.Models
         public int OfferId { get; set; }
         public string? Reason { get; set; }
     }
+
+    public class RequestSelectorDto
+    {
+        public int RequestID { get; set; }
+        public string Code => $"REQ-{RequestID:D4}";
+        public string ProductName { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+        public decimal? EstimatedBudget { get; set; }
+        public int OfferCount { get; set; }
+        public string Status { get; set; } = "Beklemede";
+    }
+
+    public class OfferComparisonItemDto
+    {
+        public int OfferID { get; set; }
+        public int SupplierID { get; set; }
+        public string SupplierName { get; set; } = string.Empty;
+        public string? SupplierOfficial { get; set; }
+        public string? SupplierPhone { get; set; }
+        public string? SupplierMail { get; set; }
+        public string? SupplierCity { get; set; }
+        public decimal OfferedPrice { get; set; }
+        public decimal UnitOfferPrice { get; set; }
+        public int DeliveryDays { get; set; }
+        public int ValidityDays { get; set; }
+        public DateTime OfferDate { get; set; }
+        public string Status { get; set; } = "Beklemede";
+        public string? SupplierNotes { get; set; }
+        public bool IsAccepted => Status == "Kabul Edildi";
+        public bool IsRejected => Status == "Reddedildi";
+        public bool IsLowestPrice { get; set; }
+        public bool IsFastestDelivery { get; set; }
+        public decimal? BudgetVariancePct { get; set; }
+        public decimal? SavingsAmountComparedToMax { get; set; }
+    }
+
+    public class OfferComparisonViewModel
+    {
+        public Requests? SelectedRequest { get; set; }
+        public List<RequestSelectorDto> AvailableRequests { get; set; } = new();
+        public List<OfferComparisonItemDto> Offers { get; set; } = new();
+
+        public int TotalOfferCount => Offers.Count;
+        public decimal? LowestOfferPrice { get; set; }
+        public string? LowestOfferSupplierName { get; set; }
+        public int? FastestDeliveryDays { get; set; }
+        public string? FastestSupplierName { get; set; }
+        public decimal? AverageOfferPrice { get; set; }
+        public decimal? MaxOfferPrice { get; set; }
+        public decimal? EstimatedBudget => SelectedRequest?.EstimatedBudget;
+        public decimal? PotentialSavingsComparedToBudget { get; set; }
+        public decimal? PotentialSavingsComparedToMax { get; set; }
+
+        public bool IsRequestApproved => SelectedRequest != null && 
+            (SelectedRequest.Status == "Onaylandı" || SelectedRequest.Status == "Kabul Edildi" || SelectedRequest.Status == "Tamamlandı");
+        public string? WinningSupplierName => SelectedRequest?.ReceiverName;
+        public bool IsOwner { get; set; }
+    }
 }

@@ -1031,6 +1031,153 @@ namespace satinalmaportali2.Controllers
         }
 
         /// <summary>
+        /// Fiyat Kıyaslama Modalı için seçilen talebin tekliflerini ve analiz metriklerini JSON olarak döner.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetComparisonData(int id)
+        {
+            try
+            {
+                int currentCompanyId = GetCurrentCompanyId();
+                string userType = GetCurrentUserType();
+                var currentCompany = currentCompanyId > 0 ? await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId) : null;
+                bool isAdmin = string.Equals(userType, "admin", StringComparison.OrdinalIgnoreCase);
+
+                var req = await _context.Requests
+                    .Include(r => r.Offers)
+                        .ThenInclude(o => o.Supplier)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(r => r.RequestID == id);
+
+                if (req == null)
+                {
+                    return Json(new { success = false, message = "Talep bulunamadı." });
+                }
+
+                bool isOwner = IsRequestOwnedByCurrentCompany(req, currentCompanyId, currentCompany);
+                int qty = req.Quantity.HasValue && req.Quantity.Value > 0 ? req.Quantity.Value : 1;
+
+                var rawOffers = req.Offers.Select(o =>
+                {
+                    var supName = o.Supplier != null ? (o.Supplier.CompanyName ?? o.Supplier.CompanyOfficial ?? "Tedarikçi Firma") : $"Firma #{o.SupplierID}";
+                    var unitPrice = Math.Round(o.OfferedPrice / qty, 2);
+
+                    decimal? budgetVariance = req.EstimatedBudget.HasValue && req.EstimatedBudget.Value > 0
+                        ? Math.Round(((o.OfferedPrice - req.EstimatedBudget.Value) / req.EstimatedBudget.Value) * 100, 1)
+                        : null;
+
+                    return new
+                    {
+                        offerId = o.OfferID,
+                        supplierId = o.SupplierID,
+                        supplierName = supName,
+                        supplierOfficial = o.Supplier?.CompanyOfficial ?? "",
+                        supplierPhone = o.Supplier?.CompanyPhone ?? "",
+                        supplierMail = o.Supplier?.CompanyMail ?? "",
+                        offeredPrice = o.OfferedPrice,
+                        offeredPriceFormatted = o.OfferedPrice.ToString("N2") + " ₺",
+                        unitPrice = unitPrice,
+                        unitPriceFormatted = unitPrice.ToString("N2") + " ₺",
+                        deliveryDays = o.DeliveryDays,
+                        validityDays = o.ValidityDays,
+                        offerDate = o.OfferDate.ToString("dd.MM.yyyy HH:mm"),
+                        status = o.Status,
+                        supplierNotes = o.SupplierNotes ?? "",
+                        isMyOffer = o.SupplierID == currentCompanyId,
+                        isAccepted = string.Equals(o.Status, "Kabul Edildi", StringComparison.OrdinalIgnoreCase),
+                        isRejected = string.Equals(o.Status, "Reddedildi", StringComparison.OrdinalIgnoreCase),
+                        budgetVariance = budgetVariance,
+                        budgetVarianceFormatted = budgetVariance.HasValue 
+                            ? (budgetVariance.Value <= 0 ? $"%{Math.Abs(budgetVariance.Value)} Tasarruf" : $"+%{budgetVariance.Value} Aşım")
+                            : "—"
+                    };
+                }).OrderBy(o => o.offeredPrice).ToList();
+
+                decimal? lowestPrice = rawOffers.Any() ? rawOffers.Min(o => o.offeredPrice) : null;
+                decimal? maxPrice = rawOffers.Any() ? rawOffers.Max(o => o.offeredPrice) : null;
+                int? fastestDays = rawOffers.Any() ? rawOffers.Min(o => o.deliveryDays) : null;
+                decimal? avgPrice = rawOffers.Any() ? Math.Round(rawOffers.Average(o => o.offeredPrice), 2) : null;
+
+                var lowestOffer = rawOffers.FirstOrDefault(o => o.offeredPrice == lowestPrice);
+                var fastestOffer = rawOffers.FirstOrDefault(o => o.deliveryDays == fastestDays);
+
+                decimal? budgetSavings = null;
+                if (req.EstimatedBudget.HasValue && req.EstimatedBudget.Value > 0 && lowestPrice.HasValue)
+                {
+                    budgetSavings = req.EstimatedBudget.Value - lowestPrice.Value;
+                }
+                else if (maxPrice.HasValue && lowestPrice.HasValue && maxPrice.Value > lowestPrice.Value)
+                {
+                    budgetSavings = maxPrice.Value - lowestPrice.Value;
+                }
+
+                bool isApproved = req.Status == "Onaylandı" || req.Status == "Kabul Edildi" || req.Status == "Tamamlandı";
+
+                var analyzedOffers = rawOffers.Select(o => new
+                {
+                    o.offerId,
+                    o.supplierId,
+                    o.supplierName,
+                    o.supplierOfficial,
+                    o.supplierPhone,
+                    o.supplierMail,
+                    o.offeredPrice,
+                    o.offeredPriceFormatted,
+                    o.unitPrice,
+                    o.unitPriceFormatted,
+                    o.deliveryDays,
+                    o.validityDays,
+                    o.offerDate,
+                    o.status,
+                    o.supplierNotes,
+                    o.isMyOffer,
+                    o.isAccepted,
+                    o.isRejected,
+                    o.budgetVariance,
+                    o.budgetVarianceFormatted,
+                    isLowestPrice = lowestPrice.HasValue && o.offeredPrice == lowestPrice.Value,
+                    isFastestDelivery = fastestDays.HasValue && o.deliveryDays == fastestDays.Value
+                }).ToList();
+
+                return Json(new
+                {
+                    success = true,
+                    requestId = req.RequestID,
+                    requestCode = $"REQ-{req.RequestID:D4}",
+                    productName = req.ProductName ?? "",
+                    requestType = req.RequestType ?? "Satın Alma",
+                    quantity = qty,
+                    estimatedBudget = req.EstimatedBudget,
+                    estimatedBudgetFormatted = req.EstimatedBudget.HasValue ? req.EstimatedBudget.Value.ToString("N2") + " ₺" : "Belirtilmedi",
+                    targetDeliveryDate = req.TargetDeliveryDate?.ToString("dd.MM.yyyy") ?? "Belirtilmedi",
+                    status = req.Status ?? "Beklemede",
+                    notes = req.Notes ?? "",
+                    isOwner = isOwner || isAdmin,
+                    isApproved = isApproved,
+                    winningSupplierName = req.ReceiverName ?? "",
+                    offerCount = analyzedOffers.Count,
+                    lowestPrice = lowestPrice,
+                    lowestPriceFormatted = lowestPrice.HasValue ? lowestPrice.Value.ToString("N2") + " ₺" : "—",
+                    lowestSupplierName = lowestOffer?.supplierName ?? "—",
+                    fastestDays = fastestDays,
+                    fastestSupplierName = fastestOffer?.supplierName ?? "—",
+                    avgPrice = avgPrice,
+                    avgPriceFormatted = avgPrice.HasValue ? avgPrice.Value.ToString("N2") + " ₺" : "—",
+                    unitAvgPriceFormatted = avgPrice.HasValue ? (avgPrice.Value / qty).ToString("N2") + " ₺" : "—",
+                    budgetSavings = budgetSavings,
+                    budgetSavingsFormatted = budgetSavings.HasValue ? (budgetSavings.Value >= 0 ? "+ " : "- ") + Math.Abs(budgetSavings.Value).ToString("N2") + " ₺" : "—",
+                    isBudgetSavingsPositive = !budgetSavings.HasValue || budgetSavings.Value >= 0,
+                    hasBudget = req.EstimatedBudget.HasValue && req.EstimatedBudget.Value > 0,
+                    offers = analyzedOffers
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Kıyaslama verileri alınamadı: " + ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Talep Silme Action
         /// </summary>
         [HttpPost]
@@ -1065,6 +1212,149 @@ namespace satinalmaportali2.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        /// <summary>
+        /// Alıcıların tedarikçi tekliflerini kalem bazlı ve genel ticari şartlarla kıyaslayabileceği ekran Action'ı.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> Compare(int? id)
+        {
+            int currentCompanyId = GetCurrentCompanyId();
+            string userType = GetCurrentUserType();
+            var currentCompany = currentCompanyId > 0 ? await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId) : null;
+            int companyTypeId = currentCompany?.CompanyTypeID ?? (int.TryParse(User.FindFirst("CompanyTypeID")?.Value, out int ctype) ? ctype : 3);
+            bool isAdmin = string.Equals(userType, "admin", StringComparison.OrdinalIgnoreCase);
+
+            string activeMode;
+            if (companyTypeId == 1 && !isAdmin)
+            {
+                activeMode = "Supplier";
+            }
+            else if (companyTypeId == 2 && !isAdmin)
+            {
+                activeMode = "Buyer";
+            }
+            else
+            {
+                var cookieMode = Request.Cookies["ActiveDashboardMode"];
+                activeMode = !string.IsNullOrWhiteSpace(cookieMode) && string.Equals(cookieMode, "Supplier", StringComparison.OrdinalIgnoreCase)
+                    ? "Supplier"
+                    : "Buyer";
+            }
+
+            ViewBag.DashboardRole = activeMode;
+            ViewBag.CanSwitchRole = (companyTypeId == 3 || isAdmin);
+            ViewBag.CompanyTypeID = companyTypeId;
+
+            // Alıcının taleplerini çek (dropdown seçici için)
+            var allRequests = await _context.Requests
+                .Include(r => r.Offers)
+                .AsNoTracking()
+                .OrderByDescending(r => r.RequestDate)
+                .ToListAsync();
+
+            var myRequests = allRequests.Where(r => isAdmin || IsRequestOwnedByCurrentCompany(r, currentCompanyId, currentCompany)).ToList();
+
+            var availableRequestsDto = myRequests.Select(r => new RequestSelectorDto
+            {
+                RequestID = r.RequestID,
+                ProductName = r.ProductName ?? r.RequestType ?? "Talep",
+                Quantity = r.Quantity ?? 1,
+                EstimatedBudget = r.EstimatedBudget,
+                OfferCount = r.Offers.Count,
+                Status = r.Status ?? "Beklemede"
+            }).ToList();
+
+            // Seçilen talep belirleme
+            Requests? targetRequest = null;
+            if (id.HasValue && id.Value > 0)
+            {
+                targetRequest = myRequests.FirstOrDefault(r => r.RequestID == id.Value);
+            }
+
+            if (targetRequest == null)
+            {
+                targetRequest = myRequests.FirstOrDefault(r => r.Offers.Any()) ?? myRequests.FirstOrDefault();
+            }
+
+            var viewModel = new OfferComparisonViewModel
+            {
+                SelectedRequest = targetRequest,
+                AvailableRequests = availableRequestsDto,
+                IsOwner = targetRequest != null && IsRequestOwnedByCurrentCompany(targetRequest, currentCompanyId, currentCompany)
+            };
+
+            if (targetRequest != null)
+            {
+                var offersWithSuppliers = await _context.RequestOffers
+                    .Include(o => o.Supplier)
+                    .Where(o => o.RequestID == targetRequest.RequestID)
+                    .OrderBy(o => o.OfferedPrice)
+                    .ToListAsync();
+
+                if (offersWithSuppliers.Any())
+                {
+                    var lowestPrice = offersWithSuppliers.Min(o => o.OfferedPrice);
+                    var maxPrice = offersWithSuppliers.Max(o => o.OfferedPrice);
+                    var minLeadTime = offersWithSuppliers.Min(o => o.DeliveryDays);
+                    var avgPrice = offersWithSuppliers.Average(o => o.OfferedPrice);
+                    var lowestOffer = offersWithSuppliers.First(o => o.OfferedPrice == lowestPrice);
+                    var fastestOffer = offersWithSuppliers.First(o => o.DeliveryDays == minLeadTime);
+
+                    int reqQty = targetRequest.Quantity.HasValue && targetRequest.Quantity.Value > 0 ? targetRequest.Quantity.Value : 1;
+
+                    viewModel.LowestOfferPrice = lowestPrice;
+                    viewModel.LowestOfferSupplierName = lowestOffer.Supplier?.CompanyName ?? lowestOffer.Supplier?.CompanyOfficial ?? $"Tedarikçi #{lowestOffer.SupplierID}";
+                    viewModel.FastestDeliveryDays = minLeadTime;
+                    viewModel.FastestSupplierName = fastestOffer.Supplier?.CompanyName ?? fastestOffer.Supplier?.CompanyOfficial ?? $"Tedarikçi #{fastestOffer.SupplierID}";
+                    viewModel.AverageOfferPrice = Math.Round(avgPrice, 2);
+                    viewModel.MaxOfferPrice = maxPrice;
+
+                    if (targetRequest.EstimatedBudget.HasValue && targetRequest.EstimatedBudget.Value > 0)
+                    {
+                        viewModel.PotentialSavingsComparedToBudget = targetRequest.EstimatedBudget.Value - lowestPrice;
+                    }
+
+                    if (maxPrice > lowestPrice)
+                    {
+                        viewModel.PotentialSavingsComparedToMax = maxPrice - lowestPrice;
+                    }
+
+                    viewModel.Offers = offersWithSuppliers.Select(o =>
+                    {
+                        var supName = o.Supplier?.CompanyName ?? o.Supplier?.CompanyOfficial ?? $"Tedarikçi #{o.SupplierID}";
+                        var unitPrice = Math.Round(o.OfferedPrice / reqQty, 2);
+                        decimal? budgetVariance = targetRequest.EstimatedBudget.HasValue && targetRequest.EstimatedBudget.Value > 0
+                            ? Math.Round(((o.OfferedPrice - targetRequest.EstimatedBudget.Value) / targetRequest.EstimatedBudget.Value) * 100, 1)
+                            : null;
+
+                        return new OfferComparisonItemDto
+                        {
+                            OfferID = o.OfferID,
+                            SupplierID = o.SupplierID,
+                            SupplierName = supName,
+                            SupplierOfficial = o.Supplier?.CompanyOfficial,
+                            SupplierPhone = o.Supplier?.CompanyPhone,
+                            SupplierMail = o.Supplier?.CompanyMail,
+                            SupplierCity = o.Supplier?.TaxOffice,
+                            OfferedPrice = o.OfferedPrice,
+                            UnitOfferPrice = unitPrice,
+                            DeliveryDays = o.DeliveryDays,
+                            ValidityDays = o.ValidityDays,
+                            OfferDate = o.OfferDate,
+                            Status = o.Status,
+                            SupplierNotes = o.SupplierNotes,
+                            IsLowestPrice = o.OfferedPrice == lowestPrice,
+                            IsFastestDelivery = o.DeliveryDays == minLeadTime,
+                            BudgetVariancePct = budgetVariance,
+                            SavingsAmountComparedToMax = maxPrice > o.OfferedPrice ? maxPrice - o.OfferedPrice : 0
+                        };
+                    }).ToList();
+                }
+            }
+
+            return View(viewModel);
         }
     }
 }
