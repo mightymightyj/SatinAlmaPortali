@@ -794,6 +794,338 @@
         color: #FFFFFF;
     }
 
+    /* ============ FİYAT KIYASLAMA MODALI MODERN STİLLERİ ============ */
+    #priceCompareModal.custom-modal-backdrop {
+        background: rgba(15, 23, 42, 0.72);
+        backdrop-filter: blur(8px);
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    #priceCompareModal .custom-modal-dialog {
+        border-radius: 20px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+        max-width: 1140px;
+        width: 96vw;
+        overflow: hidden;
+    }
+
+    .cmp-header-gradient {
+        padding: 16px 24px;
+        background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 60%, #EFF6FF 100%);
+        border-bottom: 1px solid #E2E8F0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .cmp-header-icon-box {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #FFFFFF;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
+        flex-shrink: 0;
+    }
+
+    .btn-cmp-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #FFFFFF;
+        color: #334155;
+        border: 1px solid #E2E8F0;
+        padding: 7px 13px;
+        border-radius: 9px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .btn-cmp-action:hover {
+        background: #F8FAFC;
+        border-color: #CBD5E1;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+        color: #0F172A;
+    }
+
+    /* Talep Özet Şeridi */
+    .cmp-req-banner {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        padding: 16px 20px;
+        display: grid;
+        grid-template-columns: 2.2fr 1fr 1.2fr 1fr;
+        gap: 16px;
+        align-items: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+
+    .cmp-req-col {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+    .cmp-req-col:not(:last-child) {
+        border-right: 1px solid #F1F5F9;
+        padding-right: 14px;
+    }
+
+    .cmp-badge-code {
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #2563EB;
+        background: #EFF6FF;
+        border: 1px solid #BFDBFE;
+        padding: 2px 7px;
+        border-radius: 6px;
+        display: inline-block;
+        width: fit-content;
+    }
+
+    /* KPI Kartları Grid */
+    .modal-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+    }
+
+    .modal-kpi-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        padding: 15px 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 6px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        transition: all 0.25s ease;
+    }
+    .modal-kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
+    }
+
+    .modal-kpi-card.is-lowest {
+        border-top: 3px solid #10B981;
+        background: linear-gradient(180deg, #F0FDF4 0%, #FFFFFF 65%);
+    }
+
+    .modal-kpi-card.is-fastest {
+        border-top: 3px solid #3B82F6;
+        background: linear-gradient(180deg, #EFF6FF 0%, #FFFFFF 65%);
+    }
+
+    .modal-kpi-card.is-savings {
+        border-top: 3px solid #F59E0B;
+        background: linear-gradient(180deg, #FFFBEB 0%, #FFFFFF 65%);
+    }
+
+    .modal-kpi-card.is-average {
+        border-top: 3px solid #8B5CF6;
+        background: linear-gradient(180deg, #F5F3FF 0%, #FFFFFF 65%);
+    }
+
+    .modal-kpi-card .kpi-label-text {
+        font-size: 0.74rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        color: #64748B;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .modal-kpi-card.is-lowest .kpi-label-text { color: #059669; }
+    .modal-kpi-card.is-fastest .kpi-label-text { color: #2563EB; }
+    .modal-kpi-card.is-savings .kpi-label-text { color: #D97706; }
+    .modal-kpi-card.is-average .kpi-label-text { color: #7C3AED; }
+
+    .modal-kpi-card .kpi-val-text {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #0F172A;
+        line-height: 1.2;
+    }
+
+    .modal-kpi-card.is-lowest .kpi-val-text { color: #059669; }
+    .modal-kpi-card.is-fastest .kpi-val-text { color: #2563EB; }
+    .modal-kpi-card.is-savings .kpi-val-text { color: #D97706; }
+    .modal-kpi-card.is-average .kpi-val-text { color: #7C3AED; }
+
+    .modal-kpi-card .kpi-sub-text {
+        font-size: 0.76rem;
+        color: #64748B;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Kıyaslama Tablosu */
+    .cmp-table-wrapper {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+    }
+
+    .cmp-table-top-bar {
+        padding: 13px 18px;
+        background: #FAFAFA;
+        border-bottom: 1px solid #E2E8F0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .modal-compare-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        text-align: left;
+        font-size: 0.83rem;
+    }
+
+    .modal-compare-table thead th {
+        background: #F8FAFC;
+        font-weight: 700;
+        color: #475569;
+        font-size: 0.73rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 12px 16px;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    .modal-compare-table tbody td {
+        padding: 14px 16px;
+        border-bottom: 1px solid #F1F5F9;
+        vertical-align: middle;
+    }
+
+    .modal-compare-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .modal-compare-table tbody tr:hover {
+        background: #F8FAFC;
+    }
+
+    .modal-compare-table tr.is-best-row {
+        background: #F0FDF4 !important;
+        box-shadow: inset 4px 0 0 #10B981;
+    }
+
+    .modal-compare-table tr.is-best-row:hover {
+        background: #ECFDF5 !important;
+    }
+
+    .cmp-sup-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 0.80rem;
+        color: #334155;
+        border: 1px solid #CBD5E1;
+        flex-shrink: 0;
+    }
+
+    .is-best-row .cmp-sup-avatar {
+        background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+        color: #065F46;
+        border-color: #6EE7B7;
+    }
+
+    .badge-lowest-modal {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        background: #ECFDF5;
+        color: #065F46;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        padding: 2px 7px;
+        border-radius: 6px;
+        font-size: 0.70rem;
+        font-weight: 700;
+    }
+
+    .badge-fastest-modal {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        background: #EFF6FF;
+        color: #1E40AF;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        padding: 2px 7px;
+        border-radius: 6px;
+        font-size: 0.70rem;
+        font-weight: 700;
+    }
+
+    .price-main-modal {
+        font-size: 1.08rem;
+        font-weight: 800;
+        color: #0F172A;
+    }
+    .price-main-modal.is-green {
+        color: #059669;
+    }
+
+    .btn-cmp-accept {
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        color: #FFFFFF;
+        border: none;
+        padding: 7px 14px;
+        border-radius: 8px;
+        font-size: 0.80rem;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(16, 185, 129, 0.3);
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .btn-cmp-accept:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(16, 185, 129, 0.45);
+    }
+
+    .btn-cmp-reject {
+        background: #FEF2F2;
+        color: #DC2626;
+        border: 1px solid rgba(239, 68, 68, 0.25);
+        padding: 7px 11px;
+        border-radius: 8px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .btn-cmp-reject:hover {
+        background: #EF4444;
+        color: #FFFFFF;
+        border-color: #EF4444;
+    }
+
     @@keyframes fadeIn {
         from { opacity: 0; transform: translateY(-4px); }
         to { opacity: 1; transform: translateY(0); }
@@ -1203,6 +1535,18 @@
                                         @(item.IsOwner ? $"Teklifler ({item.OfferCount})" : "Detay")
                                     </button>
 
+                                    @if (item.OfferCount > 0)
+                                    {
+                                        <button type="button" class="btn-action-view" style="background: #EFF6FF; color: #2563EB; border: 1px solid #BFDBFE; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;" onclick="openCompareModal(@item.RequestID)" title="Tedarikçi Fiyatlarını Kıyasla">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                <line x1="18" y1="20" x2="18" y2="4"></line>
+                                                <line x1="6" y1="20" x2="6" y2="14"></line>
+                                                <line x1="12" y1="20" x2="12" y2="10"></line>
+                                            </svg>
+                                            Fiyat Kıyasla
+                                        </button>
+                                    }
+
                                     <!-- Tedarikçi Teklif Verme / Durum Butonu (Eğer talep kendi talebi değilse) -->
                                     @if (!item.IsOwner)
                                     {
@@ -1485,6 +1829,215 @@
     </div>
 </div>
 
+<!-- ========================================================================= -->
+<!-- ========================================================================= -->
+<!-- 4. TEDARİKÇİ FİYAT KIYASLAMA & TEKLİF ANALİZİ MODALI (BUYER)               -->
+<!-- ========================================================================= -->
+<div class="custom-modal-backdrop" id="priceCompareModal" onclick="if(event.target === this) closeCompareModal();">
+    <div class="custom-modal-dialog is-extra-wide">
+        
+        <!-- Modal Header -->
+        <div class="cmp-header-gradient">
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div class="cmp-header-icon-box">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="custom-modal-title" style="color: #0F172A; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.2px;">
+                        Tedarikçi Fiyat Kıyaslama & Teklif Analizi
+                    </h3>
+                    <p style="font-size: 0.78rem; color: #64748B; margin: 2px 0 0 0;">
+                        Gelen tüm teklifleri birim fiyat, teslimat ve ticari şartlarla yan yana kıyaslayın.
+                    </p>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <button type="button" class="btn-cmp-action" onclick="exportCompareModalToCSV()" title="Excel / CSV Formatında İndir">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="12" y1="18" x2="12" y2="12"></line>
+                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>
+                    <span>Excel İndir</span>
+                </button>
+                <button type="button" class="btn-cmp-action" onclick="window.print()" title="Yazdır veya PDF Kaydet">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.2">
+                        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                        <rect x="6" y="14" width="12" height="8"></rect>
+                    </svg>
+                    <span>Yazdır</span>
+                </button>
+                <button type="button" class="custom-modal-close" onclick="closeCompareModal()" style="font-size: 1.4rem; padding: 0 8px; margin-left: 4px;">&times;</button>
+            </div>
+        </div>
+
+        <!-- Modal Body (Scrollable) -->
+        <div class="custom-modal-body" style="padding: 20px 24px; overflow-y: auto; max-height: calc(90vh - 120px); background: #F8FAFC;">
+            
+            <!-- Loading Spinner -->
+            <div id="cmpLoading" style="text-align: center; padding: 60px 20px; color: #64748B;">
+                <div style="width: 44px; height: 44px; border: 3px solid #E2E8F0; border-top-color: #2563EB; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px auto;"></div>
+                <strong style="color: #0F172A; display: block; font-size: 0.95rem;">Teklif ve Analiz Verileri Hesaplanıyor...</strong>
+                <span style="font-size: 0.80rem; color: #64748B;">Tedarikçi fiyatları ve birim maliyetler taranıyor</span>
+            </div>
+
+            <!-- Content Container -->
+            <div id="cmpContent" style="display: none; flex-direction: column; gap: 16px;">
+                
+                <!-- 1. Talep Özet Şeridi -->
+                <div class="cmp-req-banner">
+                    <div class="cmp-req-col">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span class="cmp-badge-code" id="cmpReqCode">#REQ-0000</span>
+                            <span style="font-size: 0.76rem; color: #64748B;" id="cmpReqCategory">Kategori</span>
+                        </div>
+                        <h4 style="margin: 4px 0 0 0; color: #0F172A; font-size: 1.1rem; font-weight: 800;" id="cmpProductName"></h4>
+                    </div>
+                    <div class="cmp-req-col">
+                        <span class="req-meta">Hedef Miktar</span>
+                        <div style="font-weight: 800; color: #0F172A; font-size: 1.05rem;" id="cmpQuantity"></div>
+                    </div>
+                    <div class="cmp-req-col">
+                        <span class="req-meta">Referans Bütçe</span>
+                        <div style="font-weight: 800; color: #2563EB; font-size: 1.05rem;" id="cmpBudget"></div>
+                    </div>
+                    <div class="cmp-req-col" style="text-align: right; align-items: flex-end;">
+                        <span class="req-meta">Talep Durumu</span>
+                        <div id="cmpStatusBadge" style="margin-top: 2px;"></div>
+                    </div>
+                </div>
+
+                <!-- Şartname / Not Kutusu -->
+                <div id="cmpNotesWrap" style="display: none; background: #FFFFFF; padding: 12px 16px; border-radius: 10px; border: 1px solid #E2E8F0; font-size: 0.82rem; color: #475569; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                    <div style="display: flex; align-items: flex-start; gap: 8px;">
+                        <span style="color: #2563EB; font-size: 1rem;">📝</span>
+                        <div>
+                            <strong style="color: #0F172A;">Teknik Şartname & Notlar:</strong>
+                            <span id="cmpNotesText" style="margin-left: 4px;"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. KPI Rozetleri Grid (4 Kart) -->
+                <div class="modal-kpi-grid">
+                    
+                    <!-- En Düşük Fiyat -->
+                    <div class="modal-kpi-card is-lowest">
+                        <div class="kpi-label-text">
+                            <span>🟢 En Düşük Fiyat Teklifi</span>
+                            <span class="badge-lowest-modal">En Uygun</span>
+                        </div>
+                        <div class="kpi-val-text" id="cmpKpiLowestPrice">0,00 ₺</div>
+                        <div class="kpi-sub-text" id="cmpKpiLowestSupplier">Firma</div>
+                    </div>
+
+                    <!-- En Hızlı Teslimat -->
+                    <div class="modal-kpi-card is-fastest">
+                        <div class="kpi-label-text">
+                            <span>⚡ En Hızlı Teslimat</span>
+                            <span class="badge-fastest-modal">En Hızlı</span>
+                        </div>
+                        <div class="kpi-val-text" id="cmpKpiFastestDays">0 Gün</div>
+                        <div class="kpi-sub-text" id="cmpKpiFastestSupplier">Firma</div>
+                    </div>
+
+                    <!-- Bütçe Tasarrufu -->
+                    <div class="modal-kpi-card is-savings">
+                        <div class="kpi-label-text">
+                            <span>💰 Bütçeye Göre Tasarruf</span>
+                            <span style="font-size: 0.70rem; font-weight: 800; color: #D97706; background: #FEF3C7; padding: 2px 6px; border-radius: 4px;">Kazanç</span>
+                        </div>
+                        <div class="kpi-val-text" id="cmpKpiSavings">0,00 ₺</div>
+                        <div class="kpi-sub-text" id="cmpKpiSavingsSub">Hedef bütçeye kıyasla net fark</div>
+                    </div>
+
+                    <!-- Ortalama Teklif -->
+                    <div class="modal-kpi-card is-average">
+                        <div class="kpi-label-text">
+                            <span>📈 Ortalama Teklif Tutarı</span>
+                            <span style="font-size: 0.70rem; font-weight: 700; color: #7C3AED; background: #EDE9FE; padding: 2px 6px; border-radius: 4px;" id="cmpKpiOfferCount">0 Teklif</span>
+                        </div>
+                        <div class="kpi-val-text" id="cmpKpiAvgPrice">0,00 ₺</div>
+                        <div class="kpi-sub-text" id="cmpKpiUnitAvg">Kalem Başına: ~0 ₺ / Adet</div>
+                    </div>
+
+                </div>
+
+                <!-- 3. Yan Yana Karşılaştırma Matrisi Tablosu -->
+                <div class="cmp-table-wrapper">
+                    <div class="cmp-table-top-bar">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <strong style="color: #0F172A; font-size: 0.94rem; font-weight: 800;">Tedarikçi Teklif Karşılaştırma Matrisi</strong>
+                            <span style="font-size: 0.75rem; background: #EFF6FF; color: #2563EB; font-weight: 700; padding: 2px 8px; border-radius: 999px;" id="cmpTableMeta"></span>
+                        </div>
+                        <span style="font-size: 0.75rem; color: #64748B;">En ucuz teklif otomatik olarak yeşil ile vurgulanır</span>
+                    </div>
+
+                    <div style="overflow-x: auto; width: 100%;">
+                        <table class="modal-compare-table" id="cmpModalTable">
+                            <thead>
+                                <tr>
+                                    <th>Tedarikçi Firma</th>
+                                    <th>Toplam Teklif (₺)</th>
+                                    <th>Birim Fiyat (₺/Adet)</th>
+                                    <th>Teslimat Süresi</th>
+                                    <th>Geçerlilik</th>
+                                    <th>Bütçe Sapması</th>
+                                    <th>Tedarikçi Notları</th>
+                                    <th>Durum</th>
+                                    <th style="text-align: right;">Karar & İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cmpTableBody">
+                                <!-- JavaScript ile doldurulacak -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 4. Grafik Kartı -->
+                <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; padding: 18px 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+                        <div>
+                            <h4 style="margin: 0; font-size: 0.92rem; font-weight: 800; color: #0F172A;">
+                                Tedarikçi Teklif Tutarları Karşılaştırma Grafiği (₺)
+                            </h4>
+                            <span style="font-size: 0.75rem; color: #64748B;">Yeşil sütun en uygun fiyatı, mavi sütunlar diğer alternatifleri temsil eder.</span>
+                        </div>
+                    </div>
+                    <div style="height: 230px; position: relative; width: 100%;">
+                        <canvas id="cmpModalChartCanvas"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Empty State -->
+            <div id="cmpEmpty" style="display: none; text-align: center; padding: 50px 20px; color: #64748B;">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">⏳</div>
+                <h4 style="color: #0F172A; font-weight: 800; margin: 0 0 6px 0; font-size: 1.05rem;">Bu Talep İçin Henüz Teklif Bulunmuyor</h4>
+                <p style="font-size: 0.84rem; color: #64748B; max-width: 440px; margin: 0 auto; line-height: 1.5;">
+                    Tedarikçiler satın alma talebinize fiyat teklifi verdikçe burada otomatik kıyaslama tablosu, KPI kartları ve fiyat grafiği oluşacaktır.
+                </p>
+            </div>
+
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="custom-modal-footer" style="padding: 14px 24px; background: #FFFFFF; border-top: 1px solid #E2E8F0;">
+            <button type="button" class="btn-modal-cancel" onclick="closeCompareModal()">Kapat</button>
+        </div>
+
+    </div>
+</div>
+
 <!-- ============ JAVASCRIPT MODAL VE AJAX İŞLEMLERİ ============ -->
 <script>
     // 1. Yeni Talep Modalı
@@ -1696,9 +2249,352 @@
         document.getElementById('detailRequestModal').classList.remove('is-open');
     }
 
+    // =========================================================================
+    // 4. TEDARİKÇİ FİYAT KIYASLAMA MODALI İŞLEMLERİ (AJAX & CHART.JS)
+    // =========================================================================
+    var cmpChartInstance = null;
+
+    async function openCompareModal(requestId) {
+        var modal = document.getElementById('priceCompareModal');
+        var loading = document.getElementById('cmpLoading');
+        var content = document.getElementById('cmpContent');
+        var empty = document.getElementById('cmpEmpty');
+        var tableBody = document.getElementById('cmpTableBody');
+
+        if (!modal) return;
+
+        modal.classList.add('is-open');
+        loading.style.display = 'block';
+        content.style.display = 'none';
+        empty.style.display = 'none';
+        tableBody.innerHTML = '';
+
+        try {
+            var response = await fetch('/Requests/GetComparisonData/' + requestId);
+            var data = await response.json();
+
+            if (!data.success) {
+                alert('Kıyaslama verileri yüklenemedi: ' + data.message);
+                closeCompareModal();
+                return;
+            }
+
+            // 1. Talep Özet Şeridi Doldur
+            document.getElementById('cmpReqCode').textContent = data.requestCode;
+            document.getElementById('cmpProductName').textContent = data.productName;
+            document.getElementById('cmpReqCategory').textContent = 'Kategori: ' + data.requestType;
+            document.getElementById('cmpQuantity').textContent = data.quantity.toLocaleString('tr-TR') + ' Adet';
+            document.getElementById('cmpBudget').textContent = data.estimatedBudgetFormatted;
+
+            var statusBadge = document.getElementById('cmpStatusBadge');
+            if (data.isApproved) {
+                statusBadge.innerHTML = '<span class="badge-status is-approved" style="font-size: 0.82rem; padding: 4px 8px; font-weight: 700;">✓ Onaylandı (' + escapeHtml(data.winningSupplierName) + ')</span>';
+            } else {
+                statusBadge.innerHTML = '<span class="badge-status is-pending" style="font-size: 0.82rem; padding: 4px 8px; font-weight: 700;">⏳ ' + escapeHtml(data.status) + '</span>';
+            }
+
+            var notesWrap = document.getElementById('cmpNotesWrap');
+            if (data.notes) {
+                notesWrap.style.display = 'block';
+                document.getElementById('cmpNotesText').textContent = data.notes;
+            } else {
+                notesWrap.style.display = 'none';
+            }
+
+            // Teklifler Var mı?
+            if (!data.offers || data.offers.length === 0) {
+                loading.style.display = 'none';
+                empty.style.display = 'block';
+                return;
+            }
+
+            // 2. KPI Rozetleri Doldur
+            document.getElementById('cmpKpiLowestPrice').textContent = data.lowestPriceFormatted;
+            document.getElementById('cmpKpiLowestSupplier').textContent = data.lowestSupplierName;
+
+            document.getElementById('cmpKpiFastestDays').textContent = data.fastestDays + ' Gün';
+            document.getElementById('cmpKpiFastestSupplier').textContent = data.fastestSupplierName;
+
+            document.getElementById('cmpKpiSavings').textContent = data.budgetSavingsFormatted;
+            document.getElementById('cmpKpiSavingsSub').textContent = data.hasBudget ? 'Hedef bütçeye kıyasla fark' : 'En pahalı teklife kıyasla tasarruf';
+
+            document.getElementById('cmpKpiOfferCount').textContent = data.offerCount + ' Teklif';
+            document.getElementById('cmpKpiAvgPrice').textContent = data.avgPriceFormatted;
+            document.getElementById('cmpKpiUnitAvg').textContent = 'Kalem Başına: ~' + data.unitAvgPriceFormatted;
+
+            document.getElementById('cmpTableMeta').textContent = data.offerCount + ' Tedarikçi Teklifi';
+
+            // 3. Kıyaslama Tablosunu Doldur
+            var tableHtml = '';
+            data.offers.forEach(function(o) {
+                var rowCls = o.isLowestPrice ? 'is-best-row' : '';
+                tableHtml += '<tr class="' + rowCls + '">';
+
+                // Tedarikçi
+                var initial = o.supplierName && o.supplierName.length >= 2 ? o.supplierName.substring(0, 2).toUpperCase() : 'TF';
+                tableHtml += '  <td>';
+                tableHtml += '    <div style="display: flex; align-items: center; gap: 10px;">';
+                tableHtml += '      <div class="cmp-sup-avatar">' + initial + '</div>';
+                tableHtml += '      <div>';
+                tableHtml += '        <strong style="color: #0F172A; font-size: 0.88rem; display: block;">' + escapeHtml(o.supplierName) + '</strong>';
+                if (o.supplierOfficial) {
+                    tableHtml += '        <div style="font-size: 0.74rem; color: #64748B;">Yetkili: ' + escapeHtml(o.supplierOfficial) + '</div>';
+                }
+                if (o.supplierPhone || o.supplierMail) {
+                    tableHtml += '        <div style="font-size: 0.72rem; color: #94A3B8;">' + escapeHtml(o.supplierPhone || o.supplierMail) + '</div>';
+                }
+                tableHtml += '      </div>';
+                tableHtml += '    </div>';
+                tableHtml += '  </td>';
+
+                // Toplam Teklif
+                var priceCls = o.isLowestPrice ? 'price-main-modal is-green' : 'price-main-modal';
+                tableHtml += '  <td>';
+                tableHtml += '    <div class="' + priceCls + '">' + o.offeredPriceFormatted + '</div>';
+                tableHtml += '    <div style="display: flex; gap: 4px; margin-top: 4px;">';
+                if (o.isLowestPrice) {
+                    tableHtml += '      <span class="badge-lowest-modal">🟢 En Uygun</span>';
+                }
+                if (o.isFastestDelivery) {
+                    tableHtml += '      <span class="badge-fastest-modal">⚡ En Hızlı</span>';
+                }
+                tableHtml += '    </div>';
+                tableHtml += '  </td>';
+
+                // Birim Fiyat
+                tableHtml += '  <td>';
+                tableHtml += '    <strong style="color: #0F172A; font-size: 0.86rem;">' + o.unitPriceFormatted + '</strong>';
+                tableHtml += '    <div style="font-size: 0.72rem; color: #64748B;">/ Adet</div>';
+                tableHtml += '  </td>';
+
+                // Teslimat
+                tableHtml += '  <td>';
+                tableHtml += '    <div style="display: inline-flex; align-items: center; gap: 4px; background: #F1F5F9; padding: 3px 8px; border-radius: 6px; font-weight: 700; color: #334155; font-size: 0.80rem;">';
+                tableHtml += '      <span>⏱️ ' + o.deliveryDays + ' Gün</span>';
+                tableHtml += '    </div>';
+                tableHtml += '  </td>';
+
+                // Geçerlilik
+                tableHtml += '  <td><span style="font-weight: 600; color: #475569;">' + o.validityDays + ' Gün</span></td>';
+
+                // Bütçe Sapması
+                var varColor = (o.budgetVariance !== null && o.budgetVariance <= 0) ? '#059669' : '#DC2626';
+                var varBg = (o.budgetVariance !== null && o.budgetVariance <= 0) ? '#ECFDF5' : '#FEF2F2';
+                var varBorder = (o.budgetVariance !== null && o.budgetVariance <= 0) ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)';
+                tableHtml += '  <td>';
+                if (o.budgetVarianceFormatted !== '—') {
+                    tableHtml += '    <span style="display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; background: ' + varBg + '; color: ' + varColor + '; border: 1px solid ' + varBorder + ';">' + o.budgetVarianceFormatted + '</span>';
+                } else {
+                    tableHtml += '    <span style="color: #94A3B8;">—</span>';
+                }
+                tableHtml += '  </td>';
+
+                // Notlar
+                tableHtml += '  <td style="max-width: 180px; font-size: 0.78rem; color: #475569; line-height: 1.4;">' + (escapeHtml(o.supplierNotes) || '<span style="color: #94A3B8;">Belirtilmedi</span>') + '</td>';
+
+                // Durum
+                tableHtml += '  <td>';
+                if (o.isAccepted) {
+                    tableHtml += '    <span class="badge-status is-approved" style="font-size: 0.78rem; font-weight: 700;">✓ Onaylandı</span>';
+                } else if (o.isRejected) {
+                    tableHtml += '    <span class="badge-status is-rejected" style="font-size: 0.78rem; font-weight: 700;">✕ Reddedildi</span>';
+                } else {
+                    tableHtml += '    <span class="badge-status is-pending" style="font-size: 0.78rem; font-weight: 700;">⏳ ' + escapeHtml(o.status) + '</span>';
+                }
+                tableHtml += '  </td>';
+
+                // Karar & İşlem Butonları
+                tableHtml += '  <td style="text-align: right;">';
+                if (data.isOwner) {
+                    if (o.status === 'Beklemede' && !data.isApproved) {
+                        tableHtml += '    <div style="display: inline-flex; gap: 5px;">';
+                        tableHtml += '      <button type="button" class="btn-cmp-accept" onclick="handleAcceptOfferFromCompareModal(' + o.offerId + ', ' + data.requestId + ', \'' + escapeHtml(o.supplierName) + '\', \'' + escapeHtml(o.offeredPriceFormatted) + '\')" title="Teklifi Kabul Et ve Talebi Onayla">✓ Kabul Et</button>';
+                        tableHtml += '      <button type="button" class="btn-cmp-reject" onclick="handleRejectOfferFromCompareModal(' + o.offerId + ', ' + data.requestId + ', \'' + escapeHtml(o.supplierName) + '\')" title="Teklifi Reddet">✕</button>';
+                        tableHtml += '    </div>';
+                    } else if (o.isAccepted) {
+                        tableHtml += '    <span style="display: inline-flex; align-items: center; gap: 4px; background: #ECFDF5; color: #065F46; border: 1px solid #10B981; font-weight: 800; font-size: 0.78rem; padding: 4px 10px; border-radius: 6px;">✓ Kazanan Teklif</span>';
+                    } else {
+                        tableHtml += '    <span style="color: #94A3B8; font-size: 0.75rem;">Kapalı</span>';
+                    }
+                } else {
+                    tableHtml += '    <span style="color: #64748B; font-size: 0.75rem;">İnceleme</span>';
+                }
+                tableHtml += '  </td>';
+
+                tableHtml += '</tr>';
+            });
+
+            tableBody.innerHTML = tableHtml;
+
+            // 4. Chart.js Karşılaştırma Grafiği Çiz
+            renderCompareModalChart(data.offers, data.lowestPrice);
+
+            loading.style.display = 'none';
+            content.style.display = 'flex';
+        } catch (err) {
+            loading.innerHTML = '<span style="color: red;">Kıyaslama yüklenirken hata oluştu: ' + err.message + '</span>';
+        }
+    }
+
+    function closeCompareModal() {
+        var modal = document.getElementById('priceCompareModal');
+        if (modal) {
+            modal.classList.remove('is-open');
+        }
+    }
+
+    function renderCompareModalChart(offers, lowestPrice) {
+        var canvas = document.getElementById('cmpModalChartCanvas');
+        if (!canvas) return;
+
+        if (cmpChartInstance) {
+            cmpChartInstance.destroy();
+            cmpChartInstance = null;
+        }
+
+        var labels = offers.map(function (o) { return o.supplierName.split(' ')[0] + ' ' + (o.supplierName.split(' ')[1] || ''); });
+        var dataPrices = offers.map(function (o) { return o.offeredPrice; });
+
+        var bgColors = dataPrices.map(function (p) {
+            return p === lowestPrice ? 'rgba(16, 185, 129, 0.88)' : 'rgba(59, 130, 246, 0.80)';
+        });
+
+        var borderColors = dataPrices.map(function (p) {
+            return p === lowestPrice ? '#059669' : '#1D4ED8';
+        });
+
+        cmpChartInstance = new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Teklif Tutarı (₺)',
+                    data: dataPrices,
+                    backgroundColor: bgColors,
+                    borderColor: borderColors,
+                    borderWidth: 1.5,
+                    borderRadius: 8,
+                    maxBarThickness: 50
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0F172A',
+                        padding: 10,
+                        titleFont: { size: 12, weight: '700' },
+                        bodyFont: { size: 12 },
+                        cornerRadius: 8,
+                        displayColors: false,
+                        callbacks: {
+                            label: function (ctx) {
+                                return '💰 Toplam Teklif: ' + Number(ctx.raw).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ₺';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function (val) {
+                                return Number(val).toLocaleString('tr-TR') + ' ₺';
+                            },
+                            font: { size: 11, weight: '500' },
+                            color: '#64748B'
+                        },
+                        grid: { color: '#F1F5F9' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11, weight: '700' }, color: '#334155' }
+                    }
+                }
+            }
+        });
+    }
+
+    async function handleAcceptOfferFromCompareModal(offerId, requestId, supplierName, priceFormatted) {
+        if (!confirm(supplierName + ' firmasının ' + priceFormatted + ' tutarındaki teklifini KABUL ETMEK ve bu talebi ONAYLAMAK istiyor musunuz?')) {
+            return;
+        }
+
+        try {
+            var response = await fetch('/Requests/AcceptOfferAjax', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ offerId: offerId })
+            });
+            var res = await response.json();
+            if (res.success) {
+                alert('✅ ' + res.message);
+                openCompareModal(requestId);
+                setTimeout(function () { window.location.reload(); }, 1200);
+            } else {
+                alert('Hata: ' + res.message);
+            }
+        } catch (err) {
+            alert('Sunucu hatası: ' + err.message);
+        }
+    }
+
+    async function handleRejectOfferFromCompareModal(offerId, requestId, supplierName) {
+        var reason = prompt(supplierName + ' firmasının teklifini reddetmek üzeresiniz.\nİsteğe bağlı bir red gerekçesi yazabilirsiniz:');
+        if (reason === null) return;
+
+        try {
+            var response = await fetch('/Requests/RejectOfferAjax', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ offerId: offerId, reason: reason })
+            });
+            var res = await response.json();
+            if (res.success) {
+                alert('✓ ' + res.message);
+                openCompareModal(requestId);
+                setTimeout(function () { window.location.reload(); }, 1200);
+            } else {
+                alert('Hata: ' + res.message);
+            }
+        } catch (err) {
+            alert('Sunucu hatası: ' + err.message);
+        }
+    }
+
+    function exportCompareModalToCSV() {
+        var table = document.getElementById('cmpModalTable');
+        if (!table) return;
+
+        var csv = [];
+        for (var i = 0; i < table.rows.length; i++) {
+            var row = [], cols = table.rows[i].querySelectorAll('td, th');
+            for (var j = 0; j < cols.length - 1; j++) {
+                var data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, ' ').replace(/"/g, '""').trim();
+                row.push('"' + data + '"');
+            }
+            csv.push(row.join(';'));
+        }
+
+        var csvString = "\uFEFF" + csv.join('\n');
+        var blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        var link = document.createElement("a");
+        var url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "Tedarikci_Fiyat_Kiyaslama_Raporu.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
     function escapeHtml(text) {
         if (!text) return '';
         var map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
         return text.replace(/[&<>"']/g, function(m) { return map[m]; });
     }
 </script>
+
+<!-- CDN Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
