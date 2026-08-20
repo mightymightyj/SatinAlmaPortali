@@ -84,14 +84,19 @@ namespace satinalmaportali2.Controllers {
                 string companyName = dbUser.CompanyName ?? dbUser.CompanyOfficial ?? email.Split('@')[0];
                 string displayName = dbUser.CompanyOfficial ?? dbUser.CompanyName ?? email.Split('@')[0];
 
+                bool isSuperAdminUser = dbUser.CompanyTypeID == 4 || string.Equals(dbUser.CompanyMail, "admin@tedarikportal.com", StringComparison.OrdinalIgnoreCase);
+                string effectiveUserType = isSuperAdminUser ? "admin" : (userType ?? "User");
+                int effectiveCompanyTypeId = isSuperAdminUser ? 4 : (dbUser.CompanyTypeID ?? 1);
+
                 var claims = new List<Claim> {
                     new Claim(ClaimTypes.NameIdentifier, dbUser.CompanyID.ToString()),
                     new Claim("CompanyID", dbUser.CompanyID.ToString()),
                     new Claim(ClaimTypes.Name, displayName),
                     new Claim(ClaimTypes.Email, email),
                     new Claim("CompanyName", companyName),
-                    new Claim("UserType", userType ?? "User"),
-                    new Claim(ClaimTypes.Role, userType ?? "User")
+                    new Claim("UserType", effectiveUserType),
+                    new Claim(ClaimTypes.Role, effectiveUserType),
+                    new Claim("CompanyTypeID", effectiveCompanyTypeId.ToString())
                 };
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -241,7 +246,8 @@ namespace satinalmaportali2.Controllers {
                     new Claim(ClaimTypes.Email, email),
                     new Claim("CompanyName", fullname ?? email),
                     new Claim("UserType", "User"),
-                    new Claim(ClaimTypes.Role, "User")
+                    new Claim(ClaimTypes.Role, "User"),
+                    new Claim("CompanyTypeID", (newCompany.CompanyTypeID ?? 1).ToString())
                 };
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -394,8 +400,11 @@ namespace satinalmaportali2.Controllers {
                 }
             }
 
-            // Load available company types for editing
-            viewModel.AvailableCompanyTypes = await _context.CompanyTypes.ToListAsync();
+            // Load available company types for editing (exclude SuperAdmin for regular users)
+            bool isCurrentCompSuperAdmin = company.CompanyTypeID == 4 || string.Equals(company.CompanyMail, "admin@tedarikportal.com", StringComparison.OrdinalIgnoreCase);
+            viewModel.AvailableCompanyTypes = await _context.CompanyTypes
+                .Where(ct => isCurrentCompSuperAdmin || ct.CompanyTypeID != 4)
+                .ToListAsync();
 
             return View(viewModel);
         }
@@ -442,6 +451,13 @@ namespace satinalmaportali2.Controllers {
                         TempData["ProfileError"] = "Bu e-posta adresi başka bir firma veya kullanıcı tarafından kullanılmaktadır.";
                         return RedirectToAction("Profile");
                     }
+                }
+
+                // Normal kullanıcılar kendilerini profil sayfasından Süper Admin yapamaz
+                if (companyTypeID == 4 && user.CompanyTypeID != 4 && !string.Equals(user.CompanyMail, "admin@tedarikportal.com", StringComparison.OrdinalIgnoreCase))
+                {
+                    TempData["ProfileError"] = "Süper Admin yetkisi doğrudan kullanıcı profilinden atanamaz.";
+                    return RedirectToAction("Profile");
                 }
 
                 // Kişi ve Firma Bilgilerini Güncelle
@@ -513,7 +529,8 @@ namespace satinalmaportali2.Controllers {
                     new Claim(ClaimTypes.Email, user.CompanyMail),
                     new Claim("CompanyName", compName),
                     new Claim("UserType", userType),
-                    new Claim(ClaimTypes.Role, userType)
+                    new Claim(ClaimTypes.Role, userType),
+                    new Claim("CompanyTypeID", (user.CompanyTypeID ?? 1).ToString())
                 };
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);

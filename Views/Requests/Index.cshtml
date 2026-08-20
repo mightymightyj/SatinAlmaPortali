@@ -1203,12 +1203,48 @@
                                         @(item.IsOwner ? $"Teklifler ({item.OfferCount})" : "Detay")
                                     </button>
 
-                                    <!-- Tedarikçi Teklif Verme Butonu (Eğer talep kendi talebi değilse) -->
-                                    @if (!item.IsOwner && item.Status != "Onaylandı" && item.Status != "Kabul Edildi")
+                                    <!-- Tedarikçi Teklif Verme / Durum Butonu (Eğer talep kendi talebi değilse) -->
+                                    @if (!item.IsOwner)
                                     {
-                                        <button type="button" class="btn-action-bid" onclick="openOfferModal(@item.RequestID, '@Html.Raw(item.ProductName)', '@(item.MyOfferPrice?.ToString() ?? "")')">
-                                            @(item.HasMyOffer ? "Teklifi Düzenle" : "Teklif Ver")
-                                        </button>
+                                        @if (item.HasMyOffer)
+                                        {
+                                            @if (item.MyOfferStatus == "Kabul Edildi" || item.MyOfferStatus == "Onaylandı")
+                                            {
+                                                <span class="badge-status is-approved" style="padding: 5px 9px; font-size: 0.78rem; font-weight: 700; background: #ECFDF5; color: #065F46; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;" title="Teklifiniz alıcı tarafından onaylanmıştır ve kilitlidir.">
+                                                    ✓ Onaylandı
+                                                </span>
+                                            }
+                                            else if (item.MyOfferStatus == "Reddedildi")
+                                            {
+                                                <span class="badge-status is-rejected" style="padding: 5px 9px; font-size: 0.78rem; font-weight: 700; background: #FEF2F2; color: #991B1B; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;" title="Teklifiniz alıcı tarafından reddedilmiştir ve düzenlenemez.">
+                                                    ✕ Reddedildi
+                                                </span>
+                                            }
+                                            else if (item.Status == "Onaylandı" || item.Status == "Kabul Edildi" || item.Status == "Tamamlandı" || item.Status == "İptal Edildi")
+                                            {
+                                                <span style="padding: 5px 9px; font-size: 0.78rem; font-weight: 700; background: #F1F5F9; color: #64748B; border: 1px solid #CBD5E1; border-radius: 6px;" title="Talep sonuçlandığı için teklifiniz kilitlenmiştir.">
+                                                    🔒 Kilitli
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" class="btn-action-bid" onclick="openOfferModal(@item.RequestID, '@Html.Raw(item.ProductName)', '@(item.MyOfferPrice?.ToString() ?? "")')">
+                                                    Teklifi Düzenle
+                                                </button>
+                                            }
+                                        }
+                                        else if (item.Status != "Onaylandı" && item.Status != "Kabul Edildi" && item.Status != "Tamamlandı" && item.Status != "İptal Edildi")
+                                        {
+                                            <button type="button" class="btn-action-bid" onclick="openOfferModal(@item.RequestID, '@Html.Raw(item.ProductName)', '')">
+                                                Teklif Ver
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span style="padding: 5px 9px; font-size: 0.78rem; font-weight: 700; background: #F1F5F9; color: #64748B; border: 1px solid #CBD5E1; border-radius: 6px;">
+                                                Kapandı
+                                            </span>
+                                        }
                                     }
 
                                     <!-- Silme Butonu (Sadece Talep Sahibi) -->
@@ -1524,17 +1560,31 @@
 
             document.getElementById('detailOfferCount').textContent = data.offerCount;
 
-            // Footer Butonları (Tedarikçi ise doğrudan Teklif Ver butonu ekle)
+            // Footer Butonları (Tedarikçi ise duruma göre Teklif Ver / Düzenle / Kilitli rozeti göster)
             if (footer) {
-                if (!data.isOwner && data.status !== 'Onaylandı' && data.status !== 'Kabul Edildi') {
-                    var myBidVal = data.myOffer ? data.myOffer.offeredPrice : '';
-                    var btnLabel = data.myOffer ? '✏️ Teklifi Düzenle' : '➕ Teklif Ver';
-                    footer.innerHTML = '<button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>' +
-                        '<button type="button" class="btn-primary" style="background: #10B981; border-color: #10B981;" onclick="closeDetailModal(); openOfferModal(' + data.requestId + ', \'' + escapeHtml(data.productName) + '\', \'' + myBidVal + '\');">' + btnLabel + '</button>';
+                if (!data.isOwner && data.status !== 'Onaylandı' && data.status !== 'Kabul Edildi' && data.status !== 'Tamamlandı' && data.status !== 'İptal Edildi') {
+                    var myOfferStatus = data.myOffer ? data.myOffer.status : null;
+                    if (myOfferStatus === 'Kabul Edildi' || myOfferStatus === 'Onaylandı') {
+                        footer.innerHTML = '<span class="badge-status is-approved" style="margin-right: auto; padding: 6px 12px; font-weight: 700; background: #ECFDF5; color: #065F46; border-radius: 6px; font-size: 0.85rem;">✓ Teklifiniz Onaylandı (Kilitli)</span><button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>';
+                    } else if (myOfferStatus === 'Reddedildi') {
+                        footer.innerHTML = '<span class="badge-status is-rejected" style="margin-right: auto; padding: 6px 12px; font-weight: 700; background: #FEF2F2; color: #991B1B; border-radius: 6px; font-size: 0.85rem;">✕ Teklifiniz Reddedildi (Düzenlenemez)</span><button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>';
+                    } else {
+                        var myBidVal = data.myOffer ? data.myOffer.offeredPrice : '';
+                        var btnLabel = data.myOffer ? '✏️ Teklifi Düzenle' : '➕ Teklif Ver';
+                        footer.innerHTML = '<button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>' +
+                            '<button type="button" class="btn-primary" style="background: #10B981; border-color: #10B981;" onclick="closeDetailModal(); openOfferModal(' + data.requestId + ', \'' + escapeHtml(data.productName) + '\', \'' + myBidVal + '\');">' + btnLabel + '</button>';
+                    }
                 } else if (data.isOwner) {
                     footer.innerHTML = '<span style="color: #64748B; font-size: 0.82rem; margin-right: auto;">ℹ️ Bu talep firmanıza aittir.</span><button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>';
                 } else {
-                    footer.innerHTML = '<button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>';
+                    var myOfferStatus = data.myOffer ? data.myOffer.status : null;
+                    var badge = '';
+                    if (myOfferStatus === 'Kabul Edildi' || myOfferStatus === 'Onaylandı') {
+                        badge = '<span class="badge-status is-approved" style="margin-right: auto; padding: 6px 12px; font-weight: 700; background: #ECFDF5; color: #065F46; border-radius: 6px; font-size: 0.85rem;">✓ Teklifiniz Onaylandı</span>';
+                    } else if (myOfferStatus === 'Reddedildi') {
+                        badge = '<span class="badge-status is-rejected" style="margin-right: auto; padding: 6px 12px; font-weight: 700; background: #FEF2F2; color: #991B1B; border-radius: 6px; font-size: 0.85rem;">✕ Teklifiniz Reddedildi</span>';
+                    }
+                    footer.innerHTML = badge + '<button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>';
                 }
             }
 

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using satinalmaportali2.Data;
 using satinalmaportali2.Models;
+using satinalmaportali2.Services;
 
 namespace satinalmaportali2.Controllers
 {
@@ -15,10 +16,12 @@ namespace satinalmaportali2.Controllers
     public class RequestsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly EmailService _emailService;
 
-        public RequestsController(ApplicationDbContext context)
+        public RequestsController(ApplicationDbContext context, EmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         private int GetCurrentCompanyId()
@@ -112,21 +115,38 @@ namespace satinalmaportali2.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(string? search, string? type, string? status, string? tab = null)
         {
-            var cookieMode = Request.Cookies["ActiveDashboardMode"];
-            string activeMode = !string.IsNullOrWhiteSpace(cookieMode) && string.Equals(cookieMode, "Supplier", StringComparison.OrdinalIgnoreCase)
-                ? "Supplier"
-                : "Buyer";
+            int currentCompanyId = GetCurrentCompanyId();
+            string userType = GetCurrentUserType();
+            var currentCompany = currentCompanyId > 0 ? await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId) : null;
+            int companyTypeId = currentCompany?.CompanyTypeID ?? (int.TryParse(User.FindFirst("CompanyTypeID")?.Value, out int ctype) ? ctype : 3);
+            bool isAdmin = string.Equals(userType, "admin", StringComparison.OrdinalIgnoreCase);
+
+            string activeMode;
+            if (companyTypeId == 1 && !isAdmin)
+            {
+                activeMode = "Supplier";
+            }
+            else if (companyTypeId == 2 && !isAdmin)
+            {
+                activeMode = "Buyer";
+            }
+            else
+            {
+                var cookieMode = Request.Cookies["ActiveDashboardMode"];
+                activeMode = !string.IsNullOrWhiteSpace(cookieMode) && string.Equals(cookieMode, "Supplier", StringComparison.OrdinalIgnoreCase)
+                    ? "Supplier"
+                    : "Buyer";
+            }
 
             ViewBag.DashboardRole = activeMode;
+            ViewBag.CanSwitchRole = (companyTypeId == 3 || isAdmin);
+            ViewBag.CompanyTypeID = companyTypeId;
 
             if (string.IsNullOrEmpty(tab))
             {
                 tab = (activeMode == "Supplier" ? "all" : "my-requests");
             }
 
-            int currentCompanyId = GetCurrentCompanyId();
-            string userType = GetCurrentUserType();
-            var currentCompany = currentCompanyId > 0 ? await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId) : null;
             var requestList = new List<RequestListItemViewModel>();
 
             try
@@ -180,7 +200,8 @@ namespace satinalmaportali2.Controllers
                             BestOfferPrice = bestOffer,
                             IsOwner = isOwner,
                             HasMyOffer = myOffer != null,
-                            MyOfferPrice = myOffer?.OfferedPrice
+                            MyOfferPrice = myOffer?.OfferedPrice,
+                            MyOfferStatus = myOffer?.Status
                         });
                     }
                 }
@@ -382,6 +403,20 @@ namespace satinalmaportali2.Controllers
 
                 if (existingOffer != null)
                 {
+                    // Alıcı teklifi onayladıktan veya reddettikten sonra düzenlenemez
+                    if (string.Equals(existingOffer.Status, "Kabul Edildi", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(existingOffer.Status, "Onaylandı", StringComparison.OrdinalIgnoreCase))
+                    {
+                        TempData["ErrorMessage"] = "Bu teklif alıcı tarafından onaylanmış olduğu için üzerinde değişiklik yapılamaz.";
+                        return RedirectToAction(nameof(Index));
+                    }
+
+                    if (string.Equals(existingOffer.Status, "Reddedildi", StringComparison.OrdinalIgnoreCase))
+                    {
+                        TempData["ErrorMessage"] = "Bu teklif alıcı tarafından reddedilmiş olduğu için üzerinde değişiklik yapılamaz.";
+                        return RedirectToAction(nameof(Index));
+                    }
+
                     // Güncelle
                     existingOffer.OfferedPrice = input.OfferedPrice;
                     existingOffer.DeliveryDays = input.DeliveryDays;
@@ -393,6 +428,16 @@ namespace satinalmaportali2.Controllers
                 }
                 else
                 {
+                    // Talep sonuçlanmış veya kapatılmışsa yeni teklif verilemez
+                    if (string.Equals(request.Status, "Onaylandı", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(request.Status, "Kabul Edildi", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(request.Status, "Tamamlandı", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(request.Status, "İptal Edildi", StringComparison.OrdinalIgnoreCase))
+                    {
+                        TempData["ErrorMessage"] = "Bu talep sonuçlanmış veya kapatılmış olduğu için yeni teklif verilemez.";
+                        return RedirectToAction(nameof(Index));
+                    }
+
                     // Yeni teklif ekle
                     var newOffer = new RequestOffers
                     {
@@ -416,6 +461,9 @@ namespace satinalmaportali2.Controllers
                 }
 
                 await _context.SaveChangesAsync();
+
+                // Alıcı firmaya e-posta bildirimini arka planda gönder
+                await TriggerOfferReceivedEmailNotificationAsync(request, currentCompany, input);
             }
             catch (Exception ex)
             {
@@ -463,6 +511,18 @@ namespace satinalmaportali2.Controllers
 
                 if (existingOffer != null)
                 {
+                    // Alıcı teklifi onayladıktan veya reddettikten sonra düzenlenemez
+                    if (string.Equals(existingOffer.Status, "Kabul Edildi", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(existingOffer.Status, "Onaylandı", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Json(new { success = false, message = "Bu teklif alıcı tarafından onaylandığı için artık düzenlenemez." });
+                    }
+
+                    if (string.Equals(existingOffer.Status, "Reddedildi", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Json(new { success = false, message = "Bu teklif alıcı tarafından reddedildiği için artık düzenlenemez." });
+                    }
+
                     existingOffer.OfferedPrice = input.OfferedPrice;
                     existingOffer.DeliveryDays = input.DeliveryDays;
                     existingOffer.ValidityDays = input.ValidityDays;
@@ -472,6 +532,14 @@ namespace satinalmaportali2.Controllers
                 }
                 else
                 {
+                    if (string.Equals(request.Status, "Onaylandı", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(request.Status, "Kabul Edildi", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(request.Status, "Tamamlandı", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(request.Status, "İptal Edildi", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Json(new { success = false, message = "Bu talep sonuçlanmış veya kapatılmış olduğu için yeni teklif verilemez." });
+                    }
+
                     var newOffer = new RequestOffers
                     {
                         RequestID = input.RequestID,
@@ -492,12 +560,134 @@ namespace satinalmaportali2.Controllers
                 }
 
                 await _context.SaveChangesAsync();
+
+                // Alıcı firmaya e-posta bildirimini arka planda gönder
+                await TriggerOfferReceivedEmailNotificationAsync(request, currentCompany, input);
+
                 return Json(new { success = true, message = $"{input.OfferedPrice:N2} ₺ tutarındaki teklifiniz başarıyla iletildi!" });
             }
             catch (Exception ex)
             {
                 var detail = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
                 return Json(new { success = false, message = "Hata: " + detail });
+            }
+        }
+
+        /// <summary>
+        /// Talebi açan alıcı firmaya yeni teklif geldiğinde otomatik zengin HTML e-postası tetikler.
+        /// </summary>
+        private async Task TriggerOfferReceivedEmailNotificationAsync(
+            Requests request,
+            Company? currentCompany,
+            SubmitOfferInputModel input)
+        {
+            try
+            {
+                string targetEmail = "";
+                string buyerName = request.BuyerInfo ?? "Kurumsal Alıcı";
+
+                // 1. SenderID üzerinden alıcı firma kaydını ve e-postasını bul
+                if (request.SenderID.HasValue && request.SenderID.Value > 0)
+                {
+                    var buyerCompany = await _context.Companies
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(c => c.CompanyID == request.SenderID.Value);
+
+                    if (buyerCompany != null)
+                    {
+                        if (!string.IsNullOrWhiteSpace(buyerCompany.CompanyMail))
+                        {
+                            targetEmail = buyerCompany.CompanyMail.Trim();
+                        }
+                        if (!string.IsNullOrWhiteSpace(buyerCompany.CompanyName))
+                        {
+                            buyerName = buyerCompany.CompanyName.Trim();
+                        }
+                        else if (!string.IsNullOrWhiteSpace(buyerCompany.CompanyOfficial))
+                        {
+                            buyerName = buyerCompany.CompanyOfficial.Trim();
+                        }
+                    }
+                }
+
+                // 2. SenderID'den bulunamadıysa BuyerInfo metnindeki e-posta veya unvan eşleşmesine bak
+                if (string.IsNullOrWhiteSpace(targetEmail) && !string.IsNullOrWhiteSpace(request.BuyerInfo))
+                {
+                    var emailCandidate = request.BuyerInfo
+                        .Split(new[] { ' ', ';', ',', '(', ')', '[', ']' }, StringSplitOptions.RemoveEmptyEntries)
+                        .FirstOrDefault(s => s.Contains("@"));
+
+                    if (!string.IsNullOrWhiteSpace(emailCandidate))
+                    {
+                        targetEmail = emailCandidate.Trim();
+                    }
+                    else
+                    {
+                        var buyerNameTrimmed = request.BuyerInfo.Trim().ToLower();
+                        var matchedCompany = await _context.Companies
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(c => c.CompanyName != null && c.CompanyName.ToLower() == buyerNameTrimmed);
+
+                        if (matchedCompany != null && !string.IsNullOrWhiteSpace(matchedCompany.CompanyMail))
+                        {
+                            targetEmail = matchedCompany.CompanyMail.Trim();
+                            if (!string.IsNullOrWhiteSpace(matchedCompany.CompanyName))
+                            {
+                                buyerName = matchedCompany.CompanyName.Trim();
+                            }
+                        }
+                    }
+                }
+
+                // 3. Hedef alıcı e-posta adresi mevcutsa arka planda MailKit ile gönder
+                if (!string.IsNullOrWhiteSpace(targetEmail))
+                {
+                    string supplierName = currentCompany?.CompanyName 
+                        ?? currentCompany?.CompanyOfficial 
+                        ?? GetCurrentCompanyName();
+
+                    string requestsUrl = $"{Request.Scheme}://{Request.Host}/Requests?tab=incoming-offers";
+                    string rfqCode = $"REQ-{request.RequestID:D4}";
+                    string prodName = request.ProductName ?? "Satın Alma Talebi";
+                    int qty = request.Quantity ?? 1;
+                    decimal offerPrice = input.OfferedPrice;
+                    int deliveryDays = input.DeliveryDays;
+                    int validityDays = input.ValidityDays;
+                    string? notes = input.SupplierNotes;
+
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await _emailService.SendOfferReceivedEmailAsync(
+                                toEmail: targetEmail,
+                                buyerName: buyerName,
+                                supplierName: supplierName,
+                                rfqCode: rfqCode,
+                                productName: prodName,
+                                productImageUrl: null,
+                                quantity: qty,
+                                unit: "Adet",
+                                offerPrice: offerPrice,
+                                deliveryDays: deliveryDays,
+                                validityDays: validityDays,
+                                offerNotes: notes,
+                                requestsUrl: requestsUrl);
+                        }
+                        catch (Exception mailEx)
+                        {
+                            Console.WriteLine($"Teklif e-posta arka plan gönderim hatası: {mailEx.Message}");
+                        }
+                    });
+                }
+                else
+                {
+                    Console.WriteLine($"[E-posta Bildirimi] Talep #{request.RequestID} için alıcı e-posta adresi tespit edilemedi.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Teklif e-posta hazırlık hatası: {ex.Message}");
             }
         }
 

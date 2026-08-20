@@ -100,6 +100,7 @@ namespace satinalmaportali2.Models
         public bool IsOwner { get; set; }
         public bool HasMyOffer { get; set; }
         public decimal? MyOfferPrice { get; set; }
+        public string? MyOfferStatus { get; set; }
     }
 
     public class RequestDetailViewModel

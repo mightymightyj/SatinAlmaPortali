@@ -195,9 +195,36 @@
                                     }
                                     else if (rfq.HasMyBid)
                                     {
-                                        <button type="button" class="btn-table-action is-secondary" onclick="openOfferModal('@rfq.RfqCode', '@rfq.ProductName', '@rfq.MyBidAmount')">
-                                            Düzenle
-                                        </button>
+                                        @if (rfq.MyBidStatus == "Kabul Edildi" || rfq.MyBidStatus == "Onaylandı")
+                                        {
+                                            <span style="display: inline-block; padding: 4px 8px; font-size: 0.75rem; font-weight: 700; color: #059669; background: #ECFDF5; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.2);" title="Teklifiniz onaylanmıştır ve kilitlidir.">
+                                                ✓ Onaylandı
+                                            </span>
+                                        }
+                                        else if (rfq.MyBidStatus == "Reddedildi")
+                                        {
+                                            <span style="display: inline-block; padding: 4px 8px; font-size: 0.75rem; font-weight: 700; color: #DC2626; background: #FEF2F2; border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.2);" title="Teklifiniz reddedilmiştir ve düzenlenemez.">
+                                                ✕ Reddedildi
+                                            </span>
+                                        }
+                                        else if (rfq.Status == "Onaylandı" || rfq.Status == "Kabul Edildi" || rfq.Status == "Tamamlandı" || rfq.Status == "İptal Edildi")
+                                        {
+                                            <span style="display: inline-block; padding: 4px 8px; font-size: 0.75rem; font-weight: 700; color: #64748B; background: #F1F5F9; border-radius: 6px; border: 1px solid #E2E8F0;" title="Talep sonuçlandığı için teklif kilitlenmiştir.">
+                                                🔒 Kilitli
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <button type="button" class="btn-table-action is-secondary" onclick="openOfferModal('@rfq.RfqCode', '@rfq.ProductName', '@rfq.MyBidAmount')">
+                                                Düzenle
+                                            </button>
+                                        }
+                                    }
+                                    else if (rfq.Status == "Onaylandı" || rfq.Status == "Kabul Edildi" || rfq.Status == "Tamamlandı" || rfq.Status == "İptal Edildi")
+                                    {
+                                        <span style="display: inline-block; padding: 4px 8px; font-size: 0.75rem; font-weight: 700; color: #64748B; background: #F1F5F9; border-radius: 6px; border: 1px solid #E2E8F0;">
+                                            Sonuçlandı
+                                        </span>
                                     }
                                     else
                                     {

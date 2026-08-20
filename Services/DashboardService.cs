@@ -906,7 +906,8 @@ namespace satinalmaportali2.Services
                         BudgetEstimate = req.EstimatedBudget ?? 0,
                         Status = rfqStatus,
                         HasMyBid = myOffer != null,
-                        MyBidAmount = myOffer?.OfferedPrice
+                        MyBidAmount = myOffer?.OfferedPrice,
+                        MyBidStatus = myOffer?.Status
                     });
                     rfqIdx++;
                 }

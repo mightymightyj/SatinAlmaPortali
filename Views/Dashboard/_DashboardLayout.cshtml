@@ -13,6 +13,17 @@
     var avatarInitials = !string.IsNullOrEmpty(activeCompany) && activeCompany.Length >= 2 
         ? activeCompany.Substring(0, 2).ToUpper() 
         : (!string.IsNullOrEmpty(activeCompany) ? activeCompany.ToUpper() : "HE");
+
+    // CompanyTypeID: 1 = Tedarikçi (Supplier), 2 = Alıcı (Buyer), 3 = Hem Alıcı Hem Tedarikçi (Both)
+    var compTypeClaim = User.FindFirst("CompanyTypeID")?.Value;
+    int companyTypeId = ViewBag.CompanyTypeID != null 
+        ? (int)ViewBag.CompanyTypeID 
+        : (int.TryParse(compTypeClaim, out int parsedCt) ? parsedCt : 3);
+
+    // Tür değiştirme tuşları YALNIZCA 'Hem Alıcı Hem Tedarikçi' (3) veya Admin hesaplarda görünür
+    bool canSwitchRole = ViewBag.CanSwitchRole != null 
+        ? (bool)ViewBag.CanSwitchRole 
+        : (companyTypeId == 3 || string.Equals(userType, "admin", StringComparison.OrdinalIgnoreCase) || User.IsInRole("admin"));
 }
 <!DOCTYPE html>
 <html lang="tr">
@@ -180,19 +191,22 @@
 
             <!-- Sağ Aksiyonlar & Profil -->
             <div class="top-actions">
-                <!-- Rol Geçiş Segmenti (Alıcı ⇄ Tedarikçi) - Kalıcı Cookie Bağlantıları -->
-                <div class="topbar-role-switcher" role="tablist">
-                    <a href="@Url.Action("SetRole", "Dashboard", new { role = "Buyer", returnUrl = (currentController == "Dashboard" && currentAction == "Supplier" ? Url.Action("Buyer", "Dashboard") : null) })" 
-                       class="top-role-btn @(!isSupplier ? "is-active" : "")" 
-                       title="Alıcı (Buyer) Paneline Geç">
-                        🛒 Alıcı Modu
-                    </a>
-                    <a href="@Url.Action("SetRole", "Dashboard", new { role = "Supplier", returnUrl = (currentController == "Dashboard" && currentAction == "Buyer" ? Url.Action("Supplier", "Dashboard") : null) })" 
-                       class="top-role-btn @(isSupplier ? "is-active" : "")" 
-                       title="Tedarikçi (Supplier) Paneline Geç">
-                        🏪 Tedarikçi Modu
-                    </a>
-                </div>
+                <!-- Rol Geçiş Segmenti (Alıcı ⇄ Tedarikçi) - Yalnızca Her İkisi Olan veya Admin Hesaplarda Görünür -->
+                @if (canSwitchRole)
+                {
+                    <div class="topbar-role-switcher" role="tablist">
+                        <a href="@Url.Action("SetRole", "Dashboard", new { role = "Buyer", returnUrl = (currentController == "Dashboard" && currentAction == "Supplier" ? Url.Action("Buyer", "Dashboard") : null) })" 
+                           class="top-role-btn @(!isSupplier ? "is-active" : "")" 
+                           title="Alıcı (Buyer) Paneline Geç">
+                            🛒 Alıcı Modu
+                        </a>
+                        <a href="@Url.Action("SetRole", "Dashboard", new { role = "Supplier", returnUrl = (currentController == "Dashboard" && currentAction == "Buyer" ? Url.Action("Supplier", "Dashboard") : null) })" 
+                           class="top-role-btn @(isSupplier ? "is-active" : "")" 
+                           title="Tedarikçi (Supplier) Paneline Geç">
+                            🏪 Tedarikçi Modu
+                        </a>
+                    </div>
+                }
 
                 <!-- Bildirim Zili -->
                 <button class="top-icon-btn" type="button" aria-label="Bildirimler" onclick="toggleNotificationDropdown()" title="Bildirimler">

@@ -28,7 +28,8 @@ namespace satinalmaportali2.Data
                         {
                             new CompanyTypes { CompanyTypeID = 1, CompanyTypeName = "Tedarikçi Firma" },
                             new CompanyTypes { CompanyTypeID = 2, CompanyTypeName = "Alıcı / Müşteri" },
-                            new CompanyTypes { CompanyTypeID = 3, CompanyTypeName = "Hem Alıcı Hem Tedarikçi" }
+                            new CompanyTypes { CompanyTypeID = 3, CompanyTypeName = "Hem Alıcı Hem Tedarikçi" },
+                            new CompanyTypes { CompanyTypeID = 4, CompanyTypeName = "Süper Admin" }
                         };
 
                         foreach (var type in types)

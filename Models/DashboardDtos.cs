@@ -241,6 +241,7 @@ namespace satinalmaportali2.Models {
         public string Status { get; set; } = "Cevap Bekliyor"; // Cevap Bekliyor, Teklif Verildi, İncelemede
         public bool HasMyBid { get; set; }
         public decimal? MyBidAmount { get; set; }
+        public string? MyBidStatus { get; set; }
     }
 
     public class SupplierEarningsTrendDto {
