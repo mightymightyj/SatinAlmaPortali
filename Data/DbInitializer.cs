@@ -104,6 +104,11 @@ namespace satinalmaportali2.Data
                 // STEP 4: Fix NULL DistrictID in Addresses table
                 // ====================================================
                 await FixAddressDistrictIdsAsync(context);
+
+                // ====================================================
+                // STEP 5: Seed 10 Supplier Test Accounts (Password: Test1234*_)
+                // ====================================================
+                await SeedSupplierTestAccountsAsync(context);
             }
             catch (Exception ex)
             {
@@ -294,6 +299,69 @@ namespace satinalmaportali2.Data
                 { "Osmaniye", new[] { "Bahçe","Düziçi","Hasanbeyli","Kadirli","Merkez","Sumbas","Toprakkale" } },
                 { "Düzce", new[] { "Akçakoca","Cumayeri","Çilimli","Gölyaka","Gümüşova","Kaynaşlı","Merkez","Yığılca" } }
             };
+        }
+
+        public static async Task SeedSupplierTestAccountsAsync(ApplicationDbContext context)
+        {
+            try
+            {
+                string rawPassword = "Test1234*_";
+                string passwordHash = PasswordHasher.HashPassword(rawPassword);
+
+                var testSuppliers = new List<(string Email, string CompanyName, string Official, string Phone, string TCNO, string TaxOffice, string Detail)>
+                {
+                    ("tedarikci1@test.com", "Atlas Metal & Sac Sanayi A.Ş.", "Burak Çelik", "05321010001", "12345678901", "Ostim Vergi Dairesi", "Lazer kesim, büküm, profil ve sac işleme alanında uzman tedarikçi."),
+                    ("tedarikci2@test.com", "Ege Plastik & Ambalaj Ltd. Şti.", "Gizem Yılmaz", "05321010002", "23456789012", "Bornova Vergi Dairesi", "Endüstriyel plastik enjeksiyon ve özel ambalaj çözümleri üreticisi."),
+                    ("tedarikci3@test.com", "Nova Elektronik & Otomasyon A.Ş.", "Selim Doğan", "05321010003", "34567890123", "Kadıköy Vergi Dairesi", "PLC, sensör, sürücü sistemleri ve endüstriyel elektronik tedariki."),
+                    ("tedarikci4@test.com", "Karadeniz Kereste & Ahşap San.", "Hakan Demir", "05321010004", "45678901234", "Trabzon Vergi Dairesi", "Masif ahşap, palet, inşaatlık kereste ve orman ürünleri tedarikçisi."),
+                    ("tedarikci5@test.com", "Zirve Kimya & Hammadde San. Tic.", "Merve Kaya", "05321010005", "56789012345", "Tuzla Vergi Dairesi", "Sanayi kimyasalları, solventler ve hammadde distribütörü."),
+                    ("tedarikci6@test.com", "Birlik Rulman & Hırdavat Ltd.", "Kenan Aydın", "05321010006", "67890123456", "Nilüfer Vergi Dairesi", "Bilyalı rulmanlar, kayış-kasnak ve genel endüstriyel hırdavat ürünleri."),
+                    ("tedarikci7@test.com", "Yıldız Lojistik & Kargo Çözümleri", "Serdar Koç", "05321010007", "78901234567", "Mersin Vergi Dairesi", "Yurtiçi taşımacılık, depolama ve lojistik tedarik hizmetleri."),
+                    ("tedarikci8@test.com", "Tekno Enerji & Kablo Sanayi", "Tolga Güler", "05321010008", "89012345678", "Gaziantep Vergi Dairesi", "Enerji kabloları, trafo ve elektrik pano ekipmanları imalatçısı."),
+                    ("tedarikci9@test.com", "Başak Cıvata & Bağlantı Elemanları", "Oğuz Kurt", "05321010009", "90123456789", "Konya Vergi Dairesi", "Paslanmaz cıvata, somun, pul ve özel imalat bağlantı elemanları."),
+                    ("tedarikci10@test.com", "Vizyon Endüstriyel Çelik Ltd.", "Can Arslan", "05321010010", "10987654321", "Gebze Vergi Dairesi", "Vasıflı çelik, transmisyon milleri ve boru profil tedarikçisi.")
+                };
+
+                foreach (var item in testSuppliers)
+                {
+                    var existing = await context.Companies.FirstOrDefaultAsync(c => c.CompanyMail == item.Email);
+                    if (existing == null)
+                    {
+                        var newCompany = new Company
+                        {
+                            CompanyName = item.CompanyName,
+                            CompanyOfficial = item.Official,
+                            CompanyMail = item.Email,
+                            CompanyPhone = item.Phone,
+                            TCNO = item.TCNO,
+                            TaxOffice = item.TaxOffice,
+                            CompanyDetailText = item.Detail,
+                            CompanyPassword = passwordHash,
+                            CompanyTypeID = 1, // Tedarikçi Firma
+                            MembershipTypeID = 1 // Standart Üyelik
+                        };
+                        await context.Companies.AddAsync(newCompany);
+                    }
+                    else
+                    {
+                        // Ensure credentials and role match requirements
+                        existing.CompanyName = item.CompanyName;
+                        existing.CompanyOfficial = item.Official;
+                        existing.CompanyPhone = item.Phone;
+                        existing.TCNO = item.TCNO;
+                        existing.TaxOffice = item.TaxOffice;
+                        existing.CompanyDetailText = item.Detail;
+                        existing.CompanyPassword = passwordHash;
+                        existing.CompanyTypeID = 1;
+                    }
+                }
+
+                await context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("SeedSupplierTestAccounts note: " + ex.Message);
+            }
         }
     }
 }

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using satinalmaportali2.Data;
 using satinalmaportali2.Helpers;
 using satinalmaportali2.Models;
+using satinalmaportali2.Services;
 using System.Security.Claims;
 
 namespace satinalmaportali2.Controllers
@@ -19,10 +20,12 @@ namespace satinalmaportali2.Controllers
     public class SuperAdminController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly EmailService _emailService;
 
-        public SuperAdminController(ApplicationDbContext context)
+        public SuperAdminController(ApplicationDbContext context, EmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         private int GetCurrentCompanyId()
@@ -178,6 +181,20 @@ namespace satinalmaportali2.Controllers
                     TotalEstimatedBudget = dbRequests.Sum(r => r.EstimatedBudget ?? 0),
                     TotalOfferedVolume = dbOffers.Sum(o => o.OfferedPrice)
                 };
+
+                // 5. Açık / Mevcut Talepler Listesi (Simülasyon ve Hızlı Teklif için)
+                viewModel.OpenRequests = dbRequests.OrderByDescending(r => r.RequestID).Select(r => new RequestSummaryDto
+                {
+                    RequestID = r.RequestID,
+                    ProductName = r.ProductName ?? "İsimsiz Talep",
+                    BuyerInfo = r.BuyerInfo ?? "Alıcı Firma",
+                    SenderID = r.SenderID,
+                    Status = r.Status ?? "Beklemede",
+                    Quantity = r.Quantity ?? 1,
+                    EstimatedBudget = r.EstimatedBudget,
+                    OfferCount = dbOffers.Count(o => o.RequestID == r.RequestID),
+                    RequestDate = r.RequestDate
+                }).ToList();
 
                 // Filtreleme (Kategoriler & Firmalar)
                 if (!string.IsNullOrWhiteSpace(search))
@@ -554,8 +571,173 @@ namespace satinalmaportali2.Controllers
         }
 
         // =========================================================================
-        // SİSTEM ARAÇLARI ACTIONS
+        // SİSTEM ARAÇLARI & SİMÜLASYON ACTIONS
         // =========================================================================
+
+        [HttpPost]
+        [Route("SimulateCreateRequest")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SimulateCreateRequest(SimulateRequestInputModel input)
+        {
+            if (!await CheckIsSuperAdminAsync()) return Forbid();
+
+            if (!ModelState.IsValid || input.SenderCompanyID <= 0 || string.IsNullOrWhiteSpace(input.ProductName) || input.Quantity <= 0)
+            {
+                TempData["AdminError"] = "Lütfen talep açan firma, ürün adı ve geçerli bir adet giriniz.";
+                return RedirectToAction(nameof(Index), new { tab = "simulation" });
+            }
+
+            try
+            {
+                var senderComp = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyID == input.SenderCompanyID);
+                if (senderComp == null)
+                {
+                    TempData["AdminError"] = "Seçilen firma bulunamadı.";
+                    return RedirectToAction(nameof(Index), new { tab = "simulation" });
+                }
+
+                string buyerInfo = !string.IsNullOrWhiteSpace(senderComp.CompanyName) ? senderComp.CompanyName : (!string.IsNullOrWhiteSpace(senderComp.CompanyOfficial) ? senderComp.CompanyOfficial : "Kurumsal Alıcı");
+
+                var newRequest = new Requests
+                {
+                    RequestDate = DateTime.UtcNow,
+                    SenderID = senderComp.CompanyID,
+                    BuyerInfo = buyerInfo,
+                    ProductName = input.ProductName.Trim(),
+                    Quantity = input.Quantity,
+                    RequestType = string.IsNullOrWhiteSpace(input.RequestType) ? "Satın Alma" : input.RequestType.Trim(),
+                    CategoryID = input.CategoryID,
+                    EstimatedBudget = input.EstimatedBudget,
+                    TargetDeliveryDate = input.TargetDeliveryDate,
+                    Status = "Beklemede",
+                    Notes = string.IsNullOrWhiteSpace(input.Notes) ? null : input.Notes.Trim()
+                };
+
+                _context.Requests.Add(newRequest);
+                await _context.SaveChangesAsync();
+
+                TempData["AdminSuccess"] = $"'{senderComp.CompanyName}' adına '#REQ-{newRequest.RequestID} - {newRequest.ProductName}' talebi başarıyla oluşturuldu ve yayınlandı!";
+            }
+            catch (Exception ex)
+            {
+                TempData["AdminError"] = "Talep simülasyonu hatası: " + ex.Message;
+            }
+
+            return RedirectToAction(nameof(Index), new { tab = "simulation" });
+        }
+
+        [HttpPost]
+        [Route("SimulateCreateOffer")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SimulateCreateOffer(SimulateOfferInputModel input)
+        {
+            if (!await CheckIsSuperAdminAsync()) return Forbid();
+
+            if (!ModelState.IsValid || input.RequestID <= 0 || input.SupplierCompanyID <= 0 || input.OfferedPrice <= 0)
+            {
+                TempData["AdminError"] = "Lütfen talep, tedarikçi firma ve geçerli bir teklif tutarı giriniz.";
+                return RedirectToAction(nameof(Index), new { tab = "simulation" });
+            }
+
+            try
+            {
+                var request = await _context.Requests.Include(r => r.Offers).FirstOrDefaultAsync(r => r.RequestID == input.RequestID);
+                if (request == null)
+                {
+                    TempData["AdminError"] = "Teklif verilmek istenen talep bulunamadı.";
+                    return RedirectToAction(nameof(Index), new { tab = "simulation" });
+                }
+
+                var supplier = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyID == input.SupplierCompanyID);
+                if (supplier == null)
+                {
+                    TempData["AdminError"] = "Seçilen tedarikçi firma bulunamadı.";
+                    return RedirectToAction(nameof(Index), new { tab = "simulation" });
+                }
+
+                // Kendi talebine teklif vermesini engelle
+                if (request.SenderID.HasValue && request.SenderID.Value == supplier.CompanyID)
+                {
+                    TempData["AdminError"] = "Bir firma kendi oluşturduğu talebe teklif veremez!";
+                    return RedirectToAction(nameof(Index), new { tab = "simulation" });
+                }
+
+                var existingOffer = await _context.RequestOffers.FirstOrDefaultAsync(o => o.RequestID == input.RequestID && o.SupplierID == supplier.CompanyID);
+                if (existingOffer != null)
+                {
+                    existingOffer.OfferedPrice = input.OfferedPrice;
+                    existingOffer.DeliveryDays = input.DeliveryDays ?? 7;
+                    existingOffer.ValidityDays = input.ValidityDays ?? 30;
+                    existingOffer.SupplierNotes = string.IsNullOrWhiteSpace(input.SupplierNotes) ? null : input.SupplierNotes.Trim();
+                    existingOffer.OfferDate = DateTime.UtcNow;
+                    existingOffer.Status = "Beklemede";
+
+                    TempData["AdminSuccess"] = $"'{supplier.CompanyName}' adına '#REQ-{request.RequestID}' talebine verilen teklif {input.OfferedPrice:N2} ₺ olarak güncellendi!";
+                }
+                else
+                {
+                    var newOffer = new RequestOffers
+                    {
+                        RequestID = input.RequestID,
+                        SupplierID = supplier.CompanyID,
+                        OfferedPrice = input.OfferedPrice,
+                        DeliveryDays = input.DeliveryDays ?? 7,
+                        ValidityDays = input.ValidityDays ?? 30,
+                        SupplierNotes = string.IsNullOrWhiteSpace(input.SupplierNotes) ? null : input.SupplierNotes.Trim(),
+                        OfferDate = DateTime.UtcNow,
+                        Status = "Beklemede"
+                    };
+
+                    _context.RequestOffers.Add(newOffer);
+                    TempData["AdminSuccess"] = $"'{supplier.CompanyName}' adına '#REQ-{request.RequestID} - {request.ProductName}' talebine {input.OfferedPrice:N2} ₺ teklif başarıyla iletildi!";
+                }
+
+                await _context.SaveChangesAsync();
+
+                // E-posta Bildirimi Gönderimi (Talep sahibine)
+                if (request.SenderID.HasValue)
+                {
+                    var ownerCompany = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == request.SenderID.Value);
+                    if (ownerCompany != null && !string.IsNullOrWhiteSpace(ownerCompany.CompanyMail))
+                    {
+                        string ownerEmail = ownerCompany.CompanyMail;
+                        string ownerName = ownerCompany.CompanyOfficial ?? ownerCompany.CompanyName ?? "Sayın Alıcı";
+                        string supplierName = supplier.CompanyName ?? supplier.CompanyOfficial ?? "Tedarikçi";
+
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await _emailService.SendOfferReceivedEmailAsync(
+                                    toEmail: ownerEmail,
+                                    buyerName: ownerName,
+                                    supplierName: supplierName,
+                                    rfqCode: $"REQ-{request.RequestID:D4}",
+                                    productName: request.ProductName ?? "Talep Edilen Ürün",
+                                    productImageUrl: null,
+                                    quantity: request.Quantity ?? 1,
+                                    unit: "Adet",
+                                    offerPrice: input.OfferedPrice,
+                                    deliveryDays: input.DeliveryDays ?? 7,
+                                    validityDays: input.ValidityDays ?? 30,
+                                    offerNotes: input.SupplierNotes,
+                                    requestsUrl: "https://localhost:5003/Requests");
+                            }
+                            catch (Exception emailEx)
+                            {
+                                Console.WriteLine($"Simulated offer email note: {emailEx.Message}");
+                            }
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["AdminError"] = "Teklif simülasyonu hatası: " + ex.Message;
+            }
+
+            return RedirectToAction(nameof(Index), new { tab = "simulation" });
+        }
 
         [HttpPost]
         [Route("SeedSystemDefaults")]

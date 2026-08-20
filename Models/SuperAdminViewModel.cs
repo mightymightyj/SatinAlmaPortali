@@ -10,8 +10,9 @@ namespace satinalmaportali2.Models
         public List<CompanyAdminDto> Companies { get; set; } = new();
         public List<CompanyTypes> AvailableCompanyTypes { get; set; } = new();
         public List<MembershipTypes> AvailableMembershipTypes { get; set; } = new();
+        public List<RequestSummaryDto> OpenRequests { get; set; } = new();
 
-        public string ActiveTab { get; set; } = "overview"; // overview, categories, companies, settings
+        public string ActiveTab { get; set; } = "overview"; // overview, categories, companies, simulation, settings
         public string? SearchQuery { get; set; }
         public int? FilterCompanyType { get; set; }
     }
@@ -66,6 +67,19 @@ namespace satinalmaportali2.Models
         public bool IsSuperAdmin => CompanyTypeID == 4;
     }
 
+    public class RequestSummaryDto
+    {
+        public int RequestID { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public string BuyerInfo { get; set; } = string.Empty;
+        public int? SenderID { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+        public decimal? EstimatedBudget { get; set; }
+        public int OfferCount { get; set; }
+        public DateTime? RequestDate { get; set; }
+    }
+
     public class EditCategoryInputModel
     {
         public int CategoryID { get; set; }
@@ -99,5 +113,46 @@ namespace satinalmaportali2.Models
         [Required(ErrorMessage = "Yeni şifre zorunludur.")]
         [MinLength(6, ErrorMessage = "Şifre en az 6 karakter olmalıdır.")]
         public string NewPassword { get; set; } = string.Empty;
+    }
+
+    public class SimulateRequestInputModel
+    {
+        [Required(ErrorMessage = "Lütfen talebi oluşturan firmayı seçin.")]
+        public int SenderCompanyID { get; set; }
+
+        [Required(ErrorMessage = "Ürün veya hizmet adı zorunludur.")]
+        public string ProductName { get; set; } = string.Empty;
+
+        [Range(1, 1000000, ErrorMessage = "Adet en az 1 olmalıdır.")]
+        public int Quantity { get; set; } = 1;
+
+        public string? RequestType { get; set; } = "Satın Alma";
+
+        public int? CategoryID { get; set; }
+
+        public decimal? EstimatedBudget { get; set; }
+
+        public DateTime? TargetDeliveryDate { get; set; }
+
+        public string? Notes { get; set; }
+    }
+
+    public class SimulateOfferInputModel
+    {
+        [Required(ErrorMessage = "Lütfen teklif verilecek talebi seçin.")]
+        public int RequestID { get; set; }
+
+        [Required(ErrorMessage = "Lütfen teklif veren tedarikçi firmayı seçin.")]
+        public int SupplierCompanyID { get; set; }
+
+        [Required(ErrorMessage = "Teklif tutarı zorunludur.")]
+        [Range(0.01, 100000000, ErrorMessage = "Lütfen geçerli bir teklif tutarı giriniz.")]
+        public decimal OfferedPrice { get; set; }
+
+        public int? DeliveryDays { get; set; } = 7;
+
+        public int? ValidityDays { get; set; } = 30;
+
+        public string? SupplierNotes { get; set; }
     }
 }

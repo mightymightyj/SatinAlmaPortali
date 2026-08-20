@@ -703,15 +703,15 @@
         @if (TempData["AdminSuccess"] != null)
         {
             <div class="alert-box alert-success">
-                <span>✓ @TempData["AdminSuccess"]</span>
-                <button type="button" class="alert-close-btn" onclick="this.parentElement.remove()">✕</button>
+                <span>@TempData["AdminSuccess"]</span>
+                <button type="button" class="alert-close-btn" onclick="this.parentElement.remove()">&times;</button>
             </div>
         }
         @if (TempData["AdminError"] != null)
         {
             <div class="alert-box alert-error">
-                <span>⚠️ @TempData["AdminError"]</span>
-                <button type="button" class="alert-close-btn" onclick="this.parentElement.remove()">✕</button>
+                <span>@TempData["AdminError"]</span>
+                <button type="button" class="alert-close-btn" onclick="this.parentElement.remove()">&times;</button>
             </div>
         }
 
@@ -732,6 +732,11 @@
                class="tab-btn @(Model.ActiveTab == "companies" ? "is-active" : "")">
                 Firmalar & Hesaplar
                 <span class="tab-count">@Model.Stats.TotalCompanies</span>
+            </a>
+
+            <a href="@Url.Action("Index", "SuperAdmin", new { tab = "simulation" })" 
+               class="tab-btn @(Model.ActiveTab == "simulation" ? "is-active" : "")">
+                Test & Simülasyon
             </a>
 
             <a href="@Url.Action("Index", "SuperAdmin", new { tab = "settings" })" 
@@ -1019,6 +1024,246 @@
             </div>
         }
 
+        <!-- ==================== SEKME: TEST & SİMÜLASYON MERKEZİ ==================== -->
+        @if (Model.ActiveTab == "simulation")
+        {
+            <div class="alert-box" style="background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E40AF; margin-bottom: 24px;">
+                <div>
+                    <strong>Test ve Simülasyon Merkezi:</strong> Bu alandan farklı hesaplara tek tek giriş-çıkış yapmadan, seçtiğiniz herhangi bir <strong>Alıcı firma adına talep açabilir</strong> ve dilediğiniz <strong>Tedarikçi firma adına teklif gönderebilirsiniz</strong>. İletilen teklifler alıcıya giden gerçek e-posta bildirimini de otomatik tetikler.
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 24px; margin-bottom: 32px;">
+                
+                <!-- KART 1: FİRMA ADINA TALEP GÖNDER -->
+                <div class="content-card" style="padding: 24px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+                        <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-heading);">
+                            Firma Adına Talep Oluştur
+                        </h3>
+                        <span class="badge badge-buyer">Alıcı Simülatörü</span>
+                    </div>
+
+                    <form asp-action="SimulateCreateRequest" method="post">
+                        @Html.AntiForgeryToken()
+                        <div style="display: flex; flex-direction: column; gap: 14px;">
+                            
+                            <div class="form-field">
+                                <label class="form-label" for="simSenderComp">Talep Sahibi Firma (Alıcı) *</label>
+                                <select id="simSenderComp" name="SenderCompanyID" class="form-select" required>
+                                    <option value="">— Talep Açacak Firmayı Seçin —</option>
+                                    @foreach (var comp in Model.Companies)
+                                    {
+                                        <option value="@comp.CompanyID">
+                                            #@comp.CompanyID - @comp.CompanyName (@comp.CompanyTypeName) [Yetkili: @comp.CompanyOfficial]
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="form-field-grid">
+                                <div class="form-field">
+                                    <label class="form-label" for="simProdName">Ürün / Hizmet Adı *</label>
+                                    <input type="text" id="simProdName" name="ProductName" class="form-input" placeholder="Örn: CNC Torna İşleme Parçaları" required />
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label" for="simQuantity">Talep Miktarı (Adet) *</label>
+                                    <input type="number" id="simQuantity" name="Quantity" class="form-input" min="1" value="100" required />
+                                </div>
+                            </div>
+
+                            <div class="form-field-grid">
+                                <div class="form-field">
+                                    <label class="form-label" for="simCategory">Kategori</label>
+                                    <select id="simCategory" name="CategoryID" class="form-select">
+                                        <option value="">— Kategori Seçin (İsteğe Bağlı) —</option>
+                                        @foreach (var cat in Model.Categories)
+                                        {
+                                            <option value="@cat.CategoryID">@cat.CategoryName @(cat.ParentCategoryName != null ? $"({cat.ParentCategoryName})" : "")</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label" for="simReqType">Talep Türü</label>
+                                    <select id="simReqType" name="RequestType" class="form-select">
+                                        <option value="Satın Alma">Satın Alma</option>
+                                        <option value="Fiyat Araştırması">Fiyat Araştırması</option>
+                                        <option value="İhale">İhale</option>
+                                        <option value="Hizmet / Proje">Hizmet / Proje</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-field-grid">
+                                <div class="form-field">
+                                    <label class="form-label" for="simBudget">Tahmini Bütçe (₺)</label>
+                                    <input type="number" step="0.01" id="simBudget" name="EstimatedBudget" class="form-input" placeholder="Örn: 25000" />
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label" for="simDeliveryDate">İstenen Teslim Tarihi</label>
+                                    <input type="date" id="simDeliveryDate" name="TargetDeliveryDate" class="form-input" />
+                                </div>
+                            </div>
+
+                            <div class="form-field">
+                                <label class="form-label" for="simNotes">Teknik Açıklama & Notlar</label>
+                                <textarea id="simNotes" name="Notes" class="form-textarea" rows="2" placeholder="Teknik şartname veya ek istekler..."></textarea>
+                            </div>
+
+                            <div style="margin-top: 6px;">
+                                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 10px;">
+                                    Seçilen Firma Adına Talebi Yayınla
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- KART 2: TEDARİKÇİ ADINA TEKLİF GÖNDER -->
+                <div class="content-card" style="padding: 24px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+                        <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-heading);">
+                            Tedarikçi Adına Teklif Gönder
+                        </h3>
+                        <span class="badge badge-supplier">Tedarikçi Simülatörü</span>
+                    </div>
+
+                    <form asp-action="SimulateCreateOffer" method="post">
+                        @Html.AntiForgeryToken()
+                        <div style="display: flex; flex-direction: column; gap: 14px;">
+                            
+                            <div class="form-field">
+                                <label class="form-label" for="simOfferReq">Teklif Verilecek Talep *</label>
+                                <select id="simOfferReq" name="RequestID" class="form-select" required>
+                                    <option value="">— Açık Taleplerden Birini Seçin —</option>
+                                    @foreach (var req in Model.OpenRequests)
+                                    {
+                                        <option value="@req.RequestID" data-sender="@(req.SenderID ?? 0)">
+                                            #REQ-@req.RequestID: @req.ProductName (@req.Quantity Adet) — [@req.BuyerInfo] - Durum: @req.Status (@req.OfferCount Teklif)
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="form-field">
+                                <label class="form-label" for="simOfferSupplier">Teklif Veren Tedarikçi *</label>
+                                <select id="simOfferSupplier" name="SupplierCompanyID" class="form-select" required>
+                                    <option value="">— Teklif Verecek Tedarikçi Firmayı Seçin —</option>
+                                    @foreach (var comp in Model.Companies)
+                                    {
+                                        <option value="@comp.CompanyID">
+                                            #@comp.CompanyID - @comp.CompanyName (@comp.CompanyTypeName) [Yetkili: @comp.CompanyOfficial]
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="form-field-grid">
+                                <div class="form-field">
+                                    <label class="form-label" for="simOfferPrice">Teklif Tutarı (Toplam ₺) *</label>
+                                    <input type="number" step="0.01" id="simOfferPrice" name="OfferedPrice" class="form-input" placeholder="Örn: 18500.00" required />
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label" for="simDeliveryDays">Teslimat Süresi (Gün)</label>
+                                    <input type="number" id="simDeliveryDays" name="DeliveryDays" class="form-input" min="1" value="7" />
+                                </div>
+                            </div>
+
+                            <div class="form-field-grid">
+                                <div class="form-field">
+                                    <label class="form-label" for="simValidityDays">Teklif Geçerlilik Süresi (Gün)</label>
+                                    <input type="number" id="simValidityDays" name="ValidityDays" class="form-input" min="1" value="30" />
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label" for="simSupplierNotes">Tedarikçi Notu / Açıklama</label>
+                                    <input type="text" id="simSupplierNotes" name="SupplierNotes" class="form-input" placeholder="Kargo dahil / Standart teslimat..." />
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 24px;">
+                                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 10px; background: #16A34A; border-color: #16A34A;">
+                                    Tedarikçi Adına Teklif Gönder
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+
+            <!-- MEVCUT AÇIK TALEPLER TABLOSU (HIZLI SEÇİM) -->
+            <div class="content-card">
+                <div class="card-toolbar">
+                    <div class="toolbar-title">
+                        Mevcut Talepler ve Teklif Durumu
+                        <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">(@Model.OpenRequests.Count talep)</span>
+                    </div>
+                </div>
+
+                <div class="data-table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">Talep No</th>
+                                <th>Ürün / Hizmet Adı</th>
+                                <th>Talep Sahibi (Alıcı)</th>
+                                <th>Miktar</th>
+                                <th>Tahmini Bütçe</th>
+                                <th>Teklif Sayısı</th>
+                                <th>Durum</th>
+                                <th style="text-align: right; width: 140px;">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.OpenRequests.Any())
+                            {
+                                @foreach (var r in Model.OpenRequests)
+                                {
+                                    <tr>
+                                        <td><strong style="color: var(--primary);">#REQ-@r.RequestID</strong></td>
+                                        <td><strong style="color: var(--text-heading);">@r.ProductName</strong></td>
+                                        <td>@r.BuyerInfo</td>
+                                        <td>@r.Quantity Adet</td>
+                                        <td>@(r.EstimatedBudget.HasValue ? $"{r.EstimatedBudget.Value:N0} ₺" : "—")</td>
+                                        <td>
+                                            <span class="badge @(r.OfferCount > 0 ? "badge-supplier" : "badge-sub")">
+                                                @r.OfferCount Teklif
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if (r.Status == "Onaylandı" || r.Status == "Kabul Edildi")
+                                            {
+                                                <span class="badge badge-root">@r.Status</span>
+                                            }
+                                            else if (r.Status == "Reddedildi")
+                                            {
+                                                <span class="badge badge-super">@r.Status</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge badge-both">@r.Status</span>
+                                            }
+                                        </td>
+                                        <td style="text-align: right;">
+                                            <button type="button" class="btn-table-action" onclick="selectRequestForOffer(@r.RequestID)" title="Bu talebe simülasyon formuyla teklif ver">
+                                                Teklif Seç
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="8" class="empty-state">Henüz açık bir talep bulunmuyor. Yukarıdaki formdan ilk talebi oluşturabilirsiniz.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+
         <!-- ==================== SEKME 4: SİSTEM AYARLARI ==================== -->
         @if (Model.ActiveTab == "settings")
         {
@@ -1057,7 +1302,7 @@
         <div class="modal-panel">
             <div class="modal-header">
                 <h3 class="modal-title">Yeni Kategori Ekle</h3>
-                <button type="button" class="modal-close-btn" onclick="closeModal('addCategoryModal')">✕</button>
+                <button type="button" class="modal-close-btn" onclick="closeModal('addCategoryModal')">&times;</button>
             </div>
             <form asp-action="CreateCategory" method="post">
                 @Html.AntiForgeryToken()
@@ -1091,7 +1336,7 @@
         <div class="modal-panel">
             <div class="modal-header">
                 <h3 class="modal-title">Kategoriyi Düzenle</h3>
-                <button type="button" class="modal-close-btn" onclick="closeModal('editCategoryModal')">✕</button>
+                <button type="button" class="modal-close-btn" onclick="closeModal('editCategoryModal')">&times;</button>
             </div>
             <form asp-action="UpdateCategory" method="post">
                 @Html.AntiForgeryToken()
@@ -1126,7 +1371,7 @@
         <div class="modal-panel" style="max-width: 620px;">
             <div class="modal-header">
                 <h3 class="modal-title">Firma Bilgilerini Düzenle</h3>
-                <button type="button" class="modal-close-btn" onclick="closeModal('editCompanyModal')">✕</button>
+                <button type="button" class="modal-close-btn" onclick="closeModal('editCompanyModal')">&times;</button>
             </div>
             <form asp-action="UpdateCompany" method="post">
                 @Html.AntiForgeryToken()
@@ -1209,7 +1454,7 @@
         <div class="modal-panel" style="max-width: 440px;">
             <div class="modal-header">
                 <h3 class="modal-title">Şifre Sıfırla</h3>
-                <button type="button" class="modal-close-btn" onclick="closeModal('resetPasswordModal')">✕</button>
+                <button type="button" class="modal-close-btn" onclick="closeModal('resetPasswordModal')">&times;</button>
             </div>
             <form asp-action="ResetCompanyPassword" method="post">
                 @Html.AntiForgeryToken()
@@ -1340,6 +1585,19 @@
                     row.style.display = 'none';
                 }
             });
+        }
+
+        // Simülasyon tablosundan hızlı talep seçimi
+        function selectRequestForOffer(requestId) {
+            var select = document.getElementById('simOfferReq');
+            if (select) {
+                select.value = requestId;
+                select.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                select.style.boxShadow = '0 0 0 3px rgba(22, 163, 74, 0.3)';
+                setTimeout(function() {
+                    select.style.boxShadow = '';
+                }, 1500);
+            }
         }
 
         // ESC tuşu ile açık modalları kapat
