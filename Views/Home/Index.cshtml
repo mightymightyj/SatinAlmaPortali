@@ -1,25 +1,24 @@
 @{
-    ViewData["Title"] = "Ana Sayfa";
+    ViewData["Title"] = "Ana Sayfa - B2B Kurumsal Tedarik Portalı";
 }
-
 
 <!-- SECTION 1: TOP HERO HEADER AREA -->
 <section class="blue-hero-container">
     <div class="hero-inner">
         <h1 class="hero-heading">Tedarik Portalı</h1>
         <p class="hero-subtext">
-            Türkiye'nin 81 ilindeki alıcılara ve tedarikçilere tek platformdan ulaşın, satın alma ve satış teklifi süreçlerinizi dijital ortamda yönetin.
+            Türkiye'nin 81 ilindeki kurumsal alıcıları ve doğrulanmış sanayi tedarikçilerini tek çatı altında buluşturan B2B satın alma & teklif pazaryeri.
         </p>
 
         <!-- Hero Action Controls -->
         <div class="hero-control-row">
             <a asp-controller="Dashboard" asp-action="Index" class="btn-create-pill">
-                <span class="plus-symbol">+</span> Yeni Talep Oluştur
+                <span class="plus-symbol">+</span> Yeni Satınalma Talebi Aç
             </a>
 
             <div class="white-search-pill">
-                <input type="text" placeholder="Ürünler içerisinde ara..." />
-                <button class="blue-search-btn" title="Arama Yap">
+                <input type="text" id="heroSearchInput" placeholder="Endüstriyel ürün, malzeme, SKU veya tedarikçi ara..." onkeydown="if(event.key==='Enter'){ document.getElementById('vitrinSearchInput').value=this.value; document.getElementById('vitrinSearchInput').dispatchEvent(new Event('input')); document.getElementById('ihtiyaciniz-olan-urunler').scrollIntoView({behavior:'smooth'}); }" />
+                <button class="blue-search-btn" title="Arama Yap" onclick="document.getElementById('vitrinSearchInput').value=document.getElementById('heroSearchInput').value; document.getElementById('vitrinSearchInput').dispatchEvent(new Event('input')); document.getElementById('ihtiyaciniz-olan-urunler').scrollIntoView({behavior:'smooth'});">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -30,80 +29,151 @@
     </div>
 </section>
 
-<!-- SECTION 2: DUAL COLUMN CARDS (YENİ ALIŞ & YENİ SATIŞ TALEPLERİ) -->
-<section class="cards-grid-section">
-    <div class="cards-grid-container">
-
-        <!-- LEFT COLUMN: YENİ ALIŞ TALEPLERİ -->
-        <div class="column-white-card min-h-300">
-            <div class="col-head">
-                <div class="col-head-title">
-                    <span class="blue-accent-x">✕</span>
-                    <h2>Yeni Alış Talepleri</h2>
-                </div>
-                <a asp-controller="Dashboard" asp-action="Index" class="link-all">Tüm Talepler</a>
+<!-- SECTION 2: B2B CORPORATE PURCHASING SHOWCASE (6x8 MATRİS) -->
+<section class="b2b-corporate-showcase" id="ihtiyaciniz-olan-urunler">
+    
+    <!-- Kurumsal Güven & Standartlar Şeridi -->
+    <div class="b2b-trust-strip">
+        <div class="b2b-trust-item">
+            <div class="b2b-trust-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <polyline points="9 12 11 14 15 10"></polyline>
+                </svg>
             </div>
-
-            <!-- Empty Container Body -->
-            <div class="cards-stack empty-container-area">
-            </div>
-        </div>
-
-        <!-- RIGHT COLUMN: YENİ SATIŞ TALEPLERİ -->
-        <div class="column-white-card min-h-300">
-            <div class="col-head">
-                <div class="col-head-title">
-                    <span class="blue-accent-x">✕</span>
-                    <h2>Yeni Satış Talepleri</h2>
-                </div>
-                <a asp-controller="Dashboard" asp-action="Index" class="link-all">Tüm Talepler</a>
-            </div>
-
-            <!-- Empty Container Body -->
-            <div class="cards-stack empty-container-area">
+            <div class="b2b-trust-text">
+                <span class="b2b-trust-title">Doğrulanmış Tedarikçiler</span>
+                <span class="b2b-trust-desc">Sanayi & Ticaret Odası kayıtlı üreticiler</span>
             </div>
         </div>
 
+        <div class="b2b-trust-item">
+            <div class="b2b-trust-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                </svg>
+            </div>
+            <div class="b2b-trust-text">
+                <span class="b2b-trust-title">Toptan & Proje İskontoları</span>
+                <span class="b2b-trust-desc">Adet bazlı toptan fabrika fiyatlandırması</span>
+            </div>
+        </div>
+
+        <div class="b2b-trust-item">
+            <div class="b2b-trust-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+            </div>
+            <div class="b2b-trust-text">
+                <span class="b2b-trust-title">Kurumsal Fatura & Vade</span>
+                <span class="b2b-trust-desc">30-60 gün vade, DBS ve açık hesap imkanı</span>
+            </div>
+        </div>
+
+        <div class="b2b-trust-item">
+            <div class="b2b-trust-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <rect x="1" y="3" width="15" height="13"></rect>
+                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                    <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                    <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                </svg>
+            </div>
+            <div class="b2b-trust-text">
+                <span class="b2b-trust-title">81 İl Kurumsal Lojistik</span>
+                <span class="b2b-trust-desc">Fabrikadan paletli ve ambarlı sevkiyat</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Üst Başlık & B2B Eylemler -->
+    <div class="b2b-header-row">
+        <div class="b2b-title-group">
+            <div class="b2b-section-tag">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                    <polyline points="2 17 12 22 22 17"></polyline>
+                    <polyline points="2 12 12 17 22 12"></polyline>
+                </svg>
+                <span>B2B KURUMSAL TEDARİK VİTRİNİ</span>
+            </div>
+            <h2 class="b2b-main-heading">
+                İhtiyacınız Olabilecek Ürünler
+            </h2>
+            <p class="b2b-subtext">
+                Doğrudan onaylı üretici ve distribütörlerden endüstriyel hammadde, makine parçaları, bilişim ve kurumsal işletme sarf malzemeleri. Her ziyarette güncellenen toptan teklif havuzu.
+            </p>
+        </div>
+
+        <div class="b2b-header-actions">
+            <!-- Farklı İlanlar Getir Butonu -->
+            <button type="button" class="btn-b2b-shuffle" id="btnShuffleProducts" title="Yeni 48 farklı kurumsal ürün ve satıcı listele">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+                Farklı İlanları Getir
+            </button>
+
+            <!-- Tedarikçi Olarak İlan Ver Butonu -->
+            <button type="button" class="btn-b2b-seller-cta" onclick="openSellerOfferModal()" title="Kurumsal satıcı olarak ürünlerinizi listelemek için tıklayın">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                Tedarikçi Olarak İlan Ver
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtre Sekmeleri, Canlı Arama ve Sıralama -->
+    <div class="b2b-controls-bar">
+        <div class="b2b-filter-chips">
+            <button type="button" class="b2b-tab-chip active" data-filter="all">Tüm Kategoriler</button>
+            <button type="button" class="b2b-tab-chip" data-filter="flash">⚡ Flaş İskontolar</button>
+            <button type="button" class="b2b-tab-chip" data-filter="metal">⚙️ Makine & Metal</button>
+            <button type="button" class="b2b-tab-chip" data-filter="energy">⚡ Elektrik & Otomasyon</button>
+            <button type="button" class="b2b-tab-chip" data-filter="hardware">🛠️ Hırdavat & Bağlantı</button>
+            <button type="button" class="b2b-tab-chip" data-filter="it">💻 Bilişim & Altyapı</button>
+            <button type="button" class="b2b-tab-chip" data-filter="packaging">📦 Ambalaj & Lojistik</button>
+            <button type="button" class="b2b-tab-chip" data-filter="chemical">🧪 Kimya & Hammadde</button>
+            <button type="button" class="b2b-tab-chip" data-filter="office">🏢 Kurumsal Ofis</button>
+        </div>
+
+        <div class="b2b-search-sort-group">
+            <div class="b2b-search-box">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="vitrinSearchInput" placeholder="Ürün, marka, SKU veya firma ara..." />
+            </div>
+
+            <select id="vitrinSortSelect" class="b2b-sort-select" title="Sıralama Seçeneği">
+                <option value="recommended">Öne Çıkanlar</option>
+                <option value="score">Tedarikçi Puanı (Yüksek)</option>
+                <option value="discount">En Yüksek İskonto</option>
+                <option value="price-asc">Fiyata Göre (Artan)</option>
+                <option value="price-desc">Fiyata Göre (Azalan)</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- 6 Sütun x 8 Satır Profesyonel B2B Ürün Matrisi (48 Ürün) -->
+    <div class="b2b-product-grid" id="trendyolProductGrid">
+        <!-- JavaScript (trendyol-vitrin.js) ile dinamik olarak doldurulacaktır -->
     </div>
 </section>
 
-<!-- SECTION 3: DUAL COLUMN CONTAINERS (YENİ ALICILAR & YENİ TEDARİKÇİLER) -->
-<section class="cards-grid-section mt-4">
-    <div class="cards-grid-container">
-
-        <!-- LEFT COLUMN: YENİ ALICILAR -->
-        <div class="column-white-card min-h-300">
-            <div class="col-head">
-                <div class="col-head-title">
-                    <span class="blue-accent-x">✕</span>
-                    <h2>Yeni Alıcılar</h2>
-                </div>
-            </div>
-
-            <!-- Empty Container Body -->
-            <div class="cards-stack empty-container-area">
-            </div>
-        </div>
-
-        <!-- RIGHT COLUMN: YENİ TEDARİKÇİLER -->
-        <div class="column-white-card min-h-300">
-            <div class="col-head">
-                <div class="col-head-title">
-                    <span class="blue-accent-x">✕</span>
-                    <h2>Yeni Tedarikçiler</h2>
-                </div>
-            </div>
-
-            <!-- Empty Container Body -->
-            <div class="cards-stack empty-container-area">
-            </div>
-        </div>
-
-    </div>
-</section>
-
-<!-- SECTION 4: STATS METRIC CARDS (RIGHT ABOVE FOOTER) -->
-<section class="stats-section mt-5">
+<!-- SECTION 3: STATS METRIC CARDS -->
+<section class="stats-section mt-4">
     <div class="stats-container">
         <div class="stats-grid">
 
@@ -116,7 +186,7 @@
                     </svg>
                 </div>
                 <div class="metric-number">350+</div>
-                <div class="metric-label">Kayıtlı Alıcı</div>
+                <div class="metric-label">Kayıtlı Alıcı Firma</div>
             </div>
 
             <!-- Stat Card 2 -->
@@ -132,7 +202,7 @@
                     </svg>
                 </div>
                 <div class="metric-number">250+</div>
-                <div class="metric-label">Kayıtlı Tedarikçi</div>
+                <div class="metric-label">Onaylı Sanayi Tedarikçisi</div>
             </div>
 
             <!-- Stat Card 3 -->
@@ -145,7 +215,7 @@
                     </svg>
                 </div>
                 <div class="metric-number">400+</div>
-                <div class="metric-label">Satın Alma Talebi</div>
+                <div class="metric-label">Açık Satınalma İhalesi</div>
             </div>
 
             <!-- Stat Card 4 -->
@@ -156,7 +226,7 @@
                     </svg>
                 </div>
                 <div class="metric-number">300+</div>
-                <div class="metric-label">Satış Talebi</div>
+                <div class="metric-label">Tamamlanan Kurumsal Teklif</div>
             </div>
 
             <!-- Stat Card 5 -->
@@ -168,10 +238,228 @@
                         <line x1="12" y1="22.08" x2="12" y2="12"></line>
                     </svg>
                 </div>
-                <div class="metric-number">1M</div>
-                <div class="metric-label">Hazır Ürün Portföyü</div>
+                <div class="metric-number">1M+</div>
+                <div class="metric-label">Endüstriyel Ürün Portföyü</div>
             </div>
 
         </div>
     </div>
 </section>
+
+<!-- MODAL 1: HIZLI ŞARTNAME VE TEKNİK DETAY MODALI -->
+<div id="tyQuickViewModal" class="ty-modal-overlay" onclick="if(event.target===this)closeTyModal('tyQuickViewModal')">
+    <div class="ty-modal-box">
+        <button type="button" class="ty-modal-close" onclick="closeTyModal('tyQuickViewModal')">&times;</button>
+        <div class="ty-qv-grid">
+            <div class="ty-qv-img-box">
+                <img id="qvModalImage" src="" alt="Ürün Görseli" />
+            </div>
+            <div class="ty-qv-details">
+                <div class="ty-qv-header-tag" id="qvModalCategory">Endüstriyel Kategori</div>
+                <h3 class="ty-qv-title" id="qvModalTitle">Ürün Teknik Başlığı</h3>
+                
+                <div class="ty-qv-seller-card">
+                    <div>
+                        <div style="font-size: 0.72rem; color: #64748b; font-weight: 600;">Üretici / Tedarikçi Firma</div>
+                        <strong id="qvModalSeller" style="color: #0f172a; font-size: 0.88rem;">Firma Ünvanı</strong>
+                        <div style="font-size: 0.72rem; color: #0284c7;" id="qvModalLocation">Lokasyon</div>
+                    </div>
+                    <span class="ty-seller-rating" id="qvModalScore">★ 9.9 / 10</span>
+                </div>
+
+                <div class="ty-qv-price-row">
+                    <div class="ty-qv-price" id="qvModalPrice">0 ₺</div>
+                    <div class="ty-qv-old-price" id="qvModalOldPrice">0 ₺</div>
+                    <span class="b2b-save-tag" id="qvModalDiscount">%0 İskonto</span>
+                </div>
+
+                <div class="ty-qv-meta-list">
+                    <div class="ty-qv-meta-item">🏷️ Marka: <strong id="qvModalBrand">Marka</strong></div>
+                    <div class="ty-qv-meta-item">🔢 Stok Kodu: <strong id="qvModalSku">SKU-000</strong></div>
+                    <div class="ty-qv-meta-item">📦 Mevcut Stok: <span id="qvModalStock">Hazır Stok</span></div>
+                    <div class="ty-qv-meta-item">📋 <span id="qvModalMoq">MOQ: 1 Adet</span></div>
+                    <div class="ty-qv-meta-item">🚚 <span id="qvModalLeadTime">Termin: 1-2 Gün</span></div>
+                    <div class="ty-qv-meta-item">🛡️ Garanti: <span>Sanayi Standartı</span></div>
+                </div>
+
+                <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 8px 10px; margin-bottom: 16px; font-size: 0.78rem; color: #1e40af;" id="qvModalTierPricing">
+                    Toplu siparişlerde özel proje iskontosu uygulanır.
+                </div>
+
+                <div class="ty-qv-actions">
+                    <button type="button" class="ty-btn-primary" id="qvModalQuoteBtn">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        Resmi Teklif İste (RFQ)
+                    </button>
+                    <button type="button" class="ty-btn-secondary" id="qvModalSellBtn">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="16"></line>
+                            <line x1="8" y1="12" x2="16" y2="12"></line>
+                        </svg>
+                        Bu Ürünü Ben de Satmak İstiyorum
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 2: RESMİ KURUMSAL TEKLİF (RFQ) TALEP FORMU -->
+<div id="tyQuoteModal" class="ty-modal-overlay" onclick="if(event.target===this)closeTyModal('tyQuoteModal')">
+    <div class="ty-modal-box" style="max-width: 560px;">
+        <button type="button" class="ty-modal-close" onclick="closeTyModal('tyQuoteModal')">&times;</button>
+        <div style="margin-bottom: 16px;">
+            <span class="b2b-section-tag">B2B RESMİ SATINALMA TEKLİFİ (RFQ)</span>
+            <h3 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin-top: 6px;">Kurumsal Fiyat & Vade Teklifi İste</h3>
+            <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Doğrudan üreticiye resmi proforma ve şartname talebi oluşturun.</p>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+            <div style="font-size: 0.86rem; font-weight: 750; color: #0f172a;" id="quoteModalProductTitle">Ürün Adı</div>
+            <div style="font-size: 0.76rem; color: #64748b; margin-top: 3px;" id="quoteModalProductSku">SKU: 0000</div>
+            <div style="font-size: 0.78rem; color: #475569; margin-top: 4px;">
+                Tedarikçi: <strong id="quoteModalSellerName" style="color: #0284c7;">Firma Ünvanı</strong> | Liste Fiyatı: <strong id="quoteModalUnitPrice" style="color: #0f172a;">0 ₺</strong>
+            </div>
+        </div>
+
+        <form onsubmit="return submitQuoteRequest(event);">
+            <input type="hidden" id="quoteModalHiddenProductId" />
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Satınalma Yapan Firma Ünvanı *</label>
+                    <input type="text" id="quoteBuyerCompany" class="form-control" placeholder="Örn: Aselsan / Ege Kimya A.Ş." required style="border-radius: 6px; font-size: 0.85rem;" />
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Vergi Kimlik No / Dairesi</label>
+                    <input type="text" id="quoteBuyerTax" class="form-control" placeholder="1234567890 / Kadıköy VD" style="border-radius: 6px; font-size: 0.85rem;" />
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Talep Edilen Miktar *</label>
+                    <input type="number" id="quoteQuantity" class="form-control" value="100" min="1" required style="border-radius: 6px; font-weight: 700; font-size: 0.85rem;" />
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Hedef Birim Fiyat (₺/Adet - Opsiyonel)</label>
+                    <input type="text" id="quoteTargetPrice" class="form-control" placeholder="Hedef bütçeniz" style="border-radius: 6px; font-size: 0.85rem;" />
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Tercih Edilen Ödeme Koşulu</label>
+                    <select id="quotePaymentTerms" class="form-control" style="border-radius: 6px; font-size: 0.85rem;">
+                        <option value="Peşin İskontolu">Peşin / Havale (Maksimum İskonto)</option>
+                        <option value="30 Gün Vade">30 Gün Vadeli Kurumsal Çek</option>
+                        <option value="60 Gün Vade">60 Gün Vadeli Kurumsal Çek</option>
+                        <option value="DBS / Açık Hesap">DBS (Doğrudan Borçlandırma Sistemi)</option>
+                        <option value="Akreditif / LC">Akreditifli Satınalma</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Teslimat İli / Fabrika Lokasyonu</label>
+                    <input type="text" id="quoteDeliveryCity" class="form-control" placeholder="Örn: Kocaeli / Dilovası" style="border-radius: 6px; font-size: 0.85rem;" />
+                </div>
+            </div>
+
+            <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Teknik Şartname & Talep Notu</label>
+                <textarea id="quoteNotes" class="form-control" rows="2" placeholder="Özel toleranslar, ambalaj tipi veya teknik şartname notlarınız..." style="border-radius: 6px; font-size: 0.82rem;"></textarea>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #334155; cursor: pointer;">
+                    <input type="checkbox" id="quoteSampleCheck" />
+                    <span>Toplu alım öncesi <strong>numune (sample)</strong> talep ediyorum.</span>
+                </label>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="btn-edit-cancel" style="flex: 1; border-radius: 6px;" onclick="closeTyModal('tyQuoteModal')">Vazgeç</button>
+                <button type="submit" class="b2b-btn-rfq" style="flex: 2; border-radius: 6px; padding: 11px 16px; font-size: 0.88rem; justify-content: center;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                    Resmi RFQ Talebini İlet
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL 3: TEDARİKÇİ OLARAK İLAN VERME / PAZARYERİ GİRİŞİ FORMU -->
+<div id="tySellerOfferModal" class="ty-modal-overlay" onclick="if(event.target===this)closeTyModal('tySellerOfferModal')">
+    <div class="ty-modal-box" style="max-width: 560px;">
+        <button type="button" class="ty-modal-close" onclick="closeTyModal('tySellerOfferModal')">&times;</button>
+        <div style="margin-bottom: 16px;">
+            <span class="b2b-section-tag" style="background: #f0fdf4; color: #166534; border-color: #bbf7d0;">KURUMSAL TEDARİKÇİ GİRİŞİ</span>
+            <h3 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin-top: 6px;">Tedarikçi Olarak Ürün / Fiyat Listele</h3>
+            <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Fabrika veya distribütör portföyünüzü binlerce kurumsal satınalma yöneticisine açın.</p>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; font-size: 0.82rem; color: #1e293b;" id="sellerModalProductInfo">
+            Yeni Kurumsal Ürün & Toptan İlan
+        </div>
+
+        <form onsubmit="return submitSellerOffer(event);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Firma Resmi Ünvanı *</label>
+                    <input type="text" id="sellerCompanyName" class="form-control" placeholder="Örn: Anadolu Sac Metal A.Ş." required style="border-radius: 6px; font-size: 0.85rem;" />
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Fabrika / Tesis Lokasyonu *</label>
+                    <input type="text" id="sellerLocation" class="form-control" placeholder="Örn: Kocaeli Dilovası OSB" required style="border-radius: 6px; font-size: 0.85rem;" />
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Toptan Birim Fiyat (₺ + KDV) *</label>
+                    <input type="number" id="sellerOfferPrice" class="form-control" placeholder="Örn: 2450" required style="border-radius: 6px; font-size: 0.85rem;" />
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Hazır Stok / Aylık Kapasite *</label>
+                    <input type="text" id="sellerOfferStock" class="form-control" placeholder="Örn: 2.500 Adet" required style="border-radius: 6px; font-size: 0.85rem;" />
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Kurumsal İletişim (E-Posta / Tel) *</label>
+                    <input type="text" id="sellerOfferContact" class="form-control" placeholder="satis@firmaniz.com" required style="border-radius: 6px; font-size: 0.85rem;" />
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Kalite Belgeleri (ISO, TSE, CE)</label>
+                    <input type="text" id="sellerCerts" class="form-control" placeholder="ISO 9001 / TSE / CE" style="border-radius: 6px; font-size: 0.85rem;" />
+                </div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Tedarik & Sevkiyat Şartları</label>
+                <textarea id="sellerOfferDesc" class="form-control" rows="2" placeholder="Minimum sipariş (MOQ), termin süresi, teslimat yöntemleri..." style="border-radius: 6px; font-size: 0.82rem;"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="btn-edit-cancel" style="flex: 1; border-radius: 6px;" onclick="closeTyModal('tySellerOfferModal')">Vazgeç</button>
+                <button type="submit" class="btn-b2b-seller-cta" style="flex: 2; border-radius: 6px; padding: 11px 16px; font-size: 0.88rem; justify-content: center; background: #0f172a;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Ürün İlanını Doğrulamaya Gönder
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/trendyol-vitrin.js" asp-append-version="true"></script>
+}
