@@ -1066,18 +1066,44 @@ function openSellerOfferModal(productId) {
     const modal = document.getElementById('tySellerOfferModal');
     if (!modal) return;
 
+    const nameInput = document.getElementById('sellerOfferProductName');
+    const catSelect = document.getElementById('sellerOfferCategory');
+    const priceInput = document.getElementById('sellerOfferPrice');
+    const stockInput = document.getElementById('sellerOfferStock');
+
     if (product) {
         document.getElementById('sellerModalProductInfo').innerHTML = `
-            <strong>Referans Ürün:</strong> ${product.title} <br/>
-            <span style="font-size:0.78rem; color:#64748b;">SKU: ${product.sku} | Kategori: ${product.categoryName}</span>
+            <strong>Referans Alınan Ürün:</strong> ${product.title} <br/>
+            <span style="font-size:0.78rem; color:#64748b;">SKU: ${product.sku} | Mevcut Kategori: ${product.categoryName}</span>
         `;
-        document.getElementById('sellerOfferPrice').value = product.price;
+        if (nameInput) nameInput.value = product.title;
+        if (priceInput) priceInput.value = product.price;
+        if (stockInput) stockInput.value = '100';
+
+        if (catSelect) {
+            // Kategoriyi eşleştirmeye çalış
+            let matched = false;
+            for (let i = 0; i < catSelect.options.length; i++) {
+                if (catSelect.options[i].text.toLowerCase().includes(product.categoryName.toLowerCase()) ||
+                    product.categoryName.toLowerCase().includes(catSelect.options[i].text.toLowerCase())) {
+                    catSelect.selectedIndex = i;
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched && catSelect.options.length > 1) {
+                catSelect.selectedIndex = 1;
+            }
+        }
     } else {
         document.getElementById('sellerModalProductInfo').innerHTML = `
             <strong>Yeni Kurumsal Portföy & Toptan Satış İlanı</strong> <br/>
             <span style="font-size:0.78rem; color:#64748b;">Doğrudan B2B satın alma yöneticilerine ve fabrikalara ulaşın.</span>
         `;
-        document.getElementById('sellerOfferPrice').value = '';
+        if (nameInput) nameInput.value = '';
+        if (priceInput) priceInput.value = '';
+        if (stockInput) stockInput.value = '';
+        if (catSelect) catSelect.selectedIndex = 0;
     }
 
     modal.classList.add('show');
@@ -1109,11 +1135,13 @@ function submitQuoteRequest(e) {
 
 function submitSellerOffer(e) {
     e.preventDefault();
+    const productName = document.getElementById('sellerOfferProductName')?.value || 'Yeni Ürün';
+    const category = document.getElementById('sellerOfferCategory')?.value || 'Genel';
     const price = document.getElementById('sellerOfferPrice')?.value || '';
     const stock = document.getElementById('sellerOfferStock')?.value || '';
 
     closeTyModal('tySellerOfferModal');
-    showB2BToast(`🏢 Ürün satış ilanınız ve toptan teklifiniz sisteme başarıyla kaydedildi.`, "success");
+    showB2BToast(`🏢 "${productName}" ürünü [${category}] kategorisinde satışa açılmak üzere başarıyla kaydedildi.`, "success");
     return false;
 }
 

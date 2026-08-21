@@ -15,7 +15,19 @@ namespace satinalmaportali2.Controllers {
             _emailService = emailService;
         }
 
-        public IActionResult Index() {
+        public async Task<IActionResult> Index() {
+            try {
+                var categories = await _context.Category
+                    .AsNoTracking()
+                    .OrderBy(c => c.ParentCategoryID.HasValue ? 1 : 0)
+                    .ThenBy(c => c.CategoryName)
+                    .ToListAsync();
+                ViewBag.Categories = categories;
+            }
+            catch (Exception ex) {
+                Console.WriteLine("HomeController Index Category Load Error: " + ex.Message);
+                ViewBag.Categories = new List<Category>();
+            }
             return View();
         }
 
