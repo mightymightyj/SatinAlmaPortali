@@ -409,18 +409,7 @@
         </div>
 
         <form onsubmit="return submitSellerOffer(event);">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Firma Resmi Ünvanı *</label>
-                    <input type="text" id="sellerCompanyName" class="form-control" placeholder="Örn: Anadolu Sac Metal A.Ş." required style="border-radius: 6px; font-size: 0.85rem;" />
-                </div>
-                <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Fabrika / Tesis Lokasyonu *</label>
-                    <input type="text" id="sellerLocation" class="form-control" placeholder="Örn: Kocaeli Dilovası OSB" required style="border-radius: 6px; font-size: 0.85rem;" />
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
                 <div>
                     <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Toptan Birim Fiyat (₺ + KDV) *</label>
                     <input type="number" id="sellerOfferPrice" class="form-control" placeholder="Örn: 2450" required style="border-radius: 6px; font-size: 0.85rem;" />
@@ -431,20 +420,9 @@
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Kurumsal İletişim (E-Posta / Tel) *</label>
-                    <input type="text" id="sellerOfferContact" class="form-control" placeholder="satis@firmaniz.com" required style="border-radius: 6px; font-size: 0.85rem;" />
-                </div>
-                <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Kalite Belgeleri (ISO, TSE, CE)</label>
-                    <input type="text" id="sellerCerts" class="form-control" placeholder="ISO 9001 / TSE / CE" style="border-radius: 6px; font-size: 0.85rem;" />
-                </div>
-            </div>
-
-            <div style="margin-bottom: 16px;">
+            <div style="margin-bottom: 18px;">
                 <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Tedarik & Sevkiyat Şartları</label>
-                <textarea id="sellerOfferDesc" class="form-control" rows="2" placeholder="Minimum sipariş (MOQ), termin süresi, teslimat yöntemleri..." style="border-radius: 6px; font-size: 0.82rem;"></textarea>
+                <textarea id="sellerOfferDesc" class="form-control" rows="3" placeholder="Minimum sipariş (MOQ), termin süresi, teslimat yöntemleri..." style="border-radius: 6px; font-size: 0.82rem;"></textarea>
             </div>
 
             <div style="display: flex; gap: 10px;">

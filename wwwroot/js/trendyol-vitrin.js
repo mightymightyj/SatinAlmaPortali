@@ -1109,11 +1109,11 @@ function submitQuoteRequest(e) {
 
 function submitSellerOffer(e) {
     e.preventDefault();
-    const company = document.getElementById('sellerCompanyName')?.value || 'Firma';
     const price = document.getElementById('sellerOfferPrice')?.value || '';
+    const stock = document.getElementById('sellerOfferStock')?.value || '';
 
     closeTyModal('tySellerOfferModal');
-    showB2BToast(`🏢 Sayın ${company}, kurumsal tedarikçi ürün teklifiniz doğrulanmak üzere sisteme kaydedildi.`, "success");
+    showB2BToast(`🏢 Ürün satış ilanınız ve toptan teklifiniz sisteme başarıyla kaydedildi.`, "success");
     return false;
 }
 
