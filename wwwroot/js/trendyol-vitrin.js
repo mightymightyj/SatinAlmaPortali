@@ -1081,11 +1081,15 @@ function openSellerOfferModal(productId) {
         if (stockInput) stockInput.value = '100';
 
         if (catSelect) {
-            // Kategoriyi eşleştirmeye çalış
+            // N-Seviyeli kategoriyi data-path, value veya text üzerinden akıllı eşleştir
             let matched = false;
+            const searchCat = (product.categoryName || '').toLowerCase();
             for (let i = 0; i < catSelect.options.length; i++) {
-                if (catSelect.options[i].text.toLowerCase().includes(product.categoryName.toLowerCase()) ||
-                    product.categoryName.toLowerCase().includes(catSelect.options[i].text.toLowerCase())) {
+                const opt = catSelect.options[i];
+                const val = (opt.value || '').toLowerCase();
+                const text = (opt.text || '').toLowerCase();
+                const path = (opt.getAttribute('data-path') || '').toLowerCase();
+                if (val && (val === searchCat || path.includes(searchCat) || text.includes(searchCat))) {
                     catSelect.selectedIndex = i;
                     matched = true;
                     break;
@@ -1136,7 +1140,9 @@ function submitQuoteRequest(e) {
 function submitSellerOffer(e) {
     e.preventDefault();
     const productName = document.getElementById('sellerOfferProductName')?.value || 'Yeni Ürün';
-    const category = document.getElementById('sellerOfferCategory')?.value || 'Genel';
+    const catSelect = document.getElementById('sellerOfferCategory');
+    const selectedOption = catSelect?.options[catSelect.selectedIndex];
+    const category = selectedOption?.getAttribute('data-path') || selectedOption?.value || 'Genel Kategori';
     const price = document.getElementById('sellerOfferPrice')?.value || '';
     const stock = document.getElementById('sellerOfferStock')?.value || '';
 

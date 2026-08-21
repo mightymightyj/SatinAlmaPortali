@@ -418,51 +418,39 @@
                 <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Kategori *</label>
                 <select id="sellerOfferCategory" class="form-control" required style="border-radius: 6px; font-size: 0.85rem;">
                     <option value="">-- Kategori Seçiniz --</option>
-                    @if (ViewBag.Categories != null && ((IEnumerable<satinalmaportali2.Models.Category>)ViewBag.Categories).Any())
+                    @if (ViewBag.HierarchicalCategories != null && ((IEnumerable<satinalmaportali2.Controllers.HierarchicalCategoryItem>)ViewBag.HierarchicalCategories).Any())
                     {
-                        var allCats = (IEnumerable<satinalmaportali2.Models.Category>)ViewBag.Categories;
-                        var parentCats = allCats.Where(c => !c.ParentCategoryID.HasValue || c.ParentCategoryID == 0).ToList();
-                        if (parentCats.Any())
+                        var flatCategories = (IEnumerable<satinalmaportali2.Controllers.HierarchicalCategoryItem>)ViewBag.HierarchicalCategories;
+                        foreach (var cat in flatCategories)
                         {
-                            foreach (var parent in parentCats)
+                            string optStyle = cat.Level switch
                             {
-                                var subs = allCats.Where(c => c.ParentCategoryID == parent.CategoryID).ToList();
-                                if (subs.Any())
-                                {
-                                    <optgroup label="@parent.CategoryName">
-                                        @foreach (var sub in subs)
-                                        {
-                                            <option value="@sub.CategoryName">@sub.CategoryName</option>
-                                        }
-                                    </optgroup>
-                                }
-                                else
-                                {
-                                    <option value="@parent.CategoryName">@parent.CategoryName</option>
-                                }
-                            }
-                        }
-                        else
-                        {
-                            foreach (var cat in allCats)
-                            {
-                                <option value="@cat.CategoryName">@cat.CategoryName</option>
-                            }
+                                0 => "font-weight: 700; background-color: #f1f5f9; color: #0f172a;",
+                                1 => "font-weight: 600; color: #1e293b; padding-left: 10px;",
+                                2 => "font-weight: 500; color: #334155; padding-left: 20px;",
+                                _ => "font-weight: 400; color: #475569; padding-left: 30px;"
+                            };
+
+                            <option value="@cat.CategoryName" data-path="@cat.BreadcrumbPath" data-level="@cat.Level" style="@optStyle">
+                                @cat.FormattedName
+                            </option>
                         }
                     }
                     else
                     {
-                        <optgroup label="Endüstriyel & İmalat">
-                            <option value="Makine & Metal Sanayi">Makine & Metal Sanayi</option>
-                            <option value="Elektrik & Otomasyon">Elektrik & Otomasyon</option>
-                            <option value="Hırdavat & Bağlantı Elemanları">Hırdavat & Bağlantı Elemanları</option>
-                            <option value="Kimya & Sanayi Hammaddeleri">Kimya & Sanayi Hammaddeleri</option>
-                        </optgroup>
-                        <optgroup label="Lojistik & Bilişim">
-                            <option value="Bilişim & Altyapı Sistemleri">Bilişim & Altyapı Sistemleri</option>
-                            <option value="Ambalaj & Depolama Çözümleri">Ambalaj & Depolama Çözümleri</option>
-                            <option value="Kurumsal Ofis & Sarf Malzemeleri">Kurumsal Ofis & Sarf Malzemeleri</option>
-                        </optgroup>
+                        <option value="Makine & Metal Sanayi" style="font-weight: 700; background: #f1f5f9;">📁 Makine & Metal Sanayi</option>
+                        <option value="Talaşlı İmalat">&nbsp;&nbsp;↳ 📂 Talaşlı İmalat & CNC</option>
+                        <option value="CNC Freze">&nbsp;&nbsp;&nbsp;&nbsp;↳ 🏷️ CNC Freze & Torna Parçaları</option>
+                        <option value="Elektrik & Otomasyon" style="font-weight: 700; background: #f1f5f9;">📁 Elektrik & Otomasyon</option>
+                        <option value="PLC & Sürücüler">&nbsp;&nbsp;↳ 📂 PLC & Sürücüler</option>
+                        <option value="Sensör & Şalt">&nbsp;&nbsp;&nbsp;&nbsp;↳ 🏷️ Endüstriyel Sensör & Şalt</option>
+                        <option value="Hırdavat & Bağlantı" style="font-weight: 700; background: #f1f5f9;">📁 Hırdavat & Bağlantı Elemanları</option>
+                        <option value="Civata & Somun">&nbsp;&nbsp;↳ 📂 Civata, Somun & Pul</option>
+                        <option value="Paslanmaz Civata">&nbsp;&nbsp;&nbsp;&nbsp;↳ 🏷️ Paslanmaz Civata & Saplama</option>
+                        <option value="Bilişim & Altyapı" style="font-weight: 700; background: #f1f5f9;">📁 Bilişim & Altyapı</option>
+                        <option value="Ambalaj & Lojistik" style="font-weight: 700; background: #f1f5f9;">📁 Ambalaj & Lojistik</option>
+                        <option value="Kimya & Hammadde" style="font-weight: 700; background: #f1f5f9;">📁 Kimya & Sanayi Hammaddeleri</option>
+                        <option value="Kurumsal Ofis & Sarf" style="font-weight: 700; background: #f1f5f9;">📁 Kurumsal Ofis & Sarf Malzemeleri</option>
                     }
                 </select>
             </div>
