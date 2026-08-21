@@ -242,6 +242,7 @@ namespace satinalmaportali2.Models {
         public bool HasMyBid { get; set; }
         public decimal? MyBidAmount { get; set; }
         public string? MyBidStatus { get; set; }
+        public string? MyBidRejectionReason { get; set; }
     }
 
     public class SupplierEarningsTrendDto {

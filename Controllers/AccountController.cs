@@ -86,7 +86,7 @@ namespace satinalmaportali2.Controllers {
 
                 bool isSuperAdminUser = dbUser.CompanyTypeID == 4 || string.Equals(dbUser.CompanyMail, "admin@tedarikportal.com", StringComparison.OrdinalIgnoreCase);
                 string effectiveUserType = isSuperAdminUser ? "admin" : (userType ?? "User");
-                int effectiveCompanyTypeId = isSuperAdminUser ? 4 : (dbUser.CompanyTypeID ?? 1);
+                int effectiveCompanyTypeId = isSuperAdminUser ? 4 : 3;
 
                 var claims = new List<Claim> {
                     new Claim(ClaimTypes.NameIdentifier, dbUser.CompanyID.ToString()),
@@ -165,7 +165,7 @@ namespace satinalmaportali2.Controllers {
         public async Task<IActionResult> RegisterSubmit(
             string fullname, string email, string password, string confirmPassword,
             string country, string city, string district, string addressText,
-            int? companyTypeID, string tcno, string companyPhone, string taxOffice, string companyDetailText) {
+            string tcno, string companyPhone, string taxOffice, string companyDetailText) {
 
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password) || password != confirmPassword) {
                 ViewData["ErrorMessage"] = "Şifreler uyuşmuyor veya e-posta adresi geçersiz!";
@@ -213,14 +213,14 @@ namespace satinalmaportali2.Controllers {
                 await _context.SaveChangesAsync();
 
                 // ====================================
-                // STEP 2: Save Company with AddressID FK
+                // STEP 2: Save Company with AddressID FK (CompanyTypeID = 3: Hem Alıcı Hem Tedarikçi)
                 // ====================================
                 var newCompany = new Company {
                     CompanyName = fullname,
                     CompanyOfficial = fullname,
                     CompanyMail = email,
                     CompanyPassword = PasswordHasher.HashPassword(password),
-                    CompanyTypeID = companyTypeID ?? 1,
+                    CompanyTypeID = 3, // Otomatik olarak Hem Alıcı Hem Tedarikçi
                     MembershipTypeID = 1,
                     TCNO = tcno,
                     CompanyPhone = companyPhone,
@@ -247,7 +247,7 @@ namespace satinalmaportali2.Controllers {
                     new Claim("CompanyName", fullname ?? email),
                     new Claim("UserType", "User"),
                     new Claim(ClaimTypes.Role, "User"),
-                    new Claim("CompanyTypeID", (newCompany.CompanyTypeID ?? 1).ToString())
+                    new Claim("CompanyTypeID", "3")
                 };
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -327,12 +327,6 @@ namespace satinalmaportali2.Controllers {
 
         [HttpGet]
         public async Task<IActionResult> Profile() {
-            var cookieMode = Request.Cookies["ActiveDashboardMode"];
-            string activeMode = !string.IsNullOrWhiteSpace(cookieMode) && string.Equals(cookieMode, "Supplier", StringComparison.OrdinalIgnoreCase)
-                ? "Supplier"
-                : "Buyer";
-            ViewBag.DashboardRole = activeMode;
-
             var company = await GetCurrentUserCompanyAsync();
             if (company == null) {
                 if (User.Identity?.IsAuthenticated != true) {
@@ -354,15 +348,10 @@ namespace satinalmaportali2.Controllers {
                 CompanyDetailText = company.CompanyDetailText,
                 CompanyLogo = company.CompanyLogo,
                 CompanyTypeID = company.CompanyTypeID,
+                CompanyTypeName = "Kurumsal Hesap (Alıcı & Tedarikçi)",
                 MembershipTypeID = company.MembershipTypeID,
                 AddressID = company.AddressID
             };
-
-            // Load CompanyType name
-            if (company.CompanyTypeID.HasValue) {
-                var companyType = await _context.CompanyTypes.FirstOrDefaultAsync(ct => ct.CompanyTypeID == company.CompanyTypeID);
-                viewModel.CompanyTypeName = companyType?.CompanyTypeName;
-            }
 
             // Load MembershipType name
             if (company.MembershipTypeID.HasValue) {
@@ -400,12 +389,6 @@ namespace satinalmaportali2.Controllers {
                 }
             }
 
-            // Load available company types for editing (exclude SuperAdmin for regular users)
-            bool isCurrentCompSuperAdmin = company.CompanyTypeID == 4 || string.Equals(company.CompanyMail, "admin@tedarikportal.com", StringComparison.OrdinalIgnoreCase);
-            viewModel.AvailableCompanyTypes = await _context.CompanyTypes
-                .Where(ct => isCurrentCompSuperAdmin || ct.CompanyTypeID != 4)
-                .ToListAsync();
-
             return View(viewModel);
         }
 
@@ -414,7 +397,6 @@ namespace satinalmaportali2.Controllers {
         public async Task<IActionResult> UpdateProfile(
             string? companyOfficial,
             string? companyName,
-            int? companyTypeID,
             string? companyMail,
             string? companyPhone,
             string? tcno,
@@ -453,17 +435,10 @@ namespace satinalmaportali2.Controllers {
                     }
                 }
 
-                // Normal kullanıcılar kendilerini profil sayfasından Süper Admin yapamaz
-                if (companyTypeID == 4 && user.CompanyTypeID != 4 && !string.Equals(user.CompanyMail, "admin@tedarikportal.com", StringComparison.OrdinalIgnoreCase))
-                {
-                    TempData["ProfileError"] = "Süper Admin yetkisi doğrudan kullanıcı profilinden atanamaz.";
-                    return RedirectToAction("Profile");
-                }
-
-                // Kişi ve Firma Bilgilerini Güncelle
+                // Kişi ve Firma Bilgilerini Güncelle (CompanyTypeID süper admin ise 4, diğer tüm kullanıcılarda 3)
                 user.CompanyOfficial = companyOfficial.Trim();
                 user.CompanyName = companyName.Trim();
-                user.CompanyTypeID = companyTypeID ?? user.CompanyTypeID ?? 1;
+                user.CompanyTypeID = (user.CompanyTypeID == 4 || string.Equals(user.CompanyMail, "admin@tedarikportal.com", StringComparison.OrdinalIgnoreCase)) ? 4 : 3;
                 user.CompanyMail = newMailTrimmed;
                 user.CompanyPhone = string.IsNullOrWhiteSpace(companyPhone) ? null : companyPhone.Trim();
                 user.TCNO = string.IsNullOrWhiteSpace(tcno) ? null : tcno.Trim();

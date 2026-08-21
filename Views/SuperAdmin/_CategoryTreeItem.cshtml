@@ -1,0 +1,63 @@
+@using satinalmaportali2.Models
+@model (CategoryAdminDto Node, int Level)
+@{
+    var node = Model.Node;
+    var level = Model.Level;
+    var hasChildren = node.SubCategories != null && node.SubCategories.Count > 0;
+    var indent = level * 18;
+}
+
+<div class="cat-tree-node level-@Math.Min(level, 3)" data-cat-id="@node.CategoryID" data-cat-name="@node.CategoryName.ToLowerInvariant()" style="margin-left: @(indent)px;">
+    <div class="cat-node-row @(level == 0 ? "is-root" : "")">
+        <div class="cat-node-left">
+            @if (hasChildren)
+            {
+                <button type="button" class="cat-toggle-btn" onclick="toggleCategoryBranch(this, 'children-@node.CategoryID')" title="Genişlet / Daralt">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="toggle-icon"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+            }
+            else
+            {
+                <span class="cat-tree-bullet">@(level == 0 ? "📁" : "↳")</span>
+            }
+
+            <span class="cat-node-icon">
+                @(level == 0 ? "📁" : level == 1 ? "📂" : "🏷️")
+            </span>
+
+            <span class="cat-node-title">@node.CategoryName</span>
+            <span class="cat-node-id">#@node.CategoryID</span>
+
+            @if (hasChildren && node.SubCategories != null)
+            {
+                <span class="cat-node-count">@node.SubCategories.Count alt</span>
+            }
+        </div>
+
+        <div class="cat-node-actions">
+            <button type="button" class="btn-compact-add" onclick="openAddCategoryModal(@node.CategoryID)" title="Bu kategorinin altına alt kategori ekle">
+                + Alt Ekle
+            </button>
+            <button type="button" class="btn-compact-action" onclick="openEditCategoryModal(@node.CategoryID)" title="Düzenle">
+                Düzenle
+            </button>
+            <form asp-action="DeleteCategory" method="post" onsubmit="return confirm('\'@Html.Raw(node.CategoryName)\' kategorisini silmek istediğinize emin misiniz? (Alt kategorileri bağımsız hale gelir)');" style="display:inline; margin: 0;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="categoryId" value="@node.CategoryID" />
+                <button type="submit" class="btn-compact-action danger" title="Sil">
+                    Sil
+                </button>
+            </form>
+        </div>
+    </div>
+
+    @if (hasChildren && node.SubCategories != null)
+    {
+        <div class="cat-children-wrap" id="children-@node.CategoryID">
+            @foreach (var child in node.SubCategories)
+            {
+                <partial name="_CategoryTreeItem" model="(Node: child, Level: level + 1)" />
+            }
+        </div>
+    }
+</div>

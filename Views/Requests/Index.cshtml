@@ -2,10 +2,6 @@
 @{
     ViewData["Title"] = "Satın Alma ve Tedarik Talepleri";
     Layout = "~/Views/Dashboard/_DashboardLayout.cshtml";
-
-    var cookieRole = Context.Request.Cookies["ActiveDashboardMode"];
-    var role = (ViewBag.DashboardRole as string) ?? cookieRole ?? "Buyer";
-    var isSupplier = string.Equals(role, "Supplier", StringComparison.OrdinalIgnoreCase);
 }
 
 <style>
@@ -47,22 +43,28 @@
     }
     .req-alert-close:hover { opacity: 1; }
 
+    /* KPI Kartları Boşluğu */
+    .kpi-row {
+        margin-bottom: 24px;
+    }
+
     /* Navigasyon Sekmeleri */
     .req-nav-tabs {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
+        row-gap: 12px;
         border-bottom: 1px solid var(--hairline, #E2E8F0);
-        padding-bottom: 12px;
-        margin-bottom: 18px;
+        padding-bottom: 16px;
+        margin-bottom: 22px;
         flex-wrap: wrap;
     }
 
     .req-tab-btn {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        padding: 9px 18px;
+        gap: 9px;
+        padding: 10px 18px;
         border-radius: 10px;
         font-size: 0.85rem;
         font-weight: 600;
@@ -70,6 +72,7 @@
         text-decoration: none;
         background: var(--surface, #FFFFFF);
         border: 1px solid var(--grid, #E2E8F0);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
         transition: all 0.15s ease;
     }
 
@@ -77,18 +80,19 @@
         background: var(--plane, #F8FAFC);
         color: var(--ink, #0F172A);
         border-color: #CBD5E1;
+        transform: translateY(-1px);
     }
 
     .req-tab-btn.is-active {
         background: var(--blue, #2563EB);
         color: #FFFFFF;
         border-color: var(--blue, #2563EB);
-        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22);
     }
 
     .req-tab-count {
         background: rgba(0, 0, 0, 0.08);
-        padding: 2px 8px;
+        padding: 2px 9px;
         border-radius: 12px;
         font-size: 0.75rem;
         font-weight: 700;
@@ -111,7 +115,7 @@
         justify-content: space-between;
         flex-wrap: wrap;
         gap: 14px;
-        margin-bottom: 18px;
+        margin-bottom: 24px;
     }
 
     .req-search-form {
@@ -1152,29 +1156,17 @@
 <!-- ============ SAYFA BAŞLIĞI & AKSİYON BUTONU ============ -->
 <div class="page-head">
     <div>
-        <h1>@(isSupplier ? "Açık İhaleler ve Satın Alma Talepleri" : "Satın Alma Taleplerim ve Teklif Yönetimi")</h1>
-        <p>@(isSupplier ? "Pazardaki açık talepleri inceleyin, rekabetçi fiyat teklifleri verin ve tekliflerinizi takip edin" : "Şirketinizin açtığı talepleri yönetin, tedarikçi tekliflerini inceleyip onaylayın veya yeni talep oluşturun")</p>
+        <h1>Satın Alma Talepleri ve İhale Portalı</h1>
+        <p>Pazardaki açık talepleri inceleyin, rekabetçi teklifler verin veya şirketiniz için yeni talep oluşturun.</p>
     </div>
 
-    @if (!isSupplier)
-    {
-        <button type="button" class="btn-primary" onclick="openCreateModal()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            Yeni Talep Oluştur
-        </button>
-    }
-    else
-    {
-        <a asp-action="Index" asp-route-tab="all" class="btn-primary" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
-                <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-            Açık İhaleleri Listele
-        </a>
-    }
+    <button type="button" class="btn-primary" onclick="openCreateModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>+ Yeni Talep Oluştur</span>
+    </button>
 </div>
 
 <!-- ============ ÖZET GÖSTERGE KARTLARI (KPIS) ============ -->
@@ -1245,43 +1237,29 @@
 
 <!-- ============ NAVİGASYON SEKME BUTONLARI ============ -->
 <nav class="req-nav-tabs" aria-label="Talep sekmeleri">
-    @if (!isSupplier)
-    {
-        <!-- Alıcı Modu Sekmeleri -->
-        <a class="req-tab-btn @(Model.ActiveTab == "my-requests" ? "is-active" : "")"
-           asp-action="Index" asp-route-tab="my-requests" asp-route-search="@Model.SearchQuery" asp-route-status="@Model.SelectedStatus">
-            <span>📋 Oluşturduğum Talepler</span>
-        </a>
+    <a class="req-tab-btn @(Model.ActiveTab == "all" ? "is-active" : "")"
+       asp-action="Index" asp-route-tab="all" asp-route-search="@Model.SearchQuery" asp-route-status="@Model.SelectedStatus">
+        <span>🌐 Pazardaki Tüm Talepler (İhaleler)</span>
+        <span class="req-tab-count">@Model.AllRequestsCount</span>
+    </a>
 
-        <a class="req-tab-btn @(Model.ActiveTab == "incoming-offers" ? "is-active" : "")"
-           asp-action="Index" asp-route-tab="incoming-offers" asp-route-search="@Model.SearchQuery">
-            <span>📬 Teklif Gelen Taleplerim</span>
-        </a>
+    <a class="req-tab-btn @(Model.ActiveTab == "my-requests" ? "is-active" : "")"
+       asp-action="Index" asp-route-tab="my-requests" asp-route-search="@Model.SearchQuery" asp-route-status="@Model.SelectedStatus">
+        <span>📋 Oluşturduğum Talepler</span>
+        <span class="req-tab-count">@Model.MyRequestsCount</span>
+    </a>
 
-        <a class="req-tab-btn @(Model.ActiveTab == "all" ? "is-active" : "")"
-           asp-action="Index" asp-route-tab="all" asp-route-search="@Model.SearchQuery" asp-route-status="@Model.SelectedStatus">
-            <span>🌐 Pazardaki Tüm Talepler</span>
-        </a>
-    }
-    else
-    {
-        <!-- Tedarikçi Modu Sekmeleri -->
-        <a class="req-tab-btn @(Model.ActiveTab == "all" ? "is-active" : "")"
-           asp-action="Index" asp-route-tab="all" asp-route-search="@Model.SearchQuery" asp-route-status="@Model.SelectedStatus">
-            <span>🌐 Tüm Açık Talepler (İhaleler)</span>
-            <span class="req-tab-count">@Model.TotalRequestsCount</span>
-        </a>
+    <a class="req-tab-btn @(Model.ActiveTab == "incoming-offers" ? "is-active" : "")"
+       asp-action="Index" asp-route-tab="incoming-offers" asp-route-search="@Model.SearchQuery">
+        <span>📬 Teklif Gelen Taleplerim</span>
+        <span class="req-tab-count">@Model.IncomingOffersCount</span>
+    </a>
 
-        <a class="req-tab-btn @(Model.ActiveTab == "my-bids" ? "is-active" : "")"
-           asp-action="Index" asp-route-tab="my-bids" asp-route-search="@Model.SearchQuery">
-            <span>💼 Verdiğim Teklifler</span>
-        </a>
-
-        <a class="req-tab-btn @(Model.ActiveTab == "my-requests" ? "is-active" : "")"
-           asp-action="Index" asp-route-tab="my-requests" asp-route-search="@Model.SearchQuery">
-            <span>📋 Kendi Açtığım Talepler</span>
-        </a>
-    }
+    <a class="req-tab-btn @(Model.ActiveTab == "my-bids" ? "is-active" : "")"
+       asp-action="Index" asp-route-tab="my-bids" asp-route-search="@Model.SearchQuery">
+        <span>💼 Verdiğim Teklifler</span>
+        <span class="req-tab-count">@Model.MyBidsCount</span>
+    </a>
 </nav>
 
 <!-- ============ FİLTRE VE ARAMA KARTI ============ -->
@@ -1345,7 +1323,7 @@
             <thead>
                 <tr>
                     <th style="width: 140px;">Talep No & Tarih</th>
-                    @if (Model.ActiveTab == "all" || isSupplier)
+                    @if (Model.ActiveTab == "all" || Model.ActiveTab == "my-bids")
                     {
                         <th>Alıcı Firma</th>
                     }
@@ -1361,7 +1339,7 @@
                 @if (Model.Requests == null || !Model.Requests.Any())
                 {
                     <tr>
-                        <td colspan="@(Model.ActiveTab == "all" || isSupplier ? 8 : 7)">
+                        <td colspan="@(Model.ActiveTab == "all" || Model.ActiveTab == "my-bids" ? 8 : 7)">
                             <div style="text-align: center; padding: 56px 20px; display: flex; flex-direction: column; align-items: center; gap: 14px;">
                                 <div style="width: 64px; height: 64px; border-radius: 18px; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center;">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1374,12 +1352,9 @@
                                 <p style="font-size: 0.86rem; color: #64748B; max-width: 420px; margin: 0; line-height: 1.5;">
                                     Seçili sekme veya arama kriterinize uygun talep kaydı bulunmamaktadır.
                                 </p>
-                                @if (!isSupplier)
-                                {
-                                    <button type="button" class="btn-primary" onclick="openCreateModal()" style="margin-top: 6px;">
-                                        + Yeni Talep Oluştur
-                                    </button>
-                                }
+                                <button type="button" class="btn-primary" onclick="openCreateModal()" style="margin-top: 6px;">
+                                    + Yeni Talep Oluştur
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -1398,8 +1373,8 @@
                                 </div>
                             </td>
 
-                            <!-- 2. ALICI FİRMA (Tüm Talepler sekmesinde veya Tedarikçi modunda gösterilir) -->
-                            @if (Model.ActiveTab == "all" || isSupplier)
+                            <!-- 2. ALICI FİRMA (Tüm Talepler veya Verdiğim Teklifler sekmesinde gösterilir) -->
+                            @if (Model.ActiveTab == "all" || Model.ActiveTab == "my-bids")
                             {
                                 <td>
                                     <div class="buyer-info-box">
@@ -1560,9 +1535,19 @@
                                             }
                                             else if (item.MyOfferStatus == "Reddedildi")
                                             {
-                                                <span class="badge-status is-rejected" style="padding: 5px 9px; font-size: 0.78rem; font-weight: 700; background: #FEF2F2; color: #991B1B; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;" title="Teklifiniz alıcı tarafından reddedilmiştir ve düzenlenemez.">
+                                                <span class="badge-status is-rejected" style="padding: 5px 9px; font-size: 0.78rem; font-weight: 700; background: #FEF2F2; color: #991B1B; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; cursor: help;" title="Reddetme Sebebi: @(item.MyOfferRejectionReason ?? "Talep için başka bir tedarikçinin teklifi kabul edildi.")">
                                                     ✕ Reddedildi
                                                 </span>
+                                                @if (item.Status != "Onaylandı" && item.Status != "Kabul Edildi" && item.Status != "Tamamlandı" && item.Status != "İptal Edildi")
+                                                {
+                                                    <button type="button" class="btn-action-bid" style="background: #EFF6FF; color: #2563EB; border: 1px solid #93C5FD; display: inline-flex; align-items: center; gap: 4px;" onclick="openOfferModal(@item.RequestID, '@Html.Raw(item.ProductName.Replace("'", "\\'"))', '@(item.MyOfferPrice?.ToString() ?? "")')" title="Talep devam ettiği için teklifinizi güncelleyip tekrar gönderebilirsiniz">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                            <path d="M12 20h9"></path>
+                                                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                                        </svg>
+                                                        Revize Et
+                                                    </button>
+                                                }
                                             }
                                             else if (item.Status == "Onaylandı" || item.Status == "Kabul Edildi" || item.Status == "Tamamlandı" || item.Status == "İptal Edildi")
                                             {
@@ -1769,7 +1754,7 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5">
                     <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
-                Talebe Fiyat Teklifi Ver
+                <span id="bidModalTitleText">Talebe Fiyat Teklifi Ver</span>
             </h3>
             <button type="button" class="custom-modal-close" onclick="closeBidModal()">&times;</button>
         </div>
@@ -1804,7 +1789,7 @@
                 <!-- 3. GEÇERLİLİK SÜRESİ -->
                 <div class="modal-form-group">
                     <label class="modal-form-label">Teklif Geçerlilik Süresi</label>
-                    <select name="ValidityDays" class="modal-form-select">
+                    <select name="ValidityDays" id="bidValidityDays" class="modal-form-select">
                         <option value="15">15 Gün</option>
                         <option value="30" selected>30 Gün</option>
                         <option value="60">60 Gün</option>
@@ -1815,13 +1800,13 @@
                 <!-- 4. TEDARİKÇİ NOTLARI -->
                 <div class="modal-form-group">
                     <label class="modal-form-label">Tedarikçi Açıklaması & Şartlar</label>
-                    <textarea name="SupplierNotes" rows="3" placeholder="Nakliye dahil/hariç, garanti süresi, teknik uyumluluk bilgileri..." class="modal-form-textarea"></textarea>
+                    <textarea name="SupplierNotes" id="bidSupplierNotes" rows="3" placeholder="Nakliye dahil/hariç, garanti süresi, teknik uyumluluk bilgileri..." class="modal-form-textarea"></textarea>
                 </div>
             </div>
 
             <div class="custom-modal-footer">
                 <button type="button" class="btn-modal-cancel" onclick="closeBidModal()">Vazgeç</button>
-                <button type="submit" class="btn-primary" style="background: #10B981; border-color: #10B981;">
+                <button type="submit" id="bidSubmitBtn" class="btn-primary" style="background: #10B981; border-color: #10B981;">
                     Teklifi İlet
                 </button>
             </div>
@@ -2049,18 +2034,32 @@
         document.getElementById('createRequestModal').classList.remove('is-open');
     }
 
-    // 2. Tedarikçi Teklif Verme Modalı
-    function openOfferModal(requestId, productName, currentBid) {
+    // 2. Tedarikçi Teklif Verme / Revize Etme Modalı
+    function openOfferModal(requestId, productName, currentBid, currentDays, currentNotes) {
         var modal = document.getElementById('supplierBidModal');
         if (!modal) return;
 
         var reqInput = document.getElementById('bidRequestID');
         var prodTitle = document.getElementById('bidProductTitle');
         var priceInput = document.getElementById('bidOfferedPrice');
+        var daysInput = document.getElementById('bidDeliveryDays');
+        var notesInput = document.getElementById('bidSupplierNotes');
+        var titleText = document.getElementById('bidModalTitleText');
+        var submitBtn = document.getElementById('bidSubmitBtn');
 
         if (reqInput) reqInput.value = requestId;
         if (prodTitle) prodTitle.textContent = productName || ('Talep #' + requestId);
         if (priceInput) priceInput.value = currentBid ? parseFloat(currentBid) : '';
+        if (daysInput) daysInput.value = currentDays ? parseInt(currentDays) : 7;
+        if (notesInput) notesInput.value = currentNotes || '';
+
+        if (currentBid && currentBid !== '') {
+            if (titleText) titleText.textContent = 'Teklifi Revize Et / Düzenle';
+            if (submitBtn) submitBtn.textContent = 'Teklifi Güncelle & Gönder';
+        } else {
+            if (titleText) titleText.textContent = 'Talebe Fiyat Teklifi Ver';
+            if (submitBtn) submitBtn.textContent = 'Teklifi İlet';
+        }
 
         modal.classList.add('is-open');
         if (priceInput) setTimeout(function () { priceInput.focus(); }, 50);
@@ -2120,12 +2119,20 @@
                     if (myOfferStatus === 'Kabul Edildi' || myOfferStatus === 'Onaylandı') {
                         footer.innerHTML = '<span class="badge-status is-approved" style="margin-right: auto; padding: 6px 12px; font-weight: 700; background: #ECFDF5; color: #065F46; border-radius: 6px; font-size: 0.85rem;">✓ Teklifiniz Onaylandı (Kilitli)</span><button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>';
                     } else if (myOfferStatus === 'Reddedildi') {
-                        footer.innerHTML = '<span class="badge-status is-rejected" style="margin-right: auto; padding: 6px 12px; font-weight: 700; background: #FEF2F2; color: #991B1B; border-radius: 6px; font-size: 0.85rem;">✕ Teklifiniz Reddedildi (Düzenlenemez)</span><button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>';
+                        var myRej = data.myOffer && data.myOffer.rejectionReason ? data.myOffer.rejectionReason : 'Talep için başka bir teklif onaylandı.';
+                        var myBidVal = data.myOffer ? data.myOffer.offeredPrice : '';
+                        var myDaysVal = data.myOffer ? data.myOffer.deliveryDays : 7;
+                        var myNotesVal = data.myOffer ? (data.myOffer.supplierNotes || '') : '';
+                        footer.innerHTML = '<div style="margin-right: auto; text-align: left;"><span class="badge-status is-rejected" style="padding: 5px 10px; font-weight: 700; background: #FEF2F2; color: #991B1B; border-radius: 6px; font-size: 0.82rem; display: inline-block;">✕ Teklifiniz Reddedildi</span><span style="font-size: 0.76rem; color: #DC2626; margin-left: 8px; font-weight: 600;">🚫 Sebep: ' + escapeHtml(myRej) + '</span></div>' +
+                            '<button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>' +
+                            '<button type="button" class="btn-primary" style="background: #2563EB; border-color: #2563EB;" onclick="closeDetailModal(); openOfferModal(' + data.requestId + ', \'' + escapeHtml(data.productName) + '\', \'' + myBidVal + '\', \'' + myDaysVal + '\', \'' + escapeHtml(myNotesVal) + '\');">✏️ Teklifi Revize Et</button>';
                     } else {
                         var myBidVal = data.myOffer ? data.myOffer.offeredPrice : '';
+                        var myDaysVal = data.myOffer ? data.myOffer.deliveryDays : 7;
+                        var myNotesVal = data.myOffer ? (data.myOffer.supplierNotes || '') : '';
                         var btnLabel = data.myOffer ? '✏️ Teklifi Düzenle' : '➕ Teklif Ver';
                         footer.innerHTML = '<button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>' +
-                            '<button type="button" class="btn-primary" style="background: #10B981; border-color: #10B981;" onclick="closeDetailModal(); openOfferModal(' + data.requestId + ', \'' + escapeHtml(data.productName) + '\', \'' + myBidVal + '\');">' + btnLabel + '</button>';
+                            '<button type="button" class="btn-primary" style="background: #10B981; border-color: #10B981;" onclick="closeDetailModal(); openOfferModal(' + data.requestId + ', \'' + escapeHtml(data.productName) + '\', \'' + myBidVal + '\', \'' + myDaysVal + '\', \'' + escapeHtml(myNotesVal) + '\');">' + btnLabel + '</button>';
                     }
                 } else if (data.isOwner) {
                     footer.innerHTML = '<span style="color: #64748B; font-size: 0.82rem; margin-right: auto;">ℹ️ Bu talep firmanıza aittir.</span><button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>';
@@ -2135,7 +2142,8 @@
                     if (myOfferStatus === 'Kabul Edildi' || myOfferStatus === 'Onaylandı') {
                         badge = '<span class="badge-status is-approved" style="margin-right: auto; padding: 6px 12px; font-weight: 700; background: #ECFDF5; color: #065F46; border-radius: 6px; font-size: 0.85rem;">✓ Teklifiniz Onaylandı</span>';
                     } else if (myOfferStatus === 'Reddedildi') {
-                        badge = '<span class="badge-status is-rejected" style="margin-right: auto; padding: 6px 12px; font-weight: 700; background: #FEF2F2; color: #991B1B; border-radius: 6px; font-size: 0.85rem;">✕ Teklifiniz Reddedildi</span>';
+                        var myRej = data.myOffer && data.myOffer.rejectionReason ? data.myOffer.rejectionReason : 'Talep için başka bir teklif onaylandı.';
+                        badge = '<div style="margin-right: auto; text-align: left;"><span class="badge-status is-rejected" style="padding: 5px 10px; font-weight: 700; background: #FEF2F2; color: #991B1B; border-radius: 6px; font-size: 0.82rem; display: inline-block;">✕ Teklifiniz Reddedildi</span><span style="font-size: 0.76rem; color: #DC2626; margin-left: 8px; font-weight: 600;">🚫 Sebep: ' + escapeHtml(myRej) + '</span></div>';
                     }
                     footer.innerHTML = badge + '<button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>';
                 }
@@ -2156,6 +2164,9 @@
                     if (o.supplierNotes) {
                         html += '    <span style="font-size: 0.78rem; color: #475569; margin-top: 3px;">💬 ' + escapeHtml(o.supplierNotes) + '</span>';
                     }
+                    if (isRej && o.rejectionReason) {
+                        html += '    <div style="font-size: 0.75rem; color: #991B1B; background: #FEF2F2; border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 4px; padding: 3px 8px; margin-top: 4px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; width: fit-content;">🚫 <strong>Red Sebebi:</strong> ' + escapeHtml(o.rejectionReason) + '</div>';
+                    }
                     html += '  </div>';
 
                     html += '  <div class="offer-price-box">';
@@ -2171,13 +2182,13 @@
                         } else if (isAcc) {
                             html += '    <span style="display: inline-block; background: #10B981; color: #FFFFFF; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; margin-top: 4px;">✓ KABUL EDİLDİ (ONAYLANDI)</span>';
                         } else if (isRej) {
-                            html += '    <span style="display: inline-block; background: #FEF2F2; color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; margin-top: 4px;">✕ REDDEDİLDİ</span>';
+                            html += '    <span style="display: inline-block; background: #FEF2F2; color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; margin-top: 4px;" title="' + escapeHtml(o.rejectionReason || 'Reddedildi') + '">✕ REDDEDİLDİ</span>';
                         }
                     } else {
                         if (isAcc) {
                             html += '    <span style="display: inline-block; background: #ECFDF5; color: #059669; border: 1px solid #10B981; font-weight: 700; font-size: 0.78rem; padding: 3px 8px; border-radius: 6px;">✓ Onaylanan Teklif</span>';
                         } else if (isRej) {
-                            html += '    <span style="display: inline-block; background: #FEF2F2; color: #EF4444; font-size: 0.78rem; padding: 3px 8px; border-radius: 6px;">✕ Reddedildi</span>';
+                            html += '    <span style="display: inline-block; background: #FEF2F2; color: #EF4444; font-size: 0.78rem; padding: 3px 8px; border-radius: 6px;" title="' + escapeHtml(o.rejectionReason || 'Reddedildi') + '">✕ Reddedildi</span>';
                         } else {
                             html += '    <span style="color: #64748B; font-size: 0.78rem; font-weight: 600;">⏳ ' + o.status + '</span>';
                         }
@@ -2389,15 +2400,25 @@
                 }
                 tableHtml += '  </td>';
 
-                // Notlar
-                tableHtml += '  <td style="max-width: 180px; font-size: 0.78rem; color: #475569; line-height: 1.4;">' + (escapeHtml(o.supplierNotes) || '<span style="color: #94A3B8;">Belirtilmedi</span>') + '</td>';
+                // Notlar & Red Gerekçesi
+                var notesHtml = '';
+                if (o.supplierNotes) {
+                    notesHtml += '<div>' + escapeHtml(o.supplierNotes) + '</div>';
+                }
+                if (o.isRejected && o.rejectionReason) {
+                    notesHtml += '<div style="font-size: 0.74rem; color: #DC2626; font-weight: 600; margin-top: 2px;">🚫 Red Sebebi: ' + escapeHtml(o.rejectionReason) + '</div>';
+                }
+                if (!notesHtml) {
+                    notesHtml = '<span style="color: #94A3B8;">Belirtilmedi</span>';
+                }
+                tableHtml += '  <td style="max-width: 200px; font-size: 0.78rem; color: #475569; line-height: 1.4;">' + notesHtml + '</td>';
 
                 // Durum
                 tableHtml += '  <td>';
                 if (o.isAccepted) {
                     tableHtml += '    <span class="badge-status is-approved" style="font-size: 0.78rem; font-weight: 700;">✓ Onaylandı</span>';
                 } else if (o.isRejected) {
-                    tableHtml += '    <span class="badge-status is-rejected" style="font-size: 0.78rem; font-weight: 700;">✕ Reddedildi</span>';
+                    tableHtml += '    <span class="badge-status is-rejected" style="font-size: 0.78rem; font-weight: 700;" title="' + escapeHtml(o.rejectionReason || 'Reddedildi') + '">✕ Reddedildi</span>';
                 } else {
                     tableHtml += '    <span class="badge-status is-pending" style="font-size: 0.78rem; font-weight: 700;">⏳ ' + escapeHtml(o.status) + '</span>';
                 }

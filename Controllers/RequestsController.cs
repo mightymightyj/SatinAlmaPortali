@@ -118,33 +118,10 @@ namespace satinalmaportali2.Controllers
             int currentCompanyId = GetCurrentCompanyId();
             string userType = GetCurrentUserType();
             var currentCompany = currentCompanyId > 0 ? await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId) : null;
-            int companyTypeId = currentCompany?.CompanyTypeID ?? (int.TryParse(User.FindFirst("CompanyTypeID")?.Value, out int ctype) ? ctype : 3);
-            bool isAdmin = string.Equals(userType, "admin", StringComparison.OrdinalIgnoreCase);
-
-            string activeMode;
-            if (companyTypeId == 1 && !isAdmin)
-            {
-                activeMode = "Supplier";
-            }
-            else if (companyTypeId == 2 && !isAdmin)
-            {
-                activeMode = "Buyer";
-            }
-            else
-            {
-                var cookieMode = Request.Cookies["ActiveDashboardMode"];
-                activeMode = !string.IsNullOrWhiteSpace(cookieMode) && string.Equals(cookieMode, "Supplier", StringComparison.OrdinalIgnoreCase)
-                    ? "Supplier"
-                    : "Buyer";
-            }
-
-            ViewBag.DashboardRole = activeMode;
-            ViewBag.CanSwitchRole = (companyTypeId == 3 || isAdmin);
-            ViewBag.CompanyTypeID = companyTypeId;
 
             if (string.IsNullOrEmpty(tab))
             {
-                tab = (activeMode == "Supplier" ? "all" : "my-requests");
+                tab = "all";
             }
 
             var requestList = new List<RequestListItemViewModel>();
@@ -178,6 +155,7 @@ namespace satinalmaportali2.Controllers
                         bool isOwner = IsRequestOwnedByCurrentCompany(req, currentCompanyId, currentCompany);
                         var myOffer = currentCompanyId > 0 ? req.Offers.FirstOrDefault(o => o.SupplierID == currentCompanyId) : null;
                         var bestOffer = req.Offers.Any() ? req.Offers.Min(o => o.OfferedPrice) : (decimal?)null;
+                        var (cleanNotes, myRejectionReason) = ParseSupplierNotes(myOffer?.SupplierNotes);
 
                         requestList.Add(new RequestListItemViewModel
                         {
@@ -201,7 +179,10 @@ namespace satinalmaportali2.Controllers
                             IsOwner = isOwner,
                             HasMyOffer = myOffer != null,
                             MyOfferPrice = myOffer?.OfferedPrice,
-                            MyOfferStatus = myOffer?.Status
+                            MyOfferDeliveryDays = myOffer?.DeliveryDays,
+                            MyOfferNotes = cleanNotes,
+                            MyOfferStatus = myOffer?.Status,
+                            MyOfferRejectionReason = myRejectionReason ?? (myOffer?.Status == "Reddedildi" ? "Talep için başka bir tedarikçinin teklifi kabul edildi." : null)
                         });
                     }
                 }
@@ -210,6 +191,17 @@ namespace satinalmaportali2.Controllers
             {
                 TempData["ErrorMessage"] = "Veritabanından talepler yüklenirken bir hata oluştu: " + ex.Message;
             }
+
+            // Sekme sayılarını ve genel KPI'ları hesapla (Tab filtresi uygulanmadan ÖNCE)
+            int allCount = requestList.Count;
+            int myCount = currentCompanyId > 0 ? requestList.Count(r => r.IsOwner) : 0;
+            int incomingCount = currentCompanyId > 0 ? requestList.Count(r => r.IsOwner && r.OfferCount > 0) : 0;
+            int myBidsCount = currentCompanyId > 0 ? requestList.Count(r => r.HasMyOffer) : 0;
+
+            int totalKpi = requestList.Count;
+            int pendingKpi = requestList.Count(r => r.Status == "Beklemede" || r.Status == "Açık" || r.Status == "Teklif Alındı");
+            int approvedKpi = requestList.Count(r => r.Status == "Onaylandı" || r.Status == "Kabul Edildi" || r.Status == "Tamamlandı");
+            int totalQtyKpi = requestList.Sum(r => r.Quantity);
 
             // Sekme Filtrelemesi (Tab)
             if (tab == "my-requests" && currentCompanyId > 0)
@@ -250,6 +242,14 @@ namespace satinalmaportali2.Controllers
             var viewModel = new RequestListViewModel
             {
                 Requests = requestList,
+                AllRequestsCount = allCount,
+                MyRequestsCount = myCount,
+                IncomingOffersCount = incomingCount,
+                MyBidsCount = myBidsCount,
+                TotalRequestsCount = totalKpi,
+                PendingRequestsCount = pendingKpi,
+                ApprovedRequestsCount = approvedKpi,
+                TotalQuantityCount = totalQtyKpi,
                 SearchQuery = search,
                 SelectedType = type,
                 SelectedStatus = status,
@@ -397,13 +397,25 @@ namespace satinalmaportali2.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
+                // Talep sonuçlanmış veya kapatılmışsa yeni teklif verilemez / güncellenemez
+                bool isRequestClosed = string.Equals(request.Status, "Onaylandı", StringComparison.OrdinalIgnoreCase) ||
+                                       string.Equals(request.Status, "Kabul Edildi", StringComparison.OrdinalIgnoreCase) ||
+                                       string.Equals(request.Status, "Tamamlandı", StringComparison.OrdinalIgnoreCase) ||
+                                       string.Equals(request.Status, "İptal Edildi", StringComparison.OrdinalIgnoreCase);
+
+                if (isRequestClosed)
+                {
+                    TempData["ErrorMessage"] = "Bu talep sonuçlanmış veya kapatılmış olduğu için teklif verilemez / düzenlenemez.";
+                    return RedirectToAction(nameof(Index));
+                }
+
                 // Daha önce verilmiş teklif var mı kontrol et
                 var existingOffer = await _context.RequestOffers
                     .FirstOrDefaultAsync(o => o.RequestID == input.RequestID && o.SupplierID == currentCompanyId);
 
                 if (existingOffer != null)
                 {
-                    // Alıcı teklifi onayladıktan veya reddettikten sonra düzenlenemez
+                    // Alıcı teklifi onayladıktan sonra kilitlenir
                     if (string.Equals(existingOffer.Status, "Kabul Edildi", StringComparison.OrdinalIgnoreCase) ||
                         string.Equals(existingOffer.Status, "Onaylandı", StringComparison.OrdinalIgnoreCase))
                     {
@@ -411,33 +423,32 @@ namespace satinalmaportali2.Controllers
                         return RedirectToAction(nameof(Index));
                     }
 
-                    if (string.Equals(existingOffer.Status, "Reddedildi", StringComparison.OrdinalIgnoreCase))
-                    {
-                        TempData["ErrorMessage"] = "Bu teklif alıcı tarafından reddedilmiş olduğu için üzerinde değişiklik yapılamaz.";
-                        return RedirectToAction(nameof(Index));
-                    }
+                    bool wasRejected = string.Equals(existingOffer.Status, "Reddedildi", StringComparison.OrdinalIgnoreCase);
 
-                    // Güncelle
+                    // Güncelle / Revize et
                     existingOffer.OfferedPrice = input.OfferedPrice;
                     existingOffer.DeliveryDays = input.DeliveryDays;
                     existingOffer.ValidityDays = input.ValidityDays;
                     existingOffer.SupplierNotes = input.SupplierNotes;
                     existingOffer.OfferDate = DateTime.UtcNow;
                     existingOffer.Status = "Beklemede";
-                    TempData["SuccessMessage"] = $"#{input.RequestID} numaralı talep için teklifiniz {input.OfferedPrice:N2} ₺ olarak güncellendi!";
+
+                    if (request.Status == "Beklemede")
+                    {
+                        request.Status = "Teklif Alındı";
+                    }
+
+                    if (wasRejected)
+                    {
+                        TempData["SuccessMessage"] = $"#{input.RequestID} numaralı talep için reddedilen teklifiniz revize edilerek {input.OfferedPrice:N2} ₺ olarak alıcıya tekrar iletildi!";
+                    }
+                    else
+                    {
+                        TempData["SuccessMessage"] = $"#{input.RequestID} numaralı talep için teklifiniz {input.OfferedPrice:N2} ₺ olarak güncellendi!";
+                    }
                 }
                 else
                 {
-                    // Talep sonuçlanmış veya kapatılmışsa yeni teklif verilemez
-                    if (string.Equals(request.Status, "Onaylandı", StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(request.Status, "Kabul Edildi", StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(request.Status, "Tamamlandı", StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(request.Status, "İptal Edildi", StringComparison.OrdinalIgnoreCase))
-                    {
-                        TempData["ErrorMessage"] = "Bu talep sonuçlanmış veya kapatılmış olduğu için yeni teklif verilemez.";
-                        return RedirectToAction(nameof(Index));
-                    }
-
                     // Yeni teklif ekle
                     var newOffer = new RequestOffers
                     {
@@ -506,22 +517,29 @@ namespace satinalmaportali2.Controllers
                     return Json(new { success = false, message = "Kendi firmanıza ait olan satın alma talebine teklif veremezsiniz!" });
                 }
 
+                bool isRequestClosed = string.Equals(request.Status, "Onaylandı", StringComparison.OrdinalIgnoreCase) ||
+                                       string.Equals(request.Status, "Kabul Edildi", StringComparison.OrdinalIgnoreCase) ||
+                                       string.Equals(request.Status, "Tamamlandı", StringComparison.OrdinalIgnoreCase) ||
+                                       string.Equals(request.Status, "İptal Edildi", StringComparison.OrdinalIgnoreCase);
+
+                if (isRequestClosed)
+                {
+                    return Json(new { success = false, message = "Bu talep sonuçlanmış veya kapatılmış olduğu için teklif verilemez / düzenlenemez." });
+                }
+
                 var existingOffer = await _context.RequestOffers
                     .FirstOrDefaultAsync(o => o.RequestID == input.RequestID && o.SupplierID == currentCompanyId);
 
                 if (existingOffer != null)
                 {
-                    // Alıcı teklifi onayladıktan veya reddettikten sonra düzenlenemez
+                    // Alıcı teklifi onayladıktan sonra düzenlenemez
                     if (string.Equals(existingOffer.Status, "Kabul Edildi", StringComparison.OrdinalIgnoreCase) ||
                         string.Equals(existingOffer.Status, "Onaylandı", StringComparison.OrdinalIgnoreCase))
                     {
                         return Json(new { success = false, message = "Bu teklif alıcı tarafından onaylandığı için artık düzenlenemez." });
                     }
 
-                    if (string.Equals(existingOffer.Status, "Reddedildi", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return Json(new { success = false, message = "Bu teklif alıcı tarafından reddedildiği için artık düzenlenemez." });
-                    }
+                    bool wasRejected = string.Equals(existingOffer.Status, "Reddedildi", StringComparison.OrdinalIgnoreCase);
 
                     existingOffer.OfferedPrice = input.OfferedPrice;
                     existingOffer.DeliveryDays = input.DeliveryDays;
@@ -529,17 +547,25 @@ namespace satinalmaportali2.Controllers
                     existingOffer.SupplierNotes = input.SupplierNotes;
                     existingOffer.OfferDate = DateTime.UtcNow;
                     existingOffer.Status = "Beklemede";
+
+                    if (request.Status == "Beklemede")
+                    {
+                        request.Status = "Teklif Alındı";
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await TriggerOfferReceivedEmailNotificationAsync(request, currentCompany, input);
+
+                    return Json(new
+                    {
+                        success = true,
+                        message = wasRejected
+                            ? $"Reddedilen teklifiniz {input.OfferedPrice:N2} ₺ olarak revize edildi ve alıcıya tekrar iletildi!"
+                            : $"Teklifiniz {input.OfferedPrice:N2} ₺ olarak başarıyla güncellendi!"
+                    });
                 }
                 else
                 {
-                    if (string.Equals(request.Status, "Onaylandı", StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(request.Status, "Kabul Edildi", StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(request.Status, "Tamamlandı", StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(request.Status, "İptal Edildi", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return Json(new { success = false, message = "Bu talep sonuçlanmış veya kapatılmış olduğu için yeni teklif verilemez." });
-                    }
-
                     var newOffer = new RequestOffers
                     {
                         RequestID = input.RequestID,
@@ -557,14 +583,12 @@ namespace satinalmaportali2.Controllers
                     {
                         request.Status = "Teklif Alındı";
                     }
+
+                    await _context.SaveChangesAsync();
+                    await TriggerOfferReceivedEmailNotificationAsync(request, currentCompany, input);
+
+                    return Json(new { success = true, message = $"{input.OfferedPrice:N2} ₺ tutarındaki teklifiniz başarıyla iletildi!" });
                 }
-
-                await _context.SaveChangesAsync();
-
-                // Alıcı firmaya e-posta bildirimini arka planda gönder
-                await TriggerOfferReceivedEmailNotificationAsync(request, currentCompany, input);
-
-                return Json(new { success = true, message = $"{input.OfferedPrice:N2} ₺ tutarındaki teklifiniz başarıyla iletildi!" });
             }
             catch (Exception ex)
             {
@@ -692,6 +716,179 @@ namespace satinalmaportali2.Controllers
         }
 
         /// <summary>
+        /// Tedarikçi notları içerisinden sistem veya kullanıcı red gerekçesini ayrıştırır.
+        /// </summary>
+        public static (string? CleanNotes, string? RejectionReason) ParseSupplierNotes(string? rawNotes)
+        {
+            if (string.IsNullOrWhiteSpace(rawNotes))
+                return (null, null);
+
+            const string tag = "[Red Gerekçesi:";
+            int idx = rawNotes.IndexOf(tag, StringComparison.OrdinalIgnoreCase);
+            if (idx >= 0)
+            {
+                int endIdx = rawNotes.IndexOf("]", idx, StringComparison.OrdinalIgnoreCase);
+                string reason;
+                if (endIdx > idx)
+                {
+                    reason = rawNotes.Substring(idx + tag.Length, endIdx - (idx + tag.Length)).Trim();
+                    string before = rawNotes.Substring(0, idx).TrimEnd(' ', '|');
+                    string after = (endIdx + 1 < rawNotes.Length) ? rawNotes.Substring(endIdx + 1).TrimStart(' ', '|') : "";
+                    string clean = (before + " " + after).Trim();
+                    return (string.IsNullOrWhiteSpace(clean) ? null : clean, reason);
+                }
+                else
+                {
+                    reason = rawNotes.Substring(idx + tag.Length).Trim();
+                    string clean = rawNotes.Substring(0, idx).TrimEnd(' ', '|');
+                    return (string.IsNullOrWhiteSpace(clean) ? null : clean, reason);
+                }
+            }
+
+            return (rawNotes.Trim(), null);
+        }
+
+        /// <summary>
+        /// Bir teklif kabul edildiğinde kazanan tedarikçiye onay e-postası, elenen tedarikçilere ise red gerekçesi e-postasını arka planda gönderir.
+        /// </summary>
+        private void TriggerOfferDecisionEmails(
+            Requests request,
+            RequestOffers winningOffer,
+            List<RequestOffers> rejectedOffers,
+            Company? buyerCompany)
+        {
+            try
+            {
+                string buyerName = buyerCompany?.CompanyName ?? buyerCompany?.CompanyOfficial ?? request.BuyerInfo ?? "Kurumsal Alıcı";
+                string rfqCode = $"REQ-{request.RequestID:D4}";
+                string prodName = request.ProductName ?? "Satın Alma Talebi";
+                int qty = request.Quantity ?? 1;
+                string requestsUrl = $"{Request.Scheme}://{Request.Host}/Requests?tab=my-bids";
+
+                // 1. Kazanan tedarikçiye kabul e-postası
+                if (winningOffer.Supplier != null && !string.IsNullOrWhiteSpace(winningOffer.Supplier.CompanyMail))
+                {
+                    var winEmail = winningOffer.Supplier.CompanyMail.Trim();
+                    var winName = winningOffer.Supplier.CompanyName ?? winningOffer.Supplier.CompanyOfficial ?? "Tedarikçi Firma";
+                    var winPrice = winningOffer.OfferedPrice;
+                    var winDelivery = winningOffer.DeliveryDays;
+
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await _emailService.SendOfferAcceptedEmailAsync(
+                                toEmail: winEmail,
+                                supplierName: winName,
+                                buyerName: buyerName,
+                                rfqCode: rfqCode,
+                                productName: prodName,
+                                quantity: qty,
+                                unit: "Adet",
+                                offeredPrice: winPrice,
+                                deliveryDays: winDelivery,
+                                requestsUrl: requestsUrl);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Kabul e-posta arka plan gönderim hatası: {ex.Message}");
+                        }
+                    });
+                }
+
+                // 2. Elenen tedarikçilere red gerekçesi e-postası
+                foreach (var rej in rejectedOffers)
+                {
+                    if (rej.Supplier != null && !string.IsNullOrWhiteSpace(rej.Supplier.CompanyMail))
+                    {
+                        var rejEmail = rej.Supplier.CompanyMail.Trim();
+                        var rejName = rej.Supplier.CompanyName ?? rej.Supplier.CompanyOfficial ?? "Tedarikçi Firma";
+                        var rejPrice = rej.OfferedPrice;
+                        var (_, reason) = ParseSupplierNotes(rej.SupplierNotes);
+                        var finalReason = reason ?? "Talep için başka bir tedarikçinin teklifi kabul edildi.";
+
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await _emailService.SendOfferRejectedEmailAsync(
+                                    toEmail: rejEmail,
+                                    supplierName: rejName,
+                                    buyerName: buyerName,
+                                    rfqCode: rfqCode,
+                                    productName: prodName,
+                                    quantity: qty,
+                                    unit: "Adet",
+                                    offeredPrice: rejPrice,
+                                    rejectionReason: finalReason,
+                                    requestsUrl: requestsUrl);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Red e-posta arka plan gönderim hatası: {ex.Message}");
+                            }
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Karar e-postaları tetikleme hatası: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Tekil bir teklif reddedildiğinde ilgili tedarikçiye arka planda red gerekçesi e-postası gönderir.
+        /// </summary>
+        private void TriggerSingleOfferRejectedEmail(
+            Requests request,
+            RequestOffers rejectedOffer,
+            string reason,
+            Company? buyerCompany)
+        {
+            try
+            {
+                if (rejectedOffer.Supplier != null && !string.IsNullOrWhiteSpace(rejectedOffer.Supplier.CompanyMail))
+                {
+                    string buyerName = buyerCompany?.CompanyName ?? buyerCompany?.CompanyOfficial ?? request.BuyerInfo ?? "Kurumsal Alıcı";
+                    string rfqCode = $"REQ-{request.RequestID:D4}";
+                    string prodName = request.ProductName ?? "Satın Alma Talebi";
+                    int qty = request.Quantity ?? 1;
+                    string requestsUrl = $"{Request.Scheme}://{Request.Host}/Requests?tab=my-bids";
+                    var rejEmail = rejectedOffer.Supplier.CompanyMail.Trim();
+                    var rejName = rejectedOffer.Supplier.CompanyName ?? rejectedOffer.Supplier.CompanyOfficial ?? "Tedarikçi Firma";
+                    var finalReason = !string.IsNullOrWhiteSpace(reason) ? reason.Trim() : "Alıcı firma tarafından doğrudan reddedildi.";
+
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await _emailService.SendOfferRejectedEmailAsync(
+                                toEmail: rejEmail,
+                                supplierName: rejName,
+                                buyerName: buyerName,
+                                rfqCode: rfqCode,
+                                productName: prodName,
+                                quantity: qty,
+                                unit: "Adet",
+                                offeredPrice: rejectedOffer.OfferedPrice,
+                                rejectionReason: finalReason,
+                                requestsUrl: requestsUrl);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Tekil red e-posta gönderim hatası: {ex.Message}");
+                        }
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Tekil red e-posta tetikleme hatası: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// Alıcının bir tedarikçi teklifini KABUL ETMESİ / ONAYLAMASI (Form POST)
         /// </summary>
         [HttpPost]
@@ -738,17 +935,30 @@ namespace satinalmaportali2.Controllers
                 request.ApprovedDate = DateTime.UtcNow;
                 request.ReceiverName = offer.Supplier?.CompanyName ?? offer.Supplier?.CompanyOfficial ?? $"Tedarikçi #{offer.SupplierID}";
 
-                // Varsa aynı talebe ait diğer teklifleri 'Reddedildi' yap
+                // Varsa aynı talebe ait diğer teklifleri 'Reddedildi' yap ve şeffaf red gerekçesi ekle
                 var otherOffers = await _context.RequestOffers
+                    .Include(o => o.Supplier)
                     .Where(o => o.RequestID == request.RequestID && o.OfferID != offerId)
                     .ToListAsync();
 
+                const string autoRejectReason = "Talep için başka bir tedarikçinin teklifi kabul edildi.";
                 foreach (var other in otherOffers)
                 {
                     other.Status = "Reddedildi";
+                    if (string.IsNullOrWhiteSpace(other.SupplierNotes))
+                    {
+                        other.SupplierNotes = $"[Red Gerekçesi: {autoRejectReason}]";
+                    }
+                    else if (!other.SupplierNotes.Contains("[Red Gerekçesi:"))
+                    {
+                        other.SupplierNotes = $"{other.SupplierNotes} | [Red Gerekçesi: {autoRejectReason}]";
+                    }
                 }
 
                 await _context.SaveChangesAsync();
+
+                // E-posta bildirimlerini tetikle
+                TriggerOfferDecisionEmails(request, offer, otherOffers, currentCompany);
 
                 TempData["SuccessMessage"] = $"Tebrikler! #{request.RequestID} numaralı talep için {offer.OfferedPrice:N2} ₺ tutarındaki teklif kabul edildi ve talep başarıyla ONAYLANDI.";
             }
@@ -806,15 +1016,28 @@ namespace satinalmaportali2.Controllers
                 request.ReceiverName = offer.Supplier?.CompanyName ?? offer.Supplier?.CompanyOfficial ?? $"Tedarikçi #{offer.SupplierID}";
 
                 var otherOffers = await _context.RequestOffers
+                    .Include(o => o.Supplier)
                     .Where(o => o.RequestID == request.RequestID && o.OfferID != input.OfferId)
                     .ToListAsync();
 
+                const string autoRejectReason = "Talep için başka bir tedarikçinin teklifi kabul edildi.";
                 foreach (var other in otherOffers)
                 {
                     other.Status = "Reddedildi";
+                    if (string.IsNullOrWhiteSpace(other.SupplierNotes))
+                    {
+                        other.SupplierNotes = $"[Red Gerekçesi: {autoRejectReason}]";
+                    }
+                    else if (!other.SupplierNotes.Contains("[Red Gerekçesi:"))
+                    {
+                        other.SupplierNotes = $"{other.SupplierNotes} | [Red Gerekçesi: {autoRejectReason}]";
+                    }
                 }
 
                 await _context.SaveChangesAsync();
+
+                // E-posta bildirimlerini tetikle
+                TriggerOfferDecisionEmails(request, offer, otherOffers, currentCompany);
 
                 return Json(new
                 {
@@ -850,6 +1073,7 @@ namespace satinalmaportali2.Controllers
 
                 var offer = await _context.RequestOffers
                     .Include(o => o.Request)
+                    .Include(o => o.Supplier)
                     .FirstOrDefaultAsync(o => o.OfferID == offerId);
 
                 if (offer == null || offer.Request == null)
@@ -864,11 +1088,10 @@ namespace satinalmaportali2.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
+                string finalReason = !string.IsNullOrWhiteSpace(reason) ? reason.Trim() : "Alıcı firma tarafından doğrudan reddedildi.";
+
                 offer.Status = "Reddedildi";
-                if (!string.IsNullOrWhiteSpace(reason))
-                {
-                    offer.SupplierNotes = (string.IsNullOrWhiteSpace(offer.SupplierNotes) ? "" : offer.SupplierNotes + " | ") + $"[Red Gerekçesi: {reason.Trim()}]";
-                }
+                offer.SupplierNotes = (string.IsNullOrWhiteSpace(offer.SupplierNotes) ? "" : offer.SupplierNotes + " | ") + $"[Red Gerekçesi: {finalReason}]";
 
                 // Kalan teklifleri kontrol et
                 var remainingOffers = await _context.RequestOffers
@@ -881,6 +1104,10 @@ namespace satinalmaportali2.Controllers
                 }
 
                 await _context.SaveChangesAsync();
+
+                // Bildirim e-postası
+                TriggerSingleOfferRejectedEmail(offer.Request, offer, finalReason, currentCompany);
+
                 TempData["SuccessMessage"] = "Teklif başarıyla reddedildi.";
             }
             catch (Exception ex)
@@ -928,11 +1155,10 @@ namespace satinalmaportali2.Controllers
                     return Json(new { success = false, message = "Bu teklifi reddetme yetkiniz bulunmuyor." });
                 }
 
+                string finalReason = !string.IsNullOrWhiteSpace(input.Reason) ? input.Reason.Trim() : "Alıcı firma tarafından doğrudan reddedildi.";
+
                 offer.Status = "Reddedildi";
-                if (!string.IsNullOrWhiteSpace(input.Reason))
-                {
-                    offer.SupplierNotes = (string.IsNullOrWhiteSpace(offer.SupplierNotes) ? "" : offer.SupplierNotes + " | ") + $"[Red Gerekçesi: {input.Reason.Trim()}]";
-                }
+                offer.SupplierNotes = (string.IsNullOrWhiteSpace(offer.SupplierNotes) ? "" : offer.SupplierNotes + " | ") + $"[Red Gerekçesi: {finalReason}]";
 
                 var remainingOffers = await _context.RequestOffers
                     .Where(o => o.RequestID == offer.RequestID && o.OfferID != input.OfferId)
@@ -944,6 +1170,9 @@ namespace satinalmaportali2.Controllers
                 }
 
                 await _context.SaveChangesAsync();
+
+                // Bildirim e-postası
+                TriggerSingleOfferRejectedEmail(offer.Request, offer, finalReason, currentCompany);
 
                 return Json(new
                 {
@@ -983,21 +1212,28 @@ namespace satinalmaportali2.Controllers
                 var currentCompany = currentCompanyId > 0 ? await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId) : null;
                 bool isOwner = IsRequestOwnedByCurrentCompany(req, currentCompanyId, currentCompany);
 
-                var offersList = req.Offers.Select(o => new
+                var offersList = req.Offers.Select(o =>
                 {
-                    offerId = o.OfferID,
-                    supplierId = o.SupplierID,
-                    supplierName = o.Supplier != null ? (o.Supplier.CompanyName ?? o.Supplier.CompanyOfficial ?? "Tedarikçi Firma") : $"Firma #{o.SupplierID}",
-                    supplierPhone = o.Supplier?.CompanyPhone ?? "",
-                    supplierMail = o.Supplier?.CompanyMail ?? "",
-                    offeredPrice = o.OfferedPrice,
-                    offeredPriceFormatted = o.OfferedPrice.ToString("N2") + " ₺",
-                    deliveryDays = o.DeliveryDays,
-                    validityDays = o.ValidityDays,
-                    offerDate = o.OfferDate.ToString("dd.MM.yyyy HH:mm"),
-                    status = o.Status,
-                    supplierNotes = o.SupplierNotes ?? "",
-                    isMyOffer = o.SupplierID == currentCompanyId
+                    var (cleanNotes, rejectionReason) = ParseSupplierNotes(o.SupplierNotes);
+                    var fallbackReason = o.Status == "Reddedildi" ? (rejectionReason ?? "Talep için başka bir tedarikçinin teklifi kabul edildi.") : null;
+
+                    return new
+                    {
+                        offerId = o.OfferID,
+                        supplierId = o.SupplierID,
+                        supplierName = o.Supplier != null ? (o.Supplier.CompanyName ?? o.Supplier.CompanyOfficial ?? "Tedarikçi Firma") : $"Firma #{o.SupplierID}",
+                        supplierPhone = o.Supplier?.CompanyPhone ?? "",
+                        supplierMail = o.Supplier?.CompanyMail ?? "",
+                        offeredPrice = o.OfferedPrice,
+                        offeredPriceFormatted = o.OfferedPrice.ToString("N2") + " ₺",
+                        deliveryDays = o.DeliveryDays,
+                        validityDays = o.ValidityDays,
+                        offerDate = o.OfferDate.ToString("dd.MM.yyyy HH:mm"),
+                        status = o.Status,
+                        supplierNotes = cleanNotes ?? "",
+                        rejectionReason = fallbackReason,
+                        isMyOffer = o.SupplierID == currentCompanyId
+                    };
                 }).OrderBy(o => o.offeredPrice).ToList();
 
                 var myOffer = offersList.FirstOrDefault(o => o.isMyOffer);
@@ -1061,6 +1297,8 @@ namespace satinalmaportali2.Controllers
                 {
                     var supName = o.Supplier != null ? (o.Supplier.CompanyName ?? o.Supplier.CompanyOfficial ?? "Tedarikçi Firma") : $"Firma #{o.SupplierID}";
                     var unitPrice = Math.Round(o.OfferedPrice / qty, 2);
+                    var (cleanNotes, rejectionReason) = ParseSupplierNotes(o.SupplierNotes);
+                    var fallbackReason = o.Status == "Reddedildi" ? (rejectionReason ?? "Talep için başka bir tedarikçinin teklifi kabul edildi.") : null;
 
                     decimal? budgetVariance = req.EstimatedBudget.HasValue && req.EstimatedBudget.Value > 0
                         ? Math.Round(((o.OfferedPrice - req.EstimatedBudget.Value) / req.EstimatedBudget.Value) * 100, 1)
@@ -1082,7 +1320,8 @@ namespace satinalmaportali2.Controllers
                         validityDays = o.ValidityDays,
                         offerDate = o.OfferDate.ToString("dd.MM.yyyy HH:mm"),
                         status = o.Status,
-                        supplierNotes = o.SupplierNotes ?? "",
+                        supplierNotes = cleanNotes ?? "",
+                        rejectionReason = fallbackReason,
                         isMyOffer = o.SupplierID == currentCompanyId,
                         isAccepted = string.Equals(o.Status, "Kabul Edildi", StringComparison.OrdinalIgnoreCase),
                         isRejected = string.Equals(o.Status, "Reddedildi", StringComparison.OrdinalIgnoreCase),
@@ -1130,6 +1369,7 @@ namespace satinalmaportali2.Controllers
                     o.offerDate,
                     o.status,
                     o.supplierNotes,
+                    o.rejectionReason,
                     o.isMyOffer,
                     o.isAccepted,
                     o.isRejected,
@@ -1325,6 +1565,9 @@ namespace satinalmaportali2.Controllers
                     {
                         var supName = o.Supplier?.CompanyName ?? o.Supplier?.CompanyOfficial ?? $"Tedarikçi #{o.SupplierID}";
                         var unitPrice = Math.Round(o.OfferedPrice / reqQty, 2);
+                        var (cleanNotes, rejectionReason) = ParseSupplierNotes(o.SupplierNotes);
+                        var fallbackReason = o.Status == "Reddedildi" ? (rejectionReason ?? "Talep için başka bir tedarikçinin teklifi kabul edildi.") : null;
+
                         decimal? budgetVariance = targetRequest.EstimatedBudget.HasValue && targetRequest.EstimatedBudget.Value > 0
                             ? Math.Round(((o.OfferedPrice - targetRequest.EstimatedBudget.Value) / targetRequest.EstimatedBudget.Value) * 100, 1)
                             : null;
@@ -1344,7 +1587,8 @@ namespace satinalmaportali2.Controllers
                             ValidityDays = o.ValidityDays,
                             OfferDate = o.OfferDate,
                             Status = o.Status,
-                            SupplierNotes = o.SupplierNotes,
+                            SupplierNotes = cleanNotes,
+                            RejectionReason = fallbackReason,
                             IsLowestPrice = o.OfferedPrice == lowestPrice,
                             IsFastestDelivery = o.DeliveryDays == minLeadTime,
                             BudgetVariancePct = budgetVariance,

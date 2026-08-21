@@ -6,7 +6,7 @@ namespace satinalmaportali2.Models
     {
         public SuperAdminStatsDto Stats { get; set; } = new();
         public List<CategoryAdminDto> Categories { get; set; } = new();
-        public List<Category> AvailableParentCategories { get; set; } = new();
+        public List<CategoryDropdownDto> AvailableParentCategories { get; set; } = new();
         public List<CompanyAdminDto> Companies { get; set; } = new();
         public List<CompanyTypes> AvailableCompanyTypes { get; set; } = new();
         public List<MembershipTypes> AvailableMembershipTypes { get; set; } = new();
@@ -20,6 +20,7 @@ namespace satinalmaportali2.Models
     public class SuperAdminStatsDto
     {
         public int TotalCompanies { get; set; }
+        public int CorporateCompaniesCount { get; set; }
         public int SupplierCount { get; set; }
         public int BuyerCount { get; set; }
         public int BothCount { get; set; }
@@ -44,6 +45,7 @@ namespace satinalmaportali2.Models
         public int SubCategoryCount { get; set; }
         public int LinkedRequestsCount { get; set; }
         public bool IsRoot => !ParentCategoryID.HasValue || ParentCategoryID.Value == 0;
+        public List<CategoryAdminDto> SubCategories { get; set; } = new();
     }
 
     public class CompanyAdminDto
@@ -154,5 +156,12 @@ namespace satinalmaportali2.Models
         public int? ValidityDays { get; set; } = 30;
 
         public string? SupplierNotes { get; set; }
+    }
+
+    public class CategoryDropdownDto
+    {
+        public int CategoryID { get; set; }
+        public string FormattedName { get; set; } = string.Empty;
+        public int Level { get; set; }
     }
 }

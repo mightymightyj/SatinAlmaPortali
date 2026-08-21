@@ -61,7 +61,7 @@
         <div class="profile-hero-badges">
             <span class="profile-badge profile-badge-type">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                @(Model.CompanyTypeName ?? "Belirtilmemiş")
+                Kurumsal Hesap (Alıcı &amp; Tedarikçi)
             </span>
             <span class="profile-badge profile-badge-member">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -232,7 +232,7 @@
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                                 Firma Türü
                             </span>
-                            <span class="info-value">@(Model.CompanyTypeName ?? "Belirtilmemiş")</span>
+                            <span class="info-value">Kurumsal Hesap (Alıcı &amp; Tedarikçi)</span>
                         </div>
                         <div class="profile-info-item">
                             <span class="info-label">
@@ -405,30 +405,6 @@
                                 <div class="form-input-wrap">
                                     <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                                     <input type="text" id="editCompanyName" name="companyName" value="@Model.CompanyName" class="profile-form-control" placeholder="Örn: Yılmaz Sanayi A.Ş." required />
-                                </div>
-                            </div>
-
-                            <div class="form-group-item">
-                                <label class="form-item-label" for="editCompanyType">
-                                    <span>Firma Faaliyet Türü</span>
-                                </label>
-                                <div class="form-input-wrap">
-                                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                                    <select id="editCompanyType" name="companyTypeID" class="profile-form-control profile-select-control">
-                                        @if (Model.AvailableCompanyTypes != null && Model.AvailableCompanyTypes.Any())
-                                        {
-                                            @foreach (var ct in Model.AvailableCompanyTypes)
-                                            {
-                                                <!option value="@ct.CompanyTypeID" @(Model.CompanyTypeID == ct.CompanyTypeID ? "selected" : "")>@ct.CompanyTypeName</!option>
-                                            }
-                                        }
-                                        else
-                                        {
-                                            <!option value="1" @(Model.CompanyTypeID == 1 ? "selected" : "")>Tedarikçi Firma</!option>
-                                            <!option value="2" @(Model.CompanyTypeID == 2 ? "selected" : "")>Alıcı / Müşteri</!option>
-                                            <!option value="3" @(Model.CompanyTypeID == 3 ? "selected" : "")>Hem Alıcı Hem Tedarikçi</!option>
-                                        }
-                                    </select>
                                 </div>
                             </div>
                         </div>

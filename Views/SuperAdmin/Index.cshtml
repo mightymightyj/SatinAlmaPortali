@@ -531,6 +531,182 @@
             border-color: #FECACA;
         }
 
+        /* COMPACT HIERARCHICAL CATEGORY TREE STYLES */
+        .cat-tree-node {
+            margin-top: 3px;
+            margin-bottom: 3px;
+            position: relative;
+        }
+
+        .cat-node-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 6px 12px;
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: var(--radius-sm);
+            font-size: 0.84rem;
+            transition: all 0.15s ease;
+        }
+
+        .cat-node-row:hover {
+            background: #F8FAFC;
+            border-color: #CBD5E1;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        }
+
+        .cat-node-row.is-root {
+            background: #FFFFFF;
+            border-left: 3px solid var(--primary);
+            font-weight: 600;
+        }
+
+        .cat-node-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .cat-toggle-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 3px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748B;
+            border-radius: 3px;
+            line-height: 1;
+        }
+
+        .cat-toggle-btn:hover {
+            background: #E2E8F0;
+            color: var(--text-heading);
+        }
+
+        .cat-toggle-btn.is-collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .toggle-icon {
+            transition: transform 0.15s ease;
+        }
+
+        .cat-tree-bullet {
+            color: #94A3B8;
+            font-size: 0.85rem;
+            width: 16px;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .cat-node-icon {
+            font-size: 0.95rem;
+            line-height: 1;
+        }
+
+        .cat-node-title {
+            color: var(--text-heading);
+            font-weight: 600;
+            font-size: 0.86rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cat-node-id {
+            font-size: 0.7rem;
+            color: #94A3B8;
+            background: #F1F5F9;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-weight: 500;
+        }
+
+        .cat-node-count {
+            font-size: 0.72rem;
+            color: #065F46;
+            background: #ECFDF5;
+            border: 1px solid #D1FAE5;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .cat-node-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            opacity: 0.8;
+            transition: opacity 0.15s ease;
+        }
+
+        .cat-node-row:hover .cat-node-actions {
+            opacity: 1;
+        }
+
+        .btn-compact-add {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 7px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            background: #EFF6FF;
+            border: 1px solid #BFDBFE;
+            color: #1D4ED8;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-compact-add:hover {
+            background: #DBEAFE;
+            color: #1E40AF;
+        }
+
+        .btn-compact-action {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 7px;
+            font-size: 0.72rem;
+            font-weight: 500;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            color: var(--text-body);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-compact-action:hover {
+            background: var(--bg-muted);
+            color: var(--text-heading);
+            border-color: #CBD5E1;
+        }
+
+        .btn-compact-action.danger:hover {
+            background: var(--danger-light);
+            color: var(--danger);
+            border-color: #FECACA;
+        }
+
+        .cat-children-wrap {
+            border-left: 2px solid #E2E8F0;
+            margin-left: 6px;
+            padding-left: 2px;
+            transition: all 0.2s ease;
+        }
+
+        .cat-children-wrap.is-hidden {
+            display: none;
+        }
+
         /* MODALS */
         .modal-backdrop-wrap {
             position: fixed;
@@ -753,7 +929,7 @@
                     <div class="kpi-label">Toplam Kayıtlı Firma</div>
                     <div class="kpi-value">@Model.Stats.TotalCompanies</div>
                     <div class="kpi-desc">
-                        @Model.Stats.SupplierCount Tedarikçi · @Model.Stats.BuyerCount Alıcı · @Model.Stats.BothCount Her İkisi
+                        @Model.Stats.CorporateCompaniesCount Kurumsal Firma (Alıcı & Tedarikçi) · @Model.Stats.SuperAdminCount Yönetici
                     </div>
                 </div>
 
@@ -788,7 +964,7 @@
                         Kategori Yönetimi
                     </h3>
                     <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
-                        Platform genelinde alıcıların talep açarken ve tedarikçilerin teklif verirken kullandığı ana ve alt kategorileri yapılandırın.
+                        Platform genelinde firmaların talep açarken ve teklif verirken kullandığı ana ve alt kategorileri yapılandırın.
                     </p>
                     <div style="display: flex; gap: 8px;">
                         <button type="button" class="btn-primary" onclick="openAddCategoryModal()">+ Yeni Kategori</button>
@@ -801,7 +977,7 @@
                         Firma & Hesap Yönetimi
                     </h3>
                     <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
-                        Kayıtlı firmaların unvan, yetkili, e-posta, telefon ve rol türlerini (Alıcı, Tedarikçi, Her İkisi, Süper Admin) düzenleyin veya şifrelerini sıfırlayın.
+                        Kayıtlı firmaların unvan, yetkili, e-posta, telefon, vergi ve üyelik bilgilerini yönetin veya şifrelerini sıfırlayın.
                     </p>
                     <div>
                         <a href="@Url.Action("Index", "SuperAdmin", new { tab = "companies" })" class="btn-primary">Firmaları Yönet</a>
@@ -816,89 +992,47 @@
             <div class="content-card">
                 <div class="card-toolbar">
                     <div class="toolbar-title">
-                        Kategori Listesi
-                        <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">(@Model.Categories.Count kayıt)</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        Kategori & Alt Kategori Ağacı
+                        <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">
+                            (@Model.Stats.TotalCategories Toplam Kategori · @Model.Stats.RootCategoriesCount Ana · @Model.Stats.SubCategoriesCount Alt)
+                        </span>
                     </div>
 
                     <div class="toolbar-actions">
                         <div class="search-input-wrap">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                            <input type="text" id="catSearchInput" class="input-search" placeholder="Kategori ara..." oninput="filterCategoriesTable()" />
+                            <input type="text" id="catSearchInput" class="input-search" placeholder="Kategori ara..." oninput="filterCategoriesTree()" />
                         </div>
 
+                        <button type="button" class="btn-compact-action" onclick="expandAllCategories()" style="font-size: 0.76rem; padding: 4px 9px;">
+                            Tümünü Aç
+                        </button>
+                        <button type="button" class="btn-compact-action" onclick="collapseAllCategories()" style="font-size: 0.76rem; padding: 4px 9px;">
+                            Tümünü Kapat
+                        </button>
                         <button type="button" class="btn-primary" onclick="openAddCategoryModal()">
-                            + Yeni Kategori Ekle
+                            + Yeni Ana Kategori Ekle
                         </button>
                     </div>
                 </div>
 
-                <div class="data-table-wrap">
-                    <table class="data-table" id="categoriesTable">
-                        <thead>
-                            <tr>
-                                <th style="width: 70px;">ID</th>
-                                <th>Kategori Adı</th>
-                                <th>Tür</th>
-                                <th>Üst Kategori</th>
-                                <th>Alt Kategori</th>
-                                <th>Bağlı Talep</th>
-                                <th style="text-align: right; width: 140px;">İşlemler</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (Model.Categories.Any())
-                            {
-                                @foreach (var cat in Model.Categories)
-                                {
-                                    <tr class="cat-row" data-name="@cat.CategoryName.ToLowerInvariant()" data-parent="@((cat.ParentCategoryName ?? "").ToLowerInvariant())">
-                                        <td style="color: var(--text-muted); font-weight: 500;">#@cat.CategoryID</td>
-                                        <td>
-                                            <strong style="color: var(--text-heading); font-weight: 600;">@cat.CategoryName</strong>
-                                        </td>
-                                        <td>
-                                            @if (cat.IsRoot)
-                                            {
-                                                <span class="badge badge-root">Ana Kategori</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge badge-sub">Alt Kategori</span>
-                                            }
-                                        </td>
-                                        <td>
-                                            @(cat.ParentCategoryName ?? "—")
-                                        </td>
-                                        <td>
-                                            @(cat.SubCategoryCount > 0 ? $"{cat.SubCategoryCount} alt kategori" : "—")
-                                        </td>
-                                        <td>
-                                            @(cat.LinkedRequestsCount > 0 ? $"{cat.LinkedRequestsCount} talep" : "—")
-                                        </td>
-                                        <td>
-                                            <div class="actions-group">
-                                                <button type="button" class="btn-table-action" onclick="openEditCategoryModal(@cat.CategoryID)">
-                                                    Düzenle
-                                                </button>
-                                                <form asp-action="DeleteCategory" method="post" onsubmit="return confirm('\'@Html.Raw(cat.CategoryName)\' kategorisini silmek istediğinize emin misiniz?');" style="display:inline;">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="categoryId" value="@cat.CategoryID" />
-                                                    <button type="submit" class="btn-table-action danger">
-                                                        Sil
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                }
-                            }
-                            else
-                            {
-                                <tr>
-                                    <td colspan="7" class="empty-state">Henüz kayıtlı bir kategori bulunmuyor.</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+                <div class="cat-compact-tree-wrap" id="categoryTreeList" style="padding: 12px 16px;">
+                    @if (Model.Categories.Any())
+                    {
+                        @foreach (var cat in Model.Categories)
+                        {
+                            <partial name="_CategoryTreeItem" model="(Node: cat, Level: 0)" />
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            Henüz kayıtlı bir kategori bulunmuyor. Yukarıdaki butona tıklayarak ilk ana kategoriyi ekleyebilirsiniz.
+                        </div>
+                    }
                 </div>
             </div>
         }
@@ -920,11 +1054,9 @@
                         </div>
 
                         <select id="compTypeFilter" class="select-filter" onchange="filterCompaniesTable()">
-                            <option value="">Tüm Firma Türleri</option>
-                            <option value="1">Tedarikçi Firma</option>
-                            <option value="2">Alıcı / Müşteri</option>
-                            <option value="3">Hem Alıcı Hem Tedarikçi</option>
-                            <option value="4">Süper Admin</option>
+                            <option value="">Tüm Hesaplar</option>
+                            <option value="corporate">Kurumsal Firmalar (Alıcı & Tedarikçi)</option>
+                            <option value="4">Süper Adminler</option>
                         </select>
                     </div>
                 </div>
@@ -937,7 +1069,7 @@
                                 <th>Firma Adı & Yetkili</th>
                                 <th>E-posta & Telefon</th>
                                 <th>Vergi / TC</th>
-                                <th>Firma Türü</th>
+                                <th>Hesap Türü</th>
                                 <th>Üyelik</th>
                                 <th>Aktivite</th>
                                 <th style="text-align: right; width: 170px;">İşlemler</th>
@@ -963,25 +1095,13 @@
                                             <div style="font-size: 0.75rem; color: var(--text-muted);">@(comp.TaxOffice ?? "")</div>
                                         </td>
                                         <td>
-                                            @if (comp.CompanyTypeID == 1)
-                                            {
-                                                <span class="badge badge-supplier">Tedarikçi</span>
-                                            }
-                                            else if (comp.CompanyTypeID == 2)
-                                            {
-                                                <span class="badge badge-buyer">Alıcı</span>
-                                            }
-                                            else if (comp.CompanyTypeID == 3)
-                                            {
-                                                <span class="badge badge-both">Alıcı & Tedarikçi</span>
-                                            }
-                                            else if (comp.CompanyTypeID == 4)
+                                            @if (comp.CompanyTypeID == 4 || comp.IsSuperAdmin)
                                             {
                                                 <span class="badge badge-super">Süper Admin</span>
                                             }
                                             else
                                             {
-                                                <span class="badge badge-sub">@comp.CompanyTypeName</span>
+                                                <span class="badge badge-both">Kurumsal (Alıcı & Tedarikçi)</span>
                                             }
                                         </td>
                                         <td>
@@ -1029,7 +1149,7 @@
         {
             <div class="alert-box" style="background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E40AF; margin-bottom: 24px;">
                 <div>
-                    <strong>Test ve Simülasyon Merkezi:</strong> Bu alandan farklı hesaplara tek tek giriş-çıkış yapmadan, seçtiğiniz herhangi bir <strong>Alıcı firma adına talep açabilir</strong> ve dilediğiniz <strong>Tedarikçi firma adına teklif gönderebilirsiniz</strong>. İletilen teklifler alıcıya giden gerçek e-posta bildirimini de otomatik tetikler.
+                    <strong>Test ve Simülasyon Merkezi:</strong> Bu alandan farklı hesaplara tek tek giriş-çıkış yapmadan, seçtiğiniz herhangi bir <strong>firma adına talep açabilir</strong> ve dilediğiniz <strong>firma adına teklif gönderebilirsiniz</strong>. İletilen teklifler talep sahibine giden gerçek e-posta bildirimini de otomatik tetikler.
                 </div>
             </div>
 
@@ -1041,7 +1161,7 @@
                         <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-heading);">
                             Firma Adına Talep Oluştur
                         </h3>
-                        <span class="badge badge-buyer">Alıcı Simülatörü</span>
+                        <span class="badge badge-buyer">Talep Simülatörü</span>
                     </div>
 
                     <form asp-action="SimulateCreateRequest" method="post">
@@ -1049,13 +1169,13 @@
                         <div style="display: flex; flex-direction: column; gap: 14px;">
                             
                             <div class="form-field">
-                                <label class="form-label" for="simSenderComp">Talep Sahibi Firma (Alıcı) *</label>
+                                <label class="form-label" for="simSenderComp">Talep Sahibi Firma *</label>
                                 <select id="simSenderComp" name="SenderCompanyID" class="form-select" required>
                                     <option value="">— Talep Açacak Firmayı Seçin —</option>
                                     @foreach (var comp in Model.Companies)
                                     {
                                         <option value="@comp.CompanyID">
-                                            #@comp.CompanyID - @comp.CompanyName (@comp.CompanyTypeName) [Yetkili: @comp.CompanyOfficial]
+                                            #@comp.CompanyID - @comp.CompanyName [Yetkili: @comp.CompanyOfficial]
                                         </option>
                                     }
                                 </select>
@@ -1077,9 +1197,9 @@
                                     <label class="form-label" for="simCategory">Kategori</label>
                                     <select id="simCategory" name="CategoryID" class="form-select">
                                         <option value="">— Kategori Seçin (İsteğe Bağlı) —</option>
-                                        @foreach (var cat in Model.Categories)
+                                        @foreach (var cat in Model.AvailableParentCategories)
                                         {
-                                            <option value="@cat.CategoryID">@cat.CategoryName @(cat.ParentCategoryName != null ? $"({cat.ParentCategoryName})" : "")</option>
+                                            <option value="@cat.CategoryID">@cat.FormattedName</option>
                                         }
                                     </select>
                                 </div>
@@ -1119,13 +1239,13 @@
                     </form>
                 </div>
 
-                <!-- KART 2: TEDARİKÇİ ADINA TEKLİF GÖNDER -->
+                <!-- KART 2: FİRMA ADINA TEKLİF GÖNDER -->
                 <div class="content-card" style="padding: 24px;">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
                         <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-heading);">
-                            Tedarikçi Adına Teklif Gönder
+                            Firma Adına Teklif Gönder
                         </h3>
-                        <span class="badge badge-supplier">Tedarikçi Simülatörü</span>
+                        <span class="badge badge-supplier">Teklif Simülatörü</span>
                     </div>
 
                     <form asp-action="SimulateCreateOffer" method="post">
@@ -1146,13 +1266,13 @@
                             </div>
 
                             <div class="form-field">
-                                <label class="form-label" for="simOfferSupplier">Teklif Veren Tedarikçi *</label>
+                                <label class="form-label" for="simOfferSupplier">Teklif Veren Firma *</label>
                                 <select id="simOfferSupplier" name="SupplierCompanyID" class="form-select" required>
-                                    <option value="">— Teklif Verecek Tedarikçi Firmayı Seçin —</option>
+                                    <option value="">— Teklif Verecek Firmayı Seçin —</option>
                                     @foreach (var comp in Model.Companies)
                                     {
                                         <option value="@comp.CompanyID">
-                                            #@comp.CompanyID - @comp.CompanyName (@comp.CompanyTypeName) [Yetkili: @comp.CompanyOfficial]
+                                            #@comp.CompanyID - @comp.CompanyName [Yetkili: @comp.CompanyOfficial]
                                         </option>
                                     }
                                 </select>
@@ -1175,14 +1295,14 @@
                                     <input type="number" id="simValidityDays" name="ValidityDays" class="form-input" min="1" value="30" />
                                 </div>
                                 <div class="form-field">
-                                    <label class="form-label" for="simSupplierNotes">Tedarikçi Notu / Açıklama</label>
+                                    <label class="form-label" for="simSupplierNotes">Açıklama / Teklif Şartları</label>
                                     <input type="text" id="simSupplierNotes" name="SupplierNotes" class="form-input" placeholder="Kargo dahil / Standart teslimat..." />
                                 </div>
                             </div>
 
                             <div style="margin-top: 24px;">
                                 <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 10px; background: #16A34A; border-color: #16A34A;">
-                                    Tedarikçi Adına Teklif Gönder
+                                    Seçilen Firma Adına Teklif Gönder
                                 </button>
                             </div>
                         </div>
@@ -1273,7 +1393,7 @@
                         Veritabanı Referans Tablolarını Eşitle
                     </h3>
                     <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 18px; line-height: 1.5;">
-                        Firma türleri (Tedarikçi, Alıcı, Alıcı & Tedarikçi, Süper Admin), üyelik seviyeleri ve Türkiye 81 il/ilçe veritabanı tablolarını denetleyip eksik kayıtları otomatik oluşturur.
+                        Firma hesapları (Kurumsal Alıcı & Tedarikçi, Süper Admin), üyelik seviyeleri ve Türkiye 81 il/ilçe veritabanı tablolarını denetleyip eksik kayıtları otomatik oluşturur.
                     </p>
                     <form asp-action="SeedSystemDefaults" method="post">
                         @Html.AntiForgeryToken()
@@ -1318,7 +1438,7 @@
                             <option value="">— Yok (Ana Kategori Olarak Ekle) —</option>
                             @foreach (var parent in Model.AvailableParentCategories)
                             {
-                                <option value="@parent.CategoryID">@parent.CategoryName</option>
+                                <option value="@parent.CategoryID">@parent.FormattedName</option>
                             }
                         </select>
                     </div>
@@ -1353,7 +1473,7 @@
                             <option value="">— Yok (Ana Kategori) —</option>
                             @foreach (var parent in Model.AvailableParentCategories)
                             {
-                                <option value="@parent.CategoryID">@parent.CategoryName</option>
+                                <option value="@parent.CategoryID">@parent.FormattedName</option>
                             }
                         </select>
                     </div>
@@ -1401,12 +1521,10 @@
 
                     <div class="form-field-grid">
                         <div class="form-field">
-                            <label class="form-label" for="editCompType">Firma Türü (Rol) *</label>
+                            <label class="form-label" for="editCompType">Hesap Türü (Rol) *</label>
                             <select id="editCompType" name="CompanyTypeID" class="form-select">
-                                @foreach (var ct in Model.AvailableCompanyTypes)
-                                {
-                                    <option value="@ct.CompanyTypeID">@ct.CompanyTypeName</option>
-                                }
+                                <option value="3">Kurumsal Firma (Alıcı & Tedarikçi)</option>
+                                <option value="4">Süper Admin</option>
                             </select>
                         </div>
                         <div class="form-field">
@@ -1492,9 +1610,9 @@
             }
         }
 
-        function openAddCategoryModal() {
+        function openAddCategoryModal(parentCatId) {
             document.getElementById('newCatName').value = '';
-            document.getElementById('newCatParent').value = '';
+            document.getElementById('newCatParent').value = parentCatId || '';
             openModal('addCategoryModal');
         }
 
@@ -1525,7 +1643,7 @@
                     document.getElementById('editCompOfficial').value = data.companyOfficial || '';
                     document.getElementById('editCompMail').value = data.companyMail || '';
                     document.getElementById('editCompPhone').value = data.companyPhone || '';
-                    document.getElementById('editCompType').value = data.companyTypeId || '1';
+                    document.getElementById('editCompType').value = (data.companyTypeId === 4) ? '4' : '3';
                     document.getElementById('editCompMember').value = data.membershipTypeId || '1';
                     document.getElementById('editCompTc').value = data.tcno || '';
                     document.getElementById('editCompTax').value = data.taxOffice || '';
@@ -1547,19 +1665,72 @@
             openModal('resetPasswordModal');
         }
 
-        // Anlık Kategori Arama Filtresi
-        function filterCategoriesTable() {
+        // Kategori Dalı Aç / Kapat
+        function toggleCategoryBranch(btn, targetId) {
+            var target = document.getElementById(targetId);
+            if (!target) return;
+            if (target.classList.contains('is-hidden')) {
+                target.classList.remove('is-hidden');
+                btn.classList.remove('is-collapsed');
+            } else {
+                target.classList.add('is-hidden');
+                btn.classList.add('is-collapsed');
+            }
+        }
+
+        // Tüm Kategori Ağacını Aç
+        function expandAllCategories() {
+            document.querySelectorAll('.cat-children-wrap').forEach(function(el) {
+                el.classList.remove('is-hidden');
+            });
+            document.querySelectorAll('.cat-toggle-btn').forEach(function(btn) {
+                btn.classList.remove('is-collapsed');
+            });
+        }
+
+        // Tüm Kategori Ağacını Kapat
+        function collapseAllCategories() {
+            document.querySelectorAll('.cat-children-wrap').forEach(function(el) {
+                el.classList.add('is-hidden');
+            });
+            document.querySelectorAll('.cat-toggle-btn').forEach(function(btn) {
+                btn.classList.add('is-collapsed');
+            });
+        }
+
+        // Anlık Kategori Ağacı Arama Filtresi
+        function filterCategoriesTree() {
             var input = document.getElementById('catSearchInput');
             if (!input) return;
             var query = input.value.trim().toLowerCase();
-            var rows = document.querySelectorAll('#categoriesTable .cat-row');
-            rows.forEach(function(row) {
-                var name = row.getAttribute('data-name') || '';
-                var parent = row.getAttribute('data-parent') || '';
-                if (name.indexOf(query) > -1 || parent.indexOf(query) > -1) {
-                    row.style.display = '';
+            var nodes = document.querySelectorAll('#categoryTreeList .cat-tree-node');
+
+            if (!query) {
+                nodes.forEach(function(n) {
+                    n.style.display = '';
+                });
+                return;
+            }
+
+            // Arama yapıldığında tüm alt dalları aç
+            expandAllCategories();
+
+            nodes.forEach(function(node) {
+                var catName = node.getAttribute('data-cat-name') || '';
+                var matchesSelf = catName.indexOf(query) > -1;
+                var hasMatchingDescendant = false;
+
+                node.querySelectorAll('.cat-tree-node').forEach(function(child) {
+                    var childName = child.getAttribute('data-cat-name') || '';
+                    if (childName.indexOf(query) > -1) {
+                        hasMatchingDescendant = true;
+                    }
+                });
+
+                if (matchesSelf || hasMatchingDescendant) {
+                    node.style.display = '';
                 } else {
-                    row.style.display = 'none';
+                    node.style.display = 'none';
                 }
             });
         }
@@ -1577,7 +1748,12 @@
                 var rowType = row.getAttribute('data-type') || '';
 
                 var matchQuery = !query || rowSearch.indexOf(query) > -1;
-                var matchType = !typeVal || rowType === typeVal;
+                var matchType = true;
+                if (typeVal === '4') {
+                    matchType = (rowType === '4');
+                } else if (typeVal === 'corporate') {
+                    matchType = (rowType !== '4');
+                }
 
                 if (matchQuery && matchType) {
                     row.style.display = '';
