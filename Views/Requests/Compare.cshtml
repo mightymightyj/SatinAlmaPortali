@@ -706,9 +706,22 @@
                                     }
                                 </td>
 
-                                <!-- Tedarikçi Notları -->
+                                <!-- Tedarikçi Notları & Red Gerekçesi -->
                                 <td style="max-width: 220px; font-size: 0.8rem; color: #475569;">
-                                    @(string.IsNullOrWhiteSpace(o.SupplierNotes) ? "—" : o.SupplierNotes)
+                                    @if (!string.IsNullOrWhiteSpace(o.SupplierNotes))
+                                    {
+                                        <div>@o.SupplierNotes</div>
+                                    }
+                                    @if (o.IsRejected && !string.IsNullOrWhiteSpace(o.RejectionReason))
+                                    {
+                                        <div style="font-size: 0.74rem; color: #DC2626; font-weight: 600; margin-top: 2px;">
+                                            🚫 Red Sebebi: @o.RejectionReason
+                                        </div>
+                                    }
+                                    @if (string.IsNullOrWhiteSpace(o.SupplierNotes) && (!o.IsRejected || string.IsNullOrWhiteSpace(o.RejectionReason)))
+                                    {
+                                        <span>—</span>
+                                    }
                                 </td>
 
                                 <!-- Durum -->
@@ -719,7 +732,7 @@
                                     }
                                     else if (o.IsRejected)
                                     {
-                                        <span class="badge-status is-rejected">✕ Reddedildi</span>
+                                        <span class="badge-status is-rejected" title="@(o.RejectionReason ?? "Reddedildi")">✕ Reddedildi</span>
                                     }
                                     else
                                     {

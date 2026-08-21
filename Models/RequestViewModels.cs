@@ -72,6 +72,7 @@ namespace satinalmaportali2.Models
         public DateTime OfferDate { get; set; }
         public string Status { get; set; } = "Beklemede";
         public string? SupplierNotes { get; set; }
+        public string? RejectionReason { get; set; }
         public bool IsAccepted => Status == "Kabul Edildi";
         public bool IsRejected => Status == "Reddedildi";
     }
@@ -100,7 +101,10 @@ namespace satinalmaportali2.Models
         public bool IsOwner { get; set; }
         public bool HasMyOffer { get; set; }
         public decimal? MyOfferPrice { get; set; }
+        public int? MyOfferDeliveryDays { get; set; }
+        public string? MyOfferNotes { get; set; }
         public string? MyOfferStatus { get; set; }
+        public string? MyOfferRejectionReason { get; set; }
     }
 
     public class RequestDetailViewModel
@@ -137,15 +141,22 @@ namespace satinalmaportali2.Models
         public CreateRequestInputModel NewRequest { get; set; } = new();
         public SubmitOfferInputModel NewOffer { get; set; } = new();
 
-        public int TotalRequestsCount => Requests.Count;
-        public int PendingRequestsCount => Requests.Count(r => r.Status == "Beklemede" || r.Status == "Açık" || r.Status == "Teklif Alındı");
-        public int ApprovedRequestsCount => Requests.Count(r => r.Status == "Onaylandı" || r.Status == "Kabul Edildi" || r.Status == "Tamamlandı");
-        public int TotalQuantityCount => Requests.Sum(r => r.Quantity);
+        // Sekme Bazlı Gerçek Sayılar (Tab filtresinden bağımsız doğru sayılar)
+        public int AllRequestsCount { get; set; }
+        public int MyRequestsCount { get; set; }
+        public int IncomingOffersCount { get; set; }
+        public int MyBidsCount { get; set; }
+
+        // KPI Göstergeleri (Genel / Pazar Özeti)
+        public int TotalRequestsCount { get; set; }
+        public int PendingRequestsCount { get; set; }
+        public int ApprovedRequestsCount { get; set; }
+        public int TotalQuantityCount { get; set; }
 
         public string? SearchQuery { get; set; }
         public string? SelectedType { get; set; }
         public string? SelectedStatus { get; set; }
-        public string ActiveTab { get; set; } = "all"; // all, my-requests, incoming-offers
+        public string ActiveTab { get; set; } = "all"; // all, my-requests, incoming-offers, my-bids
 
         public int CurrentCompanyID { get; set; }
         public string UserType { get; set; } = "User";
@@ -190,6 +201,7 @@ namespace satinalmaportali2.Models
         public DateTime OfferDate { get; set; }
         public string Status { get; set; } = "Beklemede";
         public string? SupplierNotes { get; set; }
+        public string? RejectionReason { get; set; }
         public bool IsAccepted => Status == "Kabul Edildi";
         public bool IsRejected => Status == "Reddedildi";
         public bool IsLowestPrice { get; set; }

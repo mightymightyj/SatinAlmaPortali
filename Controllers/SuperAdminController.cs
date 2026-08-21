@@ -72,6 +72,50 @@ namespace satinalmaportali2.Controllers
             return false;
         }
 
+        private static List<CategoryAdminDto> BuildCategoryHierarchy(List<Category> allCategories, int? parentId, string? parentName)
+        {
+            var children = allCategories
+                .Where(c => parentId == null 
+                    ? (!c.ParentCategoryID.HasValue || c.ParentCategoryID.Value == 0)
+                    : (c.ParentCategoryID == parentId.Value))
+                .OrderBy(c => c.CategoryName)
+                .ToList();
+
+            var result = new List<CategoryAdminDto>();
+            foreach (var c in children)
+            {
+                var node = new CategoryAdminDto
+                {
+                    CategoryID = c.CategoryID,
+                    CategoryName = c.CategoryName ?? "İsimsiz Kategori",
+                    ParentCategoryID = c.ParentCategoryID,
+                    ParentCategoryName = parentName
+                };
+                node.SubCategories = BuildCategoryHierarchy(allCategories, c.CategoryID, c.CategoryName);
+                node.SubCategoryCount = node.SubCategories.Count;
+                result.Add(node);
+            }
+            return result;
+        }
+
+        private static void FlattenCategoriesForDropdown(List<CategoryAdminDto> nodes, int depth, List<CategoryDropdownDto> result)
+        {
+            foreach (var n in nodes)
+            {
+                string indent = depth > 0 ? (new string('—', depth) + " ") : "";
+                result.Add(new CategoryDropdownDto
+                {
+                    CategoryID = n.CategoryID,
+                    FormattedName = indent + n.CategoryName,
+                    Level = depth
+                });
+                if (n.SubCategories.Count > 0)
+                {
+                    FlattenCategoriesForDropdown(n.SubCategories, depth + 1, result);
+                }
+            }
+        }
+
         /// <summary>
         /// Süper Admin Ana Kontrol Paneli (Genel Bakış, Kategoriler, Firmalar, Ayarlar)
         /// </summary>
@@ -102,28 +146,44 @@ namespace satinalmaportali2.Controllers
                 var typeMap = viewModel.AvailableCompanyTypes.ToDictionary(ct => ct.CompanyTypeID ?? 0, ct => ct.CompanyTypeName ?? "Bilinmiyor");
                 var memberMap = viewModel.AvailableMembershipTypes.ToDictionary(mt => mt.MembershipTypeID ?? 0, mt => mt.MembershipTypeName ?? "Standart");
 
-                // 2. Kategoriler
+                // 2. Kategoriler (N-Seviyeli Tam Hiyerarşik Ağaç Yapısı)
                 var dbCategories = await _context.Category.AsNoTracking().ToListAsync();
                 var catMap = dbCategories.ToDictionary(c => c.CategoryID, c => c.CategoryName ?? "");
 
-                // Talep sayımlarını kategori bazlı çek
-                var requestsByCat = await _context.Requests.AsNoTracking()
-                    .Where(r => r.CategoryID.HasValue)
-                    .GroupBy(r => r.CategoryID!.Value)
-                    .Select(g => new { CategoryId = g.Key, Count = g.Count() })
-                    .ToDictionaryAsync(x => x.CategoryId, x => x.Count);
+                var categoryTree = BuildCategoryHierarchy(dbCategories, null, null);
 
-                viewModel.Categories = dbCategories.Select(c => new CategoryAdminDto
+                // Ağaca bağlanmamış (yetim / geçersiz parent ID'ye sahip) kategorileri de ekle
+                var visitedIds = new HashSet<int>();
+                void CollectIds(List<CategoryAdminDto> nodes)
                 {
-                    CategoryID = c.CategoryID,
-                    CategoryName = c.CategoryName ?? "İsimsiz Kategori",
-                    ParentCategoryID = c.ParentCategoryID,
-                    ParentCategoryName = c.ParentCategoryID.HasValue && catMap.TryGetValue(c.ParentCategoryID.Value, out var pName) ? pName : null,
-                    SubCategoryCount = dbCategories.Count(sc => sc.ParentCategoryID == c.CategoryID),
-                    LinkedRequestsCount = requestsByCat.TryGetValue(c.CategoryID, out var reqCount) ? reqCount : 0
-                }).OrderBy(c => c.ParentCategoryID.HasValue).ThenBy(c => c.CategoryName).ToList();
+                    foreach (var n in nodes)
+                    {
+                        visitedIds.Add(n.CategoryID);
+                        CollectIds(n.SubCategories);
+                    }
+                }
+                CollectIds(categoryTree);
 
-                viewModel.AvailableParentCategories = dbCategories.Where(c => !c.ParentCategoryID.HasValue || c.ParentCategoryID.Value == 0).OrderBy(c => c.CategoryName).ToList();
+                var orphans = dbCategories.Where(c => !visitedIds.Contains(c.CategoryID)).ToList();
+                foreach (var orphan in orphans)
+                {
+                    var orphanNode = new CategoryAdminDto
+                    {
+                        CategoryID = orphan.CategoryID,
+                        CategoryName = orphan.CategoryName ?? "İsimsiz Kategori",
+                        ParentCategoryID = orphan.ParentCategoryID,
+                        ParentCategoryName = orphan.ParentCategoryID.HasValue && catMap.TryGetValue(orphan.ParentCategoryID.Value, out var pName) ? pName : "Bilinmeyen Üst Kategori",
+                        SubCategories = BuildCategoryHierarchy(dbCategories, orphan.CategoryID, orphan.CategoryName)
+                    };
+                    orphanNode.SubCategoryCount = orphanNode.SubCategories.Count;
+                    categoryTree.Add(orphanNode);
+                }
+
+                viewModel.Categories = categoryTree;
+
+                var parentDropdownList = new List<CategoryDropdownDto>();
+                FlattenCategoriesForDropdown(categoryTree, 0, parentDropdownList);
+                viewModel.AvailableParentCategories = parentDropdownList;
 
                 // 3. Firmalar
                 var dbCompanies = await _context.Companies.AsNoTracking().OrderByDescending(c => c.CompanyID).ToListAsync();
@@ -150,7 +210,7 @@ namespace satinalmaportali2.Controllers
                     TCNO = c.TCNO,
                     TaxOffice = c.TaxOffice,
                     CompanyTypeID = c.CompanyTypeID,
-                    CompanyTypeName = c.CompanyTypeID.HasValue && typeMap.TryGetValue(c.CompanyTypeID.Value, out var tName) ? tName : "Belirtilmemiş",
+                    CompanyTypeName = (c.CompanyTypeID == 4 || string.Equals(c.CompanyMail, "admin@tedarikportal.com", StringComparison.OrdinalIgnoreCase)) ? "Süper Admin" : "Kurumsal Hesap (Alıcı & Tedarikçi)",
                     MembershipTypeID = c.MembershipTypeID,
                     MembershipTypeName = c.MembershipTypeID.HasValue && memberMap.TryGetValue(c.MembershipTypeID.Value, out var mName) ? mName : "Standart",
                     CompanyLogo = c.CompanyLogo,
@@ -167,9 +227,10 @@ namespace satinalmaportali2.Controllers
                 viewModel.Stats = new SuperAdminStatsDto
                 {
                     TotalCompanies = dbCompanies.Count,
-                    SupplierCount = dbCompanies.Count(c => c.CompanyTypeID == 1),
-                    BuyerCount = dbCompanies.Count(c => c.CompanyTypeID == 2),
-                    BothCount = dbCompanies.Count(c => c.CompanyTypeID == 3),
+                    CorporateCompaniesCount = dbCompanies.Count(c => c.CompanyTypeID != 4 && !string.Equals(c.CompanyMail, "admin@tedarikportal.com", StringComparison.OrdinalIgnoreCase)),
+                    SupplierCount = 0,
+                    BuyerCount = 0,
+                    BothCount = dbCompanies.Count(c => c.CompanyTypeID != 4 && !string.Equals(c.CompanyMail, "admin@tedarikportal.com", StringComparison.OrdinalIgnoreCase)),
                     SuperAdminCount = dbCompanies.Count(c => c.CompanyTypeID == 4 || string.Equals(c.CompanyMail, "admin@tedarikportal.com", StringComparison.OrdinalIgnoreCase)),
 
                     TotalCategories = dbCategories.Count,
@@ -202,7 +263,11 @@ namespace satinalmaportali2.Controllers
                     var q = search.Trim().ToLowerInvariant();
                     if (viewModel.ActiveTab == "categories")
                     {
-                        viewModel.Categories = viewModel.Categories.Where(c => c.CategoryName.ToLowerInvariant().Contains(q) || (c.ParentCategoryName != null && c.ParentCategoryName.ToLowerInvariant().Contains(q))).ToList();
+                        viewModel.Categories = viewModel.Categories.Where(c => 
+                            c.CategoryName.ToLowerInvariant().Contains(q) || 
+                            c.SubCategories.Any(sc => sc.CategoryName.ToLowerInvariant().Contains(q)) ||
+                            (c.ParentCategoryName != null && c.ParentCategoryName.ToLowerInvariant().Contains(q))
+                        ).ToList();
                     }
                     else if (viewModel.ActiveTab == "companies")
                     {
@@ -398,7 +463,7 @@ namespace satinalmaportali2.Controllers
                 company.CompanyPhone = string.IsNullOrWhiteSpace(model.CompanyPhone) ? null : model.CompanyPhone.Trim();
                 company.TCNO = string.IsNullOrWhiteSpace(model.TCNO) ? null : model.TCNO.Trim();
                 company.TaxOffice = string.IsNullOrWhiteSpace(model.TaxOffice) ? null : model.TaxOffice.Trim();
-                company.CompanyTypeID = model.CompanyTypeID ?? company.CompanyTypeID ?? 1;
+                company.CompanyTypeID = model.CompanyTypeID == 4 ? 4 : 3;
                 company.MembershipTypeID = model.MembershipTypeID ?? company.MembershipTypeID ?? 1;
                 company.CompanyDetailText = string.IsNullOrWhiteSpace(model.CompanyDetailText) ? null : model.CompanyDetailText.Trim();
 

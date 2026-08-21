@@ -890,6 +890,9 @@ namespace satinalmaportali2.Services
                         ? req.Offers?.FirstOrDefault(o => o.SupplierID == currentCompanyId.Value)
                         : req.Offers?.FirstOrDefault();
 
+                    var (_, myRejectionReason) = satinalmaportali2.Controllers.RequestsController.ParseSupplierNotes(myOffer?.SupplierNotes);
+                    var fallbackRejection = myOffer?.Status == "Reddedildi" ? (myRejectionReason ?? "Talep için başka bir tedarikçinin teklifi kabul edildi.") : null;
+
                     openRfqs.Add(new SupplierRfqItemDto
                     {
                         RequestID = req.RequestID,
@@ -907,7 +910,8 @@ namespace satinalmaportali2.Services
                         Status = rfqStatus,
                         HasMyBid = myOffer != null,
                         MyBidAmount = myOffer?.OfferedPrice,
-                        MyBidStatus = myOffer?.Status
+                        MyBidStatus = myOffer?.Status,
+                        MyBidRejectionReason = fallbackRejection
                     });
                     rfqIdx++;
                 }

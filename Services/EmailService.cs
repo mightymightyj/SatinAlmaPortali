@@ -733,5 +733,226 @@ namespace satinalmaportali2.Services
                 return false;
             }
         }
+
+        /// <summary>
+        /// Teklifi kabul edilen kazanan tedarikçiye tebrik ve süreç tamamlama e-postası gönderir.
+        /// </summary>
+        public async Task<bool> SendOfferAcceptedEmailAsync(
+            string toEmail,
+            string supplierName,
+            string buyerName,
+            string rfqCode,
+            string productName,
+            int quantity,
+            string unit,
+            decimal offeredPrice,
+            int? deliveryDays,
+            string requestsUrl)
+        {
+            try
+            {
+                var sendTime = DateTime.UtcNow.AddHours(3).ToString("dd.MM.yyyy HH:mm");
+                var formattedPrice = offeredPrice.ToString("N2", new System.Globalization.CultureInfo("tr-TR"));
+                var displaySupplier = string.IsNullOrWhiteSpace(supplierName) ? "Değerli Tedarikçimiz" : supplierName;
+                var displayBuyer = string.IsNullOrWhiteSpace(buyerName) ? "Kurumsal Alıcı" : buyerName;
+                var displayUnit = string.IsNullOrWhiteSpace(unit) ? "Adet" : unit;
+                var displayRfq = string.IsNullOrWhiteSpace(rfqCode) ? "#TALEP" : (rfqCode.StartsWith("#") ? rfqCode : $"#{rfqCode}");
+                var deliveryText = deliveryDays.HasValue && deliveryDays.Value > 0 ? $"{deliveryDays.Value} İş Günü" : "Belirtilen Süre";
+
+                var htmlBody = $@"
+<!DOCTYPE html>
+<html lang='tr'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Tebrikler! Teklifiniz Kabul Edildi</title>
+</head>
+<body style='margin:0;padding:0;background-color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,""Segoe UI"",Roboto,Arial,sans-serif;'>
+    <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='background-color:#f1f5f9;'>
+        <tr>
+            <td align='center' style='padding:40px 16px;'>
+                <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='max-width:620px;background-color:#ffffff;border-radius:24px;box-shadow:0 10px 40px rgba(0,0,0,0.07);border:1px solid #e2e8f0;overflow:hidden;'>
+                    <tr>
+                        <td style='background:linear-gradient(135deg,#065f46 0%,#059669 50%,#10b981 100%);padding:36px 44px;text-align:center;'>
+                            <div style='background:rgba(255,255,255,0.2);display:inline-block;padding:8px 16px;border-radius:20px;margin-bottom:12px;'>
+                                <span style='color:#ffffff;font-size:14px;font-weight:800;'>🏆 KAZANAN TEKLİF</span>
+                            </div>
+                            <h1 style='margin:0;color:#ffffff;font-size:24px;font-weight:800;'>
+                                🎉 Tebrikler! Teklifiniz Kabul Edildi
+                            </h1>
+                            <p style='margin:10px 0 0;color:rgba(255,255,255,0.9);font-size:14px;'>
+                                {displayBuyer} firmanızın sunduğu teklifi onayladı!
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='padding:36px 44px 32px;'>
+                            <p style='margin:0 0 14px;color:#1e293b;font-size:16px;font-weight:700;'>
+                                Sayın {displaySupplier},
+                            </p>
+                            <p style='margin:0 0 24px;color:#475569;font-size:14.5px;line-height:1.7;'>
+                                <strong>{displayRfq}</strong> numaralı <strong>{productName}</strong> alım talebi için iletmiş olduğunuz teklif alıcı firma tarafından incelenmiş ve <strong>KABUL EDİLMİŞTİR</strong>.
+                            </p>
+
+                            <!-- Detay Kutusu -->
+                            <div style='background:#f0fdf4;border:1.5px solid #86efac;border-radius:16px;padding:22px 24px;margin-bottom:24px;text-align:center;'>
+                                <div style='color:#166534;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;'>
+                                    💰 Kabul Edilen Teklif Tutarı
+                                </div>
+                                <div style='color:#15803d;font-size:32px;font-weight:900;margin-top:6px;'>
+                                    {formattedPrice} ₺
+                                </div>
+                                <div style='color:#166534;font-size:13px;font-weight:600;margin-top:4px;'>
+                                    Teslimat Süresi: {deliveryText} · Miktar: {quantity} {displayUnit}
+                                </div>
+                            </div>
+
+                            <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='margin-bottom:24px;border-collapse:separate;border-spacing:0 8px;'>
+                                <tr>
+                                    <td style='width:160px;color:#64748b;font-size:13px;font-weight:700;padding:8px 0;'>🏢 Alıcı Firma:</td>
+                                    <td style='color:#0f172a;font-size:14px;font-weight:700;padding:8px 14px;background:#f8fafc;border-radius:8px;'>{displayBuyer}</td>
+                                </tr>
+                                <tr>
+                                    <td style='width:160px;color:#64748b;font-size:13px;font-weight:700;padding:8px 0;'>📦 Ürün / Hizmet:</td>
+                                    <td style='color:#0f172a;font-size:14px;font-weight:700;padding:8px 14px;background:#f8fafc;border-radius:8px;'>{productName}</td>
+                                </tr>
+                                <tr>
+                                    <td style='width:160px;color:#64748b;font-size:13px;font-weight:700;padding:8px 0;'>🕒 Onay Tarihi:</td>
+                                    <td style='color:#64748b;font-size:13px;font-weight:600;padding:8px 14px;background:#f8fafc;border-radius:8px;'>{sendTime}</td>
+                                </tr>
+                            </table>
+
+                            <div style='margin:30px 0;text-align:center;'>
+                                <a href='{requestsUrl}' target='_blank' style='display:inline-block;padding:15px 38px;background:linear-gradient(135deg,#059669,#10b981);color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;border-radius:12px;box-shadow:0 4px 16px rgba(16,185,129,0.35);'>
+                                    📋 Taleplerim Sayfasında Görüntüle &rarr;
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='background-color:#f8fafc;padding:24px 44px;text-align:center;border-top:1px solid #e2e8f0;'>
+                            <p style='margin:0;color:#94a3b8;font-size:11px;'>
+                                Tedarik Portal — Satın Alma Platformu · Bu bildirim <strong>{toEmail}</strong> adresine gönderilmiştir.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
+
+                var subject = $"🏆 Tebrikler! #{displayRfq} Teklifiniz Kabul Edildi — {productName}";
+                return await SendEmailAsync(toEmail, subject, htmlBody);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Kabul e-posta gönderim hatası ({ToEmail}): {Message}", toEmail, ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Teklifi elenen tedarikçilere şeffaf red gerekçesini belirten bilgilendirme e-postası gönderir.
+        /// </summary>
+        public async Task<bool> SendOfferRejectedEmailAsync(
+            string toEmail,
+            string supplierName,
+            string buyerName,
+            string rfqCode,
+            string productName,
+            int quantity,
+            string unit,
+            decimal offeredPrice,
+            string rejectionReason,
+            string requestsUrl)
+        {
+            try
+            {
+                var sendTime = DateTime.UtcNow.AddHours(3).ToString("dd.MM.yyyy HH:mm");
+                var formattedPrice = offeredPrice.ToString("N2", new System.Globalization.CultureInfo("tr-TR"));
+                var displaySupplier = string.IsNullOrWhiteSpace(supplierName) ? "Değerli Tedarikçimiz" : supplierName;
+                var displayBuyer = string.IsNullOrWhiteSpace(buyerName) ? "Kurumsal Alıcı" : buyerName;
+                var displayUnit = string.IsNullOrWhiteSpace(unit) ? "Adet" : unit;
+                var displayRfq = string.IsNullOrWhiteSpace(rfqCode) ? "#TALEP" : (rfqCode.StartsWith("#") ? rfqCode : $"#{rfqCode}");
+                var reasonText = string.IsNullOrWhiteSpace(rejectionReason) ? "Talep için başka bir tedarikçinin teklifi kabul edildi." : rejectionReason.Trim();
+
+                var htmlBody = $@"
+<!DOCTYPE html>
+<html lang='tr'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Teklif Değerlendirme Sonucu</title>
+</head>
+<body style='margin:0;padding:0;background-color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,""Segoe UI"",Roboto,Arial,sans-serif;'>
+    <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='background-color:#f1f5f9;'>
+        <tr>
+            <td align='center' style='padding:40px 16px;'>
+                <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='max-width:620px;background-color:#ffffff;border-radius:24px;box-shadow:0 10px 40px rgba(0,0,0,0.07);border:1px solid #e2e8f0;overflow:hidden;'>
+                    <tr>
+                        <td style='background:linear-gradient(135deg,#334155 0%,#475569 100%);padding:32px 44px;text-align:center;'>
+                            <h1 style='margin:0;color:#ffffff;font-size:22px;font-weight:800;'>
+                                Teklif Değerlendirme Bilgilendirmesi
+                            </h1>
+                            <p style='margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:13.5px;'>
+                                {displayRfq} numaralı talep sonuçlandı
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='padding:36px 44px 32px;'>
+                            <p style='margin:0 0 14px;color:#1e293b;font-size:16px;font-weight:700;'>
+                                Sayın {displaySupplier},
+                            </p>
+                            <p style='margin:0 0 20px;color:#475569;font-size:14.5px;line-height:1.7;'>
+                                <strong>{displayBuyer}</strong> tarafından açılan <strong>{productName}</strong> ({quantity} {displayUnit}) talebi için sunmuş olduğunuz <strong>{formattedPrice} ₺</strong> tutarındaki fiyat teklifiniz değerlendirilmiştir.
+                            </p>
+
+                            <!-- Reddetme Sebebi Kutusu -->
+                            <div style='background:#fef2f2;border:1.5px solid #fca5a5;border-left:5px solid #ef4444;border-radius:12px;padding:18px 20px;margin-bottom:24px;'>
+                                <div style='color:#991b1b;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;'>
+                                    🚫 Teklif Durumu & Red Gerekçesi:
+                                </div>
+                                <p style='margin:0;color:#7f1d1d;font-size:14.5px;font-weight:600;line-height:1.5;'>
+                                    {reasonText}
+                                </p>
+                            </div>
+
+                            <p style='margin:0 0 24px;color:#64748b;font-size:13.5px;line-height:1.6;'>
+                                İhale sürecine katılımınız ve verdiğiniz teklif için teşekkür ederiz. Portaldaki diğer açık talepleri inceleyerek yeni teklifler sunabilirsiniz.
+                            </p>
+
+                            <div style='margin:28px 0;text-align:center;'>
+                                <a href='{requestsUrl}' target='_blank' style='display:inline-block;padding:14px 34px;background:#2563eb;color:#ffffff;font-size:14.5px;font-weight:700;text-decoration:none;border-radius:10px;box-shadow:0 4px 14px rgba(37,99,235,0.3);'>
+                                    🌐 Açık İhaleleri İncele &rarr;
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='background-color:#f8fafc;padding:24px 44px;text-align:center;border-top:1px solid #e2e8f0;'>
+                            <p style='margin:0;color:#94a3b8;font-size:11px;'>
+                                Tedarik Portal — Satın Alma Platformu · Bu bildirim <strong>{toEmail}</strong> adresine gönderilmiştir.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
+
+                var subject = $"ℹ️ Teklif Bilgilendirmesi: {productName} ({displayRfq})";
+                return await SendEmailAsync(toEmail, subject, htmlBody);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Red e-posta gönderim hatası ({ToEmail}): {Message}", toEmail, ex.Message);
+                return false;
+            }
+        }
     }
 }
