@@ -279,42 +279,53 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var req in Model.RecentRequests)
+                    @if (!Model.RecentRequests.Any())
                     {
-                        var statusCls = req.Status switch {
-                            "Açık" => "badge-blue",
-                            "Beklemede" => "badge-amber",
-                            "Kazanıldı" => "badge-emerald",
-                            "Onaylandı" => "badge-emerald",
-                            _ => "badge-gray"
-                        };
-
-                        <tr data-status="@req.Status">
-                            <td>
-                                <div class="req-title-cell">
-                                    <span class="req-code">@req.RequestCode</span>
-                                    <strong class="req-name" title="@req.ProductName">@req.ProductName</strong>
-                                    <small class="req-date">@req.RequestDate.ToString("dd MMM yyyy")</small>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="category-tag">@req.CategoryName</span>
-                            </td>
-                            <td>
-                                <strong class="budget-amount">@req.EstimatedBudget.ToString("N0", ChartHelper.Tr) ₺</strong>
-                            </td>
-                            <td>
-                                <span class="status-badge @statusCls">
-                                    <span class="status-dot"></span>
-                                    @req.Status
-                                </span>
-                            </td>
-                            <td class="text-right">
-                                <a asp-controller="Requests" asp-action="Index" class="btn-table-action">
-                                    İncele
-                                </a>
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 36px 16px; color: var(--muted);">
+                                Sistemde henüz kayıtlı bir satın alma talebi bulunmuyor.
                             </td>
                         </tr>
+                    }
+                    else
+                    {
+                        @foreach (var req in Model.RecentRequests)
+                        {
+                            var statusCls = req.Status switch {
+                                "Açık" => "badge-blue",
+                                "Beklemede" => "badge-amber",
+                                "Kazanıldı" => "badge-emerald",
+                                "Onaylandı" => "badge-emerald",
+                                _ => "badge-gray"
+                            };
+
+                            <tr data-status="@req.Status">
+                                <td>
+                                    <div class="req-title-cell">
+                                        <span class="req-code">@req.RequestCode</span>
+                                        <strong class="req-name" title="@req.ProductName">@req.ProductName</strong>
+                                        <small class="req-date">@req.RequestDate.ToString("dd MMM yyyy")</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="category-tag">@req.CategoryName</span>
+                                </td>
+                                <td>
+                                    <strong class="budget-amount">@req.EstimatedBudget.ToString("N0", ChartHelper.Tr) ₺</strong>
+                                </td>
+                                <td>
+                                    <span class="status-badge @statusCls">
+                                        <span class="status-dot"></span>
+                                        @req.Status
+                                    </span>
+                                </td>
+                                <td class="text-right">
+                                    <a asp-controller="Requests" asp-action="Index" class="btn-table-action">
+                                        İncele
+                                    </a>
+                                </td>
+                            </tr>
+                        }
                     }
                 </tbody>
             </table>

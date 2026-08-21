@@ -3,14 +3,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using satinalmaportali2.Data;
-using satinalmaportali2.Models;
 using satinalmaportali2.Services;
 
 namespace satinalmaportali2.Controllers
 {
     /// <summary>
     /// Satın alma ve talep analitiği gösterge paneli denetleyicisi.
-    /// Tüm veri çekme, haritalama ve önbellekleme işlemleri IDashboardService tarafından yürütülür.
+    /// Hesap türüne göre (Alıcı, Tedarikçi, Her İkisi) erişim ve mod kontrolleri burada yönetilir.
     /// </summary>
     [Authorize]
     public class DashboardController : Controller
@@ -18,27 +17,147 @@ namespace satinalmaportali2.Controllers
         public const string ConnectionName = "TedarikDb";
 
         private readonly IDashboardService _dashboardService;
-        private readonly EmailService _emailService;
         private readonly ApplicationDbContext _context;
 
-        public DashboardController(
-            IDashboardService dashboardService,
-            EmailService emailService,
-            ApplicationDbContext context)
+        public DashboardController(IDashboardService dashboardService, ApplicationDbContext context)
         {
             _dashboardService = dashboardService;
-            _emailService = emailService;
             _context = context;
         }
 
+        private int GetCurrentCompanyId()
+        {
+            var cidClaim = User.FindFirst("CompanyID")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(cidClaim) && int.TryParse(cidClaim, out int cid))
+            {
+                return cid;
+            }
+            return 0;
+        }
+
         /// <summary>
-        /// Dashboard ana görünümü (Varsayılan olarak Alıcı / Buyer paneline yönlendirir veya seçilen rolü açar).
+        /// Kullanıcının firma türü ID'sini döner:
+        /// 1 = Tedarikçi Firma (Yalnızca Tedarikçi)
+        /// 2 = Alıcı / Müşteri (Yalnızca Alıcı)
+        /// 3 = Hem Alıcı Hem Tedarikçi (Her İkisi)
         /// </summary>
-        /// <param name="yil">Filtrelenecek yıl (isteğe bağlı).</param>
-        /// <param name="role">Rol seçimi: "buyer" veya "supplier".</param>
+        private async Task<int> GetCurrentCompanyTypeIdAsync()
+        {
+            var userType = User.FindFirst("UserType")?.Value ?? User.FindFirst(ClaimTypes.Role)?.Value;
+            if (string.Equals(userType, "admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return 3; // Admin hesaplar her iki panele de erişebilir
+            }
+
+            var typeClaim = User.FindFirst("CompanyTypeID")?.Value;
+            if (int.TryParse(typeClaim, out int claimTypeId) && claimTypeId >= 1 && claimTypeId <= 3)
+            {
+                return claimTypeId;
+            }
+
+            int companyId = GetCurrentCompanyId();
+            if (companyId > 0)
+            {
+                var comp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == companyId);
+                if (comp?.CompanyTypeID.HasValue == true && comp.CompanyTypeID.Value >= 1 && comp.CompanyTypeID.Value <= 3)
+                {
+                    return comp.CompanyTypeID.Value;
+                }
+            }
+
+            return 3; // Belirlenemezse varsayılan her iki modu da aç
+        }
+
+        private void SetDashboardModeCookie(string role)
+        {
+            Response.Cookies.Append("ActiveDashboardMode", role, new CookieOptions
+            {
+                Expires = DateTimeOffset.UtcNow.AddDays(30),
+                HttpOnly = false,
+                IsEssential = true,
+                SameSite = SameSiteMode.Lax
+            });
+        }
+
+        private string GetActiveDashboardMode()
+        {
+            var cookie = Request.Cookies["ActiveDashboardMode"];
+            if (!string.IsNullOrWhiteSpace(cookie) && string.Equals(cookie, "Supplier", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Supplier";
+            }
+            return "Buyer";
+        }
+
+        /// <summary>
+        /// Kullanıcının aktif panel modunu (Alıcı / Tedarikçi) kalıcı olarak değiştirir.
+        /// Yalnızca türü 'Hem Alıcı Hem Tedarikçi' (3) veya Admin olan hesaplar mod değiştirebilir.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> SetRole(string role, string? returnUrl = null)
+        {
+            int companyTypeId = await GetCurrentCompanyTypeIdAsync();
+            string targetRole;
+
+            if (companyTypeId == 1) // Yalnızca Tedarikçi
+            {
+                targetRole = "Supplier";
+            }
+            else if (companyTypeId == 2) // Yalnızca Alıcı
+            {
+                targetRole = "Buyer";
+            }
+            else // Her İkisi veya Admin
+            {
+                targetRole = string.Equals(role, "Supplier", StringComparison.OrdinalIgnoreCase) ? "Supplier" : "Buyer";
+            }
+
+            SetDashboardModeCookie(targetRole);
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
+            return targetRole == "Supplier" 
+                ? RedirectToAction(nameof(Supplier)) 
+                : RedirectToAction(nameof(Buyer));
+        }
+
+        /// <summary>
+        /// Dashboard ana görünümü (Kullanıcının türüne ve aktif moduna göre yönlendirir).
+        /// </summary>
         public async Task<IActionResult> Index(int? yil, string? role, CancellationToken cancellationToken)
         {
-            if (string.Equals(role, "supplier", StringComparison.OrdinalIgnoreCase))
+            int companyTypeId = await GetCurrentCompanyTypeIdAsync();
+
+            // 1. Sadece Tedarikçi olan hesaplar doğrudan Tedarikçi ekranına gider
+            if (companyTypeId == 1)
+            {
+                SetDashboardModeCookie("Supplier");
+                return RedirectToAction(nameof(Supplier), new { yil });
+            }
+
+            // 2. Sadece Alıcı olan hesaplar doğrudan Alıcı ekranına gider
+            if (companyTypeId == 2)
+            {
+                SetDashboardModeCookie("Buyer");
+                return RedirectToAction(nameof(Buyer), new { yil });
+            }
+
+            // 3. Her İkisi olan hesaplar seçilen veya cookie'deki moda göre yönlendirilir
+            if (!string.IsNullOrEmpty(role))
+            {
+                SetDashboardModeCookie(role);
+                if (string.Equals(role, "supplier", StringComparison.OrdinalIgnoreCase))
+                {
+                    return RedirectToAction(nameof(Supplier), new { yil });
+                }
+                return RedirectToAction(nameof(Buyer), new { yil });
+            }
+
+            var currentMode = GetActiveDashboardMode();
+            if (currentMode == "Supplier")
             {
                 return RedirectToAction(nameof(Supplier), new { yil });
             }
@@ -48,23 +167,47 @@ namespace satinalmaportali2.Controllers
 
         /// <summary>
         /// Alıcı (Buyer) kullanıcı rolü dashboard görünümü.
+        /// Yalnızca Tedarikçi olan hesaplar bu ekrana erişemez, Tedarikçi paneline yönlendirilir.
         /// </summary>
         public async Task<IActionResult> Buyer(int? yil, CancellationToken cancellationToken)
         {
+            int companyTypeId = await GetCurrentCompanyTypeIdAsync();
+            if (companyTypeId == 1) // Yalnızca Tedarikçi -> Alıcı ekranını göremez
+            {
+                return RedirectToAction(nameof(Supplier), new { yil });
+            }
+
+            SetDashboardModeCookie("Buyer");
             ViewBag.DashboardRole = "Buyer";
+            ViewBag.CanSwitchRole = (companyTypeId == 3 || string.Equals(User.FindFirst("UserType")?.Value, "admin", StringComparison.OrdinalIgnoreCase));
+            ViewBag.CompanyTypeID = companyTypeId;
             ViewData["Title"] = "Alıcı Portalı - Genel Bakış";
-            var viewModel = await _dashboardService.GetBuyerDashboardAsync(yil, cancellationToken);
+
+            int companyId = GetCurrentCompanyId();
+            var viewModel = await _dashboardService.GetBuyerDashboardAsync(yil, companyId > 0 ? companyId : null, cancellationToken);
             return View(viewModel);
         }
 
         /// <summary>
         /// Tedarikçi (Supplier) kullanıcı rolü dashboard görünümü.
+        /// Yalnızca Alıcı olan hesaplar bu ekrana erişemez, Alıcı paneline yönlendirilir.
         /// </summary>
         public async Task<IActionResult> Supplier(int? yil, CancellationToken cancellationToken)
         {
+            int companyTypeId = await GetCurrentCompanyTypeIdAsync();
+            if (companyTypeId == 2) // Yalnızca Alıcı -> Tedarikçi ekranını göremez
+            {
+                return RedirectToAction(nameof(Buyer), new { yil });
+            }
+
+            SetDashboardModeCookie("Supplier");
             ViewBag.DashboardRole = "Supplier";
+            ViewBag.CanSwitchRole = (companyTypeId == 3 || string.Equals(User.FindFirst("UserType")?.Value, "admin", StringComparison.OrdinalIgnoreCase));
+            ViewBag.CompanyTypeID = companyTypeId;
             ViewData["Title"] = "Tedarikçi Portalı - Mağaza Genel Bakış";
-            var viewModel = await _dashboardService.GetSupplierDashboardAsync(yil, cancellationToken);
+
+            int companyId = GetCurrentCompanyId();
+            var viewModel = await _dashboardService.GetSupplierDashboardAsync(yil, companyId > 0 ? companyId : null, cancellationToken);
             return View(viewModel);
         }
 
@@ -73,8 +216,13 @@ namespace satinalmaportali2.Controllers
         /// </summary>
         public async Task<IActionResult> Analytics(int? yil, CancellationToken cancellationToken)
         {
-            ViewBag.DashboardRole = "Buyer";
+            int companyTypeId = await GetCurrentCompanyTypeIdAsync();
+            var currentMode = companyTypeId == 1 ? "Supplier" : (companyTypeId == 2 ? "Buyer" : GetActiveDashboardMode());
+            ViewBag.DashboardRole = currentMode;
+            ViewBag.CanSwitchRole = (companyTypeId == 3 || string.Equals(User.FindFirst("UserType")?.Value, "admin", StringComparison.OrdinalIgnoreCase));
+            ViewBag.CompanyTypeID = companyTypeId;
             ViewData["Title"] = "Satın Alma ve Talep Analitiği";
+
             var viewModel = await _dashboardService.GetDashboardAsync(yil, cancellationToken);
             return View("Analytics", viewModel);
         }
@@ -105,258 +253,6 @@ namespace satinalmaportali2.Controllers
             }
 
             return RedirectToAction(nameof(Index));
-        }
-
-        /// <summary>
-        /// Tedarikçinin bir RFQ / Satın alma talebine fiyat teklifi vermesini ve alıcıya anında e-posta iletilmesini sağlar.
-        /// </summary>
-        [HttpPost]
-        public async Task<IActionResult> SubmitOffer([FromBody] SubmitOfferInput input, CancellationToken cancellationToken)
-        {
-            if (input == null || input.OfferAmount <= 0)
-            {
-                return Json(new { success = false, message = "Geçersiz teklif tutarı veya eksik bilgi." });
-            }
-
-            try
-            {
-                var activeCompanyName = User.FindFirst("CompanyName")?.Value ?? (User.Identity?.IsAuthenticated == true ? User.Identity.Name : "Tedarikçi Firma");
-                var activeOfficial = User.Identity?.Name ?? "Yetkili";
-                var supplierName = !string.IsNullOrWhiteSpace(activeCompanyName) ? activeCompanyName : activeOfficial;
-
-                string targetEmail = "navape8857@ittiv.com";
-                string buyerName = "Satın Alma Departmanı";
-                string productName = !string.IsNullOrWhiteSpace(input.ProductName) ? input.ProductName : "Satın Alma Ürün Talebi";
-                int quantity = input.Quantity.HasValue && input.Quantity.Value > 0 ? input.Quantity.Value : 1;
-                string unit = !string.IsNullOrWhiteSpace(input.Unit) ? input.Unit : "Adet";
-
-                // Veritabanında eşleşen talep var mı kontrol et
-                Requests? matchedRequest = null;
-
-                if (input.RequestId.HasValue && input.RequestId.Value > 0)
-                {
-                    matchedRequest = await _context.Requests.FirstOrDefaultAsync(r => r.RequestID == input.RequestId.Value, cancellationToken);
-                }
-                else if (!string.IsNullOrWhiteSpace(input.RfqCode))
-                {
-                    var parts = input.RfqCode.Split('-', StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length >= 3 && int.TryParse(parts[^1], out int parsedId))
-                    {
-                        matchedRequest = await _context.Requests.FirstOrDefaultAsync(r => r.RequestID == parsedId, cancellationToken);
-                    }
-                    else if (input.RfqCode.StartsWith("REQ-", StringComparison.OrdinalIgnoreCase) && int.TryParse(input.RfqCode.Substring(4), out int reqId))
-                    {
-                        matchedRequest = await _context.Requests.FirstOrDefaultAsync(r => r.RequestID == reqId, cancellationToken);
-                    }
-                }
-
-                if (matchedRequest != null)
-                {
-                    if (!string.IsNullOrWhiteSpace(matchedRequest.ProductName))
-                        productName = matchedRequest.ProductName;
-
-                    if (matchedRequest.Quantity.HasValue && matchedRequest.Quantity.Value > 0)
-                        quantity = matchedRequest.Quantity.Value;
-
-                    if (!string.IsNullOrWhiteSpace(matchedRequest.BuyerInfo))
-                        buyerName = matchedRequest.BuyerInfo;
-
-                    if (matchedRequest.SenderID.HasValue)
-                    {
-                        var buyerCompany = await _context.Companies
-                            .AsNoTracking()
-                            .FirstOrDefaultAsync(c => c.CompanyID == matchedRequest.SenderID.Value, cancellationToken);
-
-                        if (buyerCompany != null && !string.IsNullOrWhiteSpace(buyerCompany.CompanyMail))
-                        {
-                            targetEmail = buyerCompany.CompanyMail;
-                            if (string.IsNullOrWhiteSpace(buyerName))
-                                buyerName = buyerCompany.CompanyName ?? buyerCompany.CompanyOfficial ?? "Değerli Müşterimiz";
-                        }
-                    }
-
-                    if (matchedRequest.BuyerInfo != null && matchedRequest.BuyerInfo.Contains("@"))
-                    {
-                        var emailCandidate = matchedRequest.BuyerInfo.Split(' ', ';', ',').FirstOrDefault(s => s.Contains("@"));
-                        if (!string.IsNullOrWhiteSpace(emailCandidate))
-                        {
-                            targetEmail = emailCandidate.Trim();
-                        }
-                    }
-                }
-                else
-                {
-                    if (!string.IsNullOrWhiteSpace(input.ProductName))
-                        productName = input.ProductName;
-                    if (input.Quantity.HasValue)
-                        quantity = input.Quantity.Value;
-                }
-
-                if (!string.IsNullOrWhiteSpace(input.BuyerEmail))
-                {
-                    targetEmail = input.BuyerEmail.Trim();
-                }
-
-                var requestsUrl = $"{Request.Scheme}://{Request.Host}/Requests";
-
-                // E-posta gönderimini arka planda asenkron olarak tetikle
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        await _emailService.SendOfferReceivedEmailAsync(
-                            toEmail: targetEmail,
-                            buyerName: buyerName,
-                            supplierName: supplierName,
-                            rfqCode: input.RfqCode ?? "RFQ-2026",
-                            productName: productName,
-                            productImageUrl: input.ProductImageUrl,
-                            quantity: quantity,
-                            unit: unit,
-                            offerPrice: input.OfferAmount,
-                            deliveryDays: input.DeliveryDays,
-                            validityDays: input.ValidityDays,
-                            offerNotes: input.Notes,
-                            requestsUrl: requestsUrl);
-                    }
-                    catch (Exception mailEx)
-                    {
-                        Console.WriteLine($"Teklif e-posta arka plan gönderim hatası: {mailEx.Message}");
-                    }
-                });
-
-                return Json(new
-                {
-                    success = true,
-                    message = $"'{productName}' talebine {input.OfferAmount:N0} ₺ tutarındaki teklifiniz başarıyla iletildi ve alıcıya e-posta bildirimi gönderildi!",
-                    emailSent = true,
-                    targetEmail = targetEmail,
-                    productName = productName,
-                    offerAmount = input.OfferAmount
-                });
-            }
-            catch (Exception ex)
-            {
-                var errorMsg = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-                return Json(new { success = false, message = "Teklif kaydedilirken bir hata oluştu: " + errorMsg });
-            }
-        }
-
-        /// <summary>
-        /// Alıcıya gönderilen teklif e-postasını tarayıcıda doğrudan test etmek ve önizlemek için geliştirici aksiyonu.
-        /// </summary>
-        [HttpGet]
-        [AllowAnonymous]
-        public IActionResult PreviewOfferEmail(
-            string? email,
-            string? buyer,
-            string? supplier,
-            string? rfq,
-            string? product,
-            string? image,
-            int? qty,
-            string? unit,
-            decimal? price,
-            int? delivery,
-            int? validity,
-            string? notes)
-        {
-            var targetEmail = email ?? "navape8857@ittiv.com";
-            var buyerName = buyer ?? "Aselsan Tedarik & Savunma A.Ş.";
-            var supplierName = supplier ?? "Kaya Endüstriyel Çözümler A.Ş.";
-            var rfqCode = rfq ?? "RFQ-2026-104";
-            var productName = product ?? "Siemens Simatic S7-1200 PLC & Dijital Giriş/Çıkış Modülü";
-            var productImageUrl = image ?? "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80";
-            var quantity = qty ?? 50;
-            var unitName = unit ?? "Adet";
-            var offerPrice = price ?? 125000m;
-            var deliveryDays = delivery ?? 7;
-            var validityDays = validity ?? 30;
-            var offerNotes = notes ?? "Tüm ürünler orijinal ambalajında ve 2 yıl resmi distribütör garantilidir. Belirtilen fiyata fabrika teslimi nakliye ve sigorta bedeli dahildir.";
-            var requestsUrl = $"{Request.Scheme}://{Request.Host}/Requests";
-
-            var html = _emailService.GetOfferReceivedEmailHtml(
-                targetEmail,
-                buyerName,
-                supplierName,
-                rfqCode,
-                productName,
-                productImageUrl,
-                quantity,
-                unitName,
-                offerPrice,
-                deliveryDays,
-                validityDays,
-                offerNotes,
-                requestsUrl);
-
-            return Content(html, "text/html; charset=utf-8");
-        }
-
-        /// <summary>
-        /// Belirtilen adrese (veya varsayılan navape8857@ittiv.com) rastgele/örnek teklif e-postası gönderme testi.
-        /// </summary>
-        [HttpGet]
-        [AllowAnonymous]
-        public async Task<IActionResult> SendTestOfferEmail(
-            string? email,
-            string? buyer,
-            string? supplier,
-            string? rfq,
-            string? product,
-            string? image,
-            int? qty,
-            string? unit,
-            decimal? price,
-            int? delivery,
-            int? validity,
-            string? notes)
-        {
-            var targetEmail = email ?? "navape8857@ittiv.com";
-            var buyerName = buyer ?? "TUSAŞ Havacılık ve Savunma Teknolojileri A.Ş.";
-            var supplierName = supplier ?? "Endüstriyel Titanyum & Metal Sistemleri Ltd. Şti.";
-            var rfqCode = rfq ?? "RFQ-2026-8857";
-            var productName = product ?? "Endüstriyel Titanyum Bağlantı Elemanları Seti (Grade 5)";
-            var productImageUrl = image ?? "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80";
-            var quantity = qty ?? 1500;
-            var unitName = unit ?? "Adet";
-            var offerPrice = price ?? 485000m;
-            var deliveryDays = delivery ?? 10;
-            var validityDays = validity ?? 45;
-            var offerNotes = notes ?? "Tüm ürünler uluslararası AS9100 ve ISO 9001 sertifikalı tesislerimizde üretilmiş olup 2 yıl garantilidir. Belirtilen fiyata fabrika teslimi ve korozyon önleyici korumalı nakliye dahildir.";
-            var requestsUrl = $"{Request.Scheme}://{Request.Host}/Requests";
-
-            var success = await _emailService.SendOfferReceivedEmailAsync(
-                toEmail: targetEmail,
-                buyerName: buyerName,
-                supplierName: supplierName,
-                rfqCode: rfqCode,
-                productName: productName,
-                productImageUrl: productImageUrl,
-                quantity: quantity,
-                unit: unitName,
-                offerPrice: offerPrice,
-                deliveryDays: deliveryDays,
-                validityDays: validityDays,
-                offerNotes: offerNotes,
-                requestsUrl: requestsUrl);
-
-            return Json(new
-            {
-                success = success,
-                targetEmail = targetEmail,
-                buyerName = buyerName,
-                supplierName = supplierName,
-                rfqCode = rfqCode,
-                productName = productName,
-                quantity = $"{quantity} {unitName}",
-                totalPrice = $"{offerPrice:N2} ₺",
-                deliveryDays = $"{deliveryDays} İş Günü",
-                validityDays = $"{validityDays} Gün",
-                message = success 
-                    ? $"✅ E-posta başarıyla '{targetEmail}' adresine gönderildi." 
-                    : $"⚠️ E-posta SMTP üzerinden gönderilemedi! appsettings.json dosyasındaki EmailSettings bilgilerini kontrol ediniz."
-            });
         }
     }
 }

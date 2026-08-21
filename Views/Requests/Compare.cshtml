@@ -1,0 +1,956 @@
+@model satinalmaportali2.Models.OfferComparisonViewModel
+@{
+    ViewData["Title"] = "Tedarikçi Fiyat & Teklif Kıyaslama";
+    Layout = "~/Views/Dashboard/_DashboardLayout.cshtml";
+
+    var req = Model.SelectedRequest;
+    var offers = Model.Offers;
+    int qty = req?.Quantity ?? 1;
+}
+
+<style>
+    /* ============ FİYAT KIYASLAMA EKRANI STİLLERİ ============ */
+    .compare-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .compare-header-card {
+        background: var(--surface, #FFFFFF);
+        border: 1px solid var(--grid, #E2E8F0);
+        border-radius: 14px;
+        padding: 20px 24px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .compare-top-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 14px;
+        border-bottom: 1px solid #F1F5F9;
+        padding-bottom: 14px;
+    }
+
+    .compare-title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .compare-icon-badge {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+        border: 1px solid #BFDBFE;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--blue, #2563EB);
+        font-size: 1.3rem;
+    }
+
+    .compare-title-wrap h1 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--ink, #0F172A);
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .compare-title-wrap p {
+        font-size: 0.82rem;
+        color: #64748B;
+        margin: 3px 0 0 0;
+    }
+
+    .req-selector-select {
+        background: var(--plane, #F8FAFC);
+        border: 1px solid var(--grid, #E2E8F0);
+        border-radius: 10px;
+        padding: 9px 14px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--ink, #0F172A);
+        outline: none;
+        cursor: pointer;
+        min-width: 320px;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .req-selector-select:focus {
+        border-color: var(--blue, #2563EB);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    /* Talep Özet Bilgi Alanı */
+    .req-summary-grid {
+        display: grid;
+        grid-template-columns: 2.5fr 1fr 1fr 1fr;
+        gap: 16px;
+        align-items: center;
+    }
+
+    .req-info-block {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .req-info-label {
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #64748B;
+    }
+
+    .req-info-value {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--ink, #0F172A);
+    }
+
+    .req-info-sub {
+        font-size: 0.8rem;
+        color: #64748B;
+    }
+
+    /* KPI Kartları */
+    .compare-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+    }
+
+    .compare-kpi-card {
+        background: var(--surface, #FFFFFF);
+        border: 1px solid var(--grid, #E2E8F0);
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .compare-kpi-card.is-lowest {
+        border-color: rgba(16, 185, 129, 0.4);
+        background: linear-gradient(180deg, #F0FDF4 0%, #FFFFFF 100%);
+    }
+
+    .compare-kpi-card.is-fastest {
+        border-color: rgba(59, 130, 246, 0.4);
+        background: linear-gradient(180deg, #EFF6FF 0%, #FFFFFF 100%);
+    }
+
+    .compare-kpi-card.is-savings {
+        border-color: rgba(245, 158, 11, 0.4);
+        background: linear-gradient(180deg, #FFFBEB 0%, #FFFFFF 100%);
+    }
+
+    .kpi-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .kpi-title {
+        font-size: 0.76rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #64748B;
+    }
+
+    .compare-kpi-card.is-lowest .kpi-title { color: #059669; }
+    .compare-kpi-card.is-fastest .kpi-title { color: #2563EB; }
+    .compare-kpi-card.is-savings .kpi-title { color: #D97706; }
+
+    .kpi-value {
+        font-size: 1.4rem;
+        font-weight: 800;
+        font-family: 'Inter', sans-serif;
+        color: var(--ink, #0F172A);
+        line-height: 1.2;
+    }
+
+    .compare-kpi-card.is-lowest .kpi-value { color: #059669; }
+    .compare-kpi-card.is-fastest .kpi-value { color: #2563EB; }
+    .compare-kpi-card.is-savings .kpi-value { color: #D97706; }
+
+    .kpi-foot {
+        font-size: 0.78rem;
+        color: #64748B;
+        font-weight: 500;
+    }
+
+    /* Kıyaslama Tablosu */
+    .compare-table-card {
+        background: var(--surface, #FFFFFF);
+        border: 1px solid var(--grid, #E2E8F0);
+        border-radius: 14px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+    }
+
+    .compare-table-head-bar {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--grid, #E2E8F0);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        background: #FAFAFA;
+    }
+
+    .compare-table-head-bar h2 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--ink, #0F172A);
+        margin: 0;
+    }
+
+    .compare-actions-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .table-scroll-wrapper {
+        overflow-x: auto;
+        width: 100%;
+    }
+
+    .compare-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 0.85rem;
+    }
+
+    .compare-table th, .compare-table td {
+        padding: 14px 18px;
+        border-bottom: 1px solid #F1F5F9;
+        border-right: 1px solid #F1F5F9;
+    }
+
+    .compare-table th:last-child, .compare-table td:last-child {
+        border-right: none;
+    }
+
+    .compare-table thead th {
+        background: #F8FAFC;
+        font-weight: 700;
+        color: #334155;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .compare-table tbody tr:hover {
+        background: #F8FAFC;
+    }
+
+    /* Tedarikçi Kolonu Özel Vurgusu */
+    .compare-table tr.is-best-row {
+        background: rgba(16, 185, 129, 0.04);
+    }
+
+    .compare-table tr.is-best-row:hover {
+        background: rgba(16, 185, 129, 0.08);
+    }
+
+    .supplier-name-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .supplier-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 9px;
+        background: #EEF2F6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: #334155;
+        border: 1px solid #E2E8F0;
+    }
+
+    .badge-lowest {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #ECFDF5;
+        color: #065F46;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 0.72rem;
+        font-weight: 700;
+    }
+
+    .badge-fastest {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #EFF6FF;
+        color: #1E40AF;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 0.72rem;
+        font-weight: 700;
+    }
+
+    .price-main {
+        font-size: 1.05rem;
+        font-weight: 800;
+        font-family: 'Inter', sans-serif;
+        color: var(--ink, #0F172A);
+    }
+
+    .price-main.is-green {
+        color: #059669;
+    }
+
+    .price-unit {
+        font-size: 0.75rem;
+        color: #64748B;
+        font-weight: 500;
+        margin-top: 2px;
+    }
+
+    .btn-action-accept {
+        background: #10B981;
+        color: #FFFFFF;
+        border: none;
+        border-radius: 8px;
+        padding: 7px 14px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.15s, transform 0.1s;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-action-accept:hover {
+        background: #059669;
+        transform: translateY(-1px);
+    }
+
+    .btn-action-reject {
+        background: #FEE2E2;
+        color: #DC2626;
+        border: 1px solid #FCA5A5;
+        border-radius: 8px;
+        padding: 7px 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+    .btn-action-reject:hover {
+        background: #F87171;
+        color: #FFFFFF;
+    }
+
+    /* Grafik Kartı */
+    .compare-chart-card {
+        background: var(--surface, #FFFFFF);
+        border: 1px solid var(--grid, #E2E8F0);
+        border-radius: 14px;
+        padding: 20px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    }
+
+    .chart-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+    }
+
+    .chart-header h3 {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--ink, #0F172A);
+        margin: 0;
+    }
+
+    .chart-container {
+        height: 280px;
+        position: relative;
+        width: 100%;
+    }
+
+    @@media (max-width: 900px) {
+        .req-summary-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+        .req-selector-select {
+            width: 100%;
+            min-width: unset;
+        }
+    }
+
+    @@media (max-width: 600px) {
+        .req-summary-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="compare-container">
+
+    <!-- 1. ÜST BAŞLIK VE TALEP SEÇİCİ ÇUBUĞU -->
+    <div class="compare-header-card">
+        <div class="compare-top-bar">
+            
+            <div class="compare-title-wrap">
+                <span class="compare-icon-badge">📊</span>
+                <div>
+                    <h1>Tedarikçi Fiyat Kıyaslama & Teklif Analizi</h1>
+                    <p>Gelen teklifleri birim maliyet, termin ve ticari şartlarla yan yana kıyaslayın.</p>
+                </div>
+            </div>
+
+            <!-- Talep Seçici Dropdown -->
+            @if (Model.AvailableRequests != null && Model.AvailableRequests.Any())
+            {
+                <div>
+                    <select class="req-selector-select" onchange="window.location.href='/Requests/Compare/' + this.value;">
+                        @foreach (var r in Model.AvailableRequests)
+                        {
+                            if (req != null && r.RequestID == req.RequestID)
+                            {
+                                <option value="@r.RequestID" selected="selected">
+                                    📁 @r.Code: @r.ProductName (@r.OfferCount Teklif - @r.Status)
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@r.RequestID">
+                                    📁 @r.Code: @r.ProductName (@r.OfferCount Teklif - @r.Status)
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+            }
+        </div>
+
+        @if (req != null)
+        {
+            <!-- Seçili Talep Detay Şeridi -->
+            <div class="req-summary-grid">
+                <div class="req-info-block">
+                    <span class="req-info-label">Talep Kodu & Ürün Tanımı</span>
+                    <span class="req-info-value">REQ-@req.RequestID.ToString("D4"): @req.ProductName</span>
+                    <span class="req-info-sub">Kategori: @(req.RequestType ?? "Satın Alma") • Talep Tarihi: @(req.RequestDate?.ToString("dd.MM.yyyy") ?? "-")</span>
+                </div>
+
+                <div class="req-info-block">
+                    <span class="req-info-label">Talep Miktarı</span>
+                    <span class="req-info-value">@qty.ToString("N0") Adet</span>
+                    <span class="req-info-sub">Hedef Miktar</span>
+                </div>
+
+                <div class="req-info-block">
+                    <span class="req-info-label">Referans Bütçe</span>
+                    <span class="req-info-value" style="color: var(--blue, #2563EB);">
+                        @(req.EstimatedBudget.HasValue ? req.EstimatedBudget.Value.ToString("N2") + " ₺" : "Belirtilmedi")
+                    </span>
+                    <span class="req-info-sub">Tahmini Bütçe</span>
+                </div>
+
+                <div class="req-info-block">
+                    <span class="req-info-label">Talep Durumu</span>
+                    @if (Model.IsRequestApproved)
+                    {
+                        <span class="badge-status is-approved" style="font-size: 0.85rem; font-weight: 700; padding: 4px 10px; width: fit-content;">
+                            ✓ Onaylandı (@Model.WinningSupplierName)
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge-status is-pending" style="font-size: 0.85rem; font-weight: 700; padding: 4px 10px; width: fit-content;">
+                            ⏳ @(req.Status ?? "Teklif Alındı")
+                        </span>
+                    }
+                    <span class="req-info-sub">Hedef Teslim: @(req.TargetDeliveryDate?.ToString("dd.MM.yyyy") ?? "Belirtilmedi")</span>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(req.Notes))
+            {
+                <div style="background: #F8FAFC; padding: 10px 14px; border-radius: 8px; border: 1px solid #E2E8F0; font-size: 0.82rem; color: #475569;">
+                    <strong>Teknik Şartname & Notlar:</strong> @req.Notes
+                </div>
+            }
+        }
+        else
+        {
+            <div style="text-align: center; padding: 30px; color: #64748B;">
+                Henüz karşılaştırma yapılacak bir satın alma talebi bulunmuyor.
+            </div>
+        }
+    </div>
+
+    @if (offers != null && offers.Any())
+    {
+        <!-- 2. KPI / KARŞILAŞTIRMA ÖZET ROZETLERİ -->
+        <div class="compare-kpi-grid">
+            
+            <!-- En Düşük Teklif -->
+            <div class="compare-kpi-card is-lowest">
+                <div class="kpi-head">
+                    <span class="kpi-title">🟢 En Düşük Fiyat Teklifi</span>
+                    <span class="badge-lowest">En Ucuz</span>
+                </div>
+                <div class="kpi-value">
+                    @(Model.LowestOfferPrice?.ToString("N2")) ₺
+                </div>
+                <div class="kpi-foot">
+                    <strong>@Model.LowestOfferSupplierName</strong>
+                </div>
+            </div>
+
+            <!-- En Hızlı Teslimat -->
+            <div class="compare-kpi-card is-fastest">
+                <div class="kpi-head">
+                    <span class="kpi-title">⚡ En Hızlı Teslimat</span>
+                    <span class="badge-fastest">En Hızlı</span>
+                </div>
+                <div class="kpi-value">
+                    @Model.FastestDeliveryDays Gün
+                </div>
+                <div class="kpi-foot">
+                    <strong>@Model.FastestSupplierName</strong>
+                </div>
+            </div>
+
+            <!-- Bütçe Tasarrufu -->
+            <div class="compare-kpi-card is-savings">
+                <div class="kpi-head">
+                    <span class="kpi-title">💰 Bütçeye Göre Tasarruf</span>
+                    <span style="font-size: 0.75rem; font-weight: 700; color: #D97706;">Kazanç</span>
+                </div>
+                <div class="kpi-value">
+                    @if (Model.PotentialSavingsComparedToBudget.HasValue)
+                    {
+                        if (Model.PotentialSavingsComparedToBudget.Value >= 0)
+                        {
+                            <span>+ @(Model.PotentialSavingsComparedToBudget.Value.ToString("N2")) ₺</span>
+                        }
+                        else
+                        {
+                            <span style="color: #DC2626;">- @(Math.Abs(Model.PotentialSavingsComparedToBudget.Value).ToString("N2")) ₺</span>
+                        }
+                    }
+                    else if (Model.PotentialSavingsComparedToMax.HasValue)
+                    {
+                        <span>+ @(Model.PotentialSavingsComparedToMax.Value.ToString("N2")) ₺</span>
+                    }
+                    else
+                    {
+                        <span>-</span>
+                    }
+                </div>
+                <div class="kpi-foot">
+                    @(Model.PotentialSavingsComparedToBudget.HasValue ? "Hedef bütçeye kıyasla net fark" : "En pahalı teklife kıyasla tasarruf")
+                </div>
+            </div>
+
+            <!-- Ortalama Teklif -->
+            <div class="compare-kpi-card">
+                <div class="kpi-head">
+                    <span class="kpi-title">📈 Ortalama Teklif Tutarı</span>
+                    <span style="font-size: 0.75rem; color: #64748B;">@Model.TotalOfferCount Teklif</span>
+                </div>
+                <div class="kpi-value">
+                    @(Model.AverageOfferPrice?.ToString("N2")) ₺
+                </div>
+                <div class="kpi-foot">
+                    Kalem Başına: ~@((Model.AverageOfferPrice.GetValueOrDefault() / qty).ToString("N2")) ₺ / Adet
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 3. YAN YANA DETAYLI KIYASLAMA TABLOSU -->
+        <div class="compare-table-card">
+            
+            <div class="compare-table-head-bar">
+                <div>
+                    <h2>Tedarikçi Teklif Karşılaştırma Matrisi (@offers.Count Teklif)</h2>
+                </div>
+
+                <div class="compare-actions-bar">
+                    <button type="button" class="btn-secondary" onclick="exportCompareTableToCSV()" style="font-size: 0.82rem; padding: 7px 14px;">
+                        📊 Excel / CSV İndir
+                    </button>
+                    <button type="button" class="btn-secondary" onclick="window.print()" style="font-size: 0.82rem; padding: 7px 14px;">
+                        🖨️ Yazdır
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-scroll-wrapper">
+                <table class="compare-table" id="compareDataTable">
+                    <thead>
+                        <tr>
+                            <th>Tedarikçi Firma</th>
+                            <th>Toplam Teklif (₺)</th>
+                            <th>Birim Fiyat (₺/Adet)</th>
+                            <th>Teslimat (Termin)</th>
+                            <th>Geçerlilik</th>
+                            <th>Bütçe Sapması</th>
+                            <th>Tedarikçi Notları</th>
+                            <th>Durum</th>
+                            <th style="text-align: right;">Karar & İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var o in offers)
+                        {
+                            <tr class="@(o.IsLowestPrice ? "is-best-row" : "")">
+                                
+                                <!-- Tedarikçi -->
+                                <td>
+                                    <div class="supplier-name-cell">
+                                        <div class="supplier-avatar">
+                                            @(o.SupplierName.Length >= 2 ? o.SupplierName.Substring(0, 2).ToUpper() : "TF")
+                                        </div>
+                                        <div>
+                                            <strong style="color: var(--ink, #0F172A); font-size: 0.9rem;">@o.SupplierName</strong>
+                                            @if (!string.IsNullOrWhiteSpace(o.SupplierOfficial))
+                                            {
+                                                <div style="font-size: 0.76rem; color: #64748B;">Yetkili: @o.SupplierOfficial</div>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(o.SupplierPhone) || !string.IsNullOrWhiteSpace(o.SupplierMail))
+                                            {
+                                                <div style="font-size: 0.74rem; color: #94A3B8;">@(o.SupplierPhone ?? o.SupplierMail)</div>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <!-- Toplam Teklif -->
+                                <td>
+                                    <div class="price-main @(o.IsLowestPrice ? "is-green" : "")">
+                                        @o.OfferedPrice.ToString("N2") ₺
+                                    </div>
+                                    <div style="display: flex; gap: 4px; margin-top: 4px;">
+                                        @if (o.IsLowestPrice)
+                                        {
+                                            <span class="badge-lowest">🟢 En Uygun</span>
+                                        }
+                                        @if (o.IsFastestDelivery)
+                                        {
+                                            <span class="badge-fastest">⚡ En Hızlı</span>
+                                        }
+                                    </div>
+                                </td>
+
+                                <!-- Birim Fiyat -->
+                                <td>
+                                    <strong style="color: var(--ink, #0F172A);">@o.UnitOfferPrice.ToString("N2") ₺</strong>
+                                    <div class="price-unit">/ Adet</div>
+                                </td>
+
+                                <!-- Teslimat Süresi -->
+                                <td>
+                                    <strong>@o.DeliveryDays Gün</strong>
+                                    <div style="font-size: 0.75rem; color: #64748B;">Termin</div>
+                                </td>
+
+                                <!-- Geçerlilik Süresi -->
+                                <td>
+                                    <span>@o.ValidityDays Gün</span>
+                                </td>
+
+                                <!-- Bütçe Sapması -->
+                                <td>
+                                    @if (o.BudgetVariancePct.HasValue)
+                                    {
+                                        if (o.BudgetVariancePct.Value <= 0)
+                                        {
+                                            <span style="color: #059669; font-weight: 700;">%@Math.Abs(o.BudgetVariancePct.Value) Tasarruf</span>
+                                        }
+                                        else
+                                        {
+                                            <span style="color: #DC2626; font-weight: 700;">+%@o.BudgetVariancePct.Value Aşım</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span style="color: #94A3B8;">-</span>
+                                    }
+                                </td>
+
+                                <!-- Tedarikçi Notları -->
+                                <td style="max-width: 220px; font-size: 0.8rem; color: #475569;">
+                                    @(string.IsNullOrWhiteSpace(o.SupplierNotes) ? "—" : o.SupplierNotes)
+                                </td>
+
+                                <!-- Durum -->
+                                <td>
+                                    @if (o.IsAccepted)
+                                    {
+                                        <span class="badge-status is-approved">✓ Onaylandı</span>
+                                    }
+                                    else if (o.IsRejected)
+                                    {
+                                        <span class="badge-status is-rejected">✕ Reddedildi</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-status is-pending">⏳ @o.Status</span>
+                                    }
+                                </td>
+
+                                <!-- Karar ve İşlem Butonları -->
+                                <td style="text-align: right;">
+                                    @if (Model.IsOwner)
+                                    {
+                                        if (o.Status == "Beklemede" && !Model.IsRequestApproved)
+                                        {
+                                            <div style="display: inline-flex; gap: 6px;">
+                                                <button type="button" class="btn-action-accept" onclick="acceptOfferFromCompare(@o.OfferID, '@o.SupplierName', '@o.OfferedPrice.ToString("N2") ₺')">
+                                                    ✓ Kabul Et
+                                                </button>
+                                                <button type="button" class="btn-action-reject" onclick="rejectOfferFromCompare(@o.OfferID, '@o.SupplierName')">
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        }
+                                        else if (o.IsAccepted)
+                                        {
+                                            <span style="color: #059669; font-weight: 700; font-size: 0.8rem;">✓ Kazanan Teklif</span>
+                                        }
+                                        else
+                                        {
+                                            <span style="color: #94A3B8; font-size: 0.78rem;">Kapalı</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span style="color: #64748B; font-size: 0.8rem;">İnceleme Modu</span>
+                                    }
+                                </td>
+
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+        <!-- 4. GÖRSEL ANALİTİK & GRAFİK -->
+        <div class="compare-chart-card">
+            <div class="chart-header">
+                <div>
+                    <h3>Tedarikçi Teklif Tutarları Karşılaştırma Grafiği (₺)</h3>
+                    <p style="font-size: 0.78rem; color: #64748B; margin: 2px 0 0 0;">Yeşil sütun en uygun teklifi, kesikli çizgi referans bütçeyi temsil eder.</p>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="supplierComparisonChart"></canvas>
+            </div>
+        </div>
+    }
+    else if (req != null)
+    {
+        <div class="compare-header-card" style="text-align: center; padding: 40px 20px;">
+            <div style="font-size: 2.5rem; margin-bottom: 8px;">⏳</div>
+            <h3 style="color: #0F172A; font-weight: 700; margin: 0 0 6px 0;">Bu Talep İçin Henüz Teklif Bulunmuyor</h3>
+            <p style="color: #64748B; font-size: 0.85rem; max-width: 450px; margin: 0 auto 16px auto;">
+                Tedarikçiler satın alma talebinize fiyat teklifleri ilettikçe burada anlık ve kalem bazlı kıyaslama tablosu oluşacaktır.
+            </p>
+            <a asp-controller="Requests" asp-action="Index" class="btn-primary" style="margin: 0 auto; text-decoration: none;">
+                ← Taleplerime Geri Dön
+            </a>
+        </div>
+    }
+
+</div>
+
+@section Scripts {
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // 1. Chart.js Karşılaştırma Grafiği
+        @if (offers != null && offers.Any())
+        {
+            <text>
+            document.addEventListener("DOMContentLoaded", function () {
+                var ctx = document.getElementById('supplierComparisonChart');
+                if (ctx) {
+                    var labels = [
+                        @foreach (var o in offers)
+                        {
+                            @:"@Html.Raw(o.SupplierName)",
+                        }
+                    ];
+
+                    var dataPrices = [
+                        @foreach (var o in offers)
+                        {
+                            @:@o.OfferedPrice,
+                        }
+                    ];
+
+                    var lowestPrice = @(Model.LowestOfferPrice ?? 0);
+
+                    var bgColors = dataPrices.map(function (p) {
+                        return p === lowestPrice ? 'rgba(16, 185, 129, 0.85)' : 'rgba(59, 130, 246, 0.75)';
+                    });
+
+                    var borderColors = dataPrices.map(function (p) {
+                        return p === lowestPrice ? '#10B981' : '#2563EB';
+                    });
+
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Teklif Tutarı (₺)',
+                                data: dataPrices,
+                                backgroundColor: bgColors,
+                                borderColor: borderColors,
+                                borderWidth: 1.5,
+                                borderRadius: 8
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return ' Teklif: ' + Number(context.raw).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ₺';
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return Number(value).toLocaleString('tr-TR') + ' ₺';
+                                        }
+                                    },
+                                    grid: { color: '#F1F5F9' }
+                                },
+                                x: {
+                                    grid: { display: false }
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+            </text>
+        }
+
+        // 2. Kıyaslama Tablosundan Teklif Kabul Etme (AJAX)
+        async function acceptOfferFromCompare(offerId, supplierName, priceFormatted) {
+            if (!confirm(supplierName + ' firmasının ' + priceFormatted + ' tutarındaki teklifini KABUL ETMEK ve bu satın alma talebini ONAYLAMAK istiyor musunuz?')) {
+                return;
+            }
+
+            try {
+                var response = await fetch('/Requests/AcceptOfferAjax', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ offerId: offerId })
+                });
+
+                var result = await response.json();
+                if (result.success) {
+                    alert(result.message);
+                    window.location.reload();
+                } else {
+                    alert('Hata: ' + result.message);
+                }
+            } catch (err) {
+                alert('İşlem sırasında hata oluştu: ' + err.message);
+            }
+        }
+
+        // 3. Kıyaslama Tablosundan Teklif Reddetme (AJAX)
+        async function rejectOfferFromCompare(offerId, supplierName) {
+            var reason = prompt(supplierName + ' firmasının teklifini reddetmek için gerekçe giriniz (İsteğe bağlı):');
+            if (reason === null) return;
+
+            try {
+                var response = await fetch('/Requests/RejectOfferAjax', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ offerId: offerId, reason: reason })
+                });
+
+                var result = await response.json();
+                if (result.success) {
+                    alert(result.message);
+                    window.location.reload();
+                } else {
+                    alert('Hata: ' + result.message);
+                }
+            } catch (err) {
+                alert('İşlem sırasında hata oluştu: ' + err.message);
+            }
+        }
+
+        // 4. Excel / CSV Dışa Aktar
+        function exportCompareTableToCSV() {
+            var table = document.getElementById('compareDataTable');
+            if (!table) return;
+
+            var csv = [];
+            for (var i = 0; i < table.rows.length; i++) {
+                var row = [], cols = table.rows[i].querySelectorAll('td, th');
+                // Son işlem kolonunu hariç tut
+                for (var j = 0; j < cols.length - 1; j++) {
+                    var data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, ' ').replace(/"/g, '""').trim();
+                    row.push('"' + data + '"');
+                }
+                csv.push(row.join(';'));
+            }
+
+            var csvString = "\uFEFF" + csv.join('\n');
+            var blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            var link = document.createElement("a");
+            var url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "Tedarikci_Fiyat_Kiyaslama_Raporu.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+}

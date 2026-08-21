@@ -15,6 +15,7 @@ namespace satinalmaportali2.Data
         public DbSet<CompanyTypes> CompanyTypes { get; set; }
         public DbSet<MembershipTypes> MembershipTypes { get; set; }
         public DbSet<Requests> Requests { get; set; }
+        public DbSet<RequestOffers> RequestOffers { get; set; }
         public DbSet<Reviews> Reviews { get; set; }
         public DbSet<ItemsModel> Items { get; set; }
         public DbSet<Forms> Forms { get; set; }
@@ -58,6 +59,23 @@ namespace satinalmaportali2.Data
                 entity.ToTable("requests");
                 entity.HasKey(e => e.RequestID);
                 entity.Property(e => e.RequestID).ValueGeneratedOnAdd();
+
+                entity.HasMany(e => e.Offers)
+                    .WithOne(o => o.Request)
+                    .HasForeignKey(o => o.RequestID)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<RequestOffers>(entity =>
+            {
+                entity.ToTable("request_offers");
+                entity.HasKey(e => e.OfferID);
+                entity.Property(e => e.OfferID).ValueGeneratedOnAdd();
+
+                entity.HasOne(e => e.Supplier)
+                    .WithMany()
+                    .HasForeignKey(e => e.SupplierID)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<Reviews>(entity =>
