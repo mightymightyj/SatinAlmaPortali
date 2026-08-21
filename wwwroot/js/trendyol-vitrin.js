@@ -1067,7 +1067,6 @@ function openSellerOfferModal(productId) {
     if (!modal) return;
 
     const nameInput = document.getElementById('sellerOfferProductName');
-    const catSelect = document.getElementById('sellerOfferCategory');
     const priceInput = document.getElementById('sellerOfferPrice');
     const stockInput = document.getElementById('sellerOfferStock');
 
@@ -1080,25 +1079,8 @@ function openSellerOfferModal(productId) {
         if (priceInput) priceInput.value = product.price;
         if (stockInput) stockInput.value = '100';
 
-        if (catSelect) {
-            // N-Seviyeli kategoriyi data-path, value veya text üzerinden akıllı eşleştir
-            let matched = false;
-            const searchCat = (product.categoryName || '').toLowerCase();
-            for (let i = 0; i < catSelect.options.length; i++) {
-                const opt = catSelect.options[i];
-                const val = (opt.value || '').toLowerCase();
-                const text = (opt.text || '').toLowerCase();
-                const path = (opt.getAttribute('data-path') || '').toLowerCase();
-                if (val && (val === searchCat || path.includes(searchCat) || text.includes(searchCat))) {
-                    catSelect.selectedIndex = i;
-                    matched = true;
-                    break;
-                }
-            }
-            if (!matched && catSelect.options.length > 1) {
-                catSelect.selectedIndex = 1;
-            }
-        }
+        // Kategori ağacında eşleşen düğümü bul ve seç
+        autoSelectCatInTree(product.categoryName);
     } else {
         document.getElementById('sellerModalProductInfo').innerHTML = `
             <strong>Yeni Kurumsal Portföy & Toptan Satış İlanı</strong> <br/>
@@ -1107,10 +1089,155 @@ function openSellerOfferModal(productId) {
         if (nameInput) nameInput.value = '';
         if (priceInput) priceInput.value = '';
         if (stockInput) stockInput.value = '';
-        if (catSelect) catSelect.selectedIndex = 0;
+        clearCatTreeSelection();
     }
 
     modal.classList.add('show');
+}
+
+/**
+ * Kompakt Kategori Ağacı Seçici Fonksiyonları (SuperAdmin Esintili)
+ */
+function toggleCatTreeBranch(btn, targetId) {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    if (target.classList.contains('is-hidden')) {
+        target.classList.remove('is-hidden');
+        btn.classList.remove('is-collapsed');
+    } else {
+        target.classList.add('is-hidden');
+        btn.classList.add('is-collapsed');
+    }
+}
+
+function expandAllCatTreePicker() {
+    document.querySelectorAll('#catTreePickerList .cat-children-wrap').forEach(el => {
+        el.classList.remove('is-hidden');
+    });
+    document.querySelectorAll('#catTreePickerList .cat-toggle-btn').forEach(btn => {
+        btn.classList.remove('is-collapsed');
+    });
+}
+
+function collapseAllCatTreePicker() {
+    document.querySelectorAll('#catTreePickerList .cat-children-wrap').forEach(el => {
+        el.classList.add('is-hidden');
+    });
+    document.querySelectorAll('#catTreePickerList .cat-toggle-btn').forEach(btn => {
+        btn.classList.add('is-collapsed');
+    });
+}
+
+function filterCatTreePicker(query) {
+    const q = (query || '').trim().toLowerCase();
+    const nodes = document.querySelectorAll('#catTreePickerList .cat-tree-node');
+
+    if (!q) {
+        nodes.forEach(n => n.style.display = '');
+        return;
+    }
+
+    expandAllCatTreePicker();
+
+    nodes.forEach(node => {
+        const catName = node.getAttribute('data-cat-name') || '';
+        const catPath = (node.getAttribute('data-cat-path') || '').toLowerCase();
+        const matchesSelf = catName.includes(q) || catPath.includes(q);
+
+        let hasMatchingChild = false;
+        node.querySelectorAll('.cat-tree-node').forEach(child => {
+            const childName = child.getAttribute('data-cat-name') || '';
+            const childPath = (child.getAttribute('data-cat-path') || '').toLowerCase();
+            if (childName.includes(q) || childPath.includes(q)) {
+                hasMatchingChild = true;
+            }
+        });
+
+        if (matchesSelf || hasMatchingChild) {
+            node.style.display = '';
+        } else {
+            node.style.display = 'none';
+        }
+    });
+}
+
+function selectCatFromTree(catId, catName, breadcrumbPath) {
+    const hiddenCatInput = document.getElementById('sellerOfferCategory');
+    const hiddenIdInput = document.getElementById('sellerOfferCategoryId');
+    const displayBox = document.getElementById('catTreeSelectedDisplay');
+    const displayText = document.getElementById('catTreeSelectedText');
+    const displayIcon = document.getElementById('catTreeSelectedIcon');
+
+    if (hiddenCatInput) hiddenCatInput.value = catName;
+    if (hiddenIdInput) hiddenIdInput.value = catId;
+
+    if (displayBox && displayText) {
+        displayBox.classList.remove('is-empty');
+        displayBox.style.background = '#eff6ff';
+        displayBox.style.borderColor = '#93c5fd';
+        displayBox.style.color = '#1d4ed8';
+        displayText.innerHTML = `<strong>${catName}</strong> <span style="font-size:0.74rem; opacity:0.85; margin-left:4px;">(${breadcrumbPath || catName})</span>`;
+        if (displayIcon) displayIcon.textContent = '✅';
+    }
+
+    // Seçilen satırı görsel olarak vurgula
+    document.querySelectorAll('#catTreePickerList .cat-node-row').forEach(row => {
+        row.classList.remove('is-selected');
+    });
+
+    const targetNode = document.querySelector(`#catTreePickerList .cat-tree-node[data-cat-id="${catId}"] > .cat-node-row`);
+    if (targetNode) {
+        targetNode.classList.add('is-selected');
+    }
+}
+
+function autoSelectCatInTree(catName) {
+    if (!catName) return;
+    const searchCat = catName.toLowerCase();
+    const allNodes = document.querySelectorAll('#catTreePickerList .cat-tree-node');
+    let matched = false;
+
+    for (let i = 0; i < allNodes.length; i++) {
+        const node = allNodes[i];
+        const name = (node.getAttribute('data-cat-name') || '').toLowerCase();
+        const path = (node.getAttribute('data-cat-path') || '').toLowerCase();
+        const id = node.getAttribute('data-cat-id');
+
+        if (name === searchCat || path.includes(searchCat) || searchCat.includes(name)) {
+            const rawName = node.querySelector('.cat-node-title')?.textContent?.trim() || catName;
+            selectCatFromTree(id, rawName, node.getAttribute('data-cat-path') || rawName);
+            matched = true;
+            break;
+        }
+    }
+
+    if (!matched) {
+        selectCatFromTree(1, catName, catName);
+    }
+}
+
+function clearCatTreeSelection() {
+    const hiddenCatInput = document.getElementById('sellerOfferCategory');
+    const hiddenIdInput = document.getElementById('sellerOfferCategoryId');
+    const displayBox = document.getElementById('catTreeSelectedDisplay');
+    const displayText = document.getElementById('catTreeSelectedText');
+    const displayIcon = document.getElementById('catTreeSelectedIcon');
+
+    if (hiddenCatInput) hiddenCatInput.value = '';
+    if (hiddenIdInput) hiddenIdInput.value = '';
+
+    if (displayBox && displayText) {
+        displayBox.classList.add('is-empty');
+        displayBox.style.background = '';
+        displayBox.style.borderColor = '';
+        displayBox.style.color = '';
+        displayText.textContent = 'Lütfen aşağıdaki ağaçtan bir kategori seçiniz...';
+        if (displayIcon) displayIcon.textContent = '📁';
+    }
+
+    document.querySelectorAll('#catTreePickerList .cat-node-row').forEach(row => {
+        row.classList.remove('is-selected');
+    });
 }
 
 /**
@@ -1140,11 +1267,15 @@ function submitQuoteRequest(e) {
 function submitSellerOffer(e) {
     e.preventDefault();
     const productName = document.getElementById('sellerOfferProductName')?.value || 'Yeni Ürün';
-    const catSelect = document.getElementById('sellerOfferCategory');
-    const selectedOption = catSelect?.options[catSelect.selectedIndex];
-    const category = selectedOption?.getAttribute('data-path') || selectedOption?.value || 'Genel Kategori';
+    const category = document.getElementById('sellerOfferCategory')?.value;
     const price = document.getElementById('sellerOfferPrice')?.value || '';
     const stock = document.getElementById('sellerOfferStock')?.value || '';
+
+    if (!category) {
+        showB2BToast("⚠️ Lütfen ürünün dahil olduğu kategoriyi kategori ağacından seçiniz.", "info");
+        document.getElementById('catTreePickerSearch')?.focus();
+        return false;
+    }
 
     closeTyModal('tySellerOfferModal');
     showB2BToast(`🏢 "${productName}" ürünü [${category}] kategorisinde satışa açılmak üzere başarıyla kaydedildi.`, "success");

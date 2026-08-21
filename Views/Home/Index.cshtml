@@ -2,6 +2,59 @@
     ViewData["Title"] = "Ana Sayfa - B2B Kurumsal Tedarik Portalı";
 }
 
+@functions {
+    public static Microsoft.AspNetCore.Html.IHtmlContent RenderSuperAdminTree(satinalmaportali2.Controllers.HierarchicalCategoryItem node, int level)
+    {
+        var hasChildren = node.Children != null && node.Children.Count > 0;
+        var indent = level * 16;
+        var icon = level == 0 ? "📁" : level == 1 ? "📂" : level == 2 ? "🏷️" : "🔹";
+        var encodedName = System.Net.WebUtility.HtmlEncode(node.CategoryName ?? "");
+        var encodedPath = System.Net.WebUtility.HtmlEncode(node.BreadcrumbPath ?? "");
+        var safeJsName = (node.CategoryName ?? "").Replace("'", "\\'");
+        var safeJsPath = (node.BreadcrumbPath ?? "").Replace("'", "\\'");
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"<div class=\"cat-tree-node level-{Math.Min(level, 3)}\" data-cat-id=\"{node.CategoryID}\" data-cat-name=\"{encodedName.ToLowerInvariant()}\" data-cat-path=\"{encodedPath}\" style=\"margin-left: {indent}px;\">");
+        sb.Append($"<div class=\"cat-node-row {(level == 0 ? "is-root" : "")}\" onclick=\"selectCatFromTree({node.CategoryID}, '{safeJsName}', '{safeJsPath}')\" title=\"'{encodedPath}' kategorisini seç\">");
+        sb.Append("<div class=\"cat-node-left\">");
+
+        if (hasChildren)
+        {
+            sb.Append($"<button type=\"button\" class=\"cat-toggle-btn\" onclick=\"event.stopPropagation(); toggleCatTreeBranch(this, 'picker-branch-{node.CategoryID}')\" title=\"Genişlet / Daralt\"><svg width=\"10\" height=\"10\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" class=\"toggle-icon\"><polyline points=\"6 9 12 15 18 9\"></polyline></svg></button>");
+        }
+        else
+        {
+            sb.Append($"<span class=\"cat-tree-bullet\">{(level == 0 ? "📁" : "↳")}</span>");
+        }
+
+        sb.Append($"<span class=\"cat-node-icon\">{icon}</span>");
+        sb.Append($"<span class=\"cat-node-title\">{encodedName}</span>");
+        sb.Append($"<span class=\"cat-node-id\">#{node.CategoryID}</span>");
+
+        if (hasChildren)
+        {
+            sb.Append($"<span class=\"cat-node-count\">{node.Children!.Count} alt</span>");
+        }
+
+        sb.Append("</div>");
+        sb.Append($"<button type=\"button\" class=\"btn-compact-select\" onclick=\"event.stopPropagation(); selectCatFromTree({node.CategoryID}, '{safeJsName}', '{safeJsPath}')\">Seç</button>");
+        sb.Append("</div>");
+
+        if (hasChildren && node.Children != null)
+        {
+            sb.Append($"<div class=\"cat-children-wrap\" id=\"picker-branch-{node.CategoryID}\">");
+            foreach (var child in node.Children)
+            {
+                sb.Append(RenderSuperAdminTree(child, level + 1).ToString());
+            }
+            sb.Append("</div>");
+        }
+
+        sb.Append("</div>");
+        return new Microsoft.AspNetCore.Html.HtmlString(sb.ToString());
+    }
+}
+
 <!-- SECTION 1: TOP HERO HEADER AREA -->
 <section class="blue-hero-container">
     <div class="hero-inner">
@@ -414,45 +467,57 @@
                 <input type="text" id="sellerOfferProductName" class="form-control" placeholder="Örn: DIN 933 A2 Paslanmaz Cıvata M8x30" required style="border-radius: 6px; font-size: 0.85rem;" />
             </div>
 
-            <div style="margin-bottom: 12px;">
-                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Kategori *</label>
-                <select id="sellerOfferCategory" class="form-control" required style="border-radius: 6px; font-size: 0.85rem;">
-                    <option value="">-- Kategori Seçiniz --</option>
-                    @if (ViewBag.HierarchicalCategories != null && ((IEnumerable<satinalmaportali2.Controllers.HierarchicalCategoryItem>)ViewBag.HierarchicalCategories).Any())
-                    {
-                        var flatCategories = (IEnumerable<satinalmaportali2.Controllers.HierarchicalCategoryItem>)ViewBag.HierarchicalCategories;
-                        foreach (var cat in flatCategories)
-                        {
-                            string optStyle = cat.Level switch
-                            {
-                                0 => "font-weight: 700; background-color: #f1f5f9; color: #0f172a;",
-                                1 => "font-weight: 600; color: #1e293b; padding-left: 10px;",
-                                2 => "font-weight: 500; color: #334155; padding-left: 20px;",
-                                _ => "font-weight: 400; color: #475569; padding-left: 30px;"
-                            };
+            <div style="margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <label style="font-size: 0.8rem; font-weight: 700; color: #334155; margin: 0;">Kategori Seçimi *</label>
+                    <span style="font-size: 0.72rem; color: #64748b;">(Ağaçtan tıklayarak seçiniz)</span>
+                </div>
 
-                            <option value="@cat.CategoryName" data-path="@cat.BreadcrumbPath" data-level="@cat.Level" style="@optStyle">
-                                @cat.FormattedName
-                            </option>
+                <!-- Gizli Inputlar (Form Validasyonu & Gönderim İçin) -->
+                <input type="hidden" id="sellerOfferCategory" name="CategoryName" required />
+                <input type="hidden" id="sellerOfferCategoryId" name="CategoryID" />
+
+                <!-- SuperAdmin Esintili Kompakt Kategori Ağacı Seçici -->
+                <div class="b2b-cat-picker-container">
+                    <!-- Seçili Kategori Rozet Alanı -->
+                    <div class="b2b-cat-picker-header">
+                        <div id="catTreeSelectedDisplay" class="b2b-cat-picker-selected is-empty">
+                            <span id="catTreeSelectedIcon">📁</span>
+                            <span class="b2b-cat-selected-text" id="catTreeSelectedText">Lütfen aşağıdaki ağaçtan bir kategori seçiniz...</span>
+                        </div>
+                        <button type="button" class="btn-tree-tool" onclick="clearCatTreeSelection()" title="Seçimi Temizle">Temizle</button>
+                    </div>
+
+                    <!-- Canlı Arama ve Hızlı Ağaç Kontrolleri -->
+                    <div style="display: flex; gap: 6px; margin-bottom: 6px;">
+                        <div class="b2b-cat-search-box" style="flex: 1; margin-bottom: 0;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            <input type="text" id="catTreePickerSearch" placeholder="Kategori veya alt dal ara (örn: Paslanmaz, CNC, Boru...)" oninput="filterCatTreePicker(this.value)" />
+                        </div>
+                        <div class="b2b-cat-tree-controls">
+                            <button type="button" class="btn-tree-tool" onclick="expandAllCatTreePicker()" title="Tüm Düşey Dalları Aç">Tümünü Aç</button>
+                            <button type="button" class="btn-tree-tool" onclick="collapseAllCatTreePicker()" title="Tüm Dalları Kapat">Kapat</button>
+                        </div>
+                    </div>
+
+                    <!-- Kompakt Hiyerarşik Ağaç Listesi -->
+                    <div class="cat-compact-tree-box" id="catTreePickerList">
+                        @if (ViewBag.CategoryTree != null && ((IEnumerable<satinalmaportali2.Controllers.HierarchicalCategoryItem>)ViewBag.CategoryTree).Any())
+                        {
+                            var rootCategories = (IEnumerable<satinalmaportali2.Controllers.HierarchicalCategoryItem>)ViewBag.CategoryTree;
+                            foreach (var root in rootCategories)
+                            {
+                                @RenderSuperAdminTree(root, 0)
+                            }
                         }
-                    }
-                    else
-                    {
-                        <option value="Makine & Metal Sanayi" style="font-weight: 700; background: #f1f5f9;">📁 Makine & Metal Sanayi</option>
-                        <option value="Talaşlı İmalat">&nbsp;&nbsp;↳ 📂 Talaşlı İmalat & CNC</option>
-                        <option value="CNC Freze">&nbsp;&nbsp;&nbsp;&nbsp;↳ 🏷️ CNC Freze & Torna Parçaları</option>
-                        <option value="Elektrik & Otomasyon" style="font-weight: 700; background: #f1f5f9;">📁 Elektrik & Otomasyon</option>
-                        <option value="PLC & Sürücüler">&nbsp;&nbsp;↳ 📂 PLC & Sürücüler</option>
-                        <option value="Sensör & Şalt">&nbsp;&nbsp;&nbsp;&nbsp;↳ 🏷️ Endüstriyel Sensör & Şalt</option>
-                        <option value="Hırdavat & Bağlantı" style="font-weight: 700; background: #f1f5f9;">📁 Hırdavat & Bağlantı Elemanları</option>
-                        <option value="Civata & Somun">&nbsp;&nbsp;↳ 📂 Civata, Somun & Pul</option>
-                        <option value="Paslanmaz Civata">&nbsp;&nbsp;&nbsp;&nbsp;↳ 🏷️ Paslanmaz Civata & Saplama</option>
-                        <option value="Bilişim & Altyapı" style="font-weight: 700; background: #f1f5f9;">📁 Bilişim & Altyapı</option>
-                        <option value="Ambalaj & Lojistik" style="font-weight: 700; background: #f1f5f9;">📁 Ambalaj & Lojistik</option>
-                        <option value="Kimya & Hammadde" style="font-weight: 700; background: #f1f5f9;">📁 Kimya & Sanayi Hammaddeleri</option>
-                        <option value="Kurumsal Ofis & Sarf" style="font-weight: 700; background: #f1f5f9;">📁 Kurumsal Ofis & Sarf Malzemeleri</option>
-                    }
-                </select>
+                        else
+                        {
+                            <div style="padding: 12px; text-align: center; color: #94a3b8; font-size: 0.8rem;">
+                                Kategori listesi yükleniyor...
+                            </div>
+                        }
+                    </div>
+                </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
