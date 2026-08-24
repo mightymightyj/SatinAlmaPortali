@@ -73,6 +73,9 @@ namespace satinalmaportali2.Models
         public string Status { get; set; } = "Beklemede";
         public string? SupplierNotes { get; set; }
         public string? RejectionReason { get; set; }
+        public bool IsRevised { get; set; }
+        public decimal? PreviousPrice { get; set; }
+        public string? PreviousRejectionReason { get; set; }
         public bool IsAccepted => Status == "Kabul Edildi";
         public bool IsRejected => Status == "Reddedildi";
     }
@@ -105,6 +108,8 @@ namespace satinalmaportali2.Models
         public string? MyOfferNotes { get; set; }
         public string? MyOfferStatus { get; set; }
         public string? MyOfferRejectionReason { get; set; }
+        public bool HasRevisedOffers { get; set; }
+        public int RevisedOfferCount { get; set; }
     }
 
     public class RequestDetailViewModel
@@ -202,6 +207,9 @@ namespace satinalmaportali2.Models
         public string Status { get; set; } = "Beklemede";
         public string? SupplierNotes { get; set; }
         public string? RejectionReason { get; set; }
+        public bool IsRevised { get; set; }
+        public decimal? PreviousPrice { get; set; }
+        public string? PreviousRejectionReason { get; set; }
         public bool IsAccepted => Status == "Kabul Edildi";
         public bool IsRejected => Status == "Reddedildi";
         public bool IsLowestPrice { get; set; }

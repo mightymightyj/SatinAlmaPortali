@@ -645,9 +645,15 @@
                                             {
                                                 <div style="font-size: 0.76rem; color: #64748B;">Yetkili: @o.SupplierOfficial</div>
                                             }
-                                            @if (!string.IsNullOrWhiteSpace(o.SupplierPhone) || !string.IsNullOrWhiteSpace(o.SupplierMail))
+                                            @if (!string.IsNullOrEmpty(o.SupplierPhone) || !string.IsNullOrEmpty(o.SupplierMail))
                                             {
                                                 <div style="font-size: 0.74rem; color: #94A3B8;">@(o.SupplierPhone ?? o.SupplierMail)</div>
+                                            }
+                                            @if (o.IsRevised)
+                                            {
+                                                <div style="display: inline-flex; align-items: center; gap: 4px; background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; font-size: 0.70rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-top: 3px;" title="Reddedilen teklif tedarikçi tarafından güncellendi. @(o.PreviousPrice.HasValue ? $"Önceki: {o.PreviousPrice.Value:N2} ₺" : "")">
+                                                    🔄 Revize Edildi @(o.PreviousPrice.HasValue ? $"({o.PreviousPrice.Value:N2} ₺)" : "")
+                                                </div>
                                             }
                                         </div>
                                     </div>
@@ -711,6 +717,12 @@
                                     @if (!string.IsNullOrWhiteSpace(o.SupplierNotes))
                                     {
                                         <div>@o.SupplierNotes</div>
+                                    }
+                                    @if (o.IsRevised)
+                                    {
+                                        <div style="font-size: 0.74rem; color: #92400E; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 4px; padding: 3px 6px; margin-top: 3px; font-weight: 600;">
+                                            🔄 Tedarikçi reddedilen teklifini revize etti. @(o.PreviousPrice.HasValue ? $"Önceki: {o.PreviousPrice.Value:N2} ₺" : "")
+                                        </div>
                                     }
                                     @if (o.IsRejected && !string.IsNullOrWhiteSpace(o.RejectionReason))
                                     {

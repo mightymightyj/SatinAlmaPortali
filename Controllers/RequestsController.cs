@@ -155,7 +155,8 @@ namespace satinalmaportali2.Controllers
                         bool isOwner = IsRequestOwnedByCurrentCompany(req, currentCompanyId, currentCompany);
                         var myOffer = currentCompanyId > 0 ? req.Offers.FirstOrDefault(o => o.SupplierID == currentCompanyId) : null;
                         var bestOffer = req.Offers.Any() ? req.Offers.Min(o => o.OfferedPrice) : (decimal?)null;
-                        var (cleanNotes, myRejectionReason) = ParseSupplierNotes(myOffer?.SupplierNotes);
+                        var (cleanNotes, myRejectionReason, _, _, _) = ParseSupplierNotes(myOffer?.SupplierNotes);
+                        int revisedOffersCount = req.Offers.Count(o => ParseSupplierNotes(o.SupplierNotes).IsRevised);
 
                         requestList.Add(new RequestListItemViewModel
                         {
@@ -182,7 +183,9 @@ namespace satinalmaportali2.Controllers
                             MyOfferDeliveryDays = myOffer?.DeliveryDays,
                             MyOfferNotes = cleanNotes,
                             MyOfferStatus = myOffer?.Status,
-                            MyOfferRejectionReason = myRejectionReason ?? (myOffer?.Status == "Reddedildi" ? "Talep için başka bir tedarikçinin teklifi kabul edildi." : null)
+                            MyOfferRejectionReason = myRejectionReason ?? (myOffer?.Status == "Reddedildi" ? "Talep için başka bir tedarikçinin teklifi kabul edildi." : null),
+                            HasRevisedOffers = revisedOffersCount > 0,
+                            RevisedOfferCount = revisedOffersCount
                         });
                     }
                 }
@@ -423,15 +426,31 @@ namespace satinalmaportali2.Controllers
                         return RedirectToAction(nameof(Index));
                     }
 
-                    bool wasRejected = string.Equals(existingOffer.Status, "Reddedildi", StringComparison.OrdinalIgnoreCase);
+                    var parsedPrev = ParseSupplierNotes(existingOffer.SupplierNotes);
+                    bool wasRejected = string.Equals(existingOffer.Status, "Reddedildi", StringComparison.OrdinalIgnoreCase) 
+                                       || !string.IsNullOrWhiteSpace(parsedPrev.RejectionReason)
+                                       || parsedPrev.IsRevised;
+
+                    decimal prevPrice = existingOffer.OfferedPrice;
+                    string prevRej = parsedPrev.RejectionReason ?? parsedPrev.PreviousRejectionReason ?? "Alıcı tarafından reddedildi";
 
                     // Güncelle / Revize et
                     existingOffer.OfferedPrice = input.OfferedPrice;
                     existingOffer.DeliveryDays = input.DeliveryDays;
                     existingOffer.ValidityDays = input.ValidityDays;
-                    existingOffer.SupplierNotes = input.SupplierNotes;
                     existingOffer.OfferDate = DateTime.UtcNow;
                     existingOffer.Status = "Beklemede";
+
+                    if (wasRejected)
+                    {
+                        string revisionTag = $"[Revize:EskiFiyat={prevPrice.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}|EskiRed={prevRej.Replace("|", " ").Replace("]", "")}]";
+                        string cleanUserNote = input.SupplierNotes?.Trim() ?? "";
+                        existingOffer.SupplierNotes = string.IsNullOrWhiteSpace(cleanUserNote) ? revisionTag : $"{cleanUserNote} {revisionTag}";
+                    }
+                    else
+                    {
+                        existingOffer.SupplierNotes = input.SupplierNotes;
+                    }
 
                     if (request.Status == "Beklemede")
                     {
@@ -539,14 +558,30 @@ namespace satinalmaportali2.Controllers
                         return Json(new { success = false, message = "Bu teklif alıcı tarafından onaylandığı için artık düzenlenemez." });
                     }
 
-                    bool wasRejected = string.Equals(existingOffer.Status, "Reddedildi", StringComparison.OrdinalIgnoreCase);
+                    var parsedPrev = ParseSupplierNotes(existingOffer.SupplierNotes);
+                    bool wasRejected = string.Equals(existingOffer.Status, "Reddedildi", StringComparison.OrdinalIgnoreCase)
+                                       || !string.IsNullOrWhiteSpace(parsedPrev.RejectionReason)
+                                       || parsedPrev.IsRevised;
+
+                    decimal prevPrice = existingOffer.OfferedPrice;
+                    string prevRej = parsedPrev.RejectionReason ?? parsedPrev.PreviousRejectionReason ?? "Alıcı tarafından reddedildi";
 
                     existingOffer.OfferedPrice = input.OfferedPrice;
                     existingOffer.DeliveryDays = input.DeliveryDays;
                     existingOffer.ValidityDays = input.ValidityDays;
-                    existingOffer.SupplierNotes = input.SupplierNotes;
                     existingOffer.OfferDate = DateTime.UtcNow;
                     existingOffer.Status = "Beklemede";
+
+                    if (wasRejected)
+                    {
+                        string revisionTag = $"[Revize:EskiFiyat={prevPrice.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}|EskiRed={prevRej.Replace("|", " ").Replace("]", "")}]";
+                        string cleanUserNote = input.SupplierNotes?.Trim() ?? "";
+                        existingOffer.SupplierNotes = string.IsNullOrWhiteSpace(cleanUserNote) ? revisionTag : $"{cleanUserNote} {revisionTag}";
+                    }
+                    else
+                    {
+                        existingOffer.SupplierNotes = input.SupplierNotes;
+                    }
 
                     if (request.Status == "Beklemede")
                     {
@@ -716,36 +751,93 @@ namespace satinalmaportali2.Controllers
         }
 
         /// <summary>
-        /// Tedarikçi notları içerisinden sistem veya kullanıcı red gerekçesini ayrıştırır.
+        /// Tedarikçi notları içerisinden sistem red gerekçesini ve revizyon durumunu ayrıştırır.
         /// </summary>
-        public static (string? CleanNotes, string? RejectionReason) ParseSupplierNotes(string? rawNotes)
+        public static (string? CleanNotes, string? RejectionReason, bool IsRevised, decimal? PreviousPrice, string? PreviousRejectionReason) ParseSupplierNotes(string? rawNotes)
         {
             if (string.IsNullOrWhiteSpace(rawNotes))
-                return (null, null);
+                return (null, null, false, null, null);
 
-            const string tag = "[Red Gerekçesi:";
-            int idx = rawNotes.IndexOf(tag, StringComparison.OrdinalIgnoreCase);
-            if (idx >= 0)
+            string notes = rawNotes;
+            string? rejectionReason = null;
+            bool isRevised = false;
+            decimal? prevPrice = null;
+            string? prevRejectionReason = null;
+
+            // 1. Red Gerekçesi Ayrıştırma: [Red Gerekçesi: ...]
+            const string redTag = "[Red Gerekçesi:";
+            int redIdx = notes.IndexOf(redTag, StringComparison.OrdinalIgnoreCase);
+            if (redIdx >= 0)
             {
-                int endIdx = rawNotes.IndexOf("]", idx, StringComparison.OrdinalIgnoreCase);
-                string reason;
-                if (endIdx > idx)
+                int endIdx = notes.IndexOf("]", redIdx, StringComparison.OrdinalIgnoreCase);
+                if (endIdx > redIdx)
                 {
-                    reason = rawNotes.Substring(idx + tag.Length, endIdx - (idx + tag.Length)).Trim();
-                    string before = rawNotes.Substring(0, idx).TrimEnd(' ', '|');
-                    string after = (endIdx + 1 < rawNotes.Length) ? rawNotes.Substring(endIdx + 1).TrimStart(' ', '|') : "";
-                    string clean = (before + " " + after).Trim();
-                    return (string.IsNullOrWhiteSpace(clean) ? null : clean, reason);
+                    rejectionReason = notes.Substring(redIdx + redTag.Length, endIdx - (redIdx + redTag.Length)).Trim();
+                    notes = notes.Remove(redIdx, endIdx - redIdx + 1);
                 }
                 else
                 {
-                    reason = rawNotes.Substring(idx + tag.Length).Trim();
-                    string clean = rawNotes.Substring(0, idx).TrimEnd(' ', '|');
-                    return (string.IsNullOrWhiteSpace(clean) ? null : clean, reason);
+                    rejectionReason = notes.Substring(redIdx + redTag.Length).Trim();
+                    notes = notes.Substring(0, redIdx);
                 }
             }
 
-            return (rawNotes.Trim(), null);
+            // 2. Revize Etiketi Ayrıştırma: [Revize:EskiFiyat=...|EskiRed=...] veya [Revize Teklif...]
+            const string revTag = "[Revize:";
+            int revIdx = notes.IndexOf(revTag, StringComparison.OrdinalIgnoreCase);
+            if (revIdx >= 0)
+            {
+                isRevised = true;
+                int endIdx = notes.IndexOf("]", revIdx, StringComparison.OrdinalIgnoreCase);
+                string revContent = (endIdx > revIdx)
+                    ? notes.Substring(revIdx + revTag.Length, endIdx - (revIdx + revTag.Length))
+                    : notes.Substring(revIdx + revTag.Length);
+
+                var parts = revContent.Split('|');
+                foreach (var p in parts)
+                {
+                    var kv = p.Split('=');
+                    if (kv.Length == 2)
+                    {
+                        var k = kv[0].Trim().ToLower();
+                        var v = kv[1].Trim();
+                        if (k == "eskifiyat")
+                        {
+                            if (decimal.TryParse(v, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsedP))
+                                prevPrice = parsedP;
+                            else if (decimal.TryParse(v, System.Globalization.NumberStyles.Any, new System.Globalization.CultureInfo("tr-TR"), out var parsedPTr))
+                                prevPrice = parsedPTr;
+                        }
+                        else if (k == "eskired")
+                        {
+                            prevRejectionReason = v;
+                        }
+                    }
+                }
+
+                if (endIdx > revIdx)
+                    notes = notes.Remove(revIdx, endIdx - revIdx + 1);
+                else
+                    notes = notes.Substring(0, revIdx);
+            }
+            else if (notes.IndexOf("[Revize", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                isRevised = true;
+                int genericRevIdx = notes.IndexOf("[Revize", StringComparison.OrdinalIgnoreCase);
+                int endIdx = notes.IndexOf("]", genericRevIdx, StringComparison.OrdinalIgnoreCase);
+                if (endIdx > genericRevIdx)
+                    notes = notes.Remove(genericRevIdx, endIdx - genericRevIdx + 1);
+                else
+                    notes = notes.Substring(0, genericRevIdx);
+            }
+
+            string clean = notes.Replace("|", " ").Trim();
+            while (clean.Contains("  "))
+            {
+                clean = clean.Replace("  ", " ");
+            }
+
+            return (string.IsNullOrWhiteSpace(clean) ? null : clean, rejectionReason, isRevised, prevPrice, prevRejectionReason);
         }
 
         /// <summary>
@@ -804,7 +896,7 @@ namespace satinalmaportali2.Controllers
                         var rejEmail = rej.Supplier.CompanyMail.Trim();
                         var rejName = rej.Supplier.CompanyName ?? rej.Supplier.CompanyOfficial ?? "Tedarikçi Firma";
                         var rejPrice = rej.OfferedPrice;
-                        var (_, reason) = ParseSupplierNotes(rej.SupplierNotes);
+                        var (_, reason, _, _, _) = ParseSupplierNotes(rej.SupplierNotes);
                         var finalReason = reason ?? "Talep için başka bir tedarikçinin teklifi kabul edildi.";
 
                         _ = Task.Run(async () =>
@@ -1214,8 +1306,8 @@ namespace satinalmaportali2.Controllers
 
                 var offersList = req.Offers.Select(o =>
                 {
-                    var (cleanNotes, rejectionReason) = ParseSupplierNotes(o.SupplierNotes);
-                    var fallbackReason = o.Status == "Reddedildi" ? (rejectionReason ?? "Talep için başka bir tedarikçinin teklifi kabul edildi.") : null;
+                    var parsed = ParseSupplierNotes(o.SupplierNotes);
+                    var fallbackReason = o.Status == "Reddedildi" ? (parsed.RejectionReason ?? "Talep için başka bir tedarikçinin teklifi kabul edildi.") : null;
 
                     return new
                     {
@@ -1230,8 +1322,12 @@ namespace satinalmaportali2.Controllers
                         validityDays = o.ValidityDays,
                         offerDate = o.OfferDate.ToString("dd.MM.yyyy HH:mm"),
                         status = o.Status,
-                        supplierNotes = cleanNotes ?? "",
+                        supplierNotes = parsed.CleanNotes ?? "",
                         rejectionReason = fallbackReason,
+                        isRevised = parsed.IsRevised,
+                        previousPrice = parsed.PreviousPrice,
+                        previousPriceFormatted = parsed.PreviousPrice.HasValue ? parsed.PreviousPrice.Value.ToString("N2") + " ₺" : null,
+                        previousRejectionReason = parsed.PreviousRejectionReason,
                         isMyOffer = o.SupplierID == currentCompanyId
                     };
                 }).OrderBy(o => o.offeredPrice).ToList();
@@ -1291,14 +1387,18 @@ namespace satinalmaportali2.Controllers
                 }
 
                 bool isOwner = IsRequestOwnedByCurrentCompany(req, currentCompanyId, currentCompany);
+                if (!isOwner && !isAdmin)
+                {
+                    return Json(new { success = false, message = "Fiyat kıyaslama analizi yalnızca talep sahibi tarafından görüntülenebilir." });
+                }
                 int qty = req.Quantity.HasValue && req.Quantity.Value > 0 ? req.Quantity.Value : 1;
 
                 var rawOffers = req.Offers.Select(o =>
                 {
                     var supName = o.Supplier != null ? (o.Supplier.CompanyName ?? o.Supplier.CompanyOfficial ?? "Tedarikçi Firma") : $"Firma #{o.SupplierID}";
                     var unitPrice = Math.Round(o.OfferedPrice / qty, 2);
-                    var (cleanNotes, rejectionReason) = ParseSupplierNotes(o.SupplierNotes);
-                    var fallbackReason = o.Status == "Reddedildi" ? (rejectionReason ?? "Talep için başka bir tedarikçinin teklifi kabul edildi.") : null;
+                    var parsed = ParseSupplierNotes(o.SupplierNotes);
+                    var fallbackReason = o.Status == "Reddedildi" ? (parsed.RejectionReason ?? "Talep için başka bir tedarikçinin teklifi kabul edildi.") : null;
 
                     decimal? budgetVariance = req.EstimatedBudget.HasValue && req.EstimatedBudget.Value > 0
                         ? Math.Round(((o.OfferedPrice - req.EstimatedBudget.Value) / req.EstimatedBudget.Value) * 100, 1)
@@ -1320,8 +1420,12 @@ namespace satinalmaportali2.Controllers
                         validityDays = o.ValidityDays,
                         offerDate = o.OfferDate.ToString("dd.MM.yyyy HH:mm"),
                         status = o.Status,
-                        supplierNotes = cleanNotes ?? "",
+                        supplierNotes = parsed.CleanNotes ?? "",
                         rejectionReason = fallbackReason,
+                        isRevised = parsed.IsRevised,
+                        previousPrice = parsed.PreviousPrice,
+                        previousPriceFormatted = parsed.PreviousPrice.HasValue ? parsed.PreviousPrice.Value.ToString("N2") + " ₺" : null,
+                        previousRejectionReason = parsed.PreviousRejectionReason,
                         isMyOffer = o.SupplierID == currentCompanyId,
                         isAccepted = string.Equals(o.Status, "Kabul Edildi", StringComparison.OrdinalIgnoreCase),
                         isRejected = string.Equals(o.Status, "Reddedildi", StringComparison.OrdinalIgnoreCase),
@@ -1565,8 +1669,8 @@ namespace satinalmaportali2.Controllers
                     {
                         var supName = o.Supplier?.CompanyName ?? o.Supplier?.CompanyOfficial ?? $"Tedarikçi #{o.SupplierID}";
                         var unitPrice = Math.Round(o.OfferedPrice / reqQty, 2);
-                        var (cleanNotes, rejectionReason) = ParseSupplierNotes(o.SupplierNotes);
-                        var fallbackReason = o.Status == "Reddedildi" ? (rejectionReason ?? "Talep için başka bir tedarikçinin teklifi kabul edildi.") : null;
+                        var parsed = ParseSupplierNotes(o.SupplierNotes);
+                        var fallbackReason = o.Status == "Reddedildi" ? (parsed.RejectionReason ?? "Talep için başka bir tedarikçinin teklifi kabul edildi.") : null;
 
                         decimal? budgetVariance = targetRequest.EstimatedBudget.HasValue && targetRequest.EstimatedBudget.Value > 0
                             ? Math.Round(((o.OfferedPrice - targetRequest.EstimatedBudget.Value) / targetRequest.EstimatedBudget.Value) * 100, 1)
@@ -1587,8 +1691,11 @@ namespace satinalmaportali2.Controllers
                             ValidityDays = o.ValidityDays,
                             OfferDate = o.OfferDate,
                             Status = o.Status,
-                            SupplierNotes = cleanNotes,
+                            SupplierNotes = parsed.CleanNotes,
                             RejectionReason = fallbackReason,
+                            IsRevised = parsed.IsRevised,
+                            PreviousPrice = parsed.PreviousPrice,
+                            PreviousRejectionReason = parsed.PreviousRejectionReason,
                             IsLowestPrice = o.OfferedPrice == lowestPrice,
                             IsFastestDelivery = o.DeliveryDays == minLeadTime,
                             BudgetVariancePct = budgetVariance,
