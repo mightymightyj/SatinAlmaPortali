@@ -7,118 +7,235 @@
 /* Header Styles */
 .blue-top-header {
     background-color: #ffffff;
-    box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+    border-bottom: 1px solid #e2e8f0;
     position: sticky;
     top: 0;
     z-index: 1000;
 }
 
 .header-container {
-    max-width: 1400px;
+    max-width: 1440px;
     margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 40px;
+    padding: 10px 28px;
+    gap: 20px;
 }
 
 .brand-logo {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     text-decoration: none;
+    flex-shrink: 0;
 }
 
 .logo-badge {
-    background-color: #3b82f6;
+    background: linear-gradient(135deg, #0284c7, #2563eb);
     color: #ffffff;
     width: 36px;
     height: 36px;
-    border-radius: 10px;
+    border-radius: 9px;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
 }
 
 .logo-title {
-    font-size: 1.5rem;
+    font-size: 1.35rem;
     font-weight: 800;
     color: #0f172a;
+    letter-spacing: -0.02em;
 }
 
 .logo-blue-dot {
-    color: #3b82f6;
+    color: #0284c7;
 }
 
 .center-nav {
     display: flex;
-    gap: 25px;
+    align-items: center;
+    gap: 22px;
+    flex-wrap: nowrap;
 }
 
 .nav-link {
-    color: #64748b;
+    color: #475569;
     text-decoration: none;
-    font-size: 0.95rem;
+    font-size: 0.88rem;
     font-weight: 600;
-    transition: color 0.2s;
+    padding: 6px 4px;
+    border-radius: 6px;
+    white-space: nowrap;
+    transition: color 0.18s ease;
 }
 
 .nav-link:hover {
-    color: #3b82f6;
+    color: #0284c7;
 }
 
 .right-actions {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 10px;
+    flex-shrink: 0;
 }
 
-.btn-royal-pill {
-    background-color: #3b82f6;
-    color: #ffffff;
-    border-radius: 30px;
-    padding: 10px 24px;
-    font-weight: 600;
-    font-size: 0.95rem;
+/* Sepetim Nav Butonu */
+.btn-cart-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 38px;
+    padding: 0 14px;
+    background: #0f172a;
+    color: #ffffff !important;
+    border: 1px solid #0f172a;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 700;
     text-decoration: none;
-    transition: background-color 0.2s;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
+    transition: all 0.2s ease;
+}
+
+.btn-cart-nav:hover {
+    background: #1e293b;
+    border-color: #1e293b;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.22);
+}
+
+.nav-cart-badge {
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 0.70rem;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 9999px;
+    min-width: 18px;
+    text-align: center;
+    line-height: 1.3;
+}
+
+/* Tedarik Portalı Mavi Pill Butonu */
+.btn-royal-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 38px;
+    padding: 0 18px;
+    background: linear-gradient(135deg, #0284c7, #2563eb);
+    color: #ffffff !important;
+    border: none;
+    border-radius: 20px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+    transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
 .btn-royal-pill:hover {
-    background-color: #2563eb;
-    color: #ffffff;
+    background: linear-gradient(135deg, #0369a1, #1d4ed8);
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
 }
 
+/* Dil Seçimi Pill */
 .lang-pill {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
+    height: 38px;
+    padding: 0 12px;
     background: #f1f5f9;
-    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
     border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 700;
+    font-size: 0.80rem;
+    font-weight: 750;
     color: #334155;
     cursor: pointer;
+    transition: all 0.18s ease;
 }
 
+.lang-pill:hover {
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+
+/* Profil Avatar Butonu */
 .profile-avatar-btn {
+    width: 38px;
+    height: 38px;
     background: #f1f5f9;
-    border: none;
-    width: 40px;
-    height: 40px;
+    border: 1px solid #e2e8f0;
     border-radius: 50%;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #64748b;
+    color: #475569;
     cursor: pointer;
-    transition: background-color 0.2s, color 0.2s;
+    transition: all 0.18s ease;
+    text-decoration: none;
 }
 
 .profile-avatar-btn:hover {
-    background: #e2e8f0;
-    color: #3b82f6;
+    background: #e0f2fe;
+    border-color: #93c5fd;
+    color: #0284c7;
+    transform: scale(1.04);
+}
+
+/* Responsive Kırılımlar */
+@media (max-width: 1200px) {
+    .header-container {
+        padding: 10px 18px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .center-nav {
+        order: 3;
+        width: 100%;
+        justify-content: flex-start;
+        overflow-x: auto;
+        padding: 6px 0 2px 0;
+        gap: 14px;
+        border-top: 1px solid #f1f5f9;
+    }
+    .center-nav::-webkit-scrollbar {
+        height: 2px;
+    }
+}
+
+@media (max-width: 640px) {
+    .header-container {
+        padding: 8px 12px;
+    }
+    .logo-title {
+        font-size: 1.15rem;
+    }
+    .btn-royal-pill span {
+        display: none;
+    }
+    .btn-royal-pill {
+        padding: 0 10px;
+    }
+    .btn-cart-nav span {
+        display: none;
+    }
+    .btn-cart-nav {
+        padding: 0 10px;
+    }
 }
 
 html, body {
@@ -5791,6 +5908,31 @@ html, body {
     flex-wrap: wrap;
 }
 
+.btn-b2b-cart-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #0f172a;
+    color: #ffffff;
+    border: 1.5px solid #334155;
+    border-radius: 8px;
+    padding: 9px 16px;
+    font-size: 0.86rem;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease;
+}
+
+.btn-b2b-cart-cta:hover {
+    background: #1e293b;
+    border-color: #475569;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+}
+
 .btn-b2b-shuffle {
     display: inline-flex;
     align-items: center;
@@ -6300,20 +6442,95 @@ html, body {
 /* Aksiyon Butonları */
 .b2b-actions {
     display: flex;
+    align-items: center;
     gap: 6px;
     margin-top: auto;
+    padding-top: 6px;
+}
+
+.b2b-btn-buy {
+    flex: 1;
+    min-width: 0;
+    height: 34px;
+    background: #0f172a;
+    color: #ffffff;
+    border: 1px solid #0f172a;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 750;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 0 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.18s ease;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+.b2b-btn-buy:hover {
+    background: #1e293b;
+    border-color: #1e293b;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2);
+}
+
+.b2b-btn-cart {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    background: #f1f5f9;
+    color: #0f172a;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.b2b-btn-cart:hover {
+    background: #e2e8f0;
+    color: #0284c7;
+    border-color: #0284c7;
+    transform: translateY(-1px);
+}
+
+.b2b-btn-contact {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    background: #f8fafc;
+    color: #64748b;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.b2b-btn-contact:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #94a3b8;
+    transform: translateY(-1px);
 }
 
 .b2b-btn-rfq {
     flex: 1;
+    height: 34px;
     background: #0284c7;
     color: #ffffff;
     border: none;
     border-radius: 6px;
-    padding: 7px 10px;
-    font-size: 0.76rem;
+    padding: 0 10px;
+    font-size: 0.78rem;
     font-weight: 750;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 5px;
@@ -6325,27 +6542,6 @@ html, body {
 .b2b-btn-rfq:hover {
     background: #0369a1;
     box-shadow: 0 4px 10px rgba(2, 132, 199, 0.3);
-}
-
-.b2b-btn-contact {
-    width: 32px;
-    height: 32px;
-    background: #f8fafc;
-    color: #475569;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.18s ease;
-    flex-shrink: 0;
-}
-
-.b2b-btn-contact:hover {
-    background: #f1f5f9;
-    color: #0f172a;
-    border-color: #94a3b8;
 }
 
 /* Boş Durum */

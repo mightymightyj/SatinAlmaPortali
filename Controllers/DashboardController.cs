@@ -36,6 +36,26 @@ namespace satinalmaportali2.Controllers
             return 0;
         }
 
+        private string GetCurrentUserType()
+        {
+            return User.FindFirstValue("UserType") ?? User.FindFirstValue(ClaimTypes.Role) ?? "User";
+        }
+
+        private async Task<string> GetCurrentCompanyNameAsync()
+        {
+            string compName = User.FindFirst("CompanyName")?.Value ?? "";
+            if (string.IsNullOrWhiteSpace(compName))
+            {
+                int cid = GetCurrentCompanyId();
+                if (cid > 0)
+                {
+                    var comp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == cid);
+                    compName = comp?.CompanyName ?? comp?.CompanyOfficial ?? "";
+                }
+            }
+            return compName.Trim();
+        }
+
         /// <summary>
         /// Dashboard ana yönetim merkezi görünümü.
         /// </summary>
@@ -68,6 +88,7 @@ namespace satinalmaportali2.Controllers
 
         /// <summary>
         /// Katalog ürününün birim fiyatını ve stok adedini günceller (AJAX).
+        /// Sadece ürünün sahibi olan tedarikçi veya admin güncelleyebilir.
         /// </summary>
         [HttpPost]
         public async Task<IActionResult> UpdateProductPrice([FromBody] UpdateProductPriceInputModel input)
@@ -83,6 +104,20 @@ namespace satinalmaportali2.Controllers
                 if (item == null)
                 {
                     return Json(new { success = false, message = "Güncellenecek ürün veritabanında bulunamadı." });
+                }
+
+                int companyId = GetCurrentCompanyId();
+                string currentCompanyName = await GetCurrentCompanyNameAsync();
+                string userType = GetCurrentUserType();
+                bool isAdmin = userType == "SuperAdmin" || userType == "Admin";
+
+                bool isOwner = !string.IsNullOrWhiteSpace(currentCompanyName) &&
+                               !string.IsNullOrWhiteSpace(item.Brand) &&
+                               string.Equals(item.Brand.Trim(), currentCompanyName, StringComparison.OrdinalIgnoreCase);
+
+                if (!isOwner && !isAdmin)
+                {
+                    return Json(new { success = false, message = "Yalnızca kendi firmanıza ait ürünlerin fiyat ve stok bilgilerini düzenleyebilirsiniz." });
                 }
 
                 item.ItemPrice = (double)input.NewUnitPrice;
@@ -121,28 +156,28 @@ namespace satinalmaportali2.Controllers
 
         /// <summary>
         /// Tedarikçi ürün ilanları ve vitrin kataloğu yönetim sekmesi.
+        /// Normal kullanıcılar yalnızca kendi firmalarına ait satış ilanlarını görebilir ve yönetebilir.
         /// </summary>
         public async Task<IActionResult> Listings(string? search, string? category, string? status, CancellationToken cancellationToken)
         {
             ViewData["Title"] = "Ürün İlanlarım & Vitrin Kataloğu";
             int companyId = GetCurrentCompanyId();
-
-            string currentCompanyName = User.FindFirst("CompanyName")?.Value ?? "";
-            if (companyId > 0 && string.IsNullOrWhiteSpace(currentCompanyName))
-            {
-                var comp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == companyId, cancellationToken);
-                currentCompanyName = comp?.CompanyName ?? comp?.CompanyOfficial ?? "";
-            }
+            string currentCompanyName = await GetCurrentCompanyNameAsync();
+            string userType = GetCurrentUserType();
+            bool isAdmin = userType == "SuperAdmin" || userType == "Admin";
 
             // Veritabanındaki ürünleri sorgula
             var query = _context.Items.AsNoTracking().AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(currentCompanyName))
+            if (!isAdmin)
             {
-                var userItemsQuery = query.Where(i => i.Brand == currentCompanyName);
-                if (await userItemsQuery.AnyAsync(cancellationToken))
+                if (!string.IsNullOrWhiteSpace(currentCompanyName))
                 {
-                    query = userItemsQuery;
+                    query = query.Where(i => i.Brand == currentCompanyName);
+                }
+                else
+                {
+                    query = query.Where(i => false);
                 }
             }
 
@@ -238,6 +273,7 @@ namespace satinalmaportali2.Controllers
 
         /// <summary>
         /// Ürün ilanını veritabanından siler (AJAX).
+        /// Sadece ürünün sahibi olan tedarikçi veya admin silebilir.
         /// </summary>
         [HttpPost]
         public async Task<IActionResult> DeleteProductListing(int id)
@@ -253,6 +289,20 @@ namespace satinalmaportali2.Controllers
                 if (item == null)
                 {
                     return Json(new { success = false, message = "Silinecek ürün veritabanında bulunamadı." });
+                }
+
+                int companyId = GetCurrentCompanyId();
+                string currentCompanyName = await GetCurrentCompanyNameAsync();
+                string userType = GetCurrentUserType();
+                bool isAdmin = userType == "SuperAdmin" || userType == "Admin";
+
+                bool isOwner = !string.IsNullOrWhiteSpace(currentCompanyName) &&
+                               !string.IsNullOrWhiteSpace(item.Brand) &&
+                               string.Equals(item.Brand.Trim(), currentCompanyName, StringComparison.OrdinalIgnoreCase);
+
+                if (!isOwner && !isAdmin)
+                {
+                    return Json(new { success = false, message = "Yalnızca kendi firmanıza ait ürün ilanlarını silebilirsiniz." });
                 }
 
                 _context.Items.Remove(item);
