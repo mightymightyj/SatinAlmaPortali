@@ -223,6 +223,7 @@ namespace satinalmaportali2.Controllers
                 // 4. İstatistikler
                 var dbRequests = await _context.Requests.AsNoTracking().ToListAsync();
                 var dbOffers = await _context.RequestOffers.AsNoTracking().ToListAsync();
+                var dbItems = await _context.Items.AsNoTracking().OrderByDescending(i => i.ItemID).ToListAsync();
 
                 viewModel.Stats = new SuperAdminStatsDto
                 {
@@ -240,10 +241,39 @@ namespace satinalmaportali2.Controllers
                     TotalRequests = dbRequests.Count,
                     TotalOffers = dbOffers.Count,
                     TotalEstimatedBudget = dbRequests.Sum(r => r.EstimatedBudget ?? 0),
-                    TotalOfferedVolume = dbOffers.Sum(o => o.OfferedPrice)
+                    TotalOfferedVolume = dbOffers.Sum(o => o.OfferedPrice),
+
+                    TotalListings = dbItems.Count,
+                    TotalListingValue = (decimal)dbItems.Sum(i => (i.ItemPrice ?? 0) * (i.Quantity ?? 0))
                 };
 
-                // 5. Açık / Mevcut Talepler Listesi (Simülasyon ve Hızlı Teklif için)
+                // 5. Canlı Vitrin & Satış İlanları Listesi
+                viewModel.RecentListings = dbItems.Select(item =>
+                {
+                    string catName = "Endüstriyel Ürünler";
+                    if (item.CategoryID.HasValue && catMap.TryGetValue(item.CategoryID.Value, out var cName))
+                    {
+                        catName = cName;
+                    }
+                    else if (!string.IsNullOrWhiteSpace(item.Properties) && item.Properties.StartsWith("Kategori: "))
+                    {
+                        catName = item.Properties.Substring("Kategori: ".Length);
+                    }
+
+                    return new ItemSummaryDto
+                    {
+                        ItemID = item.ItemID,
+                        ItemName = item.ItemName ?? "İsimsiz Ürün",
+                        Brand = item.Brand ?? "Onaylı Tedarikçi",
+                        CategoryName = catName,
+                        UnitPrice = (decimal)(item.ItemPrice ?? 0),
+                        Quantity = item.Quantity ?? 0,
+                        Properties = item.Properties,
+                        ItemImage = null
+                    };
+                }).ToList();
+
+                // 6. Açık / Mevcut Talepler Listesi (Simülasyon ve Hızlı Teklif için)
                 viewModel.OpenRequests = dbRequests.OrderByDescending(r => r.RequestID).Select(r => new RequestSummaryDto
                 {
                     RequestID = r.RequestID,
@@ -799,6 +829,103 @@ namespace satinalmaportali2.Controllers
             catch (Exception ex)
             {
                 TempData["AdminError"] = "Teklif simülasyonu hatası: " + ex.Message;
+            }
+
+            return RedirectToAction(nameof(Index), new { tab = "simulation" });
+        }
+
+        [HttpPost]
+        [Route("SimulateCreateListing")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SimulateCreateListing(SimulateListingInputModel input)
+        {
+            if (!await CheckIsSuperAdminAsync()) return Forbid();
+
+            if (!ModelState.IsValid || input.SupplierCompanyID <= 0 || string.IsNullOrWhiteSpace(input.ItemName) || input.ItemPrice <= 0 || input.Quantity <= 0)
+            {
+                TempData["AdminError"] = "Lütfen tedarikçi firma, ürün adı, geçerli birim fiyat ve stok adedi giriniz.";
+                return RedirectToAction(nameof(Index), new { tab = "simulation" });
+            }
+
+            try
+            {
+                var supplier = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyID == input.SupplierCompanyID);
+                if (supplier == null)
+                {
+                    TempData["AdminError"] = "Seçilen tedarikçi firma bulunamadı.";
+                    return RedirectToAction(nameof(Index), new { tab = "simulation" });
+                }
+
+                string finalBrand = !string.IsNullOrWhiteSpace(input.Brand) 
+                    ? input.Brand.Trim() 
+                    : (!string.IsNullOrWhiteSpace(supplier.CompanyName) ? supplier.CompanyName.Trim() : (supplier.CompanyOfficial ?? "Onaylı Tedarikçi"));
+
+                string finalCatName = "Endüstriyel Ürünler";
+                int? finalCatId = input.CategoryID;
+                if (finalCatId.HasValue && finalCatId.Value > 0)
+                {
+                    var cat = await _context.Category.AsNoTracking().FirstOrDefaultAsync(c => c.CategoryID == finalCatId.Value);
+                    if (cat != null) finalCatName = cat.CategoryName ?? finalCatName;
+                }
+
+                string finalProps = !string.IsNullOrWhiteSpace(input.Properties)
+                    ? input.Properties.Trim()
+                    : $"Kategori: {finalCatName}";
+
+                var newItem = new ItemsModel
+                {
+                    ItemName = input.ItemName.Trim(),
+                    Brand = finalBrand,
+                    CategoryID = finalCatId,
+                    ItemPrice = (double)input.ItemPrice,
+                    Quantity = input.Quantity,
+                    Properties = finalProps,
+                    ItemDescryption = string.IsNullOrWhiteSpace(input.ItemDescryption) ? null : input.ItemDescryption.Trim()
+                };
+
+                _context.Items.Add(newItem);
+                await _context.SaveChangesAsync();
+
+                TempData["AdminSuccess"] = $"'{supplier.CompanyName}' adına '{newItem.ItemName}' (Birim Fiyat: {newItem.ItemPrice:N0} ₺ - Stok: {newItem.Quantity} Adet) ürün ilanı başarıyla vitrine eklendi ve yayına alındı! (Ürün ID: #{newItem.ItemID})";
+            }
+            catch (Exception ex)
+            {
+                TempData["AdminError"] = "Satış ilanı simülasyonu hatası: " + ex.Message;
+            }
+
+            return RedirectToAction(nameof(Index), new { tab = "simulation" });
+        }
+
+        [HttpPost]
+        [Route("DeleteListing")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteListing(int id)
+        {
+            if (!await CheckIsSuperAdminAsync()) return Forbid();
+
+            if (id <= 0)
+            {
+                TempData["AdminError"] = "Geçersiz ürün seçildi.";
+                return RedirectToAction(nameof(Index), new { tab = "simulation" });
+            }
+
+            try
+            {
+                var item = await _context.Items.FirstOrDefaultAsync(i => i.ItemID == id);
+                if (item == null)
+                {
+                    TempData["AdminError"] = "Silinecek ürün ilanı bulunamadı.";
+                    return RedirectToAction(nameof(Index), new { tab = "simulation" });
+                }
+
+                _context.Items.Remove(item);
+                await _context.SaveChangesAsync();
+
+                TempData["AdminSuccess"] = $"'{item.ItemName}' ürün ilanı vitrinden başarıyla kaldırıldı.";
+            }
+            catch (Exception ex)
+            {
+                TempData["AdminError"] = "İlan silinirken hata oluştu: " + ex.Message;
             }
 
             return RedirectToAction(nameof(Index), new { tab = "simulation" });

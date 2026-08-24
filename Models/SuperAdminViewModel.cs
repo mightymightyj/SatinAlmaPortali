@@ -11,6 +11,7 @@ namespace satinalmaportali2.Models
         public List<CompanyTypes> AvailableCompanyTypes { get; set; } = new();
         public List<MembershipTypes> AvailableMembershipTypes { get; set; } = new();
         public List<RequestSummaryDto> OpenRequests { get; set; } = new();
+        public List<ItemSummaryDto> RecentListings { get; set; } = new();
 
         public string ActiveTab { get; set; } = "overview"; // overview, categories, companies, simulation, settings
         public string? SearchQuery { get; set; }
@@ -34,6 +35,9 @@ namespace satinalmaportali2.Models
         public int TotalOffers { get; set; }
         public decimal TotalEstimatedBudget { get; set; }
         public decimal TotalOfferedVolume { get; set; }
+
+        public int TotalListings { get; set; }
+        public decimal TotalListingValue { get; set; }
     }
 
     public class CategoryAdminDto
@@ -163,5 +167,41 @@ namespace satinalmaportali2.Models
         public int CategoryID { get; set; }
         public string FormattedName { get; set; } = string.Empty;
         public int Level { get; set; }
+    }
+
+    public class SimulateListingInputModel
+    {
+        [Required(ErrorMessage = "Lütfen ürünü listeleyecek tedarikçi firmayı seçin.")]
+        public int SupplierCompanyID { get; set; }
+
+        [Required(ErrorMessage = "Ürün adı zorunludur.")]
+        public string ItemName { get; set; } = string.Empty;
+
+        public int? CategoryID { get; set; }
+
+        [Required(ErrorMessage = "Birim satış fiyatı zorunludur.")]
+        [Range(0.01, 100000000, ErrorMessage = "Geçerli bir birim fiyat giriniz.")]
+        public decimal ItemPrice { get; set; }
+
+        [Required(ErrorMessage = "Stok adedi zorunludur.")]
+        [Range(1, 1000000, ErrorMessage = "Stok adedi en az 1 olmalıdır.")]
+        public int Quantity { get; set; } = 100;
+
+        public string? Brand { get; set; }
+        public string? Properties { get; set; }
+        public string? ItemDescryption { get; set; }
+        public string? ImageBase64 { get; set; }
+    }
+
+    public class ItemSummaryDto
+    {
+        public int ItemID { get; set; }
+        public string ItemName { get; set; } = string.Empty;
+        public string Brand { get; set; } = string.Empty;
+        public string CategoryName { get; set; } = string.Empty;
+        public decimal UnitPrice { get; set; }
+        public int Quantity { get; set; }
+        public string? Properties { get; set; }
+        public string? ItemImage { get; set; }
     }
 }
