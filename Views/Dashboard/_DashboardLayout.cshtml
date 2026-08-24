@@ -70,6 +70,16 @@
                 </svg>
                 <span>Talepler & İhaleler</span>
             </a>
+
+            <a class="side-link @(currentController == "Dashboard" && currentAction == "Listings" ? "is-active" : "")" 
+               asp-controller="Dashboard" asp-action="Listings">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+                <span>Ürün İlanlarım</span>
+            </a>
             
             <a class="side-link @(currentController == "Dashboard" && currentAction == "Analytics" ? "is-active" : "")" 
                asp-controller="Dashboard" asp-action="Analytics">
@@ -234,14 +244,15 @@
                 <button type="button" class="modal-close-btn" onclick="closePriceModal()" aria-label="Kapat">✕</button>
             </div>
             <form id="supplierPriceForm" onsubmit="handlePriceUpdateSubmit(event)">
+                <input type="hidden" id="priceProductId" />
                 <div class="modal-body">
                     <div class="form-group">
                         <label class="form-label" for="priceProductSelect">Ürün Seçin <span class="req-star">*</span></label>
                         <select id="priceProductSelect" class="form-control" required onchange="handleProductPriceSelect(this)">
-                            <option value="185">Endüstriyel Rulman 6204-2RS (Mevcut: 185 ₺)</option>
-                            <option value="1450">Lineer Kızak ve Araba Seti HGR25 (Mevcut: 1.450 ₺)</option>
-                            <option value="640">Pnömatik 5/2 Yön Kontrol Valfi (Mevcut: 640 ₺)</option>
-                            <option value="320">Karbür Parmak Freze 10mm 4 Ağız (Mevcut: 320 ₺)</option>
+                            <option value="1" data-id="1" data-price="185" data-stock="450">Endüstriyel Rulman 6204-2RS (Mevcut: 185 ₺)</option>
+                            <option value="2" data-id="2" data-price="1450" data-stock="120">Lineer Kızak ve Araba Seti HGR25 (Mevcut: 1.450 ₺)</option>
+                            <option value="3" data-id="3" data-price="640" data-stock="85">Pnömatik 5/2 Yön Kontrol Valfi (Mevcut: 640 ₺)</option>
+                            <option value="4" data-id="4" data-price="320" data-stock="200">Karbür Parmak Freze 10mm 4 Ağız (Mevcut: 320 ₺)</option>
                         </select>
                     </div>
 

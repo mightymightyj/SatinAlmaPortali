@@ -17,6 +17,58 @@ namespace satinalmaportali2.Data
                 // Ensure Database and Schema exist
                 await context.Database.EnsureCreatedAsync();
 
+                // Create orders and orderitems tables if not exist
+                try
+                {
+                    await context.Database.ExecuteSqlRawAsync(@"
+                        CREATE TABLE IF NOT EXISTS orders (
+                            orderid SERIAL PRIMARY KEY,
+                            ordernumber VARCHAR(50) NOT NULL,
+                            buyercompanyid INT,
+                            buyercompanyname VARCHAR(255) NOT NULL,
+                            buyertaxnumber VARCHAR(50),
+                            buyertaxoffice VARCHAR(100),
+                            buyeremail VARCHAR(255),
+                            buyerphone VARCHAR(50),
+                            suppliercompanyid INT,
+                            suppliercompanyname VARCHAR(255),
+                            orderdate TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                            deliverydate TIMESTAMP WITH TIME ZONE,
+                            totalamount DECIMAL(18,2) NOT NULL,
+                            taxamount DECIMAL(18,2) NOT NULL,
+                            grandtotal DECIMAL(18,2) NOT NULL,
+                            paymentmethod VARCHAR(50) NOT NULL,
+                            paymentstatus VARCHAR(50) NOT NULL,
+                            orderstatus VARCHAR(50) NOT NULL,
+                            deliverycity VARCHAR(100),
+                            deliveryaddress TEXT,
+                            receivername VARCHAR(100),
+                            receiverphone VARCHAR(50),
+                            trackingnumber VARCHAR(100),
+                            shippingcarrier VARCHAR(100),
+                            notes TEXT
+                        );
+
+                        CREATE TABLE IF NOT EXISTS orderitems (
+                            orderitemid SERIAL PRIMARY KEY,
+                            orderid INT NOT NULL,
+                            itemid INT,
+                            productname VARCHAR(255) NOT NULL,
+                            sku VARCHAR(100),
+                            categoryname VARCHAR(100),
+                            unitprice DECIMAL(18,2) NOT NULL,
+                            quantity INT NOT NULL,
+                            linetotal DECIMAL(18,2) NOT NULL,
+                            suppliercompanyname VARCHAR(255),
+                            suppliercompanyid INT
+                        );
+                    ");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Orders table check/create note: " + ex.Message);
+                }
+
                 // ====================================================
                 // STEP 0: Seed CompanyTypes (FK dependency for Companies)
                 // ====================================================

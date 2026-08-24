@@ -196,12 +196,33 @@ async function handleCreateRequestSubmit(event) {
 }
 
 // --- TEDARİKÇİ (SUPPLIER) FİYAT GÜNCELLEME MODALI ---
-function openPriceModal() {
+function openPriceModal(itemId, itemName, currentPrice, currentStock) {
     var modal = document.getElementById('priceModal');
-    if (modal) {
-        modal.classList.add('is-open');
-        modal.setAttribute('aria-hidden', 'false');
+    if (!modal) return;
+
+    var select = document.getElementById('priceProductSelect');
+    var priceInput = document.getElementById('newUnitPrice');
+    var stockInput = document.getElementById('newStockQty');
+    var hiddenIdInput = document.getElementById('priceProductId');
+
+    if (itemId && select) {
+        select.value = itemId;
+        if (priceInput && currentPrice) priceInput.value = currentPrice;
+        if (stockInput && currentStock) stockInput.value = currentStock;
+        if (hiddenIdInput) hiddenIdInput.value = itemId;
+    } else if (select && select.selectedOptions.length > 0) {
+        var opt = select.selectedOptions[0];
+        var p = opt.getAttribute('data-price') || opt.value;
+        var s = opt.getAttribute('data-stock') || '100';
+        var id = opt.getAttribute('data-id') || opt.value;
+        if (priceInput && p) priceInput.value = p;
+        if (stockInput && s) stockInput.value = s;
+        if (hiddenIdInput) hiddenIdInput.value = id;
     }
+
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    if (priceInput) setTimeout(function () { priceInput.focus(); }, 50);
 }
 
 function closePriceModal() {
@@ -213,21 +234,64 @@ function closePriceModal() {
 }
 
 function handleProductPriceSelect(select) {
-    var price = select.value;
+    var opt = select.selectedOptions[0];
+    if (!opt) return;
+    var price = opt.getAttribute('data-price') || opt.value;
+    var stock = opt.getAttribute('data-stock');
+    var id = opt.getAttribute('data-id') || opt.value;
+
     var priceInput = document.getElementById('newUnitPrice');
-    if (priceInput && price) {
-        priceInput.value = price;
-    }
+    var stockInput = document.getElementById('newStockQty');
+    var hiddenId = document.getElementById('priceProductId');
+
+    if (priceInput && price) priceInput.value = price;
+    if (stockInput && stock) stockInput.value = stock;
+    if (hiddenId) hiddenId.value = id;
 }
 
-function handlePriceUpdateSubmit(event) {
+async function handlePriceUpdateSubmit(event) {
     event.preventDefault();
     var select = document.getElementById('priceProductSelect');
-    var productName = select ? select.options[select.selectedIndex].text.split('(')[0].trim() : 'Ürün';
-    var newPrice = document.getElementById('newUnitPrice')?.value || '0';
+    var opt = select ? select.selectedOptions[0] : null;
+    var rawId = document.getElementById('priceProductId')?.value || (opt ? (opt.getAttribute('data-id') || opt.value) : '1');
+    var itemId = parseInt(rawId, 10) || 1;
+    var productName = opt ? opt.text.split('(')[0].trim() : 'Ürün';
+    var newPrice = parseFloat(document.getElementById('newUnitPrice')?.value || '0');
+    var newStock = parseInt(document.getElementById('newStockQty')?.value || '0', 10);
+    var note = document.getElementById('priceChangeNote')?.value || '';
 
-    closePriceModal();
-    showAppToast('✓ ' + productName + ' birim fiyatı ' + Number(newPrice).toLocaleString('tr-TR') + ' ₺ olarak güncellendi!');
+    if (newPrice <= 0) {
+        showAppToast('Lütfen geçerli bir birim fiyat giriniz.', false);
+        return;
+    }
+
+    try {
+        var response = await fetch('/Dashboard/UpdateProductPrice', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                itemID: itemId,
+                newUnitPrice: newPrice,
+                newStockQuantity: newStock,
+                note: note
+            })
+        });
+
+        var result = await response.json();
+        if (result.success) {
+            closePriceModal();
+            showAppToast('✓ ' + result.message, true);
+            setTimeout(function () {
+                window.location.reload();
+            }, 1200);
+        } else {
+            showAppToast('Hata: ' + (result.message || 'Fiyat güncellenemedi.'), false);
+        }
+    } catch (err) {
+        showAppToast('Sunucu bağlantı hatası: ' + err.message, false);
+    }
 }
 
 // --- TEDARİKÇİ (SUPPLIER) TEKLİF VERME MODALI ---

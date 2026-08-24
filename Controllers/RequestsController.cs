@@ -1531,10 +1531,16 @@ namespace satinalmaportali2.Controllers
             try
             {
                 int currentCompanyId = GetCurrentCompanyId();
+                string userType = GetCurrentUserType();
+                bool isAdmin = userType == "SuperAdmin" || userType == "Admin";
+                var currentCompany = currentCompanyId > 0 ? await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId) : null;
+
                 var req = await _context.Requests.FindAsync(id);
                 if (req != null)
                 {
-                    if (req.SenderID.HasValue && currentCompanyId > 0 && req.SenderID != currentCompanyId)
+                    bool isOwner = IsRequestOwnedByCurrentCompany(req, currentCompanyId, currentCompany);
+
+                    if (!isOwner && !isAdmin)
                     {
                         TempData["ErrorMessage"] = "Yalnızca kendi açtığınız talepleri silebilirsiniz.";
                         return RedirectToAction(nameof(Index));

@@ -240,4 +240,113 @@ namespace satinalmaportali2.Models
         public string? WinningSupplierName => SelectedRequest?.ReceiverName;
         public bool IsOwner { get; set; }
     }
+
+    /// <summary>
+    /// Tedarikçi olarak kurumsal ürün ilanı ve fiyat listeleme DTO modeli.
+    /// </summary>
+    public class CreateProductListingInputModel
+    {
+        [Required(ErrorMessage = "Ürün adı zorunludur.")]
+        public string ProductName { get; set; } = string.Empty;
+
+        public int? CategoryID { get; set; }
+        public string? CategoryName { get; set; }
+
+        [Required(ErrorMessage = "Birim fiyat zorunludur.")]
+        public decimal UnitPrice { get; set; }
+
+        public string? StockQuantity { get; set; }
+        public string? ItemDescription { get; set; }
+        public string? Brand { get; set; }
+        public string? Properties { get; set; }
+        public string? ImageUrl { get; set; }
+    }
+
+    /// <summary>
+    /// B2B Vitrinden hızlı kurumsal teklif (RFQ) isteme DTO modeli.
+    /// </summary>
+    public class SubmitVitrinQuoteInputModel
+    {
+        public int? ProductID { get; set; }
+
+        [Required(ErrorMessage = "Firma ünvanı zorunludur.")]
+        public string BuyerCompany { get; set; } = string.Empty;
+
+        public string? BuyerTax { get; set; }
+
+        [Range(1, int.MaxValue, ErrorMessage = "Talep edilen miktar en az 1 olmalıdır.")]
+        public int Quantity { get; set; } = 1;
+
+        public decimal? TargetPrice { get; set; }
+        public string? PaymentTerms { get; set; }
+        public string? DeliveryCity { get; set; }
+        public string? Notes { get; set; }
+        public bool SampleRequested { get; set; }
+    }
+
+    /// <summary>
+    /// Tedarikçi panelinden katalog ürün fiyat ve stok güncelleme DTO modeli.
+    /// </summary>
+    public class UpdateProductPriceInputModel
+    {
+        public int ItemID { get; set; }
+        public decimal NewUnitPrice { get; set; }
+        public int? NewStockQuantity { get; set; }
+        public string? Note { get; set; }
+    }
+
+    /// <summary>
+    /// Sepet kalemi DTO modeli.
+    /// </summary>
+    public class CartItemInputModel
+    {
+        public int ProductID { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string? Sku { get; set; }
+        public string? Category { get; set; }
+        public decimal Price { get; set; }
+        public int Quantity { get; set; } = 1;
+        public string? Seller { get; set; }
+        public string? Image { get; set; }
+    }
+
+    /// <summary>
+    /// Kurumsal doğrudan sipariş oluşturma DTO modeli.
+    /// </summary>
+    public class CreateOrderInputModel
+    {
+        [Required(ErrorMessage = "Firma ünvanı zorunludur.")]
+        public string BuyerCompany { get; set; } = string.Empty;
+
+        public string? BuyerTaxNumber { get; set; }
+        public string? BuyerTaxOffice { get; set; }
+        public string? BuyerEmail { get; set; }
+        public string? BuyerPhone { get; set; }
+
+        [Required(ErrorMessage = "Teslimat şehri zorunludur.")]
+        public string DeliveryCity { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Teslimat adresi zorunludur.")]
+        public string DeliveryAddress { get; set; } = string.Empty;
+
+        public string? ReceiverName { get; set; }
+        public string? ReceiverPhone { get; set; }
+
+        public string PaymentMethod { get; set; } = "Kredi Kartı"; // Kredi Kartı, Havale / EFT, Cari Hesap / Vadeli, DBS
+        public string? Notes { get; set; }
+
+        public List<CartItemInputModel> Items { get; set; } = new List<CartItemInputModel>();
+    }
+
+    /// <summary>
+    /// Sipariş durum ve kargo güncelleme DTO modeli.
+    /// </summary>
+    public class UpdateOrderStatusInputModel
+    {
+        public int OrderID { get; set; }
+        public string OrderStatus { get; set; } = "Kargoya Verildi"; // Hazırlanıyor, Kargoya Verildi, Teslim Edildi, İptal
+        public string? TrackingNumber { get; set; }
+        public string? ShippingCarrier { get; set; }
+        public string? Notes { get; set; }
+    }
 }

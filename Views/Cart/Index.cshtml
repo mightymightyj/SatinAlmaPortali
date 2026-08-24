@@ -1,0 +1,376 @@
+@{
+    ViewData["Title"] = "Kurumsal Satınalma Sepetim";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="b2b-cart-page-container" style="max-width: 1280px; margin: 32px auto 64px; padding: 0 20px; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;">
+    
+    <!-- Üst Başlık & Breadcrumb -->
+    <div style="margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 0.84rem; color: #64748b; margin-bottom: 8px;">
+            <a href="/" style="color: #64748b; text-decoration: none;">Ana Sayfa</a>
+            <span>/</span>
+            <a href="/#ihtiyaciniz-olan-urunler" style="color: #64748b; text-decoration: none;">B2B Vitrin</a>
+            <span>/</span>
+            <span style="color: #0f172a; font-weight: 700;">Kurumsal Sepetim</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <h1 style="font-size: 1.8rem; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 10px;">
+                    <span>🛒</span> Kurumsal Satınalma Sepetim
+                </h1>
+                <p style="font-size: 0.9rem; color: #64748b; margin: 4px 0 0 0;">
+                    Seçtiğiniz endüstriyel ürünleri inceleyip tek faturada kurumsal sipariş oluşturabilirsiniz.
+                </p>
+            </div>
+            <a href="/#ihtiyaciniz-olan-urunler" class="btn-cancel" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none; padding: 10px 18px; font-size: 0.88rem; font-weight: 600; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px;">
+                ← Vitrine Dön & Ürün Ekle
+            </a>
+        </div>
+    </div>
+
+    <!-- Boş Sepet Durumu -->
+    <div id="cartEmptyState" style="display: none; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 64px 20px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+        <div style="font-size: 4rem; margin-bottom: 16px;">🛒</div>
+        <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 8px;">Kurumsal Sepetinizde Ürün Bulunmuyor</h2>
+        <p style="font-size: 0.92rem; color: #64748b; max-width: 480px; margin: 0 auto 24px;">
+            B2B pazar yerimizdeki onaylı üretici ve distribütör ürünlerini sepetinize ekleyerek doğrudan satın alım yapabilirsiniz.
+        </p>
+        <a href="/#ihtiyaciniz-olan-urunler" class="btn-primary" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 12px 24px; font-size: 0.95rem; font-weight: 700; background: #0f172a; border-radius: 8px; margin: 0 auto;">
+            B2B Ürün Vitrinine Git →
+        </a>
+    </div>
+
+    <!-- Dolu Sepet Grid Alanı -->
+    <div id="cartContentGrid" style="display: grid; grid-template-columns: 1fr 380px; gap: 28px; align-items: start;">
+        
+        <!-- Sol Kolon: Ürün Listesi -->
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            
+            <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <div style="padding: 16px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 800; font-size: 0.95rem; color: #0f172a;" id="cartTotalItemsHeader">Sepetteki Kalemler</span>
+                    <button type="button" onclick="clearB2BCart()" style="background: transparent; border: none; color: #ef4444; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                        🗑️ Tüm Sepeti Boşalt
+                    </button>
+                </div>
+
+                <div id="cartPageItemsTable" style="display: flex; flex-direction: column;">
+                    <!-- JS ile dinamik render edilir -->
+                </div>
+            </div>
+
+            <!-- Alt Güvence Şeridi -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.4rem;">🏢</span>
+                    <div>
+                        <strong style="font-size: 0.8rem; color: #0f172a; display: block;">Kurumsal E-Fatura</strong>
+                        <span style="font-size: 0.72rem; color: #64748b;">VKN & Tevkifat uyumlu resmi fatura</span>
+                    </div>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.4rem;">🛡️</span>
+                    <div>
+                        <strong style="font-size: 0.8rem; color: #0f172a; display: block;">Güvenli Ödeme</strong>
+                        <span style="font-size: 0.72rem; color: #64748b;">256-Bit SSL & 3D Secure altyapı</span>
+                    </div>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.4rem;">🚚</span>
+                    <div>
+                        <strong style="font-size: 0.8rem; color: #0f172a; display: block;">Doğrudan Fabrikadan Sevk</strong>
+                        <span style="font-size: 0.72rem; color: #64748b;">Ambar & paletli lojistik teslimat</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sağ Kolon: Sipariş Özeti & Ödemeye Geçiş -->
+        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); position: sticky; top: 20px;">
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 16px 0; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
+                Sipariş Özeti
+            </h3>
+
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #475569;">
+                    <span>Ürünler Ara Toplamı:</span>
+                    <strong id="cartSummarySubtotal" style="color: #0f172a;">0 ₺</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #475569;">
+                    <span>Hesaplanan KDV (%20):</span>
+                    <span id="cartSummaryTax" style="color: #64748b;">0 ₺</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #475569;">
+                    <span>Sevkiyat / Lojistik:</span>
+                    <span style="color: #16a34a; font-weight: 700;">Ücretsiz Standart Sevk</span>
+                </div>
+                <div style="padding-top: 14px; border-top: 1px dashed #cbd5e1; display: flex; justify-content: space-between; align-items: flex-end;">
+                    <div>
+                        <span style="font-size: 0.8rem; color: #64748b; display: block;">Ödenecek Toplam Tutar:</span>
+                        <strong id="cartSummaryGrandTotal" style="font-size: 1.5rem; font-weight: 900; color: #0284c7;">0 ₺</strong>
+                    </div>
+                    <span style="font-size: 0.72rem; color: #94a3b8;">KDV Dahil</span>
+                </div>
+            </div>
+
+            <button type="button" onclick="openCheckoutModal()" class="b2b-btn-checkout-cta">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>Kurumsal Siparişi Tamamla →</span>
+            </button>
+
+            <div style="margin-top: 16px; text-align: center; font-size: 0.76rem; color: #94a3b8;">
+                🔒 Kart, Havale/EFT, DBS veya 30/60 Gün Vadeli Çek ile satın alabilirsiniz.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== B2B KURUMSAL CHECKOUT / SATIN ALMA MODALI ==================== -->
+<div id="b2bCheckoutModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.7); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this)closeCheckoutModal()">
+    <div class="ty-modal-box" style="background: #ffffff; border-radius: 12px; width: 100%; max-width: 620px; max-height: 90vh; overflow-y: auto; padding: 24px; box-shadow: 0 25px 30px -5px rgba(0,0,0,0.3);">
+        
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+            <div>
+                <span class="status-badge badge-emerald" style="font-size: 0.72rem; padding: 2px 8px;">B2B KURUMSAL CHECKOUT</span>
+                <h3 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin-top: 6px; margin-bottom: 4px;">Siparişi Onayla & Satın Al</h3>
+                <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Fatura, sevkiyat ve kurumsal ödeme bilgilerinizi tamamlayınız.</p>
+            </div>
+            <button type="button" class="ty-modal-close" onclick="closeCheckoutModal()" style="font-size: 1.4rem; cursor: pointer; border: none; background: transparent; color: #64748b;">&times;</button>
+        </div>
+
+        <form id="corporateCheckoutForm" onsubmit="submitCorporateOrder(event); return false;">
+            
+            <!-- Adım 1: Kurumsal Fatura Bilgileri -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 14px;">
+                <h4 style="font-size: 0.88rem; font-weight: 800; color: #0f172a; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                    <span>🏢</span> 1. Kurumsal Fatura Bilgileri
+                </h4>
+                <div style="margin-bottom: 10px;">
+                    <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 3px;">Satınalma Yapan Firma Ünvanı *</label>
+                    <input type="text" id="checkoutBuyerCompany" class="form-control" placeholder="Örn: Aselsan / Ege Kimya A.Ş." required style="font-size: 0.85rem;" />
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 3px;">Vergi Kimlik No (VKN / TC)</label>
+                        <input type="text" id="checkoutBuyerTaxNo" class="form-control" placeholder="1234567890" style="font-size: 0.85rem;" />
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 3px;">Vergi Dairesi</label>
+                        <input type="text" id="checkoutBuyerTaxOffice" class="form-control" placeholder="Kadıköy VD" style="font-size: 0.85rem;" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Adım 2: Sevkiyat ve Fabrika Teslimat Adresi -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 14px;">
+                <h4 style="font-size: 0.88rem; font-weight: 800; color: #0f172a; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                    <span>📍</span> 2. Teslimat & Sevkiyat Adresi
+                </h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div>
+                        <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 3px;">Teslimat İli / İlçe *</label>
+                        <input type="text" id="checkoutDeliveryCity" class="form-control" placeholder="Örn: Kocaeli / Dilovası OSB" required style="font-size: 0.85rem;" />
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 3px;">Yetkili / Alıcı Telefonu</label>
+                        <input type="text" id="checkoutReceiverPhone" class="form-control" placeholder="0532 XXX XX XX" style="font-size: 0.85rem;" />
+                    </div>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 3px;">Fabrika / Depo Açık Adresi *</label>
+                    <textarea id="checkoutDeliveryAddress" class="form-control" rows="2" placeholder="Fabrika No, Blok, Mal Kabul Kapısı veya Şantiye Adresi..." required style="font-size: 0.82rem;"></textarea>
+                </div>
+            </div>
+
+            <!-- Adım 3: Kurumsal Ödeme Yöntemi -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 14px;">
+                <h4 style="font-size: 0.88rem; font-weight: 800; color: #0f172a; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                    <span>💳</span> 3. Kurumsal Ödeme Yöntemi
+                </h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <label style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; background: #fff;">
+                        <input type="radio" name="checkoutPaymentMethod" value="Kredi Kartı" checked onchange="togglePaymentFields(this.value)" />
+                        <span style="font-size: 0.82rem; font-weight: 700;">💳 Kredi / Kurumsal Kart</span>
+                    </label>
+                    <label style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; background: #fff;">
+                        <input type="radio" name="checkoutPaymentMethod" value="Havale / EFT" onchange="togglePaymentFields(this.value)" />
+                        <span style="font-size: 0.82rem; font-weight: 700;">🏦 Kurumsal Havale / EFT</span>
+                    </label>
+                    <label style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; background: #fff;">
+                        <input type="radio" name="checkoutPaymentMethod" value="Cari Hesap / Vadeli" onchange="togglePaymentFields(this.value)" />
+                        <span style="font-size: 0.82rem; font-weight: 700;">📄 30/60 Gün Vadeli Çek</span>
+                    </label>
+                    <label style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; background: #fff;">
+                        <input type="radio" name="checkoutPaymentMethod" value="DBS" onchange="togglePaymentFields(this.value)" />
+                        <span style="font-size: 0.82rem; font-weight: 700;">🛡️ DBS (Doğrudan Borçl.)</span>
+                    </label>
+                </div>
+
+                <!-- Kart Bilgileri Alanı (Simülasyon) -->
+                <div id="paymentCreditCardFields" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; margin-top: 8px;">
+                    <div style="margin-bottom: 8px;">
+                        <label style="font-size: 0.72rem; font-weight: 700; color: #64748b;">Kart Üzerindeki İsim</label>
+                        <input type="text" class="form-control" placeholder="Ad Soyad veya Şirket Adı" style="font-size: 0.82rem;" />
+                    </div>
+                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px;">
+                        <div>
+                            <label style="font-size: 0.72rem; font-weight: 700; color: #64748b;">Kart Numarası</label>
+                            <input type="text" class="form-control" placeholder="**** **** **** ****" style="font-size: 0.82rem;" />
+                        </div>
+                        <div>
+                            <label style="font-size: 0.72rem; font-weight: 700; color: #64748b;">SKT</label>
+                            <input type="text" class="form-control" placeholder="AA/YY" style="font-size: 0.82rem;" />
+                        </div>
+                        <div>
+                            <label style="font-size: 0.72rem; font-weight: 700; color: #64748b;">CVV</label>
+                            <input type="text" class="form-control" placeholder="***" style="font-size: 0.82rem;" />
+                        </div>
+                    </div>
+                </div>
+
+                <div id="paymentBankFields" style="display: none; font-size: 0.8rem; color: #0284c7; background: #e0f2fe; padding: 10px; border-radius: 6px; margin-top: 8px;">
+                    ℹ️ Sipariş onayınız sonrası resmi <strong>Proforma Fatura</strong> ve şirket IBAN bilgilerimiz sistem ve e-posta ile iletilecektir.
+                </div>
+            </div>
+
+            <!-- Sipariş Özeti ve Butonlar -->
+            <div style="background: #0f172a; color: #fff; border-radius: 8px; padding: 14px 18px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="font-size: 0.78rem; color: #94a3b8; display: block;">Ödenecek Toplam Tutar (KDV Dahil):</span>
+                    <strong id="checkoutModalGrandTotalText" style="font-size: 1.3rem; color: #38bdf8;">0 ₺</strong>
+                </div>
+                <div style="font-size: 0.78rem; color: #94a3b8; text-align: right;">
+                    <span id="checkoutModalItemCount">0 Kalem</span><br/>
+                    🔒 256-Bit SSL Kurumsal Güvenlik
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="btn-cancel" style="flex: 1; border-radius: 8px;" onclick="closeCheckoutModal()">Vazgeç</button>
+                <button type="submit" id="btnSubmitOrder" class="b2b-btn-submit-order">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>✓ Siparişi Onayla ve Satın Al</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== SİPARİŞ BAŞARILI MODALI ==================== -->
+<div id="b2bOrderSuccessModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.7); backdrop-filter: blur(4px); z-index: 999999; align-items: center; justify-content: center; padding: 20px;">
+    <div class="ty-modal-box" style="background: #ffffff; border-radius: 12px; width: 100%; max-width: 480px; padding: 28px; text-align: center; box-shadow: 0 25px 30px -5px rgba(0,0,0,0.3);">
+        <div style="font-size: 3.5rem; margin-bottom: 12px;">🎉</div>
+        <span class="status-badge badge-emerald" style="font-size: 0.78rem; padding: 3px 10px; margin-bottom: 8px;">SİPARİŞ ONAYLANDI</span>
+        <h3 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-top: 6px; margin-bottom: 8px;">Satın Alımınız Başarıyla Gerçekleşti</h3>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 16px;">
+            Siparişiniz tedarikçiye iletildi ve hazırlık aşamasına alındı.
+        </p>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 20px; text-align: left; font-size: 0.86rem; display: flex; flex-direction: column; gap: 6px;">
+            <div><strong>Sipariş No:</strong> <span id="successModalOrderNo" style="font-family: monospace; color: #0284c7; font-weight: 700;"></span></div>
+            <div><strong>Toplam Tutar:</strong> <span id="successModalTotal" style="font-weight: 700; color: #0f172a;"></span></div>
+            <div><strong>Tahmini Teslimat:</strong> <span>1-3 İş Günü</span></div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn-cancel" style="flex: 1;" onclick="closeTyModal('b2bOrderSuccessModal'); window.location.href='/#ihtiyaciniz-olan-urunler';">Alışverişe Devam Et</button>
+            <a href="/Dashboard/Index" class="btn-primary" style="flex: 1; text-decoration: none; justify-content: center;">
+                Yönetim Paneline Git
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/trendyol-vitrin.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            renderFullCartPage();
+        });
+
+        function renderFullCartPage() {
+            const cart = getB2BCart();
+            const emptyEl = document.getElementById('cartEmptyState');
+            const contentEl = document.getElementById('cartContentGrid');
+            const itemsContainer = document.getElementById('cartPageItemsTable');
+            const headerCount = document.getElementById('cartTotalItemsHeader');
+
+            if (!cart || cart.length === 0) {
+                if (emptyEl) emptyEl.style.display = 'block';
+                if (contentEl) contentEl.style.display = 'none';
+                return;
+            }
+
+            if (emptyEl) emptyEl.style.display = 'none';
+            if (contentEl) contentEl.style.display = 'grid';
+
+            const totals = getCartTotals();
+            if (headerCount) headerCount.textContent = `Sepetteki Kalemler (${totals.uniqueItemCount} Kalem / ${totals.totalCount} Adet)`;
+
+            document.getElementById('cartSummarySubtotal').textContent = formatB2BMoney(totals.subtotal);
+            document.getElementById('cartSummaryTax').textContent = formatB2BMoney(totals.tax);
+            document.getElementById('cartSummaryGrandTotal').textContent = formatB2BMoney(totals.grandTotal);
+
+            let html = '';
+            cart.forEach(item => {
+                const lineTotal = item.price * item.quantity;
+                html += `
+                    <div style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                        <img src="${item.image}" alt="${item.title}" style="width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0;" onerror="this.src='https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=100&auto=format&fit=crop&q=80'" />
+                        
+                        <div style="flex: 1; min-width: 220px;">
+                            <span style="font-size: 0.74rem; font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 2px 8px; border-radius: 4px;">
+                                ${item.seller || 'Onaylı Tedarikçi'}
+                            </span>
+                            <h4 style="font-size: 0.95rem; font-weight: 750; color: #0f172a; margin: 6px 0 3px 0;">
+                                ${item.title}
+                            </h4>
+                            <div style="font-size: 0.78rem; color: #64748b;">
+                                SKU: <code>${item.sku || 'SKU-000'}</code> | Kategori: <strong>${item.category || 'Endüstriyel'}</strong>
+                            </div>
+                        </div>
+
+                        <div style="text-align: right; min-width: 110px;">
+                            <div style="font-size: 0.92rem; font-weight: 700; color: #0f172a;">${formatB2BMoney(item.price)}</div>
+                            <div style="font-size: 0.72rem; color: #64748b;">Birim Fiyat (+KDV)</div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background: #f8fafc;">
+                            <button type="button" onclick="updateCartPageQty(${item.productId}, ${item.quantity - 1})" style="background: transparent; border: none; padding: 6px 12px; font-weight: 700; cursor: pointer; color: #0f172a;">-</button>
+                            <span style="padding: 6px 12px; font-size: 0.88rem; font-weight: 800; min-width: 36px; text-align: center; background: #fff;">${item.quantity}</span>
+                            <button type="button" onclick="updateCartPageQty(${item.productId}, ${item.quantity + 1})" style="background: transparent; border: none; padding: 6px 12px; font-weight: 700; cursor: pointer; color: #0f172a;">+</button>
+                        </div>
+
+                        <div style="text-align: right; min-width: 120px;">
+                            <div style="font-size: 1.05rem; font-weight: 800; color: #0284c7;">${formatB2BMoney(lineTotal)}</div>
+                            <div style="font-size: 0.72rem; color: #64748b;">Ara Toplam</div>
+                        </div>
+
+                        <div>
+                            <button type="button" onclick="removeCartPageItem(${item.productId})" style="background: transparent; border: none; color: #ef4444; font-size: 1.1rem; cursor: pointer; padding: 6px;" title="Ürünü Sepetten Çıkar">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            if (itemsContainer) itemsContainer.innerHTML = html;
+        }
+
+        function updateCartPageQty(productId, newQty) {
+            updateCartQty(productId, newQty);
+            renderFullCartPage();
+        }
+
+        function removeCartPageItem(productId) {
+            removeFromCart(productId);
+            renderFullCartPage();
+        }
+    </script>
+}
