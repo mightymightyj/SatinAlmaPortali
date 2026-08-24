@@ -1,0 +1,510 @@
+@using satinalmaportali2.Helpers
+@model satinalmaportali2.Models.SupplierListingsViewModel
+@{
+    ViewData["Title"] = "Ürün İlanlarım & Vitrin Kataloğu";
+    Layout = "~/Views/Dashboard/_DashboardLayout.cshtml";
+    ViewBag.DashboardRole = "Supplier";
+}
+
+<!-- ==================== SAYFA BAŞLIĞI VE AKSİYONLAR ==================== -->
+<div class="page-head">
+    <div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <h1>Ürün İlanlarım & Vitrin Kataloğu</h1>
+            <span class="status-badge badge-emerald" style="font-size: 0.75rem; padding: 3px 10px;">
+                <span class="status-dot"></span> Canlı Vitrin Entegre
+            </span>
+        </div>
+        <p>
+            <span>@Model.CompanyName portföyündeki kurumsal ürünler, toptan fiyat listeleri ve stok yönetimi</span>
+        </p>
+    </div>
+
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <a href="/#b2b-vitrin" target="_blank" class="btn-cancel" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none; font-size: 0.85rem; padding: 9px 14px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+            Vitrinde Gör
+        </a>
+        <button type="button" class="btn-primary" onclick="openCreateListingModal()" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; font-size: 0.88rem; font-weight: 700;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            + Yeni Ürün İlanı Ver
+        </button>
+    </div>
+</div>
+
+<!-- ==================== 4 BÜYÜK KPI KARTI ==================== -->
+<section class="kpi-row" aria-label="İlan Göstergeleri" style="margin-bottom: 20px;">
+    <!-- KPI 1: Toplam İlan -->
+    <article class="card kpi-card">
+        <div class="kpi-top">
+            <span class="kpi-label">Katalogdaki Toplam İlan</span>
+            <span class="kpi-icon accent">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+            </span>
+        </div>
+        <p class="kpi-value">@Model.TotalCount</p>
+        <p class="kpi-delta is-good">
+            <span>Yayında olan kurumsal ürün portföyü</span>
+        </p>
+    </article>
+
+    <!-- KPI 2: Toplam Katalog Değeri -->
+    <article class="card kpi-card">
+        <div class="kpi-top">
+            <span class="kpi-label">Toplam Stok / Katalog Değeri</span>
+            <span class="kpi-icon good">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+            </span>
+        </div>
+        <p class="kpi-value">@Model.TotalCatalogValue.ToString("N0", ChartHelper.Tr) ₺</p>
+        <p class="kpi-delta is-good">
+            <span>Stoktaki hazır ürünlerin toptan değeri</span>
+        </p>
+    </article>
+
+    <!-- KPI 3: Stok Durumu İdeal -->
+    <article class="card kpi-card">
+        <div class="kpi-top">
+            <span class="kpi-label">Yeterli Stokta Olanlar</span>
+            <span class="kpi-icon good">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </span>
+        </div>
+        <p class="kpi-value">@Model.ActiveCount</p>
+        <p class="kpi-delta is-good">
+            <span>Hızlı sevkiyata hazır ürünler</span>
+        </p>
+    </article>
+
+    <!-- KPI 4: Kritik Stok / Uyarı -->
+    <article class="card kpi-card">
+        <div class="kpi-top">
+            <span class="kpi-label">Kritik / Tükenen Stok</span>
+            <span class="kpi-icon @(Model.LowStockCount > 0 ? "warn" : "accent")">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+            </span>
+        </div>
+        <p class="kpi-value">@Model.LowStockCount</p>
+        <p class="kpi-delta @(Model.LowStockCount > 0 ? "is-bad" : "is-good")">
+            <span>@(Model.LowStockCount > 0 ? "Stok yenilenmesi gerekiyor" : "Tüm stok seviyeleri optimal")</span>
+        </p>
+    </article>
+</section>
+
+<!-- ==================== FİLTRELEME & ARAMA ALANI ==================== -->
+<div class="card" style="margin-bottom: 20px; padding: 16px 20px;">
+    <form method="get" asp-action="Listings" id="listingsFilterForm" style="display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between;">
+        
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; flex: 1; min-width: 300px;">
+            <!-- Arama Kutusu -->
+            <div style="position: relative; flex: 1; min-width: 220px; max-width: 400px;">
+                <input type="text" name="search" value="@Model.SearchQuery" class="form-control" placeholder="Ürün adı, SKU veya kategori ara..." style="padding-left: 36px; height: 40px; font-size: 0.88rem;" />
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" style="position: absolute; left: 12px; top: 12px; pointer-events: none;">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </div>
+
+            <!-- Kategori Dropdown -->
+            <div style="min-width: 180px;">
+                <select name="category" class="form-control" onchange="document.getElementById('listingsFilterForm').submit()" style="height: 40px; font-size: 0.88rem;">
+                    <option value="Tümü" selected="@(string.IsNullOrEmpty(Model.SelectedCategory) || Model.SelectedCategory == "Tümü")">Tüm Kategoriler</option>
+                    @foreach (var cat in Model.AvailableCategories)
+                    {
+                        <option value="@cat" selected="@(Model.SelectedCategory == cat)">@cat</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <!-- Durum Filtresi (Sekmeler) -->
+        <div style="display: flex; gap: 6px; align-items: center;">
+            <input type="hidden" name="status" id="selectedStatusInput" value="@(Model.SelectedStatus ?? "Tümü")" />
+            
+            <button type="button" class="btn-tree-tool @(string.IsNullOrEmpty(Model.SelectedStatus) || Model.SelectedStatus == "Tümü" ? "is-active" : "")" 
+                    onclick="setStatusFilter('Tümü')" style="padding: 7px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px;">
+                Tümü (@Model.TotalCount)
+            </button>
+            <button type="button" class="btn-tree-tool @(Model.SelectedStatus == "Stokta" ? "is-active" : "")" 
+                    onclick="setStatusFilter('Stokta')" style="padding: 7px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; color: #10b981;">
+                ● Stokta (@Model.ActiveCount)
+            </button>
+            <button type="button" class="btn-tree-tool @(Model.SelectedStatus == "Kritik" ? "is-active" : "")" 
+                    onclick="setStatusFilter('Kritik')" style="padding: 7px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; color: #f59e0b;">
+                ▲ Kritik (@Model.LowStockCount)
+            </button>
+            
+            @if (!string.IsNullOrWhiteSpace(Model.SearchQuery) || (!string.IsNullOrWhiteSpace(Model.SelectedCategory) && Model.SelectedCategory != "Tümü") || (!string.IsNullOrWhiteSpace(Model.SelectedStatus) && Model.SelectedStatus != "Tümü"))
+            {
+                <a asp-action="Listings" class="btn-cancel" style="padding: 7px 12px; font-size: 0.82rem; text-decoration: none;" title="Filtreleri Temizle">✕ Temizle</a>
+            }
+        </div>
+    </form>
+</div>
+
+<!-- ==================== İLANLAR ANA TABLOSU ==================== -->
+<article class="card" id="listingsTableCard">
+    <header class="card-head">
+        <div class="head-with-icon">
+            <span class="blue-accent-x">📦</span>
+            <h2>Kayıtlı Ürün İlanları & Vitrin Listesi (@Model.Listings.Count)</h2>
+        </div>
+        <div style="font-size: 0.82rem; color: var(--muted);">
+            Veritabanı ile canlı senkronizedir.
+        </div>
+    </header>
+
+    <div class="table-scroll-wrap">
+        <table class="dash-table">
+            <thead>
+                <tr>
+                    <th style="min-width: 240px;">Ürün Adı & SKU</th>
+                    <th>Kategori</th>
+                    <th>Hazır Stok</th>
+                    <th>Birim Fiyat</th>
+                    <th>Vitrin Durumu</th>
+                    <th>Şartname / Not</th>
+                    <th class="text-right" style="min-width: 160px;">Aksiyonlar</th>
+                </tr>
+            </thead>
+            <tbody id="listingsTableBody">
+                @if (!Model.Listings.Any())
+                {
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 48px 16px; color: var(--muted);">
+                            <div style="font-size: 2.5rem; margin-bottom: 12px;">📦</div>
+                            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; color: var(--text);">Henüz listelenmiş bir ürün ilanı bulunamadı</h3>
+                            <p style="font-size: 0.85rem; margin-bottom: 16px;">Kriterlere uygun ürün bulunamadı veya henüz bir ilan oluşturmadınız.</p>
+                            <button type="button" class="btn-primary" onclick="openCreateListingModal()" style="display: inline-flex; align-items: center; gap: 6px; margin: 0 auto;">
+                                + İlk Ürün İlanınızı Verin
+                            </button>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Model.Listings)
+                    {
+                        var isCrit = item.Status == "Kritik";
+                        var isOut = item.Status == "Tükendi";
+                        <tr id="listing-row-@item.ItemId">
+                            <td>
+                                <div class="req-title-cell">
+                                    <strong style="font-size: 0.92rem;">@item.ItemName</strong>
+                                    <div style="display: flex; gap: 6px; align-items: center; margin-top: 3px;">
+                                        <small class="req-code">@item.Sku</small>
+                                        <small style="background: rgba(100,116,139,0.12); padding: 1px 6px; border-radius: 4px; font-size: 0.72rem; color: var(--muted);">
+                                            🏢 @item.Brand
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="category-tag">@item.CategoryName</span>
+                            </td>
+                            <td>
+                                <div style="display: flex; flex-direction: column; gap: 2px;">
+                                    <strong class="@(isOut ? "text-danger" : (isCrit ? "text-warning" : ""))" style="font-size: 0.9rem;">
+                                        @item.Stock Adet
+                                    </strong>
+                                    <span class="status-badge @(isOut ? "badge-coral" : (isCrit ? "badge-amber" : "badge-emerald"))" style="font-size: 0.68rem; padding: 2px 6px; width: fit-content;">
+                                        <span class="status-dot"></span>
+                                        @item.Status
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                <strong style="font-size: 0.95rem; color: var(--text);">
+                                    @item.UnitPrice.ToString("N0", ChartHelper.Tr) ₺
+                                </strong>
+                                <div style="font-size: 0.72rem; color: var(--muted);">+ %20 KDV</div>
+                            </td>
+                            <td>
+                                <span class="status-badge badge-emerald" style="font-size: 0.75rem; padding: 3px 8px;">
+                                    <span class="status-dot"></span> Vitrinde Yayında
+                                </span>
+                            </td>
+                            <td>
+                                <span style="font-size: 0.8rem; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 220px;" title="@item.Description">
+                                    @(string.IsNullOrWhiteSpace(item.Description) ? "-" : item.Description)
+                                </span>
+                            </td>
+                            <td class="text-right">
+                                <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                                    <button type="button" class="btn-table-action" onclick="openPriceModal(@item.ItemId, '@item.ItemName.Replace("'", "\\'") ', @item.UnitPrice, @item.Stock)" title="Fiyat ve Stok Düzenle">
+                                        Düzenle
+                                    </button>
+                                    <button type="button" class="btn-cancel" onclick="deleteListing(@item.ItemId, '@item.ItemName.Replace("'", "\\'") ')" style="padding: 5px 9px; font-size: 0.78rem; color: #ef4444; border-color: rgba(239,68,68,0.3);" title="İlanı Sil">
+                                        Sil
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</article>
+
+<!-- ==================== MODAL: YENİ ÜRÜN İLANI VERME (DASHBOARD) ==================== -->
+<div id="dashCreateListingModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this)closeCreateListingModal()">
+    <div class="ty-modal-box" style="background: var(--card-bg, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 12px; width: 100%; max-width: 560px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+            <div>
+                <span class="status-badge badge-emerald" style="font-size: 0.72rem; padding: 2px 8px;">KURUMSAL TEDARİKÇİ GİRİŞİ</span>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text, #0f172a); margin-top: 6px; margin-bottom: 4px;">Yeni Ürün / Fiyat İlanı Ekle</h3>
+                <p style="font-size: 0.82rem; color: var(--muted, #64748b); margin: 0;">Eklediğiniz ürün anında B2B vitrininde ve katalog listenizde yayınlanacaktır.</p>
+            </div>
+            <button type="button" class="modal-close-btn" onclick="closeCreateListingModal()" style="border: none; background: transparent; font-size: 1.2rem; cursor: pointer; color: var(--muted);">✕</button>
+        </div>
+
+        <form id="dashCreateListingForm" onsubmit="handleDashCreateListing(event); return false;">
+            <div class="form-group" style="margin-bottom: 12px;">
+                <label class="form-label" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Ürün İsmi / Başlığı <span class="req-star" style="color: #ef4444;">*</span></label>
+                <input type="text" id="dashListingProductName" class="form-control" placeholder="Örn: DIN 933 A2 Paslanmaz Cıvata M8x30" required style="border-radius: 6px; font-size: 0.85rem;" />
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <label class="form-label" style="font-size: 0.8rem; font-weight: 700; margin: 0;">Kategori Seçimi <span class="req-star" style="color: #ef4444;">*</span></label>
+                    <span style="font-size: 0.72rem; color: var(--muted);">(Ağaçtan tıklayarak seçiniz)</span>
+                </div>
+
+                <input type="hidden" id="dashListingCategory" name="CategoryName" />
+                <input type="hidden" id="dashListingCategoryId" name="CategoryID" />
+
+                <div class="b2b-cat-picker-container" style="border: 1px solid var(--border-color, #e2e8f0); border-radius: 8px; padding: 8px; background: rgba(0,0,0,0.02);">
+                    <div class="b2b-cat-picker-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <div id="dashCatSelectedDisplay" style="font-size: 0.82rem; color: var(--muted); display: flex; align-items: center; gap: 6px;">
+                            <span>📁</span>
+                            <span id="dashCatSelectedText">Aşağıdaki ağaçtan bir kategori seçiniz...</span>
+                        </div>
+                        <button type="button" class="btn-tree-tool" onclick="clearDashCatTreeSelection()" style="padding: 2px 8px; font-size: 0.72rem;">Temizle</button>
+                    </div>
+
+                    <div style="max-height: 160px; overflow-y: auto; border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px; padding: 6px; background: var(--card-bg, #ffffff);">
+                        @if (ViewBag.CategoryTree != null && ((IEnumerable<satinalmaportali2.Controllers.HierarchicalCategoryItem>)ViewBag.CategoryTree).Any())
+                        {
+                            var rootCategories = (IEnumerable<satinalmaportali2.Controllers.HierarchicalCategoryItem>)ViewBag.CategoryTree;
+                            foreach (var root in rootCategories)
+                            {
+                                @RenderDashTree(root, 0)
+                            }
+                        }
+                        else
+                        {
+                            <div style="padding: 10px; text-align: center; color: var(--muted); font-size: 0.8rem;">
+                                Kategori listesi yükleniyor...
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div class="form-group">
+                    <label class="form-label" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Toptan Birim Fiyat (₺ + KDV) <span class="req-star" style="color: #ef4444;">*</span></label>
+                    <input type="number" id="dashListingPrice" class="form-control" placeholder="Örn: 2450" step="0.01" min="0.01" required style="border-radius: 6px; font-size: 0.85rem;" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Hazır Stok Miktarı <span class="req-star" style="color: #ef4444;">*</span></label>
+                    <input type="text" id="dashListingStock" class="form-control" placeholder="Örn: 500 Adet" required style="border-radius: 6px; font-size: 0.85rem;" />
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Tedarik & Sevkiyat Şartları / Açıklama</label>
+                <textarea id="dashListingDesc" class="form-control" rows="2" placeholder="Minimum sipariş (MOQ), termin süresi, teslimat yöntemleri..." style="border-radius: 6px; font-size: 0.82rem;"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn-cancel" onclick="closeCreateListingModal()">Vazgeç</button>
+                <button type="submit" class="btn-primary" style="padding: 10px 20px; font-size: 0.88rem; font-weight: 700;">
+                    ✓ İlanı Yayına Al
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@functions {
+    public Microsoft.AspNetCore.Html.IHtmlContent RenderDashTree(satinalmaportali2.Controllers.HierarchicalCategoryItem node, int depth)
+    {
+        var sb = new System.Text.StringBuilder();
+        var indent = depth * 14;
+        var hasChildren = node.Children != null && node.Children.Any();
+        
+        sb.Append($"<div class=\"cat-tree-node\" style=\"margin-left: {indent}px; margin-bottom: 3px; display: flex; align-items: center; gap: 4px;\">");
+        sb.Append($"<span style=\"font-size: 0.78rem; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: background 0.15s;\" class=\"dash-cat-opt\" onclick=\"selectDashCategory({node.CategoryID}, '{Html.Raw(node.CategoryName.Replace("'", "\\'"))}')\" onmouseover=\"this.style.background='rgba(59,130,246,0.1)'\" onmouseout=\"this.style.background='transparent'\">");
+        sb.Append(hasChildren ? "📁 " : "📄 ");
+        sb.Append($"<strong>{Html.Raw(node.CategoryName)}</strong>");
+        sb.Append("</span>");
+        sb.Append("</div>");
+
+        if (hasChildren && node.Children != null)
+        {
+            foreach (var child in node.Children)
+            {
+                sb.Append(RenderDashTree(child, depth + 1).ToString());
+            }
+        }
+
+        return new Microsoft.AspNetCore.Html.HtmlString(sb.ToString());
+    }
+}
+
+@section Scripts {
+    <script>
+        function setStatusFilter(statusVal) {
+            document.getElementById('selectedStatusInput').value = statusVal;
+            document.getElementById('listingsFilterForm').submit();
+        }
+
+        function openCreateListingModal() {
+            var modal = document.getElementById('dashCreateListingModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                document.getElementById('dashListingProductName')?.focus();
+            }
+        }
+
+        function closeCreateListingModal() {
+            var modal = document.getElementById('dashCreateListingModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function selectDashCategory(id, name) {
+            document.getElementById('dashListingCategoryId').value = id;
+            document.getElementById('dashListingCategory').value = name;
+            var textEl = document.getElementById('dashCatSelectedText');
+            if (textEl) {
+                textEl.innerHTML = '<span style="color: #10b981; font-weight: 700;">✓ ' + name + '</span>';
+            }
+        }
+
+        function clearDashCatTreeSelection() {
+            document.getElementById('dashListingCategoryId').value = '';
+            document.getElementById('dashListingCategory').value = '';
+            var textEl = document.getElementById('dashCatSelectedText');
+            if (textEl) textEl.textContent = 'Aşağıdaki ağaçtan bir kategori seçiniz...';
+        }
+
+        async function handleDashCreateListing(e) {
+            if (e) {
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+            }
+
+            const productName = document.getElementById('dashListingProductName')?.value || '';
+            const category = document.getElementById('dashListingCategory')?.value || '';
+            const categoryId = document.getElementById('dashListingCategoryId')?.value || '';
+            const price = parseFloat(document.getElementById('dashListingPrice')?.value || '0');
+            const stock = document.getElementById('dashListingStock')?.value || '';
+            const desc = document.getElementById('dashListingDesc')?.value || '';
+
+            if (!productName.trim()) {
+                alert("Lütfen ürün adını giriniz.");
+                return false;
+            }
+
+            if (!category) {
+                alert("Lütfen kategori ağacından bir kategori seçiniz.");
+                return false;
+            }
+
+            if (isNaN(price) || price <= 0) {
+                alert("Lütfen geçerli bir birim fiyat giriniz.");
+                return false;
+            }
+
+            const formEl = document.getElementById('dashCreateListingForm');
+            const submitBtn = formEl ? formEl.querySelector('button[type="submit"]') : null;
+            const origHtml = submitBtn ? submitBtn.innerHTML : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span>⏳ Kaydediliyor...</span>';
+            }
+
+            try {
+                const response = await fetch('/Home/SubmitSellerOffer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        productName: productName.trim(),
+                        categoryID: categoryId ? parseInt(categoryId, 10) : null,
+                        categoryName: category,
+                        unitPrice: price,
+                        stockQuantity: stock,
+                        itemDescription: desc
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    closeCreateListingModal();
+                    // Başarı mesajı ve sayfayı anında yenileme
+                    window.location.reload();
+                } else {
+                    alert("Hata: " + (result.message || "İlan kaydedilemedi."));
+                }
+            } catch (err) {
+                alert("Bağlantı hatası: " + err.message);
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = origHtml;
+                }
+            }
+
+            return false;
+        }
+
+        async function deleteListing(id, name) {
+            if (!confirm('"' + name + '" ürün ilanını silmek istediğinize emin misiniz?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/Dashboard/DeleteProductListing?id=' + id, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                if (result.success) {
+                    const row = document.getElementById('listing-row-' + id);
+                    if (row) {
+                        row.remove();
+                    } else {
+                        window.location.reload();
+                    }
+                } else {
+                    alert("Hata: " + (result.message || "İlan silinemedi."));
+                }
+            } catch (err) {
+                alert("Bağlantı hatası: " + err.message);
+            }
+        }
+    </script>
+}

@@ -23,10 +23,30 @@ namespace satinalmaportali2.Data
         public DbSet<Countries> Countries { get; set; }
         public DbSet<Districts> Districts { get; set; }
         public DbSet<Towns> Towns { get; set; }
+        public DbSet<Order> Orders { get; set; }
+        public DbSet<OrderItem> OrderItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Order>(entity =>
+            {
+                entity.ToTable("orders");
+                entity.HasKey(e => e.OrderID);
+                entity.Property(e => e.OrderID).ValueGeneratedOnAdd();
+                entity.HasMany(e => e.OrderItems)
+                      .WithOne(e => e.Order)
+                      .HasForeignKey(e => e.OrderID)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<OrderItem>(entity =>
+            {
+                entity.ToTable("orderitems");
+                entity.HasKey(e => e.OrderItemID);
+                entity.Property(e => e.OrderItemID).ValueGeneratedOnAdd();
+            });
 
             modelBuilder.Entity<Company>(entity =>
             {

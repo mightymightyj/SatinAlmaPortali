@@ -729,13 +729,40 @@ function formatB2BMoney(amount) {
  * Sayfa Yüklendiğinde Vitrini Başlat
  */
 document.addEventListener('DOMContentLoaded', function () {
+    // Kurumsal Sepet Durumunu Her Sayfada Güncelle
+    updateCartUi();
+
     const container = document.getElementById('trendyolProductGrid');
     if (!container) return;
 
     generateCorporate48Products();
     renderCorporateVitrin();
     setupCorporateEvents();
+    loadDbVitrinProducts();
 });
+
+/**
+ * Veritabanında (items tablosunda) kayıtlı gerçek ürünleri vitrine dahil et
+ */
+async function loadDbVitrinProducts() {
+    try {
+        const response = await fetch('/Home/GetVitrinProductsJson');
+        const data = await response.json();
+        if (data.success && Array.isArray(data.products) && data.products.length > 0) {
+            data.products.forEach(p => {
+                if (!activeProducts.some(ap => ap.id === p.id)) {
+                    activeProducts.unshift(p);
+                }
+                if (!B2B_PRODUCT_CATALOG.some(cp => cp.id === p.id)) {
+                    B2B_PRODUCT_CATALOG.unshift(p);
+                }
+            });
+            renderCorporateVitrin();
+        }
+    } catch (err) {
+        console.warn('DB vitrin ürünleri yüklenirken hata:', err);
+    }
+}
 
 /**
  * 6x8 B2B Ürün Izgarasını Render Et
@@ -863,20 +890,23 @@ function renderCorporateVitrin() {
                         </div>
                     </div>
 
-                    <!-- Aksiyon Butonları -->
+                    <!-- Aksiyon Butonları (Satın Al & Sepete Ekle) -->
                     <div class="b2b-actions">
-                        <button type="button" class="b2b-btn-rfq" onclick="openQuoteModal(${item.id})" title="Doğrudan bu tedarikçiden kurumsal proforma / RFQ teklifi iste">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14 2 14 8 20 8"></polyline>
-                                <line x1="16" y1="13" x2="8" y2="13"></line>
-                                <line x1="16" y1="17" x2="8" y2="17"></line>
-                                <polyline points="10 9 9 9 8 9"></polyline>
+                        <button type="button" class="b2b-btn-buy" onclick="directBuy(${item.id})" title="Bu ürünü doğrudan kurumsal siparişle satın alın">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                             </svg>
-                            Teklif İste (RFQ)
+                            Satın Al
+                        </button>
+                        <button type="button" class="b2b-btn-cart" onclick="addToCart(${item.id})" title="Sepete Ekle">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="9" cy="21" r="1"></circle>
+                                <circle cx="20" cy="21" r="1"></circle>
+                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                            </svg>
                         </button>
                         <button type="button" class="b2b-btn-contact" onclick="openProductQuickView(${item.id})" title="Şartname ve Tedarikçi Detaylarını Gör">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <line x1="12" y1="16" x2="12" y2="12"></line>
                                 <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -1022,17 +1052,31 @@ function openProductQuickView(productId) {
 
     const modalQuoteBtn = document.getElementById('qvModalQuoteBtn');
     if (modalQuoteBtn) {
+        modalQuoteBtn.innerHTML = `
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            Hemen Satın Al
+        `;
         modalQuoteBtn.onclick = function() {
             closeTyModal('tyQuickViewModal');
-            openQuoteModal(productId);
+            directBuy(productId);
         };
     }
 
     const modalSellBtn = document.getElementById('qvModalSellBtn');
     if (modalSellBtn) {
+        modalSellBtn.innerHTML = `
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="9" cy="21" r="1"></circle>
+                <circle cx="20" cy="21" r="1"></circle>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            </svg>
+            Sepete Ekle
+        `;
         modalSellBtn.onclick = function() {
             closeTyModal('tyQuickViewModal');
-            openSellerOfferModal(productId);
+            addToCart(productId, 1, true);
         };
     }
 
@@ -1251,25 +1295,87 @@ function closeTyModal(modalId) {
 }
 
 /**
- * RFQ ve Tedarikçi Form Gönderimleri
+ * RFQ ve Tedarikçi Form Gönderimleri (Backend Entegrasyonlu)
  */
-function submitQuoteRequest(e) {
-    e.preventDefault();
-    const qty = document.getElementById('quoteQuantity')?.value || '50';
-    const terms = document.getElementById('quotePaymentTerms')?.value || 'Peşin';
-    const buyerCompany = document.getElementById('quoteBuyerCompany')?.value || 'Şirketiniz';
+async function submitQuoteRequest(e) {
+    if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
+    const productId = document.getElementById('quoteModalHiddenProductId')?.value || '0';
+    const qty = parseInt(document.getElementById('quoteQuantity')?.value || '50', 10);
+    const targetPrice = document.getElementById('quoteTargetPrice')?.value ? parseFloat(document.getElementById('quoteTargetPrice').value) : null;
+    const terms = document.getElementById('quotePaymentTerms')?.value || 'Peşin İskontolu';
+    const buyerCompany = document.getElementById('quoteBuyerCompany')?.value || 'Kurumsal Müşteri';
+    const buyerTax = document.getElementById('quoteBuyerTax')?.value || '';
+    const deliveryCity = document.getElementById('quoteDeliveryCity')?.value || '';
+    const notes = document.getElementById('quoteNotes')?.value || '';
+    const sampleChecked = document.getElementById('quoteSampleCheck')?.checked || false;
 
-    closeTyModal('tyQuoteModal');
-    showB2BToast(`📋 Sayın ${buyerCompany}, ${qty} adet için resmi RFQ teklif talebiniz tedarikçiye iletildi. Taleplerim ekranından teklifleri izleyebilirsiniz.`, "success");
+    const formEl = document.getElementById('quoteRequestForm') || (e && e.target ? e.target : null);
+    const submitBtn = formEl ? formEl.querySelector('button[type="submit"]') : null;
+    const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span>⏳ Gönderiliyor...</span>';
+    }
+
+    try {
+        const response = await fetch('/Home/SubmitQuoteRequest', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                productID: parseInt(productId, 10) || 0,
+                buyerCompany: buyerCompany,
+                buyerTax: buyerTax,
+                quantity: qty,
+                targetPrice: targetPrice,
+                paymentTerms: terms,
+                deliveryCity: deliveryCity,
+                notes: notes,
+                sampleRequested: sampleChecked
+            })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            closeTyModal('tyQuoteModal');
+            showB2BToast(result.message, "success");
+            e.target.reset();
+        } else {
+            showB2BToast("⚠️ " + (result.message || "Teklif talebi iletilemedi."), "danger");
+        }
+    } catch (err) {
+        showB2BToast("⚠️ Sunucu bağlantı hatası: " + err.message, "danger");
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
+        }
+    }
+
     return false;
 }
 
-function submitSellerOffer(e) {
-    e.preventDefault();
-    const productName = document.getElementById('sellerOfferProductName')?.value || 'Yeni Ürün';
-    const category = document.getElementById('sellerOfferCategory')?.value;
-    const price = document.getElementById('sellerOfferPrice')?.value || '';
+async function submitSellerOffer(e) {
+    if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
+    const productName = document.getElementById('sellerOfferProductName')?.value || '';
+    const category = document.getElementById('sellerOfferCategory')?.value || '';
+    const categoryId = document.getElementById('sellerOfferCategoryId')?.value || '';
+    const price = parseFloat(document.getElementById('sellerOfferPrice')?.value || '0');
     const stock = document.getElementById('sellerOfferStock')?.value || '';
+    const desc = document.getElementById('sellerOfferDesc')?.value || '';
+
+    if (!productName.trim()) {
+        showB2BToast("⚠️ Lütfen ürün adını giriniz.", "danger");
+        document.getElementById('sellerOfferProductName')?.focus();
+        return false;
+    }
 
     if (!category) {
         showB2BToast("⚠️ Lütfen ürünün dahil olduğu kategoriyi kategori ağacından seçiniz.", "info");
@@ -1277,8 +1383,63 @@ function submitSellerOffer(e) {
         return false;
     }
 
-    closeTyModal('tySellerOfferModal');
-    showB2BToast(`🏢 "${productName}" ürünü [${category}] kategorisinde satışa açılmak üzere başarıyla kaydedildi.`, "success");
+    if (isNaN(price) || price <= 0) {
+        showB2BToast("⚠️ Lütfen geçerli bir birim fiyat giriniz.", "danger");
+        document.getElementById('sellerOfferPrice')?.focus();
+        return false;
+    }
+
+    const formEl = document.getElementById('sellerOfferForm') || (e && e.target ? e.target : null);
+    const submitBtn = formEl ? formEl.querySelector('button[type="submit"]') : null;
+    const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span>⏳ Kaydediliyor ve Yayına Alınıyor...</span>';
+    }
+
+    try {
+        const response = await fetch('/Home/SubmitSellerOffer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                productName: productName.trim(),
+                categoryID: categoryId ? parseInt(categoryId, 10) : null,
+                categoryName: category,
+                unitPrice: price,
+                stockQuantity: stock,
+                itemDescription: desc
+            })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            closeTyModal('tySellerOfferModal');
+            showB2BToast(result.message, "success");
+
+            // Yeni ürünü anında vitrinin en başına ekle ve yeniden render et
+            if (result.item) {
+                activeProducts.unshift(result.item);
+                B2B_PRODUCT_CATALOG.unshift(result.item);
+                renderCorporateVitrin();
+            }
+
+            // Formu sıfırla
+            e.target.reset();
+            clearCatTreeSelection();
+        } else {
+            showB2BToast("⚠️ " + (result.message || "İlan kaydedilemedi."), "danger");
+        }
+    } catch (err) {
+        showB2BToast("⚠️ Sunucu bağlantı hatası: " + err.message, "danger");
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
+        }
+    }
+
     return false;
 }
 
@@ -1310,3 +1471,406 @@ function showB2BToast(message, type = "default") {
         setTimeout(() => toast.remove(), 400);
     }, 4800);
 }
+
+/* =========================================================================
+   =================== B2B KURUMSAL SEPET VE CHECKOUT SİSTEMİ ===================
+   ========================================================================= */
+
+/**
+ * LocalStorage üzerinden kayıtlı kurumsal sepeti getirir
+ */
+function getB2BCart() {
+    try {
+        const stored = localStorage.getItem('b2b_portal_cart');
+        return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+        console.error("Sepet okunurken hata:", e);
+        return [];
+    }
+}
+
+/**
+ * Sepeti LocalStorage'a kaydeder ve UI'ı günceller
+ */
+function saveB2BCart(cart) {
+    try {
+        localStorage.setItem('b2b_portal_cart', JSON.stringify(cart));
+    } catch (e) {
+        console.error("Sepet kaydedilirken hata:", e);
+    }
+    updateCartUi();
+}
+
+/**
+ * Sepete ürün ekler
+ */
+function addToCart(productId, qty = 1, showDrawer = false) {
+    const product = activeProducts.find(p => p.id === productId) || B2B_PRODUCT_CATALOG.find(p => p.id === productId);
+    if (!product) {
+        showB2BToast("⚠️ Ürün bilgisi bulunamadı.", "danger");
+        return;
+    }
+
+    let cart = getB2BCart();
+    const existingIndex = cart.findIndex(item => item.productId === productId);
+
+    if (existingIndex > -1) {
+        cart[existingIndex].quantity += qty;
+    } else {
+        cart.push({
+            productId: product.id,
+            title: product.title,
+            sku: product.sku,
+            category: product.categoryName || product.category,
+            price: product.price,
+            quantity: qty,
+            seller: product.seller,
+            image: product.image
+        });
+    }
+
+    saveB2BCart(cart);
+    showB2BToast(`🛒 "${product.title}" sepete eklendi!`, "success");
+
+    if (showDrawer) {
+        openCartDrawer();
+    }
+}
+
+/**
+ * Doğrudan Satın Al (Hemen Satın Al): Ürünü sepete ekleyip direkt Checkout modalını açar
+ */
+function directBuy(productId) {
+    addToCart(productId, 1, false);
+    openCheckoutModal();
+}
+
+/**
+ * Sepetten ürünü çıkarır
+ */
+function removeFromCart(productId) {
+    let cart = getB2BCart();
+    cart = cart.filter(item => item.productId !== productId);
+    saveB2BCart(cart);
+    renderCartDrawer();
+    showB2BToast("Ürün sepetten kaldırıldı.", "info");
+}
+
+/**
+ * Sepetteki ürünün miktarını günceller
+ */
+function updateCartQty(productId, newQty) {
+    let cart = getB2BCart();
+    const item = cart.find(i => i.productId === productId);
+    if (item) {
+        if (newQty <= 0) {
+            removeFromCart(productId);
+            return;
+        }
+        item.quantity = newQty;
+        saveB2BCart(cart);
+        renderCartDrawer();
+    }
+}
+
+/**
+ * Tüm sepeti boşaltır
+ */
+function clearB2BCart() {
+    saveB2BCart([]);
+    renderCartDrawer();
+    showB2BToast("Sepetiniz boşaltıldı.", "info");
+}
+
+/**
+ * Sepet toplamlarını hesaplar
+ */
+function getCartTotals() {
+    const cart = getB2BCart();
+    let subtotal = 0;
+    let totalCount = 0;
+
+    cart.forEach(item => {
+        subtotal += item.price * item.quantity;
+        totalCount += item.quantity;
+    });
+
+    const tax = Math.round(subtotal * 0.20 * 100) / 100;
+    const grandTotal = subtotal + tax;
+
+    return {
+        subtotal,
+        tax,
+        grandTotal,
+        totalCount,
+        uniqueItemCount: cart.length
+    };
+}
+
+/**
+ * Navbar ve arayüzdeki sepet rozetlerini günceller
+ */
+function updateCartUi() {
+    const totals = getCartTotals();
+    
+    // Navbar rozeti
+    const navBadge = document.getElementById('navCartBadge');
+    if (navBadge) {
+        navBadge.textContent = totals.uniqueItemCount;
+        navBadge.style.display = totals.uniqueItemCount > 0 ? 'inline-block' : 'none';
+    }
+
+    // Vitrin başlık rozeti
+    const vitrinBadge = document.getElementById('vitrinCartBadge');
+    if (vitrinBadge) {
+        vitrinBadge.textContent = totals.uniqueItemCount;
+        vitrinBadge.style.display = totals.uniqueItemCount > 0 ? 'inline-block' : 'none';
+    }
+
+    // Drawer öğelerini güncelle
+    const drawerCount = document.getElementById('cartDrawerItemCountText');
+    if (drawerCount) {
+        drawerCount.textContent = `${totals.uniqueItemCount} Kalem Ürün (${totals.totalCount} Adet)`;
+    }
+}
+
+/**
+ * Sepet çekmecesini açar ve listeyi çizer
+ */
+function openCartDrawer() {
+    const drawerOverlay = document.getElementById('b2bCartDrawerOverlay');
+    if (!drawerOverlay) return;
+
+    renderCartDrawer();
+    drawerOverlay.style.display = 'flex';
+}
+
+/**
+ * Sepet çekmecesini kapatır
+ */
+function closeCartDrawer() {
+    const drawerOverlay = document.getElementById('b2bCartDrawerOverlay');
+    if (drawerOverlay) {
+        drawerOverlay.style.display = 'none';
+    }
+}
+
+/**
+ * Sepet çekmecesindeki HTML içeriğini dinamik olarak üretir
+ */
+function renderCartDrawer() {
+    const listContainer = document.getElementById('cartDrawerItemsList');
+    if (!listContainer) return;
+
+    const cart = getB2BCart();
+    const totals = getCartTotals();
+
+    // Fiyat özetlerini güncelle
+    const subtotalEl = document.getElementById('cartDrawerSubtotal');
+    const taxEl = document.getElementById('cartDrawerTax');
+    const grandTotalEl = document.getElementById('cartDrawerGrandTotal');
+    const footerEl = document.getElementById('cartDrawerFooter');
+
+    if (subtotalEl) subtotalEl.textContent = formatB2BMoney(totals.subtotal);
+    if (taxEl) taxEl.textContent = formatB2BMoney(totals.tax);
+    if (grandTotalEl) grandTotalEl.textContent = formatB2BMoney(totals.grandTotal);
+
+    if (cart.length === 0) {
+        listContainer.innerHTML = `
+            <div style="text-align: center; padding: 48px 16px; color: #64748b;">
+                <div style="font-size: 3rem; margin-bottom: 12px;">🛒</div>
+                <h4 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: 6px;">Sepetiniz Boş</h4>
+                <p style="font-size: 0.82rem; margin-bottom: 16px;">Vitrinden ihtiyacınız olan endüstriyel ürünleri doğrudan sepetinize ekleyebilirsiniz.</p>
+                <button type="button" class="btn-primary" onclick="closeCartDrawer()" style="display: inline-flex; margin: 0 auto; padding: 8px 16px; font-size: 0.85rem;">
+                    Alışverişe Başla
+                </button>
+            </div>
+        `;
+        if (footerEl) footerEl.style.opacity = '0.5';
+        return;
+    }
+
+    if (footerEl) footerEl.style.opacity = '1';
+
+    let html = '';
+    cart.forEach(item => {
+        const itemLineTotal = item.price * item.quantity;
+        html += `
+            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; gap: 12px; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <img src="${item.image}" alt="${item.title}" style="width: 54px; height: 54px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;" onerror="this.src='https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=100&auto=format&fit=crop&q=80'" />
+                
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-size: 0.72rem; color: #0284c7; font-weight: 700;">${item.seller || 'Onaylı Tedarikçi'}</div>
+                    <div style="font-size: 0.84rem; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.title}">${item.title}</div>
+                    <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">
+                        ${formatB2BMoney(item.price)} <small>+ KDV</small>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                    <button type="button" onclick="removeFromCart(${item.productId})" style="background: transparent; border: none; color: #ef4444; font-size: 0.82rem; cursor: pointer; padding: 2px;" title="Sil">
+                        🗑️
+                    </button>
+                    
+                    <div style="display: flex; align-items: center; border: 1px solid #cbd5e1; border-radius: 4px; overflow: hidden;">
+                        <button type="button" onclick="updateCartQty(${item.productId}, ${item.quantity - 1})" style="background: #f8fafc; border: none; padding: 2px 8px; font-weight: 700; cursor: pointer;">-</button>
+                        <span style="padding: 2px 8px; font-size: 0.8rem; font-weight: 700; min-width: 24px; text-align: center;">${item.quantity}</span>
+                        <button type="button" onclick="updateCartQty(${item.productId}, ${item.quantity + 1})" style="background: #f8fafc; border: none; padding: 2px 8px; font-weight: 700; cursor: pointer;">+</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    listContainer.innerHTML = html;
+}
+
+/**
+ * Kurumsal Checkout modalını açar
+ */
+function openCheckoutModal() {
+    const cart = getB2BCart();
+    if (cart.length === 0) {
+        showB2BToast("⚠️ Sepetinizde satın alınacak ürün bulunmamaktadır.", "danger");
+        openCartDrawer();
+        return;
+    }
+
+    closeCartDrawer();
+
+    const totals = getCartTotals();
+    const grandTotalEl = document.getElementById('checkoutModalGrandTotalText');
+    const countEl = document.getElementById('checkoutModalItemCount');
+
+    if (grandTotalEl) grandTotalEl.textContent = formatB2BMoney(totals.grandTotal);
+    if (countEl) countEl.textContent = `${totals.uniqueItemCount} Kalem (${totals.totalCount} Adet)`;
+
+    const modal = document.getElementById('b2bCheckoutModal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+/**
+ * Checkout modalını kapatır
+ */
+function closeCheckoutModal() {
+    const modal = document.getElementById('b2bCheckoutModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+/**
+ * Ödeme yöntemi seçimine göre ilgili alanları gösterir/gizler
+ */
+function togglePaymentFields(method) {
+    const ccFields = document.getElementById('paymentCreditCardFields');
+    const bankFields = document.getElementById('paymentBankFields');
+
+    if (method === 'Kredi Kartı') {
+        if (ccFields) ccFields.style.display = 'block';
+        if (bankFields) bankFields.style.display = 'none';
+    } else {
+        if (ccFields) ccFields.style.display = 'none';
+        if (bankFields) bankFields.style.display = 'block';
+    }
+}
+
+/**
+ * Kurumsal Siparişi Sunucuya İletir (POST /Order/CreateOrder)
+ */
+async function submitCorporateOrder(e) {
+    if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
+
+    const cart = getB2BCart();
+    if (cart.length === 0) {
+        showB2BToast("⚠️ Sepetiniz boş.", "danger");
+        return false;
+    }
+
+    const company = document.getElementById('checkoutBuyerCompany')?.value || '';
+    const taxNo = document.getElementById('checkoutBuyerTaxNo')?.value || '';
+    const taxOffice = document.getElementById('checkoutBuyerTaxOffice')?.value || '';
+    const city = document.getElementById('checkoutDeliveryCity')?.value || '';
+    const phone = document.getElementById('checkoutReceiverPhone')?.value || '';
+    const address = document.getElementById('checkoutDeliveryAddress')?.value || '';
+    const payMethod = document.querySelector('input[name="checkoutPaymentMethod"]:checked')?.value || 'Kredi Kartı';
+
+    if (!company.trim() || !city.trim() || !address.trim()) {
+        showB2BToast("⚠️ Lütfen zorunlu alanları (Firma Ünvanı, Şehir ve Açık Adres) doldurunuz.", "danger");
+        return false;
+    }
+
+    const submitBtn = document.getElementById('btnSubmitOrder');
+    const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span>⏳ Sipariş Onaylanıyor...</span>';
+    }
+
+    try {
+        const orderPayload = {
+            buyerCompany: company.trim(),
+            buyerTaxNumber: taxNo.trim(),
+            buyerTaxOffice: taxOffice.trim(),
+            deliveryCity: city.trim(),
+            deliveryAddress: address.trim(),
+            receiverPhone: phone.trim(),
+            paymentMethod: payMethod,
+            items: cart.map(i => ({
+                productID: i.productId,
+                title: i.title,
+                sku: i.sku,
+                category: i.category,
+                price: i.price,
+                quantity: i.quantity,
+                seller: i.seller,
+                image: i.image
+            }))
+        };
+
+        const response = await fetch('/Order/CreateOrder', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderPayload)
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            // Sepeti boşalt
+            clearB2BCart();
+            closeCheckoutModal();
+
+            // Başarılı modalını aç
+            const successOrderNo = document.getElementById('successModalOrderNo');
+            const successTotal = document.getElementById('successModalTotal');
+            if (successOrderNo) successOrderNo.textContent = result.orderNumber;
+            if (successTotal) successTotal.textContent = formatB2BMoney(result.grandTotal);
+
+            const successModal = document.getElementById('b2bOrderSuccessModal');
+            if (successModal) {
+                successModal.style.display = 'flex';
+            }
+
+            showB2BToast(result.message, "success");
+        } else {
+            showB2BToast("⚠️ " + (result.message || "Sipariş oluşturulamadı."), "danger");
+        }
+    } catch (err) {
+        showB2BToast("⚠️ Sunucu bağlantı hatası: " + err.message, "danger");
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
+        }
+    }
+
+    return false;
+}
+

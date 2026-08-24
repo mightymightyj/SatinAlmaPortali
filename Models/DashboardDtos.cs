@@ -272,4 +272,54 @@ namespace satinalmaportali2.Models {
         public decimal UnitPrice { get; set; }
         public string Status { get; set; } = "Stokta";
     }
+
+    public class SupplierListingsViewModel {
+        public IReadOnlyList<SupplierListingDetailDto> Listings { get; set; } = Array.Empty<SupplierListingDetailDto>();
+        public int TotalCount { get; set; }
+        public decimal TotalCatalogValue { get; set; }
+        public int ActiveCount { get; set; }
+        public int LowStockCount { get; set; }
+        public IReadOnlyList<string> AvailableCategories { get; set; } = Array.Empty<string>();
+        public string? SelectedCategory { get; set; }
+        public string? SearchQuery { get; set; }
+        public string? SelectedStatus { get; set; }
+        public string CompanyName { get; set; } = "";
+    }
+
+    public class SupplierListingDetailDto {
+        public int ItemId { get; set; }
+        public string ItemName { get; set; } = "";
+        public string Sku { get; set; } = "";
+        public string CategoryName { get; set; } = "";
+        public int? CategoryId { get; set; }
+        public int Stock { get; set; }
+        public decimal UnitPrice { get; set; }
+        public string Brand { get; set; } = "";
+        public string? Description { get; set; }
+        public string? Properties { get; set; }
+        public string Status { get; set; } = "Stokta";
+        public bool IsLiveOnVitrin { get; set; } = true;
+    }
+
+    public class BuyerOrdersViewModel {
+        public IReadOnlyList<Order> Orders { get; set; } = Array.Empty<Order>();
+        public int TotalOrderCount { get; set; }
+        public decimal TotalSpent { get; set; }
+        public int ActiveShipmentCount { get; set; }
+        public int CompletedCount { get; set; }
+        public string? SearchQuery { get; set; }
+        public string? SelectedStatus { get; set; }
+        public string CompanyName { get; set; } = "";
+    }
+
+    public class SupplierOrdersViewModel {
+        public IReadOnlyList<Order> Orders { get; set; } = Array.Empty<Order>();
+        public int TotalOrderCount { get; set; }
+        public decimal TotalRevenue { get; set; }
+        public int PendingShipmentCount { get; set; }
+        public int CompletedCount { get; set; }
+        public string? SearchQuery { get; set; }
+        public string? SelectedStatus { get; set; }
+        public string CompanyName { get; set; } = "";
+    }
 }

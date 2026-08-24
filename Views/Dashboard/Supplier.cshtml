@@ -435,10 +435,13 @@
     <article class="card" id="katalog-yonetimi">
         <header class="card-head">
             <div class="head-with-icon">
-                <span class="blue-accent-x">✕</span>
-                <h2>Katalog Özeti</h2>
+                <span class="blue-accent-x">📦</span>
+                <h2>Katalog & İlan Özeti</h2>
             </div>
-            <button type="button" class="link-all-btn" onclick="openPriceModal()">+ Fiyat Güncelle</button>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <a asp-action="Listings" class="link-all-btn" style="text-decoration: none; color: var(--accent); font-weight: 600;">Tüm İlanları Yönet →</a>
+                <button type="button" class="link-all-btn" onclick="openPriceModal()">+ Hızlı Fiyat Güncelle</button>
+            </div>
         </header>
 
         <div class="table-scroll-wrap">
@@ -449,34 +452,51 @@
                         <th>Kategori</th>
                         <th>Stok</th>
                         <th>Birim Fiyat</th>
-                        <th class="text-right">Durum</th>
+                        <th>Durum</th>
+                        <th class="text-right">Aksiyon</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var prod in Model.FeaturedProducts)
+                    @if (!Model.FeaturedProducts.Any())
                     {
-                        var isCrit = prod.Status == "Kritik";
                         <tr>
-                            <td>
-                                <div class="req-title-cell">
-                                    <strong>@prod.ItemName</strong>
-                                    <small class="req-code">@prod.Sku</small>
-                                </div>
-                            </td>
-                            <td><span class="category-tag">@prod.Category</span></td>
-                            <td>
-                                <strong class="@(isCrit ? "text-danger" : "")">@prod.Stock Adet</strong>
-                            </td>
-                            <td>
-                                <strong>@prod.UnitPrice.ToString("N0", ChartHelper.Tr) ₺</strong>
-                            </td>
-                            <td class="text-right">
-                                <span class="status-badge @(isCrit ? "badge-coral" : "badge-emerald")">
-                                    <span class="status-dot"></span>
-                                    @prod.Status
-                                </span>
+                            <td colspan="6" style="text-align: center; padding: 28px 16px; color: var(--muted);">
+                                Henüz katalogda listelenmiş ürününüz bulunmamaktadır.
                             </td>
                         </tr>
+                    }
+                    else
+                    {
+                        @foreach (var prod in Model.FeaturedProducts)
+                        {
+                            var isCrit = prod.Status == "Kritik";
+                            <tr>
+                                <td>
+                                    <div class="req-title-cell">
+                                        <strong>@prod.ItemName</strong>
+                                        <small class="req-code">@prod.Sku</small>
+                                    </div>
+                                </td>
+                                <td><span class="category-tag">@prod.Category</span></td>
+                                <td>
+                                    <strong class="@(isCrit ? "text-danger" : "")">@prod.Stock Adet</strong>
+                                </td>
+                                <td>
+                                    <strong>@prod.UnitPrice.ToString("N0", ChartHelper.Tr) ₺</strong>
+                                </td>
+                                <td>
+                                    <span class="status-badge @(isCrit ? "badge-coral" : "badge-emerald")">
+                                        <span class="status-dot"></span>
+                                        @prod.Status
+                                    </span>
+                                </td>
+                                <td class="text-right">
+                                    <button type="button" class="btn-table-action" onclick="openPriceModal(@prod.ItemId, '@prod.ItemName.Replace("'", "\\'") ', @prod.UnitPrice, @prod.Stock)">
+                                        Fiyat Düzenle
+                                    </button>
+                                </td>
+                            </tr>
+                        }
                     }
                 </tbody>
             </table>
@@ -540,3 +560,36 @@
         </form>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Eğer modelden gelen FeaturedProducts varsa modal dropdown'unu güncelle
+            var products = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FeaturedProducts.Select(p => new {
+                id = p.ItemId,
+                name = p.ItemName,
+                price = p.UnitPrice,
+                stock = p.Stock
+            })));
+
+            if (products && products.length > 0) {
+                var select = document.getElementById('priceProductSelect');
+                if (select) {
+                    select.innerHTML = '';
+                    products.forEach(function (p, index) {
+                        var opt = document.createElement('option');
+                        opt.value = p.id;
+                        opt.setAttribute('data-id', p.id);
+                        opt.setAttribute('data-price', p.price);
+                        opt.setAttribute('data-stock', p.stock);
+                        opt.textContent = p.name + ' (Mevcut: ' + Number(p.price).toLocaleString('tr-TR') + ' ₺)';
+                        if (index === 0) opt.selected = true;
+                        select.appendChild(opt);
+                    });
+                    handleProductPriceSelect(select);
+                }
+            }
+        });
+    </script>
+}
+
