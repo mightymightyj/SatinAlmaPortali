@@ -62,11 +62,26 @@ namespace satinalmaportali2.Data
                             suppliercompanyname VARCHAR(255),
                             suppliercompanyid INT
                         );
+
+                        CREATE TABLE IF NOT EXISTS cartitems (
+                            cartitemid SERIAL PRIMARY KEY,
+                            companyid INT NOT NULL,
+                            productid INT NOT NULL,
+                            title VARCHAR(255) NOT NULL,
+                            sku VARCHAR(100),
+                            category VARCHAR(100),
+                            price DECIMAL(18,2) NOT NULL,
+                            quantity INT NOT NULL DEFAULT 1,
+                            seller VARCHAR(255),
+                            image TEXT,
+                            createdat TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                            updatedat TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                        );
                     ");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Orders table check/create note: " + ex.Message);
+                    Console.WriteLine("Orders/CartItems table check/create note: " + ex.Message);
                 }
 
                 // ====================================================

@@ -726,11 +726,13 @@ function formatB2BMoney(amount) {
 }
 
 /**
- * Sayfa Yüklendiğinde Vitrini Başlat
+ * Sayfa Yüklendiğinde Vitrini ve Sepet Senkronizasyonunu Başlat
  */
 document.addEventListener('DOMContentLoaded', function () {
     // Kurumsal Sepet Durumunu Her Sayfada Güncelle
     updateCartUi();
+    // Sunucu ile Sepeti Senkronize Et (Çoklu cihaz/tarayıcı için)
+    initB2BCartSync();
 
     const container = document.getElementById('trendyolProductGrid');
     if (!container) return;
@@ -1502,6 +1504,48 @@ function saveB2BCart(cart) {
 }
 
 /**
+ * Sunucu ile sepet senkronizasyonu (Farklı cihaz ve tarayıcılardan giriş yapıldığında sepeti korur)
+ */
+async function initB2BCartSync() {
+    try {
+        const localCart = getB2BCart();
+        const response = await fetch('/Cart/SyncCart', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(localCart.map(i => ({
+                productID: i.productId || i.productID,
+                title: i.title,
+                sku: i.sku || '',
+                category: i.category || '',
+                price: i.price || 0,
+                quantity: i.quantity || 1,
+                seller: i.seller || '',
+                image: i.image || ''
+            })))
+        });
+
+        const data = await response.json();
+        if (data.success && data.isAuthenticated && Array.isArray(data.items)) {
+            // Sunucudaki güncel ve senkronize edilmiş sepeti yerel hafızaya kaydet
+            try {
+                localStorage.setItem('b2b_portal_cart', JSON.stringify(data.items));
+            } catch (e) {}
+            updateCartUi();
+            if (typeof renderFullCartPage === 'function') {
+                renderFullCartPage();
+            }
+            if (document.getElementById('b2bCartDrawerOverlay') && document.getElementById('b2bCartDrawerOverlay').style.display === 'flex') {
+                renderCartDrawer();
+            }
+        }
+    } catch (err) {
+        console.warn("Sepet senkronizasyon hatası:", err);
+    }
+}
+
+/**
  * Sepete ürün ekler
  */
 function addToCart(productId, qty = 1, showDrawer = false) {
@@ -1514,19 +1558,21 @@ function addToCart(productId, qty = 1, showDrawer = false) {
     let cart = getB2BCart();
     const existingIndex = cart.findIndex(item => item.productId === productId);
 
+    const itemToAdd = {
+        productId: product.id,
+        title: product.title,
+        sku: product.sku || `SKU-${product.id}`,
+        category: product.categoryName || product.category || 'Endüstriyel',
+        price: product.price,
+        quantity: qty,
+        seller: product.seller || 'Onaylı Tedarikçi',
+        image: product.image || ''
+    };
+
     if (existingIndex > -1) {
         cart[existingIndex].quantity += qty;
     } else {
-        cart.push({
-            productId: product.id,
-            title: product.title,
-            sku: product.sku,
-            category: product.categoryName || product.category,
-            price: product.price,
-            quantity: qty,
-            seller: product.seller,
-            image: product.image
-        });
+        cart.push(itemToAdd);
     }
 
     saveB2BCart(cart);
@@ -1535,6 +1581,22 @@ function addToCart(productId, qty = 1, showDrawer = false) {
     if (showDrawer) {
         openCartDrawer();
     }
+
+    // Sunucu veritabanında asenkron kaydet (cihazlar arası sepetin korunması için)
+    fetch('/Cart/AddToCart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            productID: itemToAdd.productId,
+            title: itemToAdd.title,
+            sku: itemToAdd.sku,
+            category: itemToAdd.category,
+            price: itemToAdd.price,
+            quantity: qty,
+            seller: itemToAdd.seller,
+            image: itemToAdd.image
+        })
+    }).catch(e => console.warn("AddToCart server sync:", e));
 }
 
 /**
@@ -1554,6 +1616,12 @@ function removeFromCart(productId) {
     saveB2BCart(cart);
     renderCartDrawer();
     showB2BToast("Ürün sepetten kaldırıldı.", "info");
+
+    fetch('/Cart/RemoveFromCart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productID: productId })
+    }).catch(e => console.warn("RemoveFromCart server sync:", e));
 }
 
 /**
@@ -1570,6 +1638,12 @@ function updateCartQty(productId, newQty) {
         item.quantity = newQty;
         saveB2BCart(cart);
         renderCartDrawer();
+
+        fetch('/Cart/UpdateQuantity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productID: productId, quantity: newQty })
+        }).catch(e => console.warn("UpdateQuantity server sync:", e));
     }
 }
 
@@ -1579,8 +1653,29 @@ function updateCartQty(productId, newQty) {
 function clearB2BCart() {
     saveB2BCart([]);
     renderCartDrawer();
+    if (typeof renderFullCartPage === 'function') {
+        renderFullCartPage();
+    }
     showB2BToast("Sepetiniz boşaltıldı.", "info");
+
+    fetch('/Cart/ClearCart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    }).catch(e => console.warn("ClearCart server sync:", e));
 }
+
+// Sekmeler ve pencereler arası anlık sepet eşitlemesi
+window.addEventListener('storage', function (e) {
+    if (e.key === 'b2b_portal_cart') {
+        updateCartUi();
+        if (typeof renderFullCartPage === 'function') {
+            renderFullCartPage();
+        }
+        if (document.getElementById('b2bCartDrawerOverlay') && document.getElementById('b2bCartDrawerOverlay').style.display === 'flex') {
+            renderCartDrawer();
+        }
+    }
+});
 
 /**
  * Sepet toplamlarını hesaplar
