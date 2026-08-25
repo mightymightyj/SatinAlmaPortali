@@ -1293,6 +1293,7 @@ function closeTyModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
         modal.classList.remove('show');
+        modal.style.display = 'none';
     }
 }
 
@@ -1843,6 +1844,7 @@ function openCheckoutModal() {
     const modal = document.getElementById('b2bCheckoutModal');
     if (modal) {
         modal.style.display = 'flex';
+        modal.classList.add('show');
     }
 }
 
@@ -1852,6 +1854,7 @@ function openCheckoutModal() {
 function closeCheckoutModal() {
     const modal = document.getElementById('b2bCheckoutModal');
     if (modal) {
+        modal.classList.remove('show');
         modal.style.display = 'none';
     }
 }
@@ -1951,6 +1954,7 @@ async function submitCorporateOrder(e) {
             const successModal = document.getElementById('b2bOrderSuccessModal');
             if (successModal) {
                 successModal.style.display = 'flex';
+                successModal.classList.add('show');
             }
 
             showB2BToast(result.message, "success");
