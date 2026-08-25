@@ -49,28 +49,31 @@
 
             <!-- Şifremi Unuttum Panel -->
             <div class="auth-panel @(activeTab == "forgot-password" ? "active" : "")" id="forgot-password">
-                @if (TempData["ForgotSuccess"] != null)
-                {
-                    <div class="auth-success-msg">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                        <span>@TempData["ForgotSuccess"]</span>
-                    </div>
-                }
-                @if (TempData["ForgotError"] != null)
-                {
-                    <div class="auth-error-msg">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                        <span>@TempData["ForgotError"]</span>
-                    </div>
-                }
+                <div id="forgotPasswordAlertBox">
+                    @if (TempData["ForgotSuccess"] != null)
+                    {
+                        <div class="auth-success-msg">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                            <span>@TempData["ForgotSuccess"]</span>
+                        </div>
+                    }
+                    @if (TempData["ForgotError"] != null)
+                    {
+                        <div class="auth-error-msg">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                            <span>@TempData["ForgotError"]</span>
+                        </div>
+                    }
+                </div>
 
-                <form class="auth-form" method="post" asp-action="ForgotPassword">
+                <form class="auth-form" id="forgotPasswordForm" method="post" asp-action="ForgotPassword" onsubmit="handleForgotPasswordSubmit(event); return false;">
+                    @Html.AntiForgeryToken()
                     <label>
                         Kayıtlı E-posta Adresiniz
-                        <input type="email" name="email" placeholder="ornek@firma.com" required />
+                        <input type="email" name="email" id="forgotEmailInput" placeholder="ornek@firma.com" required />
                     </label>
                     <p class="auth-help-text">Hesabınıza ait e-posta adresinizi girdiğinizde şifre sıfırlama bağlantısı gönderilecektir.</p>
-                    <button type="submit" class="auth-submit">Sıfırlama Bağlantısı Gönder</button>
+                    <button type="submit" id="btnForgotSubmit" class="auth-submit">Sıfırlama Bağlantısı Gönder</button>
                     <a href="#" class="auth-link switch-tab-link" data-target="user-login">Giriş ekranına dön</a>
                 </form>
             </div>
@@ -117,4 +120,75 @@
             });
         });
     });
+
+    async function handleForgotPasswordSubmit(event) {
+        if (event) { event.preventDefault(); event.stopPropagation(); }
+        const form = document.getElementById('forgotPasswordForm');
+        const emailInput = document.getElementById('forgotEmailInput');
+        const submitBtn = document.getElementById('btnForgotSubmit');
+        const alertBox = document.getElementById('forgotPasswordAlertBox');
+        const email = emailInput?.value?.trim() || '';
+
+        if (!email) return;
+
+        const origText = submitBtn ? submitBtn.innerHTML : 'Sıfırlama Bağlantısı Gönder';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '⏳ Gönderiliyor...';
+        }
+
+        try {
+            const formData = new FormData(form);
+            const response = await fetch('/Account/ForgotPassword', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                if (alertBox) {
+                    alertBox.innerHTML = `
+                        <div class="auth-success-msg">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                            <span>${result.message}</span>
+                        </div>
+                    `;
+                }
+                form.reset();
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('✓ ' + result.message, 'success');
+                }
+            } else {
+                if (alertBox) {
+                    alertBox.innerHTML = `
+                        <div class="auth-error-msg">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                            <span>${result.message}</span>
+                        </div>
+                    `;
+                }
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Hata: ' + result.message, 'error');
+                }
+            }
+        } catch (err) {
+            if (alertBox) {
+                alertBox.innerHTML = `
+                    <div class="auth-error-msg">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        <span>Bağlantı hatası: ${err.message}</span>
+                    </div>
+                `;
+            }
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = origText;
+            }
+        }
+    }
 </script>

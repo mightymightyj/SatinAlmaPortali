@@ -616,8 +616,13 @@ namespace satinalmaportali2.Controllers {
 
         [HttpPost]
         public async Task<IActionResult> ForgotPassword(string email) {
+            bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
+                          (Request.Headers.Accept.ToString().Contains("application/json") && !Request.Headers.Accept.ToString().Contains("text/html"));
+
             if (string.IsNullOrWhiteSpace(email)) {
-                TempData["ForgotError"] = "Lütfen e-posta adresinizi giriniz.";
+                var err = "Lütfen e-posta adresinizi giriniz.";
+                if (isAjax) return Json(new { success = false, message = err });
+                TempData["ForgotError"] = err;
                 return RedirectToAction("Login", new { tab = "forgot-password" });
             }
 
@@ -626,7 +631,9 @@ namespace satinalmaportali2.Controllers {
                 var user = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyMail != null && c.CompanyMail.ToLower() == emailTrimmed);
 
                 if (user == null) {
-                    TempData["ForgotError"] = "Bu e-posta adresi ile kayıtlı bir hesap bulunamadı.";
+                    var err = "Bu e-posta adresi ile kayıtlı bir hesap bulunamadı.";
+                    if (isAjax) return Json(new { success = false, message = err });
+                    TempData["ForgotError"] = err;
                     return RedirectToAction("Login", new { tab = "forgot-password" });
                 }
 
@@ -644,14 +651,20 @@ namespace satinalmaportali2.Controllers {
                 var sent = await _emailService.SendPasswordResetEmailAsync(email, resetLink!);
 
                 if (sent) {
-                    TempData["ForgotSuccess"] = "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. Lütfen gelen kutunuzu kontrol ediniz.";
+                    var msg = "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. Lütfen gelen kutunuzu kontrol ediniz.";
+                    if (isAjax) return Json(new { success = true, message = msg });
+                    TempData["ForgotSuccess"] = msg;
                 } else {
-                    TempData["ForgotError"] = "E-posta gönderilemedi. Lütfen daha sonra tekrar deneyiniz.";
+                    var err = "E-posta gönderilemedi. Lütfen daha sonra tekrar deneyiniz.";
+                    if (isAjax) return Json(new { success = false, message = err });
+                    TempData["ForgotError"] = err;
                 }
             }
             catch (Exception ex) {
                 Console.WriteLine($"ForgotPassword Error: {ex.Message}");
-                TempData["ForgotError"] = "Bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.";
+                var err = "Bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.";
+                if (isAjax) return Json(new { success = false, message = err });
+                TempData["ForgotError"] = err;
             }
 
             return RedirectToAction("Login", new { tab = "forgot-password" });

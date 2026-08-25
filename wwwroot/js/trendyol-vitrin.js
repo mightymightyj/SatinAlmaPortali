@@ -1728,6 +1728,11 @@ function updateCartUi() {
     if (drawerCount) {
         drawerCount.textContent = `${totals.uniqueItemCount} Kalem Ürün (${totals.totalCount} Adet)`;
     }
+
+    // Eğer tam sepet sayfasındaysak (Cart/Index), sayfayı yenilemeden tabloyu canlı güncelle
+    if (typeof renderFullCartPage === 'function') {
+        renderFullCartPage();
+    }
 }
 
 /**
