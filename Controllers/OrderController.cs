@@ -164,6 +164,17 @@ namespace satinalmaportali2.Controllers
                 };
 
                 _context.Orders.Add(order);
+
+                // Kullanıcının veritabanı sepetini temizle
+                if (currentCompanyId > 0)
+                {
+                    var userCartItems = await _context.CartItems.Where(c => c.CompanyID == currentCompanyId).ToListAsync();
+                    if (userCartItems.Any())
+                    {
+                        _context.CartItems.RemoveRange(userCartItems);
+                    }
+                }
+
                 await _context.SaveChangesAsync();
 
                 // SignalR ile Anlık Bildirim ve Sipariş Senkronizasyonu
