@@ -159,7 +159,7 @@
                                 _ => "badge-gray"
                             };
 
-                            <tr data-status="@rfq.Status">
+                            <tr data-status="@rfq.Status" data-request-id="@rfq.RequestID" data-rfq-code="@rfq.RfqCode">
                                 <td>
                                     <div class="req-title-cell">
                                         <strong class="vendor-name">@rfq.BuyerCompany</strong>
@@ -181,12 +181,12 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="status-badge @rfqStatusCls">
+                                    <span class="status-badge @rfqStatusCls" data-rfq-status-badge="@rfq.RequestID">
                                         <span class="status-dot"></span>
                                         @rfq.Status
                                     </span>
                                 </td>
-                                <td class="text-right">
+                                <td class="text-right" data-rfq-action-cell="@rfq.RequestID">
                                     @if (rfq.IsOwner)
                                     {
                                         <span style="display: inline-block; padding: 4px 8px; font-size: 0.75rem; font-weight: 700; color: #2563EB; background: #EFF6FF; border-radius: 6px; border: 1px solid rgba(37, 99, 235, 0.2);">

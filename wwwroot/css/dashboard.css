@@ -1814,3 +1814,52 @@ body.app-body {
     .app-content { padding: 16px; }
     .top-profile-text { display: none; }
 }
+
+/* ==================== REAL-TIME PULSE & HIGHLIGHT ANIMATIONS ==================== */
+@keyframes realtimeRowPulse {
+    0% {
+        background-color: rgba(37, 99, 235, 0.25);
+        box-shadow: inset 0 0 0 2px rgba(37, 99, 235, 0.4);
+    }
+    50% {
+        background-color: rgba(16, 185, 129, 0.18);
+        box-shadow: inset 0 0 0 2px rgba(16, 185, 129, 0.3);
+    }
+    100% {
+        background-color: transparent;
+        box-shadow: none;
+    }
+}
+
+.realtime-updated {
+    animation: realtimeRowPulse 2.4s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+@keyframes realtimePriceFlash {
+    0% {
+        background-color: #FEF08A;
+        color: #854D0E;
+        transform: scale(1.12);
+    }
+    100% {
+        background-color: transparent;
+        transform: scale(1);
+    }
+}
+
+.realtime-price-flash {
+    display: inline-block;
+    border-radius: 6px;
+    padding: 1px 5px;
+    animation: realtimePriceFlash 2s ease-out;
+}
+
+.realtime-badge-pulse {
+    animation: pulseBadge 1.5s infinite;
+}
+
+@keyframes pulseBadge {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.6)); }
+    100% { transform: scale(1); }
+}

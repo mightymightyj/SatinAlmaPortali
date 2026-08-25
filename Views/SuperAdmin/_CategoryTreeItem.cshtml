@@ -41,13 +41,9 @@
             <button type="button" class="btn-compact-action" onclick="openEditCategoryModal(@node.CategoryID)" title="Düzenle">
                 Düzenle
             </button>
-            <form asp-action="DeleteCategory" method="post" onsubmit="return confirm('\'@Html.Raw(node.CategoryName)\' kategorisini silmek istediğinize emin misiniz? (Alt kategorileri bağımsız hale gelir)');" style="display:inline; margin: 0;">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="categoryId" value="@node.CategoryID" />
-                <button type="submit" class="btn-compact-action danger" title="Sil">
-                    Sil
-                </button>
-            </form>
+            <button type="button" class="btn-compact-action danger" title="Sil" onclick="handleDeleteCategory(@node.CategoryID, '@Html.Raw(node.CategoryName.Replace("'", "\\'"))', event)">
+                Sil
+            </button>
         </div>
     </div>
 

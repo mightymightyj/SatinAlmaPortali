@@ -1088,35 +1088,37 @@
                             {
                                 @foreach (var comp in Model.Companies)
                                 {
-                                    <tr class="comp-row" data-type="@(comp.CompanyTypeID ?? 0)" data-search="@comp.CompanyName.ToLowerInvariant() @comp.CompanyOfficial.ToLowerInvariant() @comp.CompanyMail.ToLowerInvariant() @(comp.TCNO ?? "")">
+                                    <tr class="comp-row" id="comp-row-@comp.CompanyID" data-type="@(comp.CompanyTypeID ?? 0)" data-search="@comp.CompanyName.ToLowerInvariant() @comp.CompanyOfficial.ToLowerInvariant() @comp.CompanyMail.ToLowerInvariant() @(comp.TCNO ?? "")">
                                         <td style="color: var(--text-muted); font-weight: 500;">#@comp.CompanyID</td>
                                         <td>
-                                            <div style="font-weight: 600; color: var(--text-heading);">@comp.CompanyName</div>
-                                            <div style="font-size: 0.78rem; color: var(--text-muted);">@comp.CompanyOfficial</div>
+                                            <div style="font-weight: 600; color: var(--text-heading);" id="comp-name-@comp.CompanyID">@comp.CompanyName</div>
+                                            <div style="font-size: 0.78rem; color: var(--text-muted);" id="comp-official-@comp.CompanyID">@comp.CompanyOfficial</div>
                                         </td>
                                         <td>
-                                            <div style="color: var(--text-heading);">@comp.CompanyMail</div>
-                                            <div style="font-size: 0.78rem; color: var(--text-muted);">@(comp.CompanyPhone ?? "—")</div>
+                                            <div style="color: var(--text-heading);" id="comp-mail-@comp.CompanyID">@comp.CompanyMail</div>
+                                            <div style="font-size: 0.78rem; color: var(--text-muted);" id="comp-phone-@comp.CompanyID">@(comp.CompanyPhone ?? "—")</div>
                                         </td>
                                         <td>
-                                            <div style="font-family: monospace; font-size: 0.8rem; color: var(--text-heading);">@(comp.TCNO ?? "—")</div>
-                                            <div style="font-size: 0.75rem; color: var(--text-muted);">@(comp.TaxOffice ?? "")</div>
+                                            <div style="font-size: 0.82rem; color: var(--text-heading);">@(string.IsNullOrWhiteSpace(comp.TCNO) ? "—" : comp.TCNO)</div>
+                                            <div style="font-size: 0.76rem; color: var(--text-muted);">@(string.IsNullOrWhiteSpace(comp.TaxOffice) ? "" : comp.TaxOffice)</div>
                                         </td>
                                         <td>
-                                            @if (comp.CompanyTypeID == 4 || comp.IsSuperAdmin)
+                                            @if (comp.CompanyTypeID == 4)
                                             {
                                                 <span class="badge badge-super">Süper Admin</span>
                                             }
                                             else
                                             {
-                                                <span class="badge badge-both">Kurumsal (Alıcı & Tedarikçi)</span>
+                                                <span class="badge badge-both">Kurumsal Firma</span>
                                             }
                                         </td>
                                         <td>
-                                            <span style="font-size: 0.8rem; font-weight: 500;">@comp.MembershipTypeName</span>
+                                            <span class="badge badge-member">
+                                                @(comp.MembershipTypeName ?? "Standart")
+                                            </span>
                                         </td>
                                         <td>
-                                            <span style="font-size: 0.78rem; color: var(--text-muted);">
+                                            <span class="badge badge-sub">
                                                 @comp.RequestCount Talep / @comp.OfferCount Teklif
                                             </span>
                                         </td>
@@ -1125,16 +1127,12 @@
                                                 <button type="button" class="btn-table-action" onclick="openEditCompanyModal(@comp.CompanyID)" title="Firma Bilgilerini Düzenle">
                                                     Düzenle
                                                 </button>
-                                                <button type="button" class="btn-table-action" onclick="openResetPasswordModal(@comp.CompanyID, '@Html.Raw(comp.CompanyName)')" title="Şifre Sıfırla">
+                                                <button type="button" class="btn-table-action" onclick="openResetPasswordModal(@comp.CompanyID, '@Html.Raw(comp.CompanyName.Replace("'", "\\'"))')" title="Şifre Sıfırla">
                                                     Şifre
                                                 </button>
-                                                <form asp-action="DeleteCompany" method="post" onsubmit="return confirm('\'@Html.Raw(comp.CompanyName)\' firmasını silmek istediğinize emin misiniz?');" style="display:inline;">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="companyId" value="@comp.CompanyID" />
-                                                    <button type="submit" class="btn-table-action danger" title="Sil">
-                                                        Sil
-                                                    </button>
-                                                </form>
+                                                <button type="button" class="btn-table-action danger" title="Sil" onclick="handleDeleteCompany(@comp.CompanyID, '@Html.Raw(comp.CompanyName.Replace("'", "\\'"))', event)">
+                                                    Sil
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -1172,7 +1170,7 @@
                         <span class="badge badge-supplier" style="background: #EFF6FF; color: #2563EB; border: 1px solid #BFDBFE;">Vitrin Simülatörü</span>
                     </div>
 
-                    <form asp-action="SimulateCreateListing" method="post" id="simListingForm">
+                    <form asp-action="SimulateCreateListing" method="post" id="simListingForm" onsubmit="handleSimListingSubmit(event); return false;">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="ImageBase64" id="simListingImageBase64" />
 
@@ -1256,7 +1254,7 @@
                         <span class="badge badge-buyer">Talep Simülatörü</span>
                     </div>
 
-                    <form asp-action="SimulateCreateRequest" method="post">
+                    <form asp-action="SimulateCreateRequest" method="post" id="simRequestForm" onsubmit="handleSimRequestSubmit(event); return false;">
                         @Html.AntiForgeryToken()
                         <div style="display: flex; flex-direction: column; gap: 14px;">
                             
@@ -1339,7 +1337,7 @@
                         <span class="badge badge-supplier" style="background: #ECFDF5; color: #16A34A; border: 1px solid #A7F3D0;">Teklif Simülatörü</span>
                     </div>
 
-                    <form asp-action="SimulateCreateOffer" method="post">
+                    <form asp-action="SimulateCreateOffer" method="post" id="simOfferForm" onsubmit="handleSimOfferSubmit(event); return false;">
                         @Html.AntiForgeryToken()
                         <div style="display: flex; flex-direction: column; gap: 14px;">
                             
@@ -1434,7 +1432,7 @@
                             {
                                 @foreach (var item in Model.RecentListings)
                                 {
-                                    <tr>
+                                    <tr id="listing-row-@item.ItemID">
                                         <td><strong style="color: var(--primary);">#ITEM-@item.ItemID</strong></td>
                                         <td>
                                             <div style="display: flex; align-items: center; gap: 8px;">
@@ -1461,13 +1459,9 @@
                                                 <a href="/#ihtiyaciniz-olan-urunler" target="_blank" class="btn-table-action" title="Ana sayfada ürünü görüntüle">
                                                     Vitrin ↗
                                                 </a>
-                                                <form asp-action="DeleteListing" method="post" style="display:inline;" onsubmit="return confirm('\'@item.ItemName\' ürün ilanını vitrinden silmek istediğinize emin misiniz?');">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="id" value="@item.ItemID" />
-                                                    <button type="submit" class="btn-table-action" style="color: #DC2626; border-color: #FCA5A5;" title="İlanı Sil">
-                                                        Sil
-                                                    </button>
-                                                </form>
+                                                <button type="button" class="btn-table-action" style="color: #DC2626; border-color: #FCA5A5;" title="İlanı Sil" onclick="handleDeleteListing(@item.ItemID, '@Html.Raw(item.ItemName.Replace("'", "\\'"))', event)">
+                                                    Sil
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -1568,9 +1562,9 @@
                     <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 18px; line-height: 1.5;">
                         Firma hesapları (Kurumsal Alıcı & Tedarikçi, Süper Admin), üyelik seviyeleri ve Türkiye 81 il/ilçe veritabanı tablolarını denetleyip eksik kayıtları otomatik oluşturur.
                     </p>
-                    <form asp-action="SeedSystemDefaults" method="post">
+                    <form asp-action="SeedSystemDefaults" method="post" id="seedDefaultsForm" onsubmit="handleSeedSystemDefaultsSubmit(event); return false;">
                         @Html.AntiForgeryToken()
-                        <button type="submit" class="btn-primary" onclick="return confirm('Varsayılan referans verileri senkronize edilsin mi?');">
+                        <button type="submit" class="btn-primary">
                             Tabloları Senkronize Et
                         </button>
                     </form>
@@ -1597,7 +1591,7 @@
                 <h3 class="modal-title">Yeni Kategori Ekle</h3>
                 <button type="button" class="modal-close-btn" onclick="closeModal('addCategoryModal')">&times;</button>
             </div>
-            <form asp-action="CreateCategory" method="post">
+            <form asp-action="CreateCategory" method="post" id="addCategoryForm" onsubmit="handleAddCategorySubmit(event); return false;">
                 @Html.AntiForgeryToken()
                 <div class="modal-body">
                     <div class="form-field">
@@ -1631,7 +1625,7 @@
                 <h3 class="modal-title">Kategoriyi Düzenle</h3>
                 <button type="button" class="modal-close-btn" onclick="closeModal('editCategoryModal')">&times;</button>
             </div>
-            <form asp-action="UpdateCategory" method="post">
+            <form asp-action="UpdateCategory" method="post" id="editCategoryForm" onsubmit="handleEditCategorySubmit(event); return false;">
                 @Html.AntiForgeryToken()
                 <input type="hidden" id="editCatId" name="CategoryID" />
                 <div class="modal-body">
@@ -1666,7 +1660,7 @@
                 <h3 class="modal-title">Firma Bilgilerini Düzenle</h3>
                 <button type="button" class="modal-close-btn" onclick="closeModal('editCompanyModal')">&times;</button>
             </div>
-            <form asp-action="UpdateCompany" method="post">
+            <form asp-action="UpdateCompany" method="post" id="editCompanyForm" onsubmit="handleEditCompanySubmit(event); return false;">
                 @Html.AntiForgeryToken()
                 <input type="hidden" id="editCompId" name="CompanyID" />
                 <div class="modal-body">
@@ -1747,7 +1741,7 @@
                 <h3 class="modal-title">Şifre Sıfırla</h3>
                 <button type="button" class="modal-close-btn" onclick="closeModal('resetPasswordModal')">&times;</button>
             </div>
-            <form asp-action="ResetCompanyPassword" method="post">
+            <form asp-action="ResetCompanyPassword" method="post" id="resetPasswordForm" onsubmit="handleResetPasswordSubmit(event); return false;">
                 @Html.AntiForgeryToken()
                 <input type="hidden" id="resetCompId" name="CompanyID" />
                 <div class="modal-body">
@@ -1973,6 +1967,389 @@
                 setTimeout(function() {
                     select.style.boxShadow = '';
                 }, 1500);
+            }
+        }
+
+        // Global SuperAdmin Bildirim Toast'ı
+        function showAdminToast(message, type) {
+            let container = document.getElementById('adminToastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'adminToastContainer';
+                container.style.cssText = 'position: fixed; bottom: 24px; right: 24px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; max-width: 420px;';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            const isSuccess = type === 'success';
+            toast.style.cssText = `
+                padding: 12px 18px;
+                border-radius: 8px;
+                background: ${isSuccess ? '#0F172A' : '#7F1D1D'};
+                color: #FFFFFF;
+                font-size: 0.88rem;
+                font-weight: 500;
+                box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                border-left: 4px solid ${isSuccess ? '#10B981' : '#EF4444'};
+                transition: all 0.3s ease;
+            `;
+            toast.innerHTML = `<span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(10px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // 1. Yeni Kategori Ekle AJAX
+        async function handleAddCategorySubmit(event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            const form = event.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const origText = submitBtn ? submitBtn.innerHTML : 'Kaydet';
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Kaydediliyor...'; }
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch('/SuperAdmin/CreateCategory', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) {
+                    closeModal('addCategoryModal');
+                    form.reset();
+                    showAdminToast('✓ ' + (result.message || 'Kategori eklendi!'), 'success');
+                } else {
+                    showAdminToast('Hata: ' + (result.message || 'Kategori eklenemedi.'), 'error');
+                }
+            } catch (err) {
+                showAdminToast('Bağlantı hatası: ' + err.message, 'error');
+            } finally {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = origText; }
+            }
+        }
+
+        // 2. Kategori Düzenle AJAX
+        async function handleEditCategorySubmit(event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            const form = event.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const origText = submitBtn ? submitBtn.innerHTML : 'Değişiklikleri Kaydet';
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Kaydediliyor...'; }
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch('/SuperAdmin/UpdateCategory', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) {
+                    closeModal('editCategoryModal');
+                    showAdminToast('✓ ' + (result.message || 'Kategori güncellendi!'), 'success');
+                    const catNode = document.querySelector(`div.cat-tree-node[data-cat-id="${result.categoryId}"]`);
+                    if (catNode) {
+                        const titleEl = catNode.querySelector('.cat-node-title');
+                        if (titleEl && result.categoryName) titleEl.textContent = result.categoryName;
+                    }
+                } else {
+                    showAdminToast('Hata: ' + (result.message || 'Güncellenemedi.'), 'error');
+                }
+            } catch (err) {
+                showAdminToast('Bağlantı hatası: ' + err.message, 'error');
+            } finally {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = origText; }
+            }
+        }
+
+        // 3. Kategori Sil AJAX
+        async function handleDeleteCategory(catId, catName, event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            if (!confirm(`'${catName}' kategorisini silmek istediğinize emin misiniz? (Alt kategorileri bağımsız hale gelir)`)) return;
+
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                const formData = new FormData();
+                formData.append('categoryId', catId);
+                formData.append('__RequestVerificationToken', token);
+
+                const response = await fetch('/SuperAdmin/DeleteCategory?categoryId=' + catId, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showAdminToast('✓ ' + (result.message || 'Kategori silindi.'), 'success');
+                    const node = document.querySelector(`div.cat-tree-node[data-cat-id="${catId}"]`);
+                    if (node) {
+                        node.style.transition = 'all 0.3s ease';
+                        node.style.opacity = '0';
+                        node.style.transform = 'scale(0.95)';
+                        setTimeout(() => node.remove(), 300);
+                    }
+                } else {
+                    showAdminToast('Hata: ' + (result.message || 'Kategori silinemedi.'), 'error');
+                }
+            } catch (err) {
+                showAdminToast('Bağlantı hatası: ' + err.message, 'error');
+            }
+        }
+
+        // 4. Firma Bilgilerini Düzenle AJAX
+        async function handleEditCompanySubmit(event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            const form = event.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const origText = submitBtn ? submitBtn.innerHTML : 'Güncelle';
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Kaydediliyor...'; }
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch('/SuperAdmin/UpdateCompany', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) {
+                    closeModal('editCompanyModal');
+                    showAdminToast('✓ ' + (result.message || 'Firma güncellendi!'), 'success');
+                    const compId = result.companyId;
+                    const nameEl = document.getElementById('comp-name-' + compId);
+                    if (nameEl && result.companyName) nameEl.textContent = result.companyName;
+                } else {
+                    showAdminToast('Hata: ' + (result.message || 'Firma güncellenemedi.'), 'error');
+                }
+            } catch (err) {
+                showAdminToast('Bağlantı hatası: ' + err.message, 'error');
+            } finally {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = origText; }
+            }
+        }
+
+        // 5. Firma Sil AJAX
+        async function handleDeleteCompany(compId, compName, event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            if (!confirm(`'${compName}' firmasını silmek istediğinize emin misiniz?`)) return;
+
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                const formData = new FormData();
+                formData.append('companyId', compId);
+                formData.append('__RequestVerificationToken', token);
+
+                const response = await fetch('/SuperAdmin/DeleteCompany?companyId=' + compId, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showAdminToast('✓ ' + (result.message || 'Firma silindi.'), 'success');
+                    const row = document.getElementById('comp-row-' + compId);
+                    if (row) {
+                        row.style.transition = 'all 0.3s ease';
+                        row.style.opacity = '0';
+                        row.style.transform = 'scale(0.96)';
+                        setTimeout(() => row.remove(), 300);
+                    }
+                } else {
+                    showAdminToast('Hata: ' + (result.message || 'Firma silinemedi.'), 'error');
+                }
+            } catch (err) {
+                showAdminToast('Bağlantı hatası: ' + err.message, 'error');
+            }
+        }
+
+        // 6. Şifre Sıfırla AJAX
+        async function handleResetPasswordSubmit(event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            const form = event.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const origText = submitBtn ? submitBtn.innerHTML : 'Şifreyi Kaydet';
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Kaydediliyor...'; }
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch('/SuperAdmin/ResetCompanyPassword', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) {
+                    closeModal('resetPasswordModal');
+                    form.reset();
+                    showAdminToast('✓ ' + (result.message || 'Şifre sıfırlandı!'), 'success');
+                } else {
+                    showAdminToast('Hata: ' + (result.message || 'Şifre sıfırlanamadı.'), 'error');
+                }
+            } catch (err) {
+                showAdminToast('Bağlantı hatası: ' + err.message, 'error');
+            } finally {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = origText; }
+            }
+        }
+
+        // 7. Simülasyon: Satış İlanı Ekle AJAX
+        async function handleSimListingSubmit(event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            const form = event.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const origText = submitBtn ? submitBtn.innerHTML : '✓ Seçilen Firma Adına Vitrine İlanı Ekle';
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Yayınlanıyor...'; }
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch('/SuperAdmin/SimulateCreateListing', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) {
+                    form.reset();
+                    const previewBox = document.getElementById('simImgPreviewBox');
+                    if (previewBox) previewBox.style.display = 'none';
+                    showAdminToast('✓ ' + (result.message || 'Ürün ilanı vitrine eklendi!'), 'success');
+                } else {
+                    showAdminToast('Hata: ' + (result.message || 'İlan eklenemedi.'), 'error');
+                }
+            } catch (err) {
+                showAdminToast('Bağlantı hatası: ' + err.message, 'error');
+            } finally {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = origText; }
+            }
+        }
+
+        // 8. Simülasyon: Talep Oluştur AJAX
+        async function handleSimRequestSubmit(event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            const form = event.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const origText = submitBtn ? submitBtn.innerHTML : 'Seçilen Firma Adına Talebi Yayınla';
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Yayınlanıyor...'; }
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch('/SuperAdmin/SimulateCreateRequest', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) {
+                    form.reset();
+                    showAdminToast('✓ ' + (result.message || 'Talep yayınlandı!'), 'success');
+                } else {
+                    showAdminToast('Hata: ' + (result.message || 'Talep oluşturulamadı.'), 'error');
+                }
+            } catch (err) {
+                showAdminToast('Bağlantı hatası: ' + err.message, 'error');
+            } finally {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = origText; }
+            }
+        }
+
+        // 9. Simülasyon: Teklif Gönder AJAX
+        async function handleSimOfferSubmit(event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            const form = event.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const origText = submitBtn ? submitBtn.innerHTML : 'Seçilen Firma Adına Teklif Gönder';
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Gönderiliyor...'; }
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch('/SuperAdmin/SimulateCreateOffer', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) {
+                    form.reset();
+                    showAdminToast('✓ ' + (result.message || 'Teklif başarıyla iletildi!'), 'success');
+                } else {
+                    showAdminToast('Hata: ' + (result.message || 'Teklif iletilemedi.'), 'error');
+                }
+            } catch (err) {
+                showAdminToast('Bağlantı hatası: ' + err.message, 'error');
+            } finally {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = origText; }
+            }
+        }
+
+        // 10. İlan Sil AJAX
+        async function handleDeleteListing(itemId, itemName, event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            if (!confirm(`'${itemName}' ürün ilanını vitrinden silmek istediğinize emin misiniz?`)) return;
+
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                const formData = new FormData();
+                formData.append('id', itemId);
+                formData.append('__RequestVerificationToken', token);
+
+                const response = await fetch('/SuperAdmin/DeleteListing?id=' + itemId, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showAdminToast('✓ ' + (result.message || 'İlan kaldırıldı.'), 'success');
+                    const row = document.getElementById('listing-row-' + itemId);
+                    if (row) {
+                        row.style.transition = 'all 0.3s ease';
+                        row.style.opacity = '0';
+                        row.style.transform = 'scale(0.96)';
+                        setTimeout(() => row.remove(), 300);
+                    }
+                } else {
+                    showAdminToast('Hata: ' + (result.message || 'İlan silinemedi.'), 'error');
+                }
+            } catch (err) {
+                showAdminToast('Bağlantı hatası: ' + err.message, 'error');
+            }
+        }
+
+        // 11. Sistem Tablolarını Senkronize Et AJAX
+        async function handleSeedSystemDefaultsSubmit(event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            if (!confirm('Varsayılan referans verileri senkronize edilsin mi?')) return;
+            const form = event.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const origText = submitBtn ? submitBtn.innerHTML : 'Tabloları Senkronize Et';
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Senkronize Ediliyor...'; }
+
+            try {
+                const token = form.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                const formData = new FormData();
+                formData.append('__RequestVerificationToken', token);
+
+                const response = await fetch('/SuperAdmin/SeedSystemDefaults', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showAdminToast('✓ ' + (result.message || 'Sistem verileri eşitlendi!'), 'success');
+                } else {
+                    showAdminToast('Hata: ' + (result.message || 'Senkronizasyon hatası.'), 'error');
+                }
+            } catch (err) {
+                showAdminToast('Bağlantı hatası: ' + err.message, 'error');
+            } finally {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = origText; }
             }
         }
 

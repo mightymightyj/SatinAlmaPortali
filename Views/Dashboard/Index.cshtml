@@ -729,7 +729,7 @@
                 <button type="button" class="cat-modal-close" onclick="closeCatModal()">&times;</button>
             </div>
 
-            <form asp-controller="Dashboard" asp-action="CreateCategory" method="post" id="modalCategoryForm">
+            <form asp-controller="Dashboard" asp-action="CreateCategory" method="post" id="modalCategoryForm" onsubmit="handleCategorySubmit(event); return false;">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="parentCategoryId" id="modalParentCategoryId" value="" />
 
@@ -784,6 +784,61 @@
         function closeCatModal() {
             var modal = document.getElementById('categoryModal');
             modal.classList.remove('is-open');
+        }
+
+        async function handleCategorySubmit(event) {
+            if (event) {
+                if (typeof event.preventDefault === 'function') event.preventDefault();
+                if (typeof event.stopPropagation === 'function') event.stopPropagation();
+            }
+
+            const form = event.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn ? submitBtn.innerHTML : 'Kategori Kaydet';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ Kaydediliyor...';
+            }
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch('/Dashboard/CreateCategory', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    closeCatModal();
+                    form.reset();
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('✓ ' + (result.message || 'Kategori başarıyla eklendi!'), 'success');
+                    } else if (typeof showAppToast === 'function') {
+                        showAppToast('✓ ' + (result.message || 'Kategori başarıyla eklendi!'), true);
+                    }
+                } else {
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('Hata: ' + (result.message || 'Kategori eklenemedi.'), 'error');
+                    } else {
+                        alert('Hata: ' + result.message);
+                    }
+                }
+            } catch (err) {
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Bağlantı hatası: ' + err.message, 'error');
+                } else {
+                    alert('Bağlantı hatası: ' + err.message);
+                }
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            }
         }
 
         function filterCatTree() {

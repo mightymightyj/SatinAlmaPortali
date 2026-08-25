@@ -55,7 +55,7 @@
                     </div>
                 }
 
-                <form asp-controller="Home" asp-action="IletisimSubmit" method="post" class="iletisim-form">
+                <form asp-controller="Home" asp-action="IletisimSubmit" method="post" class="iletisim-form" onsubmit="handleIletisimSubmit(event); return false;">
                     @Html.AntiForgeryToken()
                     <div class="iletisim-form-row">
                         <div class="iletisim-form-group">
@@ -332,5 +332,59 @@
                 });
             }
         });
+
+        async function handleIletisimSubmit(event) {
+            if (event) {
+                if (typeof event.preventDefault === 'function') event.preventDefault();
+                if (typeof event.stopPropagation === 'function') event.stopPropagation();
+            }
+
+            const form = event.target;
+            const submitBtn = form.querySelector('.iletisim-submit-btn') || form.querySelector('button[type="submit"]');
+            const originalText = submitBtn ? submitBtn.innerHTML : 'Mesajı Gönder';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ Gönderiliyor...';
+            }
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch('/Home/IletisimSubmit', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    form.reset();
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('✓ ' + (result.message || 'Mesajınız başarıyla iletildi!'), 'success');
+                    } else {
+                        alert(result.message || 'Mesajınız başarıyla iletildi!');
+                    }
+                } else {
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('Hata: ' + (result.message || 'Mesaj iletilemedi.'), 'error');
+                    } else {
+                        alert('Hata: ' + result.message);
+                    }
+                }
+            } catch (err) {
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Bağlantı hatası: ' + err.message, 'error');
+                } else {
+                    alert('Bağlantı hatası: ' + err.message);
+                }
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            }
+        }
     </script>
 }

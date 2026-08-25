@@ -163,8 +163,13 @@ namespace satinalmaportali2.Controllers {
 
         [HttpPost]
         public async Task<IActionResult> IletisimSubmit(string adSoyad, string eposta, string telefon, string konu, string mesaj) {
+            bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
+                          (Request.Headers.Accept.ToString().Contains("application/json") && !Request.Headers.Accept.ToString().Contains("text/html"));
+
             if (string.IsNullOrWhiteSpace(adSoyad) || string.IsNullOrWhiteSpace(eposta) || string.IsNullOrWhiteSpace(mesaj)) {
-                TempData["IletisimError"] = "Lütfen zorunlu alanları (Ad Soyad, E-posta, Mesaj) eksiksiz doldurunuz.";
+                var reqMsg = "Lütfen zorunlu alanları (Ad Soyad, E-posta, Mesaj) eksiksiz doldurunuz.";
+                if (isAjax) return Json(new { success = false, message = reqMsg });
+                TempData["IletisimError"] = reqMsg;
                 return RedirectToAction("Iletisim");
             }
 
@@ -187,12 +192,16 @@ namespace satinalmaportali2.Controllers {
                 _context.Forms.Add(formRecord);
                 await _context.SaveChangesAsync();
 
-                TempData["IletisimSuccess"] = "Mesajınız başarıyla sistemimize kaydedildi. En kısa sürede sizinle iletişime geçeceğiz.";
+                var succMsg = "Mesajınız başarıyla sistemimize kaydedildi. En kısa sürede sizinle iletişime geçeceğiz.";
+                if (isAjax) return Json(new { success = true, message = succMsg });
+                TempData["IletisimSuccess"] = succMsg;
             }
             catch (Exception ex) {
                 var innerMsg = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
                 Console.WriteLine($"IletisimSubmit Error: {innerMsg}");
-                TempData["IletisimError"] = "Mesajınız gönderilirken bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.";
+                var errMsg = "Mesajınız gönderilirken bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.";
+                if (isAjax) return Json(new { success = false, message = errMsg });
+                TempData["IletisimError"] = errMsg;
             }
 
             return RedirectToAction("Iletisim");

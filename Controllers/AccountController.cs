@@ -393,7 +393,6 @@ namespace satinalmaportali2.Controllers {
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateProfile(
             string? companyOfficial,
             string? companyName,
@@ -407,16 +406,23 @@ namespace satinalmaportali2.Controllers {
             string? addressText,
             string? companyDetailText)
         {
+            bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
+                          (Request.Headers.Accept.ToString().Contains("application/json") && !Request.Headers.Accept.ToString().Contains("text/html"));
+
             var user = await GetCurrentUserCompanyAsync();
             if (user == null)
             {
-                TempData["ProfileError"] = "Oturum açmış kullanıcı hesabı bulunamadı. Lütfen tekrar giriş yapınız.";
+                var unauthMsg = "Oturum açmış kullanıcı hesabı bulunamadı. Lütfen tekrar giriş yapınız.";
+                if (isAjax) return Json(new { success = false, message = unauthMsg });
+                TempData["ProfileError"] = unauthMsg;
                 return RedirectToAction("Login");
             }
 
             if (string.IsNullOrWhiteSpace(companyOfficial) || string.IsNullOrWhiteSpace(companyName) || string.IsNullOrWhiteSpace(companyMail))
             {
-                TempData["ProfileError"] = "Lütfen zorunlu alanları (Firma Yetkilisi, Firma Adı, E-posta) doldurunuz.";
+                var reqMsg = "Lütfen zorunlu alanları (Firma Yetkilisi, Firma Adı, E-posta) doldurunuz.";
+                if (isAjax) return Json(new { success = false, message = reqMsg });
+                TempData["ProfileError"] = reqMsg;
                 return RedirectToAction("Profile");
             }
 
@@ -430,7 +436,9 @@ namespace satinalmaportali2.Controllers {
                     var emailExists = await _context.Companies.AnyAsync(c => c.CompanyID != user.CompanyID && c.CompanyMail != null && c.CompanyMail.ToLower() == newMailTrimmed);
                     if (emailExists)
                     {
-                        TempData["ProfileError"] = "Bu e-posta adresi başka bir firma veya kullanıcı tarafından kullanılmaktadır.";
+                        var existMsg = "Bu e-posta adresi başka bir firma veya kullanıcı tarafından kullanılmaktadır.";
+                        if (isAjax) return Json(new { success = false, message = existMsg });
+                        TempData["ProfileError"] = existMsg;
                         return RedirectToAction("Profile");
                     }
                 }
@@ -513,12 +521,29 @@ namespace satinalmaportali2.Controllers {
 
                 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
 
-                TempData["ProfileSuccess"] = "Profil ve kişi bilgileriniz başarıyla güncellendi!";
+                var successMsg = "Profil ve kişi bilgileriniz başarıyla güncellendi!";
+                if (isAjax)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        message = successMsg,
+                        official = user.CompanyOfficial,
+                        company = user.CompanyName,
+                        email = user.CompanyMail,
+                        phone = user.CompanyPhone,
+                        address = cleanAddressText
+                    });
+                }
+
+                TempData["ProfileSuccess"] = successMsg;
             }
             catch (Exception ex)
             {
                 var innerMsg = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-                TempData["ProfileError"] = $"Bilgiler güncellenirken bir hata oluştu: {innerMsg}";
+                var errMsg = $"Bilgiler güncellenirken bir hata oluştu: {innerMsg}";
+                if (isAjax) return Json(new { success = false, message = errMsg });
+                TempData["ProfileError"] = errMsg;
             }
 
             return RedirectToAction("Profile");
@@ -526,20 +551,26 @@ namespace satinalmaportali2.Controllers {
 
         [HttpPost]
         public async Task<IActionResult> RequestPasswordReset() {
+            bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
+                          (Request.Headers.Accept.ToString().Contains("application/json") && !Request.Headers.Accept.ToString().Contains("text/html"));
+
             var user = await GetCurrentUserCompanyAsync();
             if (user == null) {
-                TempData["ProfileError"] = "Oturum açmış kullanıcı hesabı bulunamadı.";
+                var unauthMsg = "Oturum açmış kullanıcı hesabı bulunamadı.";
+                if (isAjax) return Json(new { success = false, message = unauthMsg });
+                TempData["ProfileError"] = unauthMsg;
                 return RedirectToAction("Login");
             }
 
             var email = user.CompanyMail;
             if (string.IsNullOrEmpty(email)) {
-                TempData["ProfileError"] = "Kullanıcıya ait geçerli bir e-posta adresi bulunamadı.";
+                var mailErr = "Kullanıcıya ait geçerli bir e-posta adresi bulunamadı.";
+                if (isAjax) return Json(new { success = false, message = mailErr });
+                TempData["ProfileError"] = mailErr;
                 return RedirectToAction("Profile");
             }
 
             try {
-
                 // Generate reset token
                 var token = Guid.NewGuid().ToString("N");
                 user.ResetToken = token;
@@ -554,14 +585,20 @@ namespace satinalmaportali2.Controllers {
                 var sent = await _emailService.SendPasswordResetEmailAsync(email, resetLink!);
 
                 if (sent) {
-                    TempData["ProfileSuccess"] = $"Şifre sıfırlama bağlantısı kayıtlı e-posta adresinize ({email}) başarıyla gönderildi. Lütfen gelen kutunuzu kontrol ediniz.";
+                    var succMsg = $"Şifre sıfırlama bağlantısı kayıtlı e-posta adresinize ({email}) başarıyla gönderildi. Lütfen gelen kutunuzu kontrol ediniz.";
+                    if (isAjax) return Json(new { success = true, message = succMsg });
+                    TempData["ProfileSuccess"] = succMsg;
                 } else {
-                    TempData["ProfileError"] = "E-posta gönderimi başarısız oldu. Lütfen daha sonra tekrar deneyiniz.";
+                    var failMsg = "E-posta gönderimi başarısız oldu. Lütfen daha sonra tekrar deneyiniz.";
+                    if (isAjax) return Json(new { success = false, message = failMsg });
+                    TempData["ProfileError"] = failMsg;
                 }
             }
             catch (Exception ex) {
                 var innerMsg = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-                TempData["ProfileError"] = $"Şifre sıfırlama talebi oluşturulurken bir hata oluştu: {innerMsg}";
+                var errMsg = $"Şifre sıfırlama talebi oluşturulurken bir hata oluştu: {innerMsg}";
+                if (isAjax) return Json(new { success = false, message = errMsg });
+                TempData["ProfileError"] = errMsg;
             }
 
             return RedirectToAction("Profile");

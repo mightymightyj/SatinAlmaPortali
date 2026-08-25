@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using satinalmaportali2.Data;
 using satinalmaportali2.Helpers;
+using satinalmaportali2.Hubs;
 using satinalmaportali2.Models;
 using satinalmaportali2.Services;
 using System.Security.Claims;
@@ -21,11 +23,13 @@ namespace satinalmaportali2.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
+        private readonly IHubContext<PortalHub> _hubContext;
 
-        public SuperAdminController(ApplicationDbContext context, EmailService emailService)
+        public SuperAdminController(ApplicationDbContext context, EmailService emailService, IHubContext<PortalHub> hubContext)
         {
             _context = context;
             _emailService = emailService;
+            _hubContext = hubContext;
         }
 
         private int GetCurrentCompanyId()
@@ -323,15 +327,25 @@ namespace satinalmaportali2.Controllers
         // =========================================================================
 
         [HttpPost]
+        private bool IsAjaxRequest() =>
+            Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
+            (Request.Headers.Accept.ToString().Contains("application/json") && !Request.Headers.Accept.ToString().Contains("text/html"));
+
+        [HttpPost]
         [Route("CreateCategory")]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateCategory(string categoryName, int? parentCategoryId)
         {
-            if (!await CheckIsSuperAdminAsync()) return Forbid();
+            if (!await CheckIsSuperAdminAsync())
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Yetkisiz işlem." });
+                return Forbid();
+            }
 
             if (string.IsNullOrWhiteSpace(categoryName))
             {
-                TempData["AdminError"] = "Kategori adı boş bırakılamaz.";
+                var reqMsg = "Kategori adı boş bırakılamaz.";
+                if (IsAjaxRequest()) return Json(new { success = false, message = reqMsg });
+                TempData["AdminError"] = reqMsg;
                 return RedirectToAction(nameof(Index), new { tab = "categories" });
             }
 
@@ -346,11 +360,29 @@ namespace satinalmaportali2.Controllers
                 _context.Category.Add(newCat);
                 await _context.SaveChangesAsync();
 
-                TempData["AdminSuccess"] = $"'{newCat.CategoryName}' kategorisi başarıyla eklendi!";
+                try
+                {
+                    await _hubContext.Clients.All.SendAsync("OnCategoryCreated", new
+                    {
+                        categoryId = newCat.CategoryID,
+                        categoryName = newCat.CategoryName,
+                        parentCategoryId = newCat.ParentCategoryID
+                    });
+                }
+                catch (Exception hubEx)
+                {
+                    Console.WriteLine($"SignalR SuperAdmin CreateCategory error: {hubEx.Message}");
+                }
+
+                var succMsg = $"'{newCat.CategoryName}' kategorisi başarıyla eklendi!";
+                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, categoryId = newCat.CategoryID, categoryName = newCat.CategoryName });
+                TempData["AdminSuccess"] = succMsg;
             }
             catch (Exception ex)
             {
-                TempData["AdminError"] = "Kategori ekleme hatası: " + ex.Message;
+                var errMsg = "Kategori ekleme hatası: " + ex.Message;
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["AdminError"] = errMsg;
             }
 
             return RedirectToAction(nameof(Index), new { tab = "categories" });
@@ -358,14 +390,19 @@ namespace satinalmaportali2.Controllers
 
         [HttpPost]
         [Route("UpdateCategory")]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateCategory(EditCategoryInputModel model)
         {
-            if (!await CheckIsSuperAdminAsync()) return Forbid();
+            if (!await CheckIsSuperAdminAsync())
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Yetkisiz işlem." });
+                return Forbid();
+            }
 
             if (!ModelState.IsValid || model.CategoryID <= 0)
             {
-                TempData["AdminError"] = "Geçersiz kategori bilgisi.";
+                var errInvalid = "Geçersiz kategori bilgisi.";
+                if (IsAjaxRequest()) return Json(new { success = false, message = errInvalid });
+                TempData["AdminError"] = errInvalid;
                 return RedirectToAction(nameof(Index), new { tab = "categories" });
             }
 
@@ -374,13 +411,17 @@ namespace satinalmaportali2.Controllers
                 var category = await _context.Category.FirstOrDefaultAsync(c => c.CategoryID == model.CategoryID);
                 if (category == null)
                 {
-                    TempData["AdminError"] = "Güncellenecek kategori bulunamadı.";
+                    var notFoundMsg = "Güncellenecek kategori bulunamadı.";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = notFoundMsg });
+                    TempData["AdminError"] = notFoundMsg;
                     return RedirectToAction(nameof(Index), new { tab = "categories" });
                 }
 
                 if (model.ParentCategoryID == model.CategoryID)
                 {
-                    TempData["AdminError"] = "Bir kategori kendisinin üst kategorisi olamaz.";
+                    var selfParentMsg = "Bir kategori kendisinin üst kategorisi olamaz.";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = selfParentMsg });
+                    TempData["AdminError"] = selfParentMsg;
                     return RedirectToAction(nameof(Index), new { tab = "categories" });
                 }
 
@@ -388,11 +429,30 @@ namespace satinalmaportali2.Controllers
                 category.ParentCategoryID = (model.ParentCategoryID.HasValue && model.ParentCategoryID.Value > 0) ? model.ParentCategoryID.Value : null;
 
                 await _context.SaveChangesAsync();
-                TempData["AdminSuccess"] = $"'{category.CategoryName}' kategorisi başarıyla güncellendi!";
+
+                try
+                {
+                    await _hubContext.Clients.All.SendAsync("OnCategoryUpdated", new
+                    {
+                        categoryId = category.CategoryID,
+                        categoryName = category.CategoryName,
+                        parentCategoryId = category.ParentCategoryID
+                    });
+                }
+                catch (Exception hubEx)
+                {
+                    Console.WriteLine($"SignalR SuperAdmin UpdateCategory error: {hubEx.Message}");
+                }
+
+                var succMsg = $"'{category.CategoryName}' kategorisi başarıyla güncellendi!";
+                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, categoryId = category.CategoryID, categoryName = category.CategoryName });
+                TempData["AdminSuccess"] = succMsg;
             }
             catch (Exception ex)
             {
-                TempData["AdminError"] = "Kategori güncelleme hatası: " + ex.Message;
+                var errMsg = "Kategori güncelleme hatası: " + ex.Message;
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["AdminError"] = errMsg;
             }
 
             return RedirectToAction(nameof(Index), new { tab = "categories" });
@@ -400,17 +460,22 @@ namespace satinalmaportali2.Controllers
 
         [HttpPost]
         [Route("DeleteCategory")]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteCategory(int categoryId)
         {
-            if (!await CheckIsSuperAdminAsync()) return Forbid();
+            if (!await CheckIsSuperAdminAsync())
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Yetkisiz işlem." });
+                return Forbid();
+            }
 
             try
             {
                 var category = await _context.Category.FirstOrDefaultAsync(c => c.CategoryID == categoryId);
                 if (category == null)
                 {
-                    TempData["AdminError"] = "Silinecek kategori bulunamadı.";
+                    var notFoundMsg = "Silinecek kategori bulunamadı.";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = notFoundMsg });
+                    TempData["AdminError"] = notFoundMsg;
                     return RedirectToAction(nameof(Index), new { tab = "categories" });
                 }
 
@@ -424,11 +489,24 @@ namespace satinalmaportali2.Controllers
                 _context.Category.Remove(category);
                 await _context.SaveChangesAsync();
 
-                TempData["AdminSuccess"] = $"'{category.CategoryName}' kategorisi başarıyla silindi.";
+                try
+                {
+                    await _hubContext.Clients.All.SendAsync("OnCategoryDeleted", new { categoryId = categoryId });
+                }
+                catch (Exception hubEx)
+                {
+                    Console.WriteLine($"SignalR SuperAdmin DeleteCategory error: {hubEx.Message}");
+                }
+
+                var succMsg = $"'{category.CategoryName}' kategorisi başarıyla silindi.";
+                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, categoryId = categoryId });
+                TempData["AdminSuccess"] = succMsg;
             }
             catch (Exception ex)
             {
-                TempData["AdminError"] = "Kategori silinirken hata oluştu: " + ex.Message;
+                var errMsg = "Kategori silinirken hata oluştu: " + ex.Message;
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["AdminError"] = errMsg;
             }
 
             return RedirectToAction(nameof(Index), new { tab = "categories" });
@@ -458,14 +536,19 @@ namespace satinalmaportali2.Controllers
 
         [HttpPost]
         [Route("UpdateCompany")]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateCompany(EditCompanyInputModel model)
         {
-            if (!await CheckIsSuperAdminAsync()) return Forbid();
+            if (!await CheckIsSuperAdminAsync())
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Yetkisiz işlem." });
+                return Forbid();
+            }
 
             if (!ModelState.IsValid || model.CompanyID <= 0)
             {
-                TempData["AdminError"] = "Lütfen tüm zorunlu firma bilgilerini eksiksiz doldurun.";
+                var reqMsg = "Lütfen tüm zorunlu firma bilgilerini eksiksiz doldurun.";
+                if (IsAjaxRequest()) return Json(new { success = false, message = reqMsg });
+                TempData["AdminError"] = reqMsg;
                 return RedirectToAction(nameof(Index), new { tab = "companies" });
             }
 
@@ -474,7 +557,9 @@ namespace satinalmaportali2.Controllers
                 var company = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyID == model.CompanyID);
                 if (company == null)
                 {
-                    TempData["AdminError"] = "Güncellenecek firma bulunamadı.";
+                    var notFoundMsg = "Güncellenecek firma bulunamadı.";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = notFoundMsg });
+                    TempData["AdminError"] = notFoundMsg;
                     return RedirectToAction(nameof(Index), new { tab = "companies" });
                 }
 
@@ -483,7 +568,9 @@ namespace satinalmaportali2.Controllers
                 var emailExists = await _context.Companies.AnyAsync(c => c.CompanyID != model.CompanyID && c.CompanyMail != null && c.CompanyMail.ToLower() == emailTrim);
                 if (emailExists)
                 {
-                    TempData["AdminError"] = "Bu e-posta adresi başka bir firma tarafından kullanılmaktadır.";
+                    var emailExistMsg = "Bu e-posta adresi başka bir firma tarafından kullanılmaktadır.";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = emailExistMsg });
+                    TempData["AdminError"] = emailExistMsg;
                     return RedirectToAction(nameof(Index), new { tab = "companies" });
                 }
 
@@ -522,11 +609,15 @@ namespace satinalmaportali2.Controllers
                 }
 
                 await _context.SaveChangesAsync();
-                TempData["AdminSuccess"] = $"'{company.CompanyName}' firması ve tüm ayarları başarıyla güncellendi!";
+                var succMsg = $"'{company.CompanyName}' firması ve tüm ayarları başarıyla güncellendi!";
+                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, companyId = company.CompanyID, companyName = company.CompanyName });
+                TempData["AdminSuccess"] = succMsg;
             }
             catch (Exception ex)
             {
-                TempData["AdminError"] = "Firma güncelleme hatası: " + ex.Message;
+                var errMsg = "Firma güncelleme hatası: " + ex.Message;
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["AdminError"] = errMsg;
             }
 
             return RedirectToAction(nameof(Index), new { tab = "companies" });
@@ -534,14 +625,19 @@ namespace satinalmaportali2.Controllers
 
         [HttpPost]
         [Route("ResetCompanyPassword")]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetCompanyPassword(ResetPasswordInputModel model)
         {
-            if (!await CheckIsSuperAdminAsync()) return Forbid();
+            if (!await CheckIsSuperAdminAsync())
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Yetkisiz işlem." });
+                return Forbid();
+            }
 
             if (model.CompanyID <= 0 || string.IsNullOrWhiteSpace(model.NewPassword) || model.NewPassword.Length < 6)
             {
-                TempData["AdminError"] = "Şifre en az 6 karakter olmalıdır.";
+                var reqMsg = "Şifre en az 6 karakter olmalıdır.";
+                if (IsAjaxRequest()) return Json(new { success = false, message = reqMsg });
+                TempData["AdminError"] = reqMsg;
                 return RedirectToAction(nameof(Index), new { tab = "companies" });
             }
 
@@ -550,18 +646,24 @@ namespace satinalmaportali2.Controllers
                 var company = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyID == model.CompanyID);
                 if (company == null)
                 {
-                    TempData["AdminError"] = "Firma bulunamadı.";
+                    var notFoundMsg = "Firma bulunamadı.";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = notFoundMsg });
+                    TempData["AdminError"] = notFoundMsg;
                     return RedirectToAction(nameof(Index), new { tab = "companies" });
                 }
 
                 company.CompanyPassword = PasswordHasher.HashPassword(model.NewPassword.Trim());
                 await _context.SaveChangesAsync();
 
-                TempData["AdminSuccess"] = $"'{company.CompanyName}' firmasının şifresi başarıyla sıfırlandı!";
+                var succMsg = $"'{company.CompanyName}' firmasının şifresi başarıyla sıfırlandı!";
+                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, companyId = company.CompanyID });
+                TempData["AdminSuccess"] = succMsg;
             }
             catch (Exception ex)
             {
-                TempData["AdminError"] = "Şifre sıfırlama hatası: " + ex.Message;
+                var errMsg = "Şifre sıfırlama hatası: " + ex.Message;
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["AdminError"] = errMsg;
             }
 
             return RedirectToAction(nameof(Index), new { tab = "companies" });
@@ -569,28 +671,37 @@ namespace satinalmaportali2.Controllers
 
         [HttpPost]
         [Route("QuickChangeCompanyType")]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> QuickChangeCompanyType(int companyId, int companyTypeId)
         {
-            if (!await CheckIsSuperAdminAsync()) return Forbid();
+            if (!await CheckIsSuperAdminAsync())
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Yetkisiz işlem." });
+                return Forbid();
+            }
 
             try
             {
                 var company = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyID == companyId);
                 if (company == null)
                 {
-                    TempData["AdminError"] = "Firma bulunamadı.";
+                    var notFoundMsg = "Firma bulunamadı.";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = notFoundMsg });
+                    TempData["AdminError"] = notFoundMsg;
                     return RedirectToAction(nameof(Index), new { tab = "companies" });
                 }
 
                 company.CompanyTypeID = companyTypeId;
                 await _context.SaveChangesAsync();
 
-                TempData["AdminSuccess"] = $"'{company.CompanyName}' firmasının türü güncellendi!";
+                var succMsg = $"'{company.CompanyName}' firmasının türü güncellendi!";
+                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, companyId = companyId, companyTypeId = companyTypeId });
+                TempData["AdminSuccess"] = succMsg;
             }
             catch (Exception ex)
             {
-                TempData["AdminError"] = "Firma türü değiştirme hatası: " + ex.Message;
+                var errMsg = "Firma türü değiştirme hatası: " + ex.Message;
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["AdminError"] = errMsg;
             }
 
             return RedirectToAction(nameof(Index), new { tab = "companies" });
@@ -598,15 +709,20 @@ namespace satinalmaportali2.Controllers
 
         [HttpPost]
         [Route("DeleteCompany")]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteCompany(int companyId)
         {
-            if (!await CheckIsSuperAdminAsync()) return Forbid();
+            if (!await CheckIsSuperAdminAsync())
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Yetkisiz işlem." });
+                return Forbid();
+            }
 
             int currentCompId = GetCurrentCompanyId();
             if (companyId == currentCompId)
             {
-                TempData["AdminError"] = "Kendi aktif oturum hesabınızı silemezsiniz!";
+                var selfMsg = "Kendi aktif oturum hesabınızı silemezsiniz!";
+                if (IsAjaxRequest()) return Json(new { success = false, message = selfMsg });
+                TempData["AdminError"] = selfMsg;
                 return RedirectToAction(nameof(Index), new { tab = "companies" });
             }
 
@@ -615,18 +731,24 @@ namespace satinalmaportali2.Controllers
                 var company = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyID == companyId);
                 if (company == null)
                 {
-                    TempData["AdminError"] = "Silinecek firma bulunamadı.";
+                    var notFoundMsg = "Silinecek firma bulunamadı.";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = notFoundMsg });
+                    TempData["AdminError"] = notFoundMsg;
                     return RedirectToAction(nameof(Index), new { tab = "companies" });
                 }
 
                 _context.Companies.Remove(company);
                 await _context.SaveChangesAsync();
 
-                TempData["AdminSuccess"] = $"'{company.CompanyName}' firması kalıcı olarak silindi.";
+                var succMsg = $"'{company.CompanyName}' firması kalıcı olarak silindi.";
+                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, companyId = companyId });
+                TempData["AdminSuccess"] = succMsg;
             }
             catch (Exception ex)
             {
-                TempData["AdminError"] = "Firma silinirken hata oluştu: " + ex.Message;
+                var errMsg = "Firma silinirken hata oluştu: " + ex.Message;
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["AdminError"] = errMsg;
             }
 
             return RedirectToAction(nameof(Index), new { tab = "companies" });
@@ -671,14 +793,19 @@ namespace satinalmaportali2.Controllers
 
         [HttpPost]
         [Route("SimulateCreateRequest")]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> SimulateCreateRequest(SimulateRequestInputModel input)
         {
-            if (!await CheckIsSuperAdminAsync()) return Forbid();
+            if (!await CheckIsSuperAdminAsync())
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Yetkisiz işlem." });
+                return Forbid();
+            }
 
             if (!ModelState.IsValid || input.SenderCompanyID <= 0 || string.IsNullOrWhiteSpace(input.ProductName) || input.Quantity <= 0)
             {
-                TempData["AdminError"] = "Lütfen talep açan firma, ürün adı ve geçerli bir adet giriniz.";
+                var reqMsg = "Lütfen talep açan firma, ürün adı ve geçerli bir adet giriniz.";
+                if (IsAjaxRequest()) return Json(new { success = false, message = reqMsg });
+                TempData["AdminError"] = reqMsg;
                 return RedirectToAction(nameof(Index), new { tab = "simulation" });
             }
 
@@ -687,7 +814,9 @@ namespace satinalmaportali2.Controllers
                 var senderComp = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyID == input.SenderCompanyID);
                 if (senderComp == null)
                 {
-                    TempData["AdminError"] = "Seçilen firma bulunamadı.";
+                    var notFoundMsg = "Seçilen firma bulunamadı.";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = notFoundMsg });
+                    TempData["AdminError"] = notFoundMsg;
                     return RedirectToAction(nameof(Index), new { tab = "simulation" });
                 }
 
@@ -711,11 +840,40 @@ namespace satinalmaportali2.Controllers
                 _context.Requests.Add(newRequest);
                 await _context.SaveChangesAsync();
 
-                TempData["AdminSuccess"] = $"'{senderComp.CompanyName}' adına '#REQ-{newRequest.RequestID} - {newRequest.ProductName}' talebi başarıyla oluşturuldu ve yayınlandı!";
+                try
+                {
+                    await _hubContext.Clients.All.SendAsync("OnRequestCreated", new
+                    {
+                        requestId = newRequest.RequestID,
+                        requestCode = $"REQ-{newRequest.RequestID:D4}",
+                        productName = newRequest.ProductName ?? "Satın Alma Talebi",
+                        category = newRequest.RequestType ?? "Satın Alma",
+                        quantity = newRequest.Quantity ?? 1,
+                        estimatedBudget = newRequest.EstimatedBudget,
+                        estimatedBudgetFormatted = newRequest.EstimatedBudget.HasValue ? newRequest.EstimatedBudget.Value.ToString("N2") + " ₺" : "Belirtilmedi",
+                        senderId = newRequest.SenderID,
+                        buyerInfo = newRequest.BuyerInfo ?? "Kurumsal Alıcı",
+                        status = newRequest.Status ?? "Beklemede",
+                        requestDate = newRequest.RequestDate?.ToString("dd.MM.yyyy HH:mm") ?? DateTime.Now.ToString("dd.MM.yyyy HH:mm"),
+                        targetDeliveryDate = newRequest.TargetDeliveryDate?.ToString("dd.MM.yyyy") ?? "Belirtilmedi",
+                        notes = newRequest.Notes ?? "",
+                        offerCount = 0
+                    });
+                }
+                catch (Exception hubEx)
+                {
+                    Console.WriteLine($"SignalR SimulateCreateRequest error: {hubEx.Message}");
+                }
+
+                var succMsg = $"'{senderComp.CompanyName}' adına '#REQ-{newRequest.RequestID} - {newRequest.ProductName}' talebi başarıyla oluşturuldu ve yayınlandı!";
+                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, requestId = newRequest.RequestID, productName = newRequest.ProductName });
+                TempData["AdminSuccess"] = succMsg;
             }
             catch (Exception ex)
             {
-                TempData["AdminError"] = "Talep simülasyonu hatası: " + ex.Message;
+                var errMsg = "Talep simülasyonu hatası: " + ex.Message;
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["AdminError"] = errMsg;
             }
 
             return RedirectToAction(nameof(Index), new { tab = "simulation" });
@@ -723,14 +881,19 @@ namespace satinalmaportali2.Controllers
 
         [HttpPost]
         [Route("SimulateCreateOffer")]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> SimulateCreateOffer(SimulateOfferInputModel input)
         {
-            if (!await CheckIsSuperAdminAsync()) return Forbid();
+            if (!await CheckIsSuperAdminAsync())
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Yetkisiz işlem." });
+                return Forbid();
+            }
 
             if (!ModelState.IsValid || input.RequestID <= 0 || input.SupplierCompanyID <= 0 || input.OfferedPrice <= 0)
             {
-                TempData["AdminError"] = "Lütfen talep, tedarikçi firma ve geçerli bir teklif tutarı giriniz.";
+                var reqMsg = "Lütfen talep, tedarikçi firma ve geçerli bir teklif tutarı giriniz.";
+                if (IsAjaxRequest()) return Json(new { success = false, message = reqMsg });
+                TempData["AdminError"] = reqMsg;
                 return RedirectToAction(nameof(Index), new { tab = "simulation" });
             }
 
@@ -739,25 +902,32 @@ namespace satinalmaportali2.Controllers
                 var request = await _context.Requests.Include(r => r.Offers).FirstOrDefaultAsync(r => r.RequestID == input.RequestID);
                 if (request == null)
                 {
-                    TempData["AdminError"] = "Teklif verilmek istenen talep bulunamadı.";
+                    var notFoundMsg = "Teklif verilmek istenen talep bulunamadı.";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = notFoundMsg });
+                    TempData["AdminError"] = notFoundMsg;
                     return RedirectToAction(nameof(Index), new { tab = "simulation" });
                 }
 
                 var supplier = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyID == input.SupplierCompanyID);
                 if (supplier == null)
                 {
-                    TempData["AdminError"] = "Seçilen tedarikçi firma bulunamadı.";
+                    var notFoundMsg = "Seçilen tedarikçi firma bulunamadı.";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = notFoundMsg });
+                    TempData["AdminError"] = notFoundMsg;
                     return RedirectToAction(nameof(Index), new { tab = "simulation" });
                 }
 
                 // Kendi talebine teklif vermesini engelle
                 if (request.SenderID.HasValue && request.SenderID.Value == supplier.CompanyID)
                 {
-                    TempData["AdminError"] = "Bir firma kendi oluşturduğu talebe teklif veremez!";
+                    var selfOfferMsg = "Bir firma kendi oluşturduğu talebe teklif veremez!";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = selfOfferMsg });
+                    TempData["AdminError"] = selfOfferMsg;
                     return RedirectToAction(nameof(Index), new { tab = "simulation" });
                 }
 
                 var existingOffer = await _context.RequestOffers.FirstOrDefaultAsync(o => o.RequestID == input.RequestID && o.SupplierID == supplier.CompanyID);
+                string succMsg;
                 if (existingOffer != null)
                 {
                     existingOffer.OfferedPrice = input.OfferedPrice;
@@ -767,7 +937,7 @@ namespace satinalmaportali2.Controllers
                     existingOffer.OfferDate = DateTime.UtcNow;
                     existingOffer.Status = "Beklemede";
 
-                    TempData["AdminSuccess"] = $"'{supplier.CompanyName}' adına '#REQ-{request.RequestID}' talebine verilen teklif {input.OfferedPrice:N2} ₺ olarak güncellendi!";
+                    succMsg = $"'{supplier.CompanyName}' adına '#REQ-{request.RequestID}' talebine verilen teklif {input.OfferedPrice:N2} ₺ olarak güncellendi!";
                 }
                 else
                 {
@@ -784,10 +954,69 @@ namespace satinalmaportali2.Controllers
                     };
 
                     _context.RequestOffers.Add(newOffer);
-                    TempData["AdminSuccess"] = $"'{supplier.CompanyName}' adına '#REQ-{request.RequestID} - {request.ProductName}' talebine {input.OfferedPrice:N2} ₺ teklif başarıyla iletildi!";
+                    succMsg = $"'{supplier.CompanyName}' adına '#REQ-{request.RequestID} - {request.ProductName}' talebine {input.OfferedPrice:N2} ₺ teklif başarıyla iletildi!";
                 }
 
                 await _context.SaveChangesAsync();
+
+                try
+                {
+                    var offerToSend = existingOffer ?? await _context.RequestOffers.FirstOrDefaultAsync(o => o.RequestID == input.RequestID && o.SupplierID == supplier.CompanyID);
+                    if (offerToSend != null)
+                    {
+                        var supplierName = supplier.CompanyName ?? supplier.CompanyOfficial ?? $"Tedarikçi #{supplier.CompanyID}";
+                        var payload = new
+                        {
+                            requestId = request.RequestID,
+                            requestCode = $"REQ-{request.RequestID:D4}",
+                            productName = request.ProductName ?? "Satın Alma Talebi",
+                            offerId = offerToSend.OfferID,
+                            supplierId = offerToSend.SupplierID,
+                            supplierName = supplierName,
+                            supplierOfficial = supplier.CompanyOfficial ?? "",
+                            supplierPhone = supplier.CompanyPhone ?? "",
+                            supplierMail = supplier.CompanyMail ?? "",
+                            offeredPrice = offerToSend.OfferedPrice,
+                            offeredPriceFormatted = offerToSend.OfferedPrice.ToString("N2") + " ₺",
+                            deliveryDays = offerToSend.DeliveryDays,
+                            validityDays = offerToSend.ValidityDays,
+                            offerDate = offerToSend.OfferDate.ToString("dd.MM.yyyy HH:mm"),
+                            status = offerToSend.Status ?? "Beklemede",
+                            supplierNotes = offerToSend.SupplierNotes ?? "",
+                            isRevised = (existingOffer != null),
+                            totalOffersCount = request.Offers.Count,
+                            bestOfferPrice = request.Offers.Any() ? request.Offers.Min(o => o.OfferedPrice) : offerToSend.OfferedPrice
+                        };
+
+                        await _hubContext.Clients.Group($"request_{request.RequestID}").SendAsync("OnOfferSubmitted", payload);
+
+                        if (request.SenderID.HasValue && request.SenderID.Value > 0)
+                        {
+                            await _hubContext.Clients.Group($"company_{request.SenderID.Value}").SendAsync("OnOfferReceivedNotification", new
+                            {
+                                requestId = request.RequestID,
+                                productName = request.ProductName,
+                                supplierName = supplierName,
+                                offeredPrice = offerToSend.OfferedPrice,
+                                offeredPriceFormatted = offerToSend.OfferedPrice.ToString("N2") + " ₺",
+                                isRevised = (existingOffer != null)
+                            });
+                        }
+
+                        await _hubContext.Clients.All.SendAsync("OnRequestOfferCountUpdated", new
+                        {
+                            requestId = request.RequestID,
+                            offerCount = request.Offers.Count,
+                            bestOfferPrice = request.Offers.Min(o => o.OfferedPrice),
+                            bestOfferPriceFormatted = request.Offers.Min(o => o.OfferedPrice).ToString("N2") + " ₺",
+                            status = request.Status
+                        });
+                    }
+                }
+                catch (Exception hubEx)
+                {
+                    Console.WriteLine($"SignalR SimulateCreateOffer error: {hubEx.Message}");
+                }
 
                 // E-posta Bildirimi Gönderimi (Talep sahibine)
                 if (request.SenderID.HasValue)
@@ -825,10 +1054,15 @@ namespace satinalmaportali2.Controllers
                         });
                     }
                 }
+
+                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, requestId = request.RequestID, offeredPrice = input.OfferedPrice });
+                TempData["AdminSuccess"] = succMsg;
             }
             catch (Exception ex)
             {
-                TempData["AdminError"] = "Teklif simülasyonu hatası: " + ex.Message;
+                var errMsg = "Teklif simülasyonu hatası: " + ex.Message;
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["AdminError"] = errMsg;
             }
 
             return RedirectToAction(nameof(Index), new { tab = "simulation" });
@@ -836,14 +1070,19 @@ namespace satinalmaportali2.Controllers
 
         [HttpPost]
         [Route("SimulateCreateListing")]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> SimulateCreateListing(SimulateListingInputModel input)
         {
-            if (!await CheckIsSuperAdminAsync()) return Forbid();
+            if (!await CheckIsSuperAdminAsync())
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Yetkisiz işlem." });
+                return Forbid();
+            }
 
             if (!ModelState.IsValid || input.SupplierCompanyID <= 0 || string.IsNullOrWhiteSpace(input.ItemName) || input.ItemPrice <= 0 || input.Quantity <= 0)
             {
-                TempData["AdminError"] = "Lütfen tedarikçi firma, ürün adı, geçerli birim fiyat ve stok adedi giriniz.";
+                var reqMsg = "Lütfen tedarikçi firma, ürün adı, geçerli birim fiyat ve stok adedi giriniz.";
+                if (IsAjaxRequest()) return Json(new { success = false, message = reqMsg });
+                TempData["AdminError"] = reqMsg;
                 return RedirectToAction(nameof(Index), new { tab = "simulation" });
             }
 
@@ -852,7 +1091,9 @@ namespace satinalmaportali2.Controllers
                 var supplier = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyID == input.SupplierCompanyID);
                 if (supplier == null)
                 {
-                    TempData["AdminError"] = "Seçilen tedarikçi firma bulunamadı.";
+                    var notFoundMsg = "Seçilen tedarikçi firma bulunamadı.";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = notFoundMsg });
+                    TempData["AdminError"] = notFoundMsg;
                     return RedirectToAction(nameof(Index), new { tab = "simulation" });
                 }
 
@@ -886,11 +1127,15 @@ namespace satinalmaportali2.Controllers
                 _context.Items.Add(newItem);
                 await _context.SaveChangesAsync();
 
-                TempData["AdminSuccess"] = $"'{supplier.CompanyName}' adına '{newItem.ItemName}' (Birim Fiyat: {newItem.ItemPrice:N0} ₺ - Stok: {newItem.Quantity} Adet) ürün ilanı başarıyla vitrine eklendi ve yayına alındı! (Ürün ID: #{newItem.ItemID})";
+                var succMsg = $"'{supplier.CompanyName}' adına '{newItem.ItemName}' (Birim Fiyat: {newItem.ItemPrice:N0} ₺ - Stok: {newItem.Quantity} Adet) ürün ilanı başarıyla vitrine eklendi ve yayına alındı! (Ürün ID: #{newItem.ItemID})";
+                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, itemId = newItem.ItemID, itemName = newItem.ItemName, price = newItem.ItemPrice, quantity = newItem.Quantity });
+                TempData["AdminSuccess"] = succMsg;
             }
             catch (Exception ex)
             {
-                TempData["AdminError"] = "Satış ilanı simülasyonu hatası: " + ex.Message;
+                var errMsg = "Satış ilanı simülasyonu hatası: " + ex.Message;
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["AdminError"] = errMsg;
             }
 
             return RedirectToAction(nameof(Index), new { tab = "simulation" });
@@ -898,14 +1143,19 @@ namespace satinalmaportali2.Controllers
 
         [HttpPost]
         [Route("DeleteListing")]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteListing(int id)
         {
-            if (!await CheckIsSuperAdminAsync()) return Forbid();
+            if (!await CheckIsSuperAdminAsync())
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Yetkisiz işlem." });
+                return Forbid();
+            }
 
             if (id <= 0)
             {
-                TempData["AdminError"] = "Geçersiz ürün seçildi.";
+                var reqMsg = "Geçersiz ürün seçildi.";
+                if (IsAjaxRequest()) return Json(new { success = false, message = reqMsg });
+                TempData["AdminError"] = reqMsg;
                 return RedirectToAction(nameof(Index), new { tab = "simulation" });
             }
 
@@ -914,18 +1164,24 @@ namespace satinalmaportali2.Controllers
                 var item = await _context.Items.FirstOrDefaultAsync(i => i.ItemID == id);
                 if (item == null)
                 {
-                    TempData["AdminError"] = "Silinecek ürün ilanı bulunamadı.";
+                    var notFoundMsg = "Silinecek ürün ilanı bulunamadı.";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = notFoundMsg });
+                    TempData["AdminError"] = notFoundMsg;
                     return RedirectToAction(nameof(Index), new { tab = "simulation" });
                 }
 
                 _context.Items.Remove(item);
                 await _context.SaveChangesAsync();
 
-                TempData["AdminSuccess"] = $"'{item.ItemName}' ürün ilanı vitrinden başarıyla kaldırıldı.";
+                var succMsg = $"'{item.ItemName}' ürün ilanı vitrinden başarıyla kaldırıldı.";
+                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, itemId = id });
+                TempData["AdminSuccess"] = succMsg;
             }
             catch (Exception ex)
             {
-                TempData["AdminError"] = "İlan silinirken hata oluştu: " + ex.Message;
+                var errMsg = "İlan silinirken hata oluştu: " + ex.Message;
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["AdminError"] = errMsg;
             }
 
             return RedirectToAction(nameof(Index), new { tab = "simulation" });
@@ -933,19 +1189,26 @@ namespace satinalmaportali2.Controllers
 
         [HttpPost]
         [Route("SeedSystemDefaults")]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> SeedSystemDefaults()
         {
-            if (!await CheckIsSuperAdminAsync()) return Forbid();
+            if (!await CheckIsSuperAdminAsync())
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Yetkisiz işlem." });
+                return Forbid();
+            }
 
             try
             {
                 await DbInitializer.SeedDataAsync(_context);
-                TempData["AdminSuccess"] = "Sistem varsayılan verileri ve tür tabloları başarıyla senkronize edildi!";
+                var succMsg = "Sistem varsayılan verileri ve tür tabloları başarıyla senkronize edildi!";
+                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg });
+                TempData["AdminSuccess"] = succMsg;
             }
             catch (Exception ex)
             {
-                TempData["AdminError"] = "Senkronizasyon hatası: " + ex.Message;
+                var errMsg = "Senkronizasyon hatası: " + ex.Message;
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["AdminError"] = errMsg;
             }
 
             return RedirectToAction(nameof(Index), new { tab = "settings" });

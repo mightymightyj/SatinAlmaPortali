@@ -917,13 +917,22 @@
 
                 var result = await response.json();
                 if (result.success) {
-                    alert(result.message);
-                    window.location.reload();
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('✓ ' + (result.message || 'Teklif başarıyla kabul edildi!'), 'success');
+                    }
                 } else {
-                    alert('Hata: ' + result.message);
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('Hata: ' + result.message, 'error');
+                    } else {
+                        alert('Hata: ' + result.message);
+                    }
                 }
             } catch (err) {
-                alert('İşlem sırasında hata oluştu: ' + err.message);
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('İşlem sırasında hata oluştu: ' + err.message, 'error');
+                } else {
+                    alert('İşlem sırasında hata oluştu: ' + err.message);
+                }
             }
         }
 
@@ -941,13 +950,22 @@
 
                 var result = await response.json();
                 if (result.success) {
-                    alert(result.message);
-                    window.location.reload();
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('✓ ' + (result.message || 'Teklif reddedildi.'), 'info');
+                    }
                 } else {
-                    alert('Hata: ' + result.message);
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('Hata: ' + result.message, 'error');
+                    } else {
+                        alert('Hata: ' + result.message);
+                    }
                 }
             } catch (err) {
-                alert('İşlem sırasında hata oluştu: ' + err.message);
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('İşlem sırasında hata oluştu: ' + err.message, 'error');
+                } else {
+                    alert('İşlem sırasında hata oluştu: ' + err.message);
+                }
             }
         }
 

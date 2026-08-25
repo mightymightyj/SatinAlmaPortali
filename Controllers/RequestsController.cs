@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
 using satinalmaportali2.Data;
+using satinalmaportali2.Hubs;
 using satinalmaportali2.Models;
 using satinalmaportali2.Services;
 
@@ -17,11 +19,13 @@ namespace satinalmaportali2.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
+        private readonly IHubContext<PortalHub> _hubContext;
 
-        public RequestsController(ApplicationDbContext context, EmailService emailService)
+        public RequestsController(ApplicationDbContext context, EmailService emailService, IHubContext<PortalHub> hubContext)
         {
             _context = context;
             _emailService = emailService;
+            _hubContext = hubContext;
         }
 
         private int GetCurrentCompanyId()
@@ -302,6 +306,8 @@ namespace satinalmaportali2.Controllers
                 _context.Requests.Add(newRequest);
                 await _context.SaveChangesAsync();
 
+                await BroadcastRequestCreatedAsync(newRequest);
+
                 TempData["SuccessMessage"] = $"'{input.ProductName}' ürün talebiniz ({input.Quantity} Adet) başarıyla oluşturuldu ve tedarikçilere açıldı!";
             }
             catch (Exception ex)
@@ -348,6 +354,8 @@ namespace satinalmaportali2.Controllers
 
                 _context.Requests.Add(newRequest);
                 await _context.SaveChangesAsync();
+
+                await BroadcastRequestCreatedAsync(newRequest);
 
                 return Json(new
                 {
@@ -416,6 +424,9 @@ namespace satinalmaportali2.Controllers
                 var existingOffer = await _context.RequestOffers
                     .FirstOrDefaultAsync(o => o.RequestID == input.RequestID && o.SupplierID == currentCompanyId);
 
+                bool wasRejected = false;
+                decimal? prevPrice = null;
+
                 if (existingOffer != null)
                 {
                     // Alıcı teklifi onayladıktan sonra kilitlenir
@@ -427,11 +438,11 @@ namespace satinalmaportali2.Controllers
                     }
 
                     var parsedPrev = ParseSupplierNotes(existingOffer.SupplierNotes);
-                    bool wasRejected = string.Equals(existingOffer.Status, "Reddedildi", StringComparison.OrdinalIgnoreCase) 
+                    wasRejected = string.Equals(existingOffer.Status, "Reddedildi", StringComparison.OrdinalIgnoreCase) 
                                        || !string.IsNullOrWhiteSpace(parsedPrev.RejectionReason)
                                        || parsedPrev.IsRevised;
 
-                    decimal prevPrice = existingOffer.OfferedPrice;
+                    prevPrice = existingOffer.OfferedPrice;
                     string prevRej = parsedPrev.RejectionReason ?? parsedPrev.PreviousRejectionReason ?? "Alıcı tarafından reddedildi";
 
                     // Güncelle / Revize et
@@ -441,9 +452,9 @@ namespace satinalmaportali2.Controllers
                     existingOffer.OfferDate = DateTime.UtcNow;
                     existingOffer.Status = "Beklemede";
 
-                    if (wasRejected)
+                    if (wasRejected && prevPrice.HasValue)
                     {
-                        string revisionTag = $"[Revize:EskiFiyat={prevPrice.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}|EskiRed={prevRej.Replace("|", " ").Replace("]", "")}]";
+                        string revisionTag = $"[Revize:EskiFiyat={prevPrice.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}|EskiRed={prevRej.Replace("|", " ").Replace("]", "")}]";
                         string cleanUserNote = input.SupplierNotes?.Trim() ?? "";
                         existingOffer.SupplierNotes = string.IsNullOrWhiteSpace(cleanUserNote) ? revisionTag : $"{cleanUserNote} {revisionTag}";
                     }
@@ -491,6 +502,19 @@ namespace satinalmaportali2.Controllers
                 }
 
                 await _context.SaveChangesAsync();
+
+                if (existingOffer != null)
+                {
+                    await BroadcastOfferSubmittedAsync(request, existingOffer, currentCompany, wasRejected, wasRejected ? prevPrice : null);
+                }
+                else
+                {
+                    var createdOffer = await _context.RequestOffers.FirstOrDefaultAsync(o => o.RequestID == input.RequestID && o.SupplierID == currentCompanyId);
+                    if (createdOffer != null)
+                    {
+                        await BroadcastOfferSubmittedAsync(request, createdOffer, currentCompany, false, null);
+                    }
+                }
 
                 // Alıcı firmaya e-posta bildirimini arka planda gönder
                 await TriggerOfferReceivedEmailNotificationAsync(request, currentCompany, input);
@@ -590,6 +614,7 @@ namespace satinalmaportali2.Controllers
 
                     await _context.SaveChangesAsync();
                     await TriggerOfferReceivedEmailNotificationAsync(request, currentCompany, input);
+                    await BroadcastOfferSubmittedAsync(request, existingOffer, currentCompany, wasRejected, wasRejected ? prevPrice : null);
 
                     return Json(new
                     {
@@ -621,6 +646,7 @@ namespace satinalmaportali2.Controllers
 
                     await _context.SaveChangesAsync();
                     await TriggerOfferReceivedEmailNotificationAsync(request, currentCompany, input);
+                    await BroadcastOfferSubmittedAsync(request, newOffer, currentCompany, false, null);
 
                     return Json(new { success = true, message = $"{input.OfferedPrice:N2} ₺ tutarındaki teklifiniz başarıyla iletildi!" });
                 }
@@ -629,6 +655,180 @@ namespace satinalmaportali2.Controllers
             {
                 var detail = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
                 return Json(new { success = false, message = "Hata: " + detail });
+            }
+        }
+
+        private async Task BroadcastRequestCreatedAsync(Requests newRequest)
+        {
+            try
+            {
+                await _hubContext.Clients.All.SendAsync("OnRequestCreated", new
+                {
+                    requestId = newRequest.RequestID,
+                    requestCode = $"REQ-{newRequest.RequestID:D4}",
+                    productName = newRequest.ProductName ?? "Satın Alma Talebi",
+                    category = newRequest.RequestType ?? "Satın Alma",
+                    quantity = newRequest.Quantity ?? 1,
+                    estimatedBudget = newRequest.EstimatedBudget,
+                    estimatedBudgetFormatted = newRequest.EstimatedBudget.HasValue ? newRequest.EstimatedBudget.Value.ToString("N2") + " ₺" : "Belirtilmedi",
+                    senderId = newRequest.SenderID,
+                    buyerInfo = newRequest.BuyerInfo ?? "Kurumsal Alıcı",
+                    status = newRequest.Status ?? "Beklemede",
+                    requestDate = newRequest.RequestDate?.ToString("dd.MM.yyyy HH:mm") ?? DateTime.Now.ToString("dd.MM.yyyy HH:mm"),
+                    targetDeliveryDate = newRequest.TargetDeliveryDate?.ToString("dd.MM.yyyy") ?? "Belirtilmedi",
+                    notes = newRequest.Notes ?? "",
+                    offerCount = 0
+                });
+            }
+            catch (Exception hubEx)
+            {
+                Console.WriteLine($"SignalR BroadcastRequestCreated error: {hubEx.Message}");
+            }
+        }
+
+        private async Task BroadcastOfferSubmittedAsync(Requests request, RequestOffers offer, Company? supplier, bool isRevised, decimal? prevPrice)
+        {
+            try
+            {
+                var supplierName = supplier?.CompanyName ?? supplier?.CompanyOfficial ?? $"Tedarikçi #{offer.SupplierID}";
+                var parsed = ParseSupplierNotes(offer.SupplierNotes);
+
+                var payload = new
+                {
+                    requestId = request.RequestID,
+                    requestCode = $"REQ-{request.RequestID:D4}",
+                    productName = request.ProductName ?? "Satın Alma Talebi",
+                    offerId = offer.OfferID,
+                    supplierId = offer.SupplierID,
+                    supplierName = supplierName,
+                    supplierOfficial = supplier?.CompanyOfficial ?? "",
+                    supplierPhone = supplier?.CompanyPhone ?? "",
+                    supplierMail = supplier?.CompanyMail ?? "",
+                    offeredPrice = offer.OfferedPrice,
+                    offeredPriceFormatted = offer.OfferedPrice.ToString("N2") + " ₺",
+                    deliveryDays = offer.DeliveryDays,
+                    validityDays = offer.ValidityDays,
+                    offerDate = offer.OfferDate.ToString("dd.MM.yyyy HH:mm"),
+                    status = offer.Status ?? "Beklemede",
+                    supplierNotes = parsed.CleanNotes ?? "",
+                    isRevised = isRevised,
+                    previousPrice = prevPrice,
+                    previousPriceFormatted = prevPrice.HasValue ? prevPrice.Value.ToString("N2") + " ₺" : null,
+                    totalOffersCount = request.Offers.Count,
+                    bestOfferPrice = request.Offers.Any() ? request.Offers.Min(o => o.OfferedPrice) : offer.OfferedPrice
+                };
+
+                // 1. Talebin canlı modalını izleyen gruba ve tüm portal kullanıcılarına gönder
+                await _hubContext.Clients.Group($"request_{request.RequestID}").SendAsync("OnOfferSubmitted", payload);
+                await _hubContext.Clients.All.SendAsync("OnOfferSubmitted", payload);
+
+                // 2. Talep sahibi alıcı firmanın grubuna özel bildirim gönder
+                if (request.SenderID.HasValue && request.SenderID.Value > 0)
+                {
+                    await _hubContext.Clients.Group($"company_{request.SenderID.Value}").SendAsync("OnOfferReceivedNotification", new
+                    {
+                        requestId = request.RequestID,
+                        productName = request.ProductName,
+                        supplierName = supplierName,
+                        offeredPrice = offer.OfferedPrice,
+                        offeredPriceFormatted = offer.OfferedPrice.ToString("N2") + " ₺",
+                        isRevised = isRevised
+                    });
+                }
+
+                // 3. Genel listeleri ve sayaçları güncellemek için genel yayın
+                await _hubContext.Clients.All.SendAsync("OnRequestOfferCountUpdated", new
+                {
+                    requestId = request.RequestID,
+                    offerCount = request.Offers.Count,
+                    bestOfferPrice = request.Offers.Any() ? request.Offers.Min(o => o.OfferedPrice) : offer.OfferedPrice,
+                    bestOfferPriceFormatted = request.Offers.Any() ? request.Offers.Min(o => o.OfferedPrice).ToString("N2") + " ₺" : "—",
+                    status = request.Status
+                });
+            }
+            catch (Exception hubEx)
+            {
+                Console.WriteLine($"SignalR BroadcastOfferSubmitted error: {hubEx.Message}");
+            }
+        }
+
+        private async Task BroadcastOfferAcceptedAsync(Requests request, RequestOffers winningOffer, List<RequestOffers> rejectedOffers)
+        {
+            try
+            {
+                var winSupName = winningOffer.Supplier?.CompanyName ?? winningOffer.Supplier?.CompanyOfficial ?? $"Tedarikçi #{winningOffer.SupplierID}";
+
+                // 1. Kazanan tedarikçiye doğrudan bildirim
+                await _hubContext.Clients.Group($"company_{winningOffer.SupplierID}").SendAsync("OnOfferWonNotification", new
+                {
+                    requestId = request.RequestID,
+                    requestCode = $"REQ-{request.RequestID:D4}",
+                    productName = request.ProductName,
+                    offeredPrice = winningOffer.OfferedPrice,
+                    offeredPriceFormatted = winningOffer.OfferedPrice.ToString("N2") + " ₺",
+                    message = $"🎉 Tebrikler! '{request.ProductName}' (#REQ-{request.RequestID:D4}) talebine verdiğiniz {winningOffer.OfferedPrice:N2} ₺ tutarındaki teklifiniz KABUL EDİLDİ!"
+                });
+
+                // 2. Elenen tedarikçilere red bildirimi
+                foreach (var rej in rejectedOffers)
+                {
+                    await _hubContext.Clients.Group($"company_{rej.SupplierID}").SendAsync("OnOfferLostNotification", new
+                    {
+                        requestId = request.RequestID,
+                        requestCode = $"REQ-{request.RequestID:D4}",
+                        productName = request.ProductName,
+                        rejectionReason = "Talep için başka bir tedarikçinin teklifi kabul edildi."
+                    });
+                }
+
+                // 3. İlgili talep modal grubuna ve genel listelere yayın
+                var payload = new
+                {
+                    requestId = request.RequestID,
+                    winningOfferId = winningOffer.OfferID,
+                    winningSupplierId = winningOffer.SupplierID,
+                    winningSupplierName = winSupName,
+                    status = "Onaylandı",
+                    approvedDate = request.ApprovedDate?.ToString("dd.MM.yyyy HH:mm") ?? DateTime.Now.ToString("dd.MM.yyyy HH:mm")
+                };
+
+                await _hubContext.Clients.Group($"request_{request.RequestID}").SendAsync("OnRequestApproved", payload);
+                await _hubContext.Clients.All.SendAsync("OnRequestApproved", payload);
+                await _hubContext.Clients.All.SendAsync("OnRequestStatusChanged", payload);
+            }
+            catch (Exception hubEx)
+            {
+                Console.WriteLine($"SignalR BroadcastOfferAccepted error: {hubEx.Message}");
+            }
+        }
+
+        private async Task BroadcastOfferRejectedAsync(Requests request, RequestOffers rejectedOffer, string reason)
+        {
+            try
+            {
+                var payload = new
+                {
+                    requestId = request.RequestID,
+                    offerId = rejectedOffer.OfferID,
+                    supplierId = rejectedOffer.SupplierID,
+                    rejectionReason = reason,
+                    status = "Reddedildi"
+                };
+
+                await _hubContext.Clients.Group($"company_{rejectedOffer.SupplierID}").SendAsync("OnOfferLostNotification", new
+                {
+                    requestId = request.RequestID,
+                    requestCode = $"REQ-{request.RequestID:D4}",
+                    productName = request.ProductName,
+                    rejectionReason = reason
+                });
+
+                await _hubContext.Clients.Group($"request_{request.RequestID}").SendAsync("OnOfferRejected", payload);
+                await _hubContext.Clients.All.SendAsync("OnOfferRejected", payload);
+            }
+            catch (Exception hubEx)
+            {
+                Console.WriteLine($"SignalR BroadcastOfferRejected error: {hubEx.Message}");
             }
         }
 
@@ -1052,6 +1252,9 @@ namespace satinalmaportali2.Controllers
                 // E-posta bildirimlerini tetikle
                 TriggerOfferDecisionEmails(request, offer, otherOffers, currentCompany);
 
+                // SignalR ile anlık ekran güncellemesi ve bildirim gönder
+                await BroadcastOfferAcceptedAsync(request, offer, otherOffers);
+
                 TempData["SuccessMessage"] = $"Tebrikler! #{request.RequestID} numaralı talep için {offer.OfferedPrice:N2} ₺ tutarındaki teklif kabul edildi ve talep başarıyla ONAYLANDI.";
             }
             catch (Exception ex)
@@ -1131,6 +1334,9 @@ namespace satinalmaportali2.Controllers
                 // E-posta bildirimlerini tetikle
                 TriggerOfferDecisionEmails(request, offer, otherOffers, currentCompany);
 
+                // SignalR ile anlık ekran güncellemesi ve bildirim gönder
+                await BroadcastOfferAcceptedAsync(request, offer, otherOffers);
+
                 return Json(new
                 {
                     success = true,
@@ -1200,6 +1406,9 @@ namespace satinalmaportali2.Controllers
                 // Bildirim e-postası
                 TriggerSingleOfferRejectedEmail(offer.Request, offer, finalReason, currentCompany);
 
+                // SignalR ile anlık güncelleme
+                await BroadcastOfferRejectedAsync(offer.Request, offer, finalReason);
+
                 TempData["SuccessMessage"] = "Teklif başarıyla reddedildi.";
             }
             catch (Exception ex)
@@ -1265,6 +1474,9 @@ namespace satinalmaportali2.Controllers
 
                 // Bildirim e-postası
                 TriggerSingleOfferRejectedEmail(offer.Request, offer, finalReason, currentCompany);
+
+                // SignalR ile anlık güncelleme
+                await BroadcastOfferRejectedAsync(offer.Request, offer, finalReason);
 
                 return Json(new
                 {
@@ -1525,9 +1737,11 @@ namespace satinalmaportali2.Controllers
         /// Talep Silme Action
         /// </summary>
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
+            bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
+                          (Request.Headers.Accept.ToString().Contains("application/json") && !Request.Headers.Accept.ToString().Contains("text/html"));
+
             try
             {
                 int currentCompanyId = GetCurrentCompanyId();
@@ -1542,23 +1756,41 @@ namespace satinalmaportali2.Controllers
 
                     if (!isOwner && !isAdmin)
                     {
-                        TempData["ErrorMessage"] = "Yalnızca kendi açtığınız talepleri silebilirsiniz.";
+                        var unauthMsg = "Yalnızca kendi açtığınız talepleri silebilirsiniz.";
+                        if (isAjax) return Json(new { success = false, message = unauthMsg });
+                        TempData["ErrorMessage"] = unauthMsg;
                         return RedirectToAction(nameof(Index));
                     }
 
                     _context.Requests.Remove(req);
                     await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = $"#{id} numaralı talep veritabanından başarıyla silindi.";
+
+                    try
+                    {
+                        await _hubContext.Clients.All.SendAsync("OnRequestDeleted", new { requestId = id });
+                    }
+                    catch (Exception hubEx)
+                    {
+                        Console.WriteLine($"SignalR Delete broadcast error: {hubEx.Message}");
+                    }
+
+                    var succMsg = $"#{id} numaralı talep veritabanından başarıyla silindi.";
+                    if (isAjax) return Json(new { success = true, message = succMsg, requestId = id });
+                    TempData["SuccessMessage"] = succMsg;
                 }
                 else
                 {
-                    TempData["ErrorMessage"] = $"#{id} numaralı talep bulunamadı.";
+                    var notFoundMsg = $"#{id} numaralı talep bulunamadı.";
+                    if (isAjax) return Json(new { success = false, message = notFoundMsg });
+                    TempData["ErrorMessage"] = notFoundMsg;
                 }
             }
             catch (Exception ex)
             {
                 var detail = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-                TempData["ErrorMessage"] = "Silme işlemi sırasında hata oluştu: " + detail;
+                var errDetail = "Silme işlemi sırasında hata oluştu: " + detail;
+                if (isAjax) return Json(new { success = false, message = errDetail });
+                TempData["ErrorMessage"] = errDetail;
             }
 
             return RedirectToAction(nameof(Index));

@@ -1181,7 +1181,7 @@
                 </svg>
             </span>
         </div>
-        <p class="kpi-value">@Model.TotalRequestsCount</p>
+        <p class="kpi-value" id="kpiTotalRequests">@Model.TotalRequestsCount</p>
         <p class="kpi-delta is-flat">
             <span class="kpi-delta-note">Listelenen toplam talep adedi</span>
         </p>
@@ -1197,7 +1197,7 @@
                 </svg>
             </span>
         </div>
-        <p class="kpi-value">@Model.PendingRequestsCount</p>
+        <p class="kpi-value" id="kpiPendingRequests">@Model.PendingRequestsCount</p>
         <p class="kpi-delta is-flat">
             <span class="kpi-delta-note">Aktif ve işlem bekleyen talepler</span>
         </p>
@@ -1213,7 +1213,7 @@
                 </svg>
             </span>
         </div>
-        <p class="kpi-value">@Model.ApprovedRequestsCount</p>
+        <p class="kpi-value" id="kpiApprovedRequests">@Model.ApprovedRequestsCount</p>
         <p class="kpi-delta is-good">
             <span class="kpi-delta-note">Teklifi onaylanan başarılı talepler</span>
         </p>
@@ -1228,7 +1228,7 @@
                 </svg>
             </span>
         </div>
-        <p class="kpi-value">@Model.TotalQuantityCount.ToString("N0")</p>
+        <p class="kpi-value" id="kpiTotalQuantity">@Model.TotalQuantityCount.ToString("N0")</p>
         <p class="kpi-delta is-flat">
             <span class="kpi-delta-note">Toplam talep edilen ürün adedi</span>
         </p>
@@ -1240,25 +1240,25 @@
     <a class="req-tab-btn @(Model.ActiveTab == "all" ? "is-active" : "")"
        asp-action="Index" asp-route-tab="all" asp-route-search="@Model.SearchQuery" asp-route-status="@Model.SelectedStatus">
         <span>🌐 Pazardaki Tüm Talepler (İhaleler)</span>
-        <span class="req-tab-count">@Model.AllRequestsCount</span>
+        <span class="req-tab-count" id="allRequestsTabCount">@Model.AllRequestsCount</span>
     </a>
 
     <a class="req-tab-btn @(Model.ActiveTab == "my-requests" ? "is-active" : "")"
        asp-action="Index" asp-route-tab="my-requests" asp-route-search="@Model.SearchQuery" asp-route-status="@Model.SelectedStatus">
         <span>📋 Oluşturduğum Talepler</span>
-        <span class="req-tab-count">@Model.MyRequestsCount</span>
+        <span class="req-tab-count" id="myRequestsTabCount">@Model.MyRequestsCount</span>
     </a>
 
     <a class="req-tab-btn @(Model.ActiveTab == "incoming-offers" ? "is-active" : "")"
        asp-action="Index" asp-route-tab="incoming-offers" asp-route-search="@Model.SearchQuery">
         <span>📬 Teklif Gelen Taleplerim</span>
-        <span class="req-tab-count">@Model.IncomingOffersCount</span>
+        <span class="req-tab-count" id="incomingOffersTabCount">@Model.IncomingOffersCount</span>
     </a>
 
     <a class="req-tab-btn @(Model.ActiveTab == "my-bids" ? "is-active" : "")"
        asp-action="Index" asp-route-tab="my-bids" asp-route-search="@Model.SearchQuery">
         <span>💼 Verdiğim Teklifler</span>
-        <span class="req-tab-count">@Model.MyBidsCount</span>
+        <span class="req-tab-count" id="myBidsTabCount">@Model.MyBidsCount</span>
     </a>
 </nav>
 
@@ -1364,7 +1364,7 @@
                     foreach (var item in Model.Requests)
                     {
                         var initial = !string.IsNullOrEmpty(item.BuyerInfo) ? item.BuyerInfo[0].ToString().ToUpper() : "A";
-                        <tr>
+                        <tr data-request-id="@item.RequestID" data-status="@item.Status" data-product-name="@item.ProductName" data-is-owner="@(item.IsOwner ? "true" : "false")" data-has-my-offer="@(item.HasMyOffer ? "true" : "false")">
                             <!-- 1. TALEP NO & TARİH -->
                             <td>
                                 <div class="req-id-box">
@@ -1445,71 +1445,75 @@
 
                             <!-- 6. GELEN TEKLİFLER -->
                             <td>
-                                @if (item.OfferCount > 0)
-                                {
-                                    <button type="button" class="offers-interactive-pill" onclick="openDetailModal(@item.RequestID)" title="Teklifleri İncele">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                            <polyline points="20 6 9 17 4 12"></polyline>
-                                        </svg>
-                                        <span>@item.OfferCount Teklif</span>
-                                        @if (item.BestOfferPrice.HasValue)
-                                        {
-                                            <small style="opacity: 0.85; font-weight: 700;">(@item.BestOfferPrice.Value.ToString("N0") ₺)</small>
-                                        }
-                                    </button>
-                                    @if (item.IsOwner && item.HasRevisedOffers)
+                                <div class="offers-cell-wrap" data-offers-wrap-id="@item.RequestID">
+                                    @if (item.OfferCount > 0)
                                     {
-                                        <span style="display: block; margin-top: 4px; font-size: 0.70rem; font-weight: 700; color: #B45309; background: #FEF3C7; border: 1px solid #FCD34D; padding: 1px 6px; border-radius: 4px; width: fit-content;" title="Daha önce reddedilen tedarikçi teklifini güncelleyip tekrar gönderdi">
-                                            🔄 @(item.RevisedOfferCount > 1 ? $"{item.RevisedOfferCount} Revize Teklif" : "Revize Teklif Var")
-                                        </span>
+                                        <button type="button" class="offers-interactive-pill" data-offer-pill-id="@item.RequestID" onclick="openDetailModal(@item.RequestID)" title="Teklifleri İncele">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                <polyline points="20 6 9 17 4 12"></polyline>
+                                            </svg>
+                                            <span class="pill-offer-count-text">@item.OfferCount Teklif</span>
+                                            @if (item.BestOfferPrice.HasValue)
+                                            {
+                                                <small class="pill-best-price-text" style="opacity: 0.85; font-weight: 700;">(@item.BestOfferPrice.Value.ToString("N0") ₺)</small>
+                                            }
+                                        </button>
+                                        @if (item.IsOwner && item.HasRevisedOffers)
+                                        {
+                                            <span class="revised-badge-tag" style="display: block; margin-top: 4px; font-size: 0.70rem; font-weight: 700; color: #B45309; background: #FEF3C7; border: 1px solid #FCD34D; padding: 1px 6px; border-radius: 4px; width: fit-content;" title="Daha önce reddedilen tedarikçi teklifini güncelleyip tekrar gönderdi">
+                                                🔄 @(item.RevisedOfferCount > 1 ? $"{item.RevisedOfferCount} Revize Teklif" : "Revize Teklif Var")
+                                            </span>
+                                        }
                                     }
-                                }
-                                else
-                                {
-                                    <button type="button" class="offers-interactive-pill is-empty" onclick="openDetailModal(@item.RequestID)" title="Talep Detayını İncele">
-                                        Teklif Bekleniyor
-                                    </button>
-                                }
+                                    else
+                                    {
+                                        <button type="button" class="offers-interactive-pill is-empty" data-offer-pill-id="@item.RequestID" onclick="openDetailModal(@item.RequestID)" title="Talep Detayını İncele">
+                                            <span class="pill-offer-count-text">Teklif Bekleniyor</span>
+                                        </button>
+                                    }
+                                </div>
                             </td>
 
                             <!-- 7. DURUM -->
                             <td>
-                                @if (item.Status == "Beklemede" || item.Status == "Açık")
-                                {
-                                    <span class="status-dot-badge is-pending">
-                                        <span class="status-dot"></span>
-                                        Beklemede
-                                    </span>
-                                }
-                                else if (item.Status == "Teklif Alındı")
-                                {
-                                    <span class="status-dot-badge is-received">
-                                        <span class="status-dot"></span>
-                                        Teklif Alındı
-                                    </span>
-                                }
-                                else if (item.Status == "Onaylandı" || item.Status == "Kabul Edildi")
-                                {
-                                    <span class="status-dot-badge is-approved">
-                                        <span class="status-dot"></span>
-                                        Onaylandı
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="status-dot-badge is-neutral">
-                                        <span class="status-dot"></span>
-                                        @item.Status
-                                    </span>
-                                }
+                                <div class="status-cell-wrap" data-status-wrap-id="@item.RequestID">
+                                    @if (item.Status == "Beklemede" || item.Status == "Açık")
+                                    {
+                                        <span class="status-dot-badge is-pending" data-status-badge-id="@item.RequestID">
+                                            <span class="status-dot"></span>
+                                            Beklemede
+                                        </span>
+                                    }
+                                    else if (item.Status == "Teklif Alındı")
+                                    {
+                                        <span class="status-dot-badge is-received" data-status-badge-id="@item.RequestID">
+                                            <span class="status-dot"></span>
+                                            Teklif Alındı
+                                        </span>
+                                    }
+                                    else if (item.Status == "Onaylandı" || item.Status == "Kabul Edildi")
+                                    {
+                                        <span class="status-dot-badge is-approved" data-status-badge-id="@item.RequestID">
+                                            <span class="status-dot"></span>
+                                            Onaylandı
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-dot-badge is-neutral" data-status-badge-id="@item.RequestID">
+                                            <span class="status-dot"></span>
+                                            @item.Status
+                                        </span>
+                                    }
+                                </div>
                             </td>
 
                             <td style="text-align: right;">
-                                <div class="actions-cluster">
+                                <div class="actions-cluster" data-actions-cluster-id="@item.RequestID">
                                     <!-- Fiyat Kıyaslama Butonu (Sadece Talebi Açan Kişi / Firma ve Teklif Varsa) -->
                                     @if (item.IsOwner && item.OfferCount > 0)
                                     {
-                                        <button type="button" class="btn-action-view" style="background: #EFF6FF; color: #2563EB; border: 1px solid #BFDBFE; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;" onclick="openCompareModal(@item.RequestID)" title="Tedarikçi Fiyatlarını Kıyasla">
+                                        <button type="button" class="btn-action-view" data-compare-btn-id="@item.RequestID" style="background: #EFF6FF; color: #2563EB; border: 1px solid #BFDBFE; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;" onclick="openCompareModal(@item.RequestID)" title="Tedarikçi Fiyatlarını Kıyasla">
                                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                                 <line x1="18" y1="20" x2="18" y2="4"></line>
                                                 <line x1="6" y1="20" x2="6" y2="14"></line>
@@ -1526,7 +1530,7 @@
                                         {
                                             @if (item.MyOfferStatus == "Reddedildi")
                                             {
-                                                <button type="button" class="btn-action-bid" style="background: #EFF6FF; color: #2563EB; border: 1px solid #93C5FD; display: inline-flex; align-items: center; gap: 4px;" onclick="openOfferModal(@item.RequestID, '@Html.Raw(item.ProductName.Replace("'", "\\'"))', '@(item.MyOfferPrice?.ToString() ?? "")')" title="Talep devam ettiği için teklifinizi güncelleyip tekrar gönderebilirsiniz">
+                                                <button type="button" class="btn-action-bid" data-bid-btn-id="@item.RequestID" style="background: #EFF6FF; color: #2563EB; border: 1px solid #93C5FD; display: inline-flex; align-items: center; gap: 4px;" onclick="openOfferModal(@item.RequestID, '@Html.Raw(item.ProductName.Replace("'", "\\'"))', '@(item.MyOfferPrice?.ToString() ?? "")', '@(item.MyOfferDeliveryDays?.ToString() ?? "7")', '@Html.Raw((item.MyOfferNotes ?? "").Replace("'", "\\'"))')" title="Talep devam ettiği için teklifinizi güncelleyip tekrar gönderebilirsiniz">
                                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                                         <path d="M12 20h9"></path>
                                                         <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
@@ -1536,14 +1540,14 @@
                                             }
                                             else if (item.MyOfferStatus != "Kabul Edildi" && item.MyOfferStatus != "Onaylandı")
                                             {
-                                                <button type="button" class="btn-action-bid" onclick="openOfferModal(@item.RequestID, '@Html.Raw(item.ProductName.Replace("'", "\\'"))', '@(item.MyOfferPrice?.ToString() ?? "")')">
+                                                <button type="button" class="btn-action-bid" data-bid-btn-id="@item.RequestID" onclick="openOfferModal(@item.RequestID, '@Html.Raw(item.ProductName.Replace("'", "\\'"))', '@(item.MyOfferPrice?.ToString() ?? "")', '@(item.MyOfferDeliveryDays?.ToString() ?? "7")', '@Html.Raw((item.MyOfferNotes ?? "").Replace("'", "\\'"))')">
                                                     Teklifi Düzenle
                                                 </button>
                                             }
                                         }
                                         else
                                         {
-                                            <button type="button" class="btn-action-bid" onclick="openOfferModal(@item.RequestID, '@Html.Raw(item.ProductName.Replace("'", "\\'"))', '')">
+                                            <button type="button" class="btn-action-bid" data-bid-btn-id="@item.RequestID" onclick="openOfferModal(@item.RequestID, '@Html.Raw(item.ProductName.Replace("'", "\\'"))', '', '7', '')">
                                                 Teklif Ver
                                             </button>
                                         }
@@ -1552,15 +1556,12 @@
                                     <!-- Silme Butonu (Sadece Talep Sahibi) -->
                                     @if (item.IsOwner)
                                     {
-                                        <form asp-action="Delete" asp-route-id="@item.RequestID" method="post" onsubmit="return confirm('#REQ-@item.RequestID numaralı talebinizi silmek istediğinize emin misiniz?');" style="display:inline;">
-                                            @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn-action-delete" title="Talebi Kalıcı Olarak Sil">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                                </svg>
-                                            </button>
-                                        </form>
+                                        <button type="button" class="btn-action-delete" title="Talebi Kalıcı Olarak Sil" onclick="handleDeleteRequest(@item.RequestID, event)">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            </svg>
+                                        </button>
                                     }
                                 </div>
                             </td>
@@ -1588,7 +1589,7 @@
             <button type="button" class="custom-modal-close" onclick="closeCreateModal()">&times;</button>
         </div>
 
-        <form asp-action="Create" method="post" id="createRequestForm">
+        <form id="createRequestForm" onsubmit="handleCreateRequestFormSubmit(event)">
             @Html.AntiForgeryToken()
 
             <div class="custom-modal-body">
@@ -1597,14 +1598,14 @@
                     <label class="modal-form-label">
                         Aranan Ürün veya Hizmet Adı <span>*</span>
                     </label>
-                    <input type="text" asp-for="NewRequest.ProductName" name="ProductName" required placeholder="Örn: Siemens PLC Modülü S7-1500" class="modal-form-input" />
+                    <input type="text" name="ProductName" required placeholder="Örn: Siemens PLC Modülü S7-1500" class="modal-form-input" />
                 </div>
 
                 <!-- 2. KATEGORİ & 3. MİKTAR -->
                 <div class="modal-form-row">
                     <div class="modal-form-group">
                         <label class="modal-form-label">Kategori / Talep Tipi</label>
-                        <select asp-for="NewRequest.RequestType" name="RequestType" class="modal-form-select">
+                        <select name="RequestType" class="modal-form-select">
                             <option value="Satın Alma">Satın Alma</option>
                             <option value="Hammadde & Malzeme">Hammadde & Malzeme</option>
                             <option value="Makine & Yedek Parça">Makine & Yedek Parça</option>
@@ -1618,7 +1619,7 @@
                         <label class="modal-form-label">
                             Talep Miktarı (Adet/Birim) <span>*</span>
                         </label>
-                        <input type="number" asp-for="NewRequest.Quantity" name="Quantity" min="1" required value="10" class="modal-form-input" />
+                        <input type="number" name="Quantity" min="1" required value="10" class="modal-form-input" />
                     </div>
                 </div>
 
@@ -1626,19 +1627,19 @@
                 <div class="modal-form-row">
                     <div class="modal-form-group">
                         <label class="modal-form-label">Tahmini Bütçe (₺)</label>
-                        <input type="number" asp-for="NewRequest.EstimatedBudget" name="EstimatedBudget" placeholder="Örn: 85000" min="0" step="any" class="modal-form-input" />
+                        <input type="number" name="EstimatedBudget" placeholder="Örn: 85000" min="0" step="any" class="modal-form-input" />
                     </div>
 
                     <div class="modal-form-group">
                         <label class="modal-form-label">Hedef Teslim / Son Tarih</label>
-                        <input type="date" asp-for="NewRequest.TargetDeliveryDate" name="TargetDeliveryDate" class="modal-form-input" />
+                        <input type="date" name="TargetDeliveryDate" class="modal-form-input" />
                     </div>
                 </div>
 
                 <!-- 6. TEKNİK ŞARTNAME & NOTLAR -->
                 <div class="modal-form-group">
                     <label class="modal-form-label">Teknik Şartname & Açıklama Notları</label>
-                    <textarea asp-for="NewRequest.Notes" name="Notes" rows="3" placeholder="Tedarikçilerin teklif verirken dikkat etmesi gereken teknik şartlar, marka ve teslimat detayları..." class="modal-form-textarea"></textarea>
+                    <textarea name="Notes" rows="3" placeholder="Tedarikçilerin teklif verirken dikkat etmesi gereken teknik şartlar, marka ve teslimat detayları..." class="modal-form-textarea"></textarea>
                 </div>
             </div>
 
@@ -1732,7 +1733,7 @@
             <button type="button" class="custom-modal-close" onclick="closeBidModal()">&times;</button>
         </div>
 
-        <form asp-action="SubmitOffer" method="post" id="submitOfferForm">
+        <form id="submitOfferForm" onsubmit="handleBidSubmit(event)">
             @Html.AntiForgeryToken()
             <input type="hidden" name="RequestID" id="bidRequestID" />
 
@@ -2007,6 +2008,122 @@
         document.getElementById('createRequestModal').classList.remove('is-open');
     }
 
+    async function handleCreateRequestFormSubmit(event) {
+        event.preventDefault();
+        var form = event.target;
+        var submitBtn = form.querySelector('button[type="submit"]');
+        var originalText = submitBtn ? submitBtn.innerHTML : 'Talebi Yayınla';
+
+        var productName = form.querySelector('[name="ProductName"]')?.value || '';
+        var requestType = form.querySelector('[name="RequestType"]')?.value || 'Satın Alma';
+        var quantity = parseInt(form.querySelector('[name="Quantity"]')?.value || '1', 10);
+        var budgetVal = form.querySelector('[name="EstimatedBudget"]')?.value;
+        var estimatedBudget = budgetVal ? parseFloat(budgetVal) : null;
+        var targetDeliveryDate = form.querySelector('[name="TargetDeliveryDate"]')?.value || null;
+        var notes = form.querySelector('[name="Notes"]')?.value || '';
+
+        if (!productName.trim()) {
+            if (typeof showRealtimeToast === 'function') {
+                showRealtimeToast('Lütfen ürün veya hizmet adını giriniz.', 'error');
+            } else {
+                alert('Lütfen ürün veya hizmet adını giriniz.');
+            }
+            return;
+        }
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '⏳ Yayınlanıyor...';
+        }
+
+        try {
+            var response = await fetch('/Requests/CreateAjax', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    productName: productName,
+                    requestType: requestType,
+                    quantity: quantity,
+                    estimatedBudget: estimatedBudget,
+                    targetDeliveryDate: targetDeliveryDate,
+                    notes: notes
+                })
+            });
+
+            var result = await response.json();
+            if (result.success) {
+                closeCreateModal();
+                form.reset();
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('✓ ' + (result.message || 'Talebiniz başarıyla yayınlandı!'), 'success');
+                }
+            } else {
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Hata: ' + (result.message || 'Talep kaydedilemedi.'), 'error');
+                } else {
+                    alert('Hata: ' + result.message);
+                }
+            }
+        } catch (err) {
+            if (typeof showRealtimeToast === 'function') {
+                showRealtimeToast('Sunucu bağlantı hatası: ' + err.message, 'error');
+            } else {
+                alert('Sunucu hatası: ' + err.message);
+            }
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+    }
+
+    async function handleDeleteRequest(requestId, event) {
+        if (event) {
+            if (typeof event.preventDefault === 'function') event.preventDefault();
+            if (typeof event.stopPropagation === 'function') event.stopPropagation();
+        }
+        if (!confirm('#REQ-' + requestId + ' numaralı talebinizi silmek istediğinize emin misiniz?')) {
+            return;
+        }
+
+        try {
+            var response = await fetch('/Requests/Delete?id=' + requestId, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            });
+
+            var result = await response.json();
+            if (result.success) {
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('✓ ' + (result.message || 'Talep başarıyla silindi.'), 'info');
+                }
+                var row = document.querySelector('tr[data-request-id="' + requestId + '"]');
+                if (row) {
+                    row.style.transition = 'all 0.35s ease';
+                    row.style.opacity = '0';
+                    row.style.transform = 'scale(0.96)';
+                    setTimeout(function () { row.remove(); }, 350);
+                }
+            } else {
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Hata: ' + (result.message || 'Silme işlemi başarısız.'), 'error');
+                } else {
+                    alert('Hata: ' + result.message);
+                }
+            }
+        } catch (err) {
+            if (typeof showRealtimeToast === 'function') {
+                showRealtimeToast('Sunucu hatası: ' + err.message, 'error');
+            } else {
+                alert('Sunucu hatası: ' + err.message);
+            }
+        }
+    }
+
     // 2. Tedarikçi Teklif Verme / Revize Etme Modalı
     function openOfferModal(requestId, productName, currentBid, currentDays, currentNotes) {
         var modal = document.getElementById('supplierBidModal');
@@ -2045,6 +2162,106 @@
         }
     }
 
+    async function handleBidSubmit(event) {
+        event.preventDefault();
+        var form = event.target;
+        var submitBtn = document.getElementById('bidSubmitBtn') || form.querySelector('button[type="submit"]');
+        var originalText = submitBtn ? submitBtn.innerHTML : 'Teklifi İlet';
+
+        var reqId = parseInt(document.getElementById('bidRequestID')?.value || '0', 10);
+        var price = parseFloat(document.getElementById('bidOfferedPrice')?.value || '0');
+        var days = parseInt(document.getElementById('bidDeliveryDays')?.value || '7', 10);
+        var valDays = parseInt(document.getElementById('bidValidityDays')?.value || '30', 10);
+        var notes = document.getElementById('bidSupplierNotes')?.value || '';
+
+        if (reqId <= 0) {
+            if (typeof showRealtimeToast === 'function') {
+                showRealtimeToast('Hata: Talep referansı tespit edilemedi.', 'error');
+            } else {
+                alert('Hata: Talep referansı tespit edilemedi.');
+            }
+            return;
+        }
+
+        if (isNaN(price) || price <= 0) {
+            if (typeof showRealtimeToast === 'function') {
+                showRealtimeToast('Lütfen geçerli bir teklif tutarı giriniz.', 'error');
+            } else {
+                alert('Lütfen geçerli bir teklif tutarı giriniz.');
+            }
+            return;
+        }
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '⏳ İletiliyor...';
+        }
+
+        try {
+            var response = await fetch('/Requests/SubmitOfferAjax', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    requestId: reqId,
+                    offeredPrice: price,
+                    deliveryDays: days,
+                    validityDays: valDays,
+                    supplierNotes: notes
+                })
+            });
+
+            var result = await response.json();
+            if (result.success) {
+                closeBidModal();
+
+                if (typeof updatePortalDomForOfferSubmitted === 'function') {
+                    updatePortalDomForOfferSubmitted({
+                        requestId: reqId,
+                        offeredPrice: price,
+                        offeredPriceFormatted: Number(price).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ₺',
+                        deliveryDays: days,
+                        validityDays: valDays,
+                        supplierNotes: notes,
+                        isMyBid: true
+                    });
+                }
+
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('✓ ' + (result.message || 'Teklifiniz başarıyla iletildi!'), 'success');
+                }
+
+                // Eğer Talep Detay Modalı o an açıksa canlı güncelle
+                var detailModal = document.getElementById('detailRequestModal');
+                if (detailModal && detailModal.classList.contains('is-open')) {
+                    openDetailModal(reqId);
+                }
+
+                // Eğer Kıyaslama Modalı açıksa canlı güncelle
+                var cmpModal = document.getElementById('priceCompareModal');
+                if (cmpModal && cmpModal.classList.contains('is-open')) {
+                    openCompareModal(reqId);
+                }
+            } else {
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Teklif iletilemedi: ' + (result.message || 'Bilinmeyen hata.'), 'error');
+                } else {
+                    alert('Teklif iletilemedi: ' + result.message);
+                }
+            }
+        } catch (err) {
+            if (typeof showRealtimeToast === 'function') {
+                showRealtimeToast('Sunucu bağlantı hatası: ' + err.message, 'error');
+            } else {
+                alert('Sunucu hatası: ' + err.message);
+            }
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+    }
+
     // 3. Talep Detay ve Teklifleri İnceleme Modalı
     async function openDetailModal(requestId) {
         var modal = document.getElementById('detailRequestModal');
@@ -2053,10 +2270,19 @@
         var container = document.getElementById('offersListContainer');
         var footer = document.getElementById('detailModalFooter');
 
+        if (!modal) return;
+
+        modal.setAttribute('data-active-request-id', requestId);
         modal.classList.add('is-open');
         loading.style.display = 'block';
         content.style.display = 'none';
         container.innerHTML = '';
+
+        try {
+            if (window.portalHubConnection && window.portalHubConnection.state === 'Connected') {
+                window.portalHubConnection.invoke('JoinRequestGroup', parseInt(requestId)).catch(function(e) { console.warn(e); });
+            }
+        } catch (e) { }
 
         try {
             var response = await fetch('/Requests/GetRequestDetails/' + requestId);
@@ -2146,7 +2372,7 @@
                         html += '    </div>';
                     }
                     if (isRej && o.rejectionReason) {
-                        html += '    <div style="font-size: 0.75rem; color: #991B1B; background: #FEF2F2; border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 4px; padding: 3px 8px; margin-top: 4px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; width: fit-content;">🚫 <strong>Red Sebebi:</strong> ' + escapeHtml(o.rejectionReason) + '</div>';
+                        html += '    <div style="font-size: 0.75rem; color: #991B1B; background: #FEF2F2; border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 4px; padding: 3px 8px; margin-top: 4px; font-weight: 600; display: inline-flex; align-items: gap: 4px; width: fit-content;">🚫 <strong>Red Sebebi:</strong> ' + escapeHtml(o.rejectionReason) + '</div>';
                     }
                     html += '  </div>';
 
@@ -2203,20 +2429,32 @@
             });
             var res = await response.json();
             if (res.success) {
-                alert('✅ ' + res.message);
+                if (typeof updatePortalDomForOfferApproved === 'function') {
+                    updatePortalDomForOfferApproved({ requestId: requestId });
+                }
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('✓ ' + (res.message || 'Teklif başarıyla onaylandı!'), 'success');
+                }
                 openDetailModal(requestId);
-                setTimeout(function () { window.location.reload(); }, 1200);
             } else {
-                alert('Hata: ' + res.message);
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Hata: ' + res.message, 'error');
+                } else {
+                    alert('Hata: ' + res.message);
+                }
             }
         } catch (err) {
-            alert('Sunucu hatası: ' + err.message);
+            if (typeof showRealtimeToast === 'function') {
+                showRealtimeToast('Sunucu hatası: ' + err.message, 'error');
+            } else {
+                alert('Sunucu hatası: ' + err.message);
+            }
         }
     }
 
     async function handleRejectOffer(offerId, requestId, supplierName) {
         var reason = prompt(supplierName + ' firmasının teklifini reddetmek üzeresiniz.\nİsteğe bağlı bir red gerekçesi yazabilirsiniz:');
-        if (reason === null) return; // İptal edildi
+        if (reason === null) return;
 
         try {
             var response = await fetch('/Requests/RejectOfferAjax', {
@@ -2226,19 +2464,39 @@
             });
             var res = await response.json();
             if (res.success) {
-                alert('✓ ' + res.message);
+                if (typeof updatePortalDomForOfferRejected === 'function') {
+                    updatePortalDomForOfferRejected({ requestId: requestId });
+                }
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('✓ ' + (res.message || 'Teklif reddedildi.'), 'info');
+                }
                 openDetailModal(requestId);
-                setTimeout(function () { window.location.reload(); }, 1200);
             } else {
-                alert('Hata: ' + res.message);
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Hata: ' + res.message, 'error');
+                } else {
+                    alert('Hata: ' + res.message);
+                }
             }
         } catch (err) {
-            alert('Sunucu hatası: ' + err.message);
+            if (typeof showRealtimeToast === 'function') {
+                showRealtimeToast('Sunucu hatası: ' + err.message, 'error');
+            } else {
+                alert('Sunucu hatası: ' + err.message);
+            }
         }
     }
 
     function closeDetailModal() {
-        document.getElementById('detailRequestModal').classList.remove('is-open');
+        var modal = document.getElementById('detailRequestModal');
+        if (modal) {
+            var reqId = modal.getAttribute('data-active-request-id');
+            if (reqId && window.portalHubConnection && window.portalHubConnection.state === 'Connected') {
+                window.portalHubConnection.invoke('LeaveRequestGroup', parseInt(reqId)).catch(function(e) { console.warn(e); });
+            }
+            modal.removeAttribute('data-active-request-id');
+            modal.classList.remove('is-open');
+        }
     }
 
     // =========================================================================
@@ -2535,14 +2793,26 @@
             });
             var res = await response.json();
             if (res.success) {
-                alert('✅ ' + res.message);
+                if (typeof updatePortalDomForOfferApproved === 'function') {
+                    updatePortalDomForOfferApproved({ requestId: requestId });
+                }
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('✓ ' + (res.message || 'Teklif başarıyla onaylandı!'), 'success');
+                }
                 openCompareModal(requestId);
-                setTimeout(function () { window.location.reload(); }, 1200);
             } else {
-                alert('Hata: ' + res.message);
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Hata: ' + res.message, 'error');
+                } else {
+                    alert('Hata: ' + res.message);
+                }
             }
         } catch (err) {
-            alert('Sunucu hatası: ' + err.message);
+            if (typeof showRealtimeToast === 'function') {
+                showRealtimeToast('Sunucu hatası: ' + err.message, 'error');
+            } else {
+                alert('Sunucu hatası: ' + err.message);
+            }
         }
     }
 
@@ -2558,14 +2828,26 @@
             });
             var res = await response.json();
             if (res.success) {
-                alert('✓ ' + res.message);
+                if (typeof updatePortalDomForOfferRejected === 'function') {
+                    updatePortalDomForOfferRejected({ requestId: requestId });
+                }
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('✓ ' + (res.message || 'Teklif reddedildi.'), 'info');
+                }
                 openCompareModal(requestId);
-                setTimeout(function () { window.location.reload(); }, 1200);
             } else {
-                alert('Hata: ' + res.message);
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Hata: ' + res.message, 'error');
+                } else {
+                    alert('Hata: ' + res.message);
+                }
             }
         } catch (err) {
-            alert('Sunucu hatası: ' + err.message);
+            if (typeof showRealtimeToast === 'function') {
+                showRealtimeToast('Sunucu hatası: ' + err.message, 'error');
+            } else {
+                alert('Sunucu hatası: ' + err.message);
+            }
         }
     }
 

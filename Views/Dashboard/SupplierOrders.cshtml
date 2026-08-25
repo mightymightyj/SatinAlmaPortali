@@ -331,12 +331,43 @@
                 const result = await response.json();
                 if (result.success) {
                     closeShipmentModal();
-                    window.location.reload();
+
+                    const badge = document.getElementById('badge-order-' + id);
+                    if (badge) {
+                        const isDel = status === "Teslim Edildi" || status === "Tamamlandı";
+                        const isShip = status === "Kargoya Verildi";
+                        badge.className = 'status-badge ' + (isDel ? 'badge-emerald' : (isShip ? 'badge-amber' : 'badge-blue'));
+                        badge.innerHTML = '<span class="status-dot"></span>' + status;
+                    }
+                    let trackingEl = document.getElementById('tracking-order-' + id);
+                    if (tracking && tracking.trim() !== '') {
+                        if (!trackingEl && badge && badge.parentElement && badge.parentElement.parentElement) {
+                            trackingEl = document.createElement('div');
+                            trackingEl.id = 'tracking-order-' + id;
+                            trackingEl.style.cssText = 'font-size: 0.75rem; margin-top: 4px; color: var(--muted);';
+                            badge.parentElement.parentElement.appendChild(trackingEl);
+                        }
+                        if (trackingEl) {
+                            trackingEl.innerHTML = '📦 <strong>' + carrier + ':</strong> ' + tracking;
+                        }
+                    }
+
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('✓ ' + (result.message || 'Sipariş durumu güncellendi!'), 'success');
+                    }
                 } else {
-                    alert("Hata: " + (result.message || "Güncellenemedi."));
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('Hata: ' + (result.message || 'Güncellenemedi.'), 'error');
+                    } else {
+                        alert("Hata: " + (result.message || "Güncellenemedi."));
+                    }
                 }
             } catch (err) {
-                alert("Bağlantı hatası: " + err.message);
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Bağlantı hatası: ' + err.message, 'error');
+                } else {
+                    alert("Bağlantı hatası: " + err.message);
+                }
             }
 
             return false;

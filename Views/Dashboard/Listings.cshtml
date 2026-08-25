@@ -465,13 +465,22 @@
                 const result = await response.json();
                 if (result.success) {
                     closeCreateListingModal();
-                    // Başarı mesajı ve sayfayı anında yenileme
-                    window.location.reload();
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('✓ ' + (result.message || 'Ürün ilanı başarıyla yayınlandı!'), 'success');
+                    }
                 } else {
-                    alert("Hata: " + (result.message || "İlan kaydedilemedi."));
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('Hata: ' + (result.message || 'İlan kaydedilemedi.'), 'error');
+                    } else {
+                        alert("Hata: " + (result.message || "İlan kaydedilemedi."));
+                    }
                 }
             } catch (err) {
-                alert("Bağlantı hatası: " + err.message);
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Bağlantı hatası: ' + err.message, 'error');
+                } else {
+                    alert("Bağlantı hatası: " + err.message);
+                }
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;
@@ -496,14 +505,23 @@
                     const row = document.getElementById('listing-row-' + id);
                     if (row) {
                         row.remove();
-                    } else {
-                        window.location.reload();
+                    }
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('✓ ' + (result.message || 'Ürün ilanı silindi.'), 'info');
                     }
                 } else {
-                    alert("Hata: " + (result.message || "İlan silinemedi."));
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('Hata: ' + (result.message || 'İlan silinemedi.'), 'error');
+                    } else {
+                        alert("Hata: " + (result.message || "İlan silinemedi."));
+                    }
                 }
             } catch (err) {
-                alert("Bağlantı hatası: " + err.message);
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Bağlantı hatası: ' + err.message, 'error');
+                } else {
+                    alert("Bağlantı hatası: " + err.message);
+                }
             }
         }
     </script>

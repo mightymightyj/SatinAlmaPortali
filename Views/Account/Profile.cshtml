@@ -173,8 +173,7 @@
 
                             @if (!string.IsNullOrWhiteSpace(Model.CompanyLogo))
                             {
-                                <form asp-controller="Account" asp-action="DeleteProfilePhoto" method="post" class="d-inline" id="deletePhotoForm" onsubmit="return confirm('Profil fotoğrafınızı silmek ve varsayılan baş harflere dönmek istediğinize emin misiniz?');">
-                                    @Html.AntiForgeryToken()
+                                <form asp-controller="Account" asp-action="DeleteProfilePhoto" method="post" class="d-inline" id="deletePhotoForm" onsubmit="handleDeletePhoto(event); return false;">
                                     <button type="submit" class="btn-avatar-delete" title="Mevcut fotoğrafı kaldır">
                                         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                                             <polyline points="3 6 5 6 21 6"></polyline>
@@ -370,7 +369,7 @@
         <!-- 2. DÜZENLEME FORMU (EDIT MODE)                                            -->
         <!-- ========================================================================= -->
         <div id="profileEditMode" class="profile-mode-section" style="display: none;">
-            <form asp-controller="Account" asp-action="UpdateProfile" method="post" id="updateProfileForm">
+            <form asp-controller="Account" asp-action="UpdateProfile" method="post" id="updateProfileForm" onsubmit="handleUpdateProfile(event); return false;">
                 @Html.AntiForgeryToken()
 
                 <!-- Kişi ve Firma Bilgileri Düzenleme -->
@@ -640,7 +639,7 @@
                             <p>Şifre güvenliğiniz için e-posta adresinize tek kullanımlık şifre sıfırlama linki gönderilir.</p>
                         </div>
                     </div>
-                    <form asp-controller="Account" asp-action="RequestPasswordReset" method="post" class="security-action-form">
+                    <form asp-controller="Account" asp-action="RequestPasswordReset" method="post" class="security-action-form" onsubmit="handleRequestPasswordReset(event); return false;">
                         @Html.AntiForgeryToken()
                         <button type="submit" class="btn-security-reset">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1108,7 +1107,7 @@
                 const tokenInput = document.querySelector('#hiddenPhotoUploadForm input[name="__RequestVerificationToken"]');
                 const tokenVal = tokenInput ? tokenInput.value : '';
                 const formHtml = `
-                    <form action="/Account/DeleteProfilePhoto" method="post" class="d-inline" id="deletePhotoForm" onsubmit="return confirm('Profil fotoğrafınızı silmek ve varsayılan baş harflere dönmek istediğinize emin misiniz?');">
+                    <form action="/Account/DeleteProfilePhoto" method="post" class="d-inline" id="deletePhotoForm" onsubmit="handleDeletePhoto(event); return false;">
                         <input type="hidden" name="__RequestVerificationToken" value="${tokenVal}" />
                         <button type="submit" class="btn-avatar-delete" title="Mevcut fotoğrafı kaldır">
                             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
@@ -1123,6 +1122,134 @@
                 `;
                 buttonsContainer.insertAdjacentHTML('beforeend', formHtml);
             }
+        }
+    }
+
+    async function handleDeletePhoto(event) {
+        if (event) {
+            if (typeof event.preventDefault === 'function') event.preventDefault();
+            if (typeof event.stopPropagation === 'function') event.stopPropagation();
+        }
+        if (!confirm('Profil fotoğrafınızı silmek ve varsayılan baş harflere dönmek istediğinize emin misiniz?')) return;
+
+        try {
+            const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+            const tokenVal = tokenInput ? tokenInput.value : '';
+            const formData = new FormData();
+            formData.append('__RequestVerificationToken', tokenVal);
+
+            const response = await fetch('/Account/DeleteProfilePhoto', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                showDynamicAlert('✓ ' + (result.message || 'Profil fotoğrafınız başarıyla kaldırıldı.'), 'success');
+                if (typeof showRealtimeToast === 'function') showRealtimeToast('✓ ' + (result.message || 'Profil fotoğrafınız kaldırıldı.'), 'success');
+
+                const heroImg = document.getElementById('heroAvatarImg');
+                if (heroImg) heroImg.remove();
+                const cardImg = document.getElementById('cardAvatarImg');
+                if (cardImg) cardImg.remove();
+                const deleteForm = document.getElementById('deletePhotoForm');
+                if (deleteForm) deleteForm.remove();
+                const statusBadge = document.getElementById('avatarStatusBadge');
+                if (statusBadge) {
+                    statusBadge.innerHTML = '<span class="avatar-status-pill status-neutral"><span class="tag-dot"></span> Baş Harf Modu</span>';
+                }
+            } else {
+                showDynamicAlert('Hata: ' + (result.message || 'Fotoğraf kaldırılamadı.'), 'error');
+            }
+        } catch (err) {
+            showDynamicAlert('Bağlantı hatası: ' + err.message, 'error');
+        }
+    }
+
+    async function handleUpdateProfile(event) {
+        if (event) {
+            if (typeof event.preventDefault === 'function') event.preventDefault();
+            if (typeof event.stopPropagation === 'function') event.stopPropagation();
+        }
+        const form = document.getElementById('updateProfileForm') || event.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn ? submitBtn.innerHTML : 'Bilgileri Kaydet';
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Kaydediliyor...'; }
+
+        try {
+            const formData = new FormData(form);
+            const response = await fetch('/Account/UpdateProfile', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                showDynamicAlert('✓ ' + (result.message || 'Profil başarıyla güncellendi!'), 'success');
+                if (typeof showRealtimeToast === 'function') showRealtimeToast('✓ ' + (result.message || 'Profil güncellendi!'), 'success');
+
+                const officialEl = document.querySelector('.hero-user-name');
+                if (officialEl && result.official) officialEl.textContent = result.official;
+                const companyEl = document.querySelector('.hero-company-name');
+                if (companyEl && result.company) companyEl.textContent = result.company;
+
+                if (isEditMode) {
+                    toggleEditProfileMode();
+                }
+            } else {
+                showDynamicAlert('Hata: ' + (result.message || 'Bilgiler kaydedilemedi.'), 'error');
+            }
+        } catch (err) {
+            showDynamicAlert('Bağlantı hatası: ' + err.message, 'error');
+        } finally {
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = originalText; }
+        }
+    }
+
+    async function handleRequestPasswordReset(event) {
+        if (event) {
+            if (typeof event.preventDefault === 'function') event.preventDefault();
+            if (typeof event.stopPropagation === 'function') event.stopPropagation();
+        }
+        const form = event.target;
+        const btn = form.querySelector('button[type="submit"]');
+        const originalText = btn ? btn.innerHTML : 'Şifre Sıfırlama Bağlantısı Gönder';
+        if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Gönderiliyor...'; }
+
+        try {
+            const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+            const tokenVal = tokenInput ? tokenInput.value : '';
+            const formData = new FormData();
+            formData.append('__RequestVerificationToken', tokenVal);
+
+            const response = await fetch('/Account/RequestPasswordReset', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                showDynamicAlert('✓ ' + (result.message || 'Şifre sıfırlama bağlantısı gönderildi.'), 'success');
+                if (typeof showRealtimeToast === 'function') showRealtimeToast('✓ ' + (result.message || 'Bağlantı gönderildi.'), 'success');
+            } else {
+                showDynamicAlert('Hata: ' + (result.message || 'İşlem başarısız.'), 'error');
+            }
+        } catch (err) {
+            showDynamicAlert('Bağlantı hatası: ' + err.message, 'error');
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
         }
     }
 

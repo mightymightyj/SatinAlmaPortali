@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using satinalmaportali2.Data;
+using satinalmaportali2.Hubs;
 using satinalmaportali2.Models;
 using satinalmaportali2.Services;
 
@@ -8,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews()
     .AddRazorRuntimeCompilation();
+builder.Services.AddSignalR();
 builder.Services.AddMemoryCache();
 
 // E-posta Servisi (Gmail SMTP / MailKit)
@@ -73,6 +75,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
+
+app.MapHub<PortalHub>("/portalHub");
 
 app.MapControllerRoute(
     name: "default",

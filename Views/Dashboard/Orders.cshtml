@@ -187,7 +187,7 @@
                     {
                         var isShipped = o.OrderStatus == "Kargoya Verildi";
                         var isDelivered = o.OrderStatus == "Teslim Edildi" || o.OrderStatus == "Tamamlandı";
-                        <tr>
+                        <tr id="buyer-order-row-@o.OrderID" data-order-id="@o.OrderID">
                             <td>
                                 <div class="req-title-cell">
                                     <strong style="font-size: 0.92rem; color: var(--text);">@o.OrderNumber</strong>

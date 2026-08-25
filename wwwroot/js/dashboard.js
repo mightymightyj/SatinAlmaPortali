@@ -102,14 +102,16 @@
 
 // Toast Bildirimi Göster
 function showAppToast(message, isSuccess) {
-    var toast = document.getElementById('appToast');
+    if (typeof showRealtimeToast === 'function') {
+        showRealtimeToast(message, isSuccess === false ? 'error' : (isSuccess === true ? 'success' : 'info'));
+        return;
+    }
+    var toast = document.getElementById('appToast') || document.getElementById('realtimeToast');
     if (!toast) return;
     toast.textContent = message;
-    if (isSuccess === false) {
-        toast.style.background = '#DC2626';
-    } else {
-        toast.style.background = '#0F172A';
-    }
+    toast.style.background = (isSuccess === false) ? '#DC2626' : ((isSuccess === true) ? '#059669' : '#0F172A');
+    toast.classList.remove('is-show');
+    void toast.offsetWidth;
     toast.classList.add('is-show');
     setTimeout(function () {
         toast.classList.remove('is-show');
@@ -283,9 +285,6 @@ async function handlePriceUpdateSubmit(event) {
         if (result.success) {
             closePriceModal();
             showAppToast('✓ ' + result.message, true);
-            setTimeout(function () {
-                window.location.reload();
-            }, 1200);
         } else {
             showAppToast('Hata: ' + (result.message || 'Fiyat güncellenemedi.'), false);
         }
@@ -400,10 +399,18 @@ async function handleOfferSubmit(event) {
         var result = await response.json();
         if (result.success) {
             closeOfferModal();
+            if (typeof updatePortalDomForOfferSubmitted === 'function') {
+                updatePortalDomForOfferSubmitted({
+                    requestId: reqId,
+                    offeredPrice: amount,
+                    offeredPriceFormatted: Number(amount).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ₺',
+                    deliveryDays: days,
+                    validityDays: valDays,
+                    supplierNotes: notes,
+                    isMyBid: true
+                });
+            }
             showAppToast('✓ ' + result.message, true);
-            setTimeout(function () {
-                window.location.reload();
-            }, 1200);
         } else {
             showAppToast('Teklif iletilemedi: ' + (result.message || 'Bilinmeyen hata.'), false);
         }

@@ -1,8 +1,10 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using satinalmaportali2.Data;
+using satinalmaportali2.Hubs;
 using satinalmaportali2.Models;
 using satinalmaportali2.Services;
 
@@ -19,11 +21,13 @@ namespace satinalmaportali2.Controllers
 
         private readonly IDashboardService _dashboardService;
         private readonly ApplicationDbContext _context;
+        private readonly IHubContext<PortalHub> _hubContext;
 
-        public DashboardController(IDashboardService dashboardService, ApplicationDbContext context)
+        public DashboardController(IDashboardService dashboardService, ApplicationDbContext context, IHubContext<PortalHub> hubContext)
         {
             _dashboardService = dashboardService;
             _context = context;
+            _hubContext = hubContext;
         }
 
         private int GetCurrentCompanyId()
@@ -127,6 +131,24 @@ namespace satinalmaportali2.Controllers
                 }
 
                 await _context.SaveChangesAsync();
+
+                try
+                {
+                    await _hubContext.Clients.All.SendAsync("OnProductPriceChanged", new
+                    {
+                        itemId = item.ItemID,
+                        itemName = item.ItemName ?? "Ürün",
+                        newUnitPrice = input.NewUnitPrice,
+                        newUnitPriceFormatted = input.NewUnitPrice.ToString("N0") + " ₺",
+                        newStock = item.Quantity ?? 0,
+                        status = (item.Quantity ?? 0) <= 0 ? "Tükendi" : ((item.Quantity ?? 0) < 50 ? "Kritik" : "Stokta"),
+                        brand = item.Brand ?? ""
+                    });
+                }
+                catch (Exception hubEx)
+                {
+                    Console.WriteLine($"SignalR UpdateProductPrice error: {hubEx.Message}");
+                }
 
                 return Json(new
                 {
@@ -307,6 +329,15 @@ namespace satinalmaportali2.Controllers
 
                 _context.Items.Remove(item);
                 await _context.SaveChangesAsync();
+
+                try
+                {
+                    await _hubContext.Clients.All.SendAsync("OnProductDeleted", new { itemId = id });
+                }
+                catch (Exception hubEx)
+                {
+                    Console.WriteLine($"SignalR DeleteProductListing error: {hubEx.Message}");
+                }
 
                 return Json(new { success = true, message = $"\"{item.ItemName}\" ilanı katalogdan ve vitrinden kaldırıldı." });
             }
@@ -522,6 +553,37 @@ namespace satinalmaportali2.Controllers
 
                 await _context.SaveChangesAsync();
 
+                try
+                {
+                    var statusPayload = new
+                    {
+                        orderId = order.OrderID,
+                        orderNumber = order.OrderNumber,
+                        status = order.OrderStatus,
+                        trackingNumber = order.TrackingNumber ?? "",
+                        shippingCarrier = order.ShippingCarrier ?? "",
+                        notes = order.Notes ?? ""
+                    };
+
+                    if (order.BuyerCompanyID.HasValue && order.BuyerCompanyID.Value > 0)
+                    {
+                        await _hubContext.Clients.Group($"company_{order.BuyerCompanyID.Value}").SendAsync("OnOrderStatusUpdatedNotification", new
+                        {
+                            orderId = order.OrderID,
+                            orderNumber = order.OrderNumber,
+                            status = order.OrderStatus,
+                            trackingNumber = order.TrackingNumber,
+                            message = $"📦 {order.OrderNumber} numaralı siparişinizin durumu '{order.OrderStatus}' olarak güncellendi."
+                        });
+                    }
+
+                    await _hubContext.Clients.All.SendAsync("OnOrderStatusChanged", statusPayload);
+                }
+                catch (Exception hubEx)
+                {
+                    Console.WriteLine($"SignalR UpdateOrderStatus error: {hubEx.Message}");
+                }
+
                 return Json(new
                 {
                     success = true,
@@ -543,25 +605,60 @@ namespace satinalmaportali2.Controllers
         /// Yeni kategori veya alt kategori oluşturur.
         /// </summary>
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateCategory(string categoryName, int? parentCategoryId, CancellationToken cancellationToken)
         {
+            bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
+                          (Request.Headers.Accept.ToString().Contains("application/json") && !Request.Headers.Accept.ToString().Contains("text/html"));
+
             if (string.IsNullOrWhiteSpace(categoryName))
             {
-                TempData["CategoryError"] = "Lütfen bir kategori adı girin.";
+                var reqMsg = "Lütfen bir kategori adı girin.";
+                if (isAjax) return Json(new { success = false, message = reqMsg });
+                TempData["CategoryError"] = reqMsg;
                 return RedirectToAction(nameof(Index));
             }
 
             try
             {
                 var created = await _dashboardService.CreateCategoryAsync(categoryName, parentCategoryId, cancellationToken);
-                TempData["CategorySuccess"] = parentCategoryId.HasValue && parentCategoryId.Value > 0
+
+                try
+                {
+                    await _hubContext.Clients.All.SendAsync("OnCategoryCreated", new
+                    {
+                        categoryId = created.CategoryID,
+                        categoryName = created.CategoryName,
+                        parentCategoryId = created.ParentCategoryID
+                    });
+                }
+                catch (Exception hubEx)
+                {
+                    Console.WriteLine($"SignalR CreateCategory error: {hubEx.Message}");
+                }
+
+                var succMsg = parentCategoryId.HasValue && parentCategoryId.Value > 0
                     ? $"Alt kategori '{created.CategoryName}' başarıyla eklendi!" 
-                    : $"Kök kategori '{created.CategoryName}' (ParentCategoryID = NULL) başarıyla eklendi!";
+                    : $"Kök kategori '{created.CategoryName}' başarıyla eklendi!";
+
+                if (isAjax)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        message = succMsg,
+                        categoryId = created.CategoryID,
+                        categoryName = created.CategoryName,
+                        parentCategoryId = created.ParentCategoryID
+                    });
+                }
+
+                TempData["CategorySuccess"] = succMsg;
             }
             catch (Exception ex)
             {
-                TempData["CategoryError"] = "Kategori oluşturulurken hata oluştu: " + ex.Message;
+                var errMsg = "Kategori oluşturulurken hata oluştu: " + ex.Message;
+                if (isAjax) return Json(new { success = false, message = errMsg });
+                TempData["CategoryError"] = errMsg;
             }
 
             return RedirectToAction(nameof(Index));

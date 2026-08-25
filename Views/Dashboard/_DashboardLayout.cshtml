@@ -283,7 +283,9 @@
     <!-- Toast Bildirim Kutusu -->
     <div id="appToast" class="app-toast" role="alert" aria-live="polite"></div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
     <script src="~/js/dashboard.js" asp-append-version="true"></script>
+    <script src="~/js/realtime-portal.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -4,8 +4,10 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using satinalmaportali2.Data;
+using satinalmaportali2.Hubs;
 using satinalmaportali2.Models;
 using satinalmaportali2.Services;
 
@@ -15,11 +17,13 @@ namespace satinalmaportali2.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
+        private readonly IHubContext<PortalHub> _hubContext;
 
-        public OrderController(ApplicationDbContext context, EmailService emailService)
+        public OrderController(ApplicationDbContext context, EmailService emailService, IHubContext<PortalHub> hubContext)
         {
             _context = context;
             _emailService = emailService;
+            _hubContext = hubContext;
         }
 
         private int GetCurrentCompanyId()
@@ -161,6 +165,51 @@ namespace satinalmaportali2.Controllers
 
                 _context.Orders.Add(order);
                 await _context.SaveChangesAsync();
+
+                // SignalR ile Anlık Bildirim ve Sipariş Senkronizasyonu
+                try
+                {
+                    var orderBroadcast = new
+                    {
+                        orderId = order.OrderID,
+                        orderNumber = order.OrderNumber,
+                        buyerCompanyName = order.BuyerCompanyName,
+                        supplierCompanyName = order.SupplierCompanyName,
+                        totalAmount = order.TotalAmount,
+                        grandTotal = order.GrandTotal,
+                        grandTotalFormatted = order.GrandTotal.ToString("N0") + " ₺",
+                        orderDate = order.OrderDate.ToString("dd.MM.yyyy HH:mm"),
+                        orderStatus = order.OrderStatus,
+                        paymentStatus = order.PaymentStatus,
+                        itemCount = order.OrderItems.Count,
+                        firstItemTitle = order.OrderItems.FirstOrDefault()?.ProductName ?? "Sipariş Kalemi"
+                    };
+
+                    await _hubContext.Clients.All.SendAsync("OnOrderPlaced", orderBroadcast);
+
+                    // Stok düşümü olan ürünlerin canlı güncellenmesi
+                    foreach (var oi in orderItemsList.Where(x => x.ItemID.HasValue))
+                    {
+                        var updatedItem = await _context.Items.AsNoTracking().FirstOrDefaultAsync(i => i.ItemID == oi.ItemID!.Value);
+                        if (updatedItem != null)
+                        {
+                            await _hubContext.Clients.All.SendAsync("OnProductPriceChanged", new
+                            {
+                                itemId = updatedItem.ItemID,
+                                itemName = updatedItem.ItemName,
+                                newUnitPrice = (decimal)(updatedItem.ItemPrice ?? 0),
+                                newUnitPriceFormatted = ((decimal)(updatedItem.ItemPrice ?? 0)).ToString("N0") + " ₺",
+                                newStock = updatedItem.Quantity ?? 0,
+                                status = (updatedItem.Quantity ?? 0) <= 0 ? "Tükendi" : ((updatedItem.Quantity ?? 0) < 50 ? "Kritik" : "Stokta"),
+                                brand = updatedItem.Brand
+                            });
+                        }
+                    }
+                }
+                catch (Exception hubEx)
+                {
+                    Console.WriteLine($"SignalR CreateOrder broadcast error: {hubEx.Message}");
+                }
 
                 // E-Posta Bildirimi Gönder (Async Arka Plan)
                 try
