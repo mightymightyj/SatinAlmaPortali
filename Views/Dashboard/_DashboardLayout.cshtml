@@ -9,6 +9,7 @@
     var avatarInitials = !string.IsNullOrEmpty(activeCompany) && activeCompany.Length >= 2 
         ? activeCompany.Substring(0, 2).ToUpper() 
         : (!string.IsNullOrEmpty(activeCompany) ? activeCompany.ToUpper() : "HE");
+    var currentCompanyId = User.FindFirst("CompanyID")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
 }
 <!DOCTYPE html>
 <html lang="tr">
@@ -21,7 +22,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
 </head>
-<body class="app-body">
+<body class="app-body" data-current-company-id="@currentCompanyId" data-current-company-name="@activeCompany">
+    <script>
+        window.CURRENT_USER_COMPANY_ID = "@currentCompanyId";
+        window.CURRENT_USER_COMPANY_NAME = "@Html.Raw((activeCompany ?? "").Replace("\"", "\\\""))";
+    </script>
 
     <a class="skip-link" href="#dash-main">İçeriğe atla</a>
 
@@ -164,65 +169,125 @@
         </main>
     </div>
 
-    <!-- ==================== YENİ SATIN ALMA TALEBİ MODALI (BUYER) ==================== -->
+    <!-- ==================== YENİ SATIN ALMA TALEBİ MODALI (DİNAMİK İSTENİLENLER LİSTESİ) ==================== -->
     <div id="requestModal" class="app-modal" aria-hidden="true" role="dialog" aria-modal="true">
         <div class="modal-backdrop" onclick="closeRequestModal()"></div>
-        <div class="modal-card">
+        <div class="modal-card is-extra-wide">
             <div class="modal-head">
                 <div class="modal-title-wrap">
                     <span class="modal-badge-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
                     </span>
-                    <h3>Yeni Satın Alma Talebi Oluştur</h3>
+                    <h3>Yeni Satın Alma Talebi & İstenilenler Listesi Oluştur</h3>
                 </div>
                 <button type="button" class="modal-close-btn" onclick="closeRequestModal()" aria-label="Kapat">✕</button>
             </div>
             <form id="buyerRequestForm" onsubmit="handleCreateRequestSubmit(event)">
+                @Html.AntiForgeryToken()
                 <div class="modal-body">
-                    <div class="form-group">
-                        <label class="form-label" for="reqProductName">Ürün veya Hizmet Adı <span class="req-star">*</span></label>
-                        <input type="text" id="reqProductName" class="form-control" placeholder="Örn: Endüstriyel Rulman & Mil Seti" required />
-                    </div>
-
-                    <div class="form-row-2">
+                    <!-- 1. TALEP BAŞLIĞI, KATEGORİ VE TERMİN -->
+                    <div style="display: grid; grid-template-columns: 2fr 1.2fr 1fr; gap: 12px;">
                         <div class="form-group">
-                            <label class="form-label" for="reqCategory">Kategori <span class="req-star">*</span></label>
+                            <label class="form-label" for="reqProductName">Talep Başlığı / Proje Adı <span class="req-star">*</span></label>
+                            <input type="text" id="reqProductName" class="form-control" placeholder="Örn: Fabrika Elektrik & Bakım Malzemeleri Alımı" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="reqCategory">Kategori / Talep Tipi <span class="req-star">*</span></label>
                             <select id="reqCategory" class="form-control" required>
+                                <option value="Satın Alma">Satın Alma</option>
+                                <option value="Hammadde & Malzeme">Hammadde & Malzeme</option>
                                 <option value="Makine & Yedek Parça">Makine & Yedek Parça</option>
-                                <option value="Hammadde & Kimyasallar">Hammadde & Kimyasallar</option>
-                                <option value="Otomasyon & Pnömatik">Otomasyon & Pnömatik</option>
-                                <option value="Fabrika & Donanım">Fabrika & Donanım</option>
-                                <option value="Lojistik & Sarf">Lojistik & Sarf</option>
+                                <option value="Otomasyon & Elektrik">Otomasyon & Elektrik</option>
+                                <option value="Lojistik & Ambalaj">Lojistik & Ambalaj</option>
+                                <option value="Hizmet Tedariği">Hizmet Tedariği</option>
+                                <option value="Bilişim & Donanım">Bilişim & Donanım</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="reqQuantity">Miktar <span class="req-star">*</span></label>
-                            <input type="number" id="reqQuantity" class="form-control" value="10" min="1" required />
-                        </div>
-                    </div>
 
-                    <div class="form-row-2">
                         <div class="form-group">
-                            <label class="form-label" for="reqBudget">Tahmini Bütçe (₺)</label>
-                            <input type="number" id="reqBudget" class="form-control" placeholder="85000" min="0" step="any" />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="reqDeadline">Son Teklif / Termin Tarihi</label>
+                            <label class="form-label" for="reqDeadline">Son Teklif / Termin</label>
                             <input type="date" id="reqDeadline" class="form-control" value="@DateTime.Today.AddDays(7).ToString("yyyy-MM-dd")" />
                         </div>
                     </div>
 
+                    <!-- 2. DİNAMİK İSTENİLENLER LİSTESİ (KALEMLER TABLOSU) -->
+                    <div class="items-builder-container">
+                        <div class="items-builder-header">
+                            <div>
+                                <div class="items-builder-title">
+                                    <span>📋 Talep Edilen Malzeme ve Hizmet Kalemleri (İstenilenler Listesi)</span>
+                                </div>
+                                <!-- Hızlı Şablonlar -->
+                                <div class="quick-templates-bar">
+                                    <span style="font-size: 0.72rem; color: #64748B;">Örnek Yükle:</span>
+                                    <button type="button" class="btn-quick-tpl" onclick="loadDashSampleTemplate('elektrik')">⚡ Elektrik & Otomasyon</button>
+                                    <button type="button" class="btn-quick-tpl" onclick="loadDashSampleTemplate('ofis')">📦 Ofis & Sarf Malzeme</button>
+                                    <button type="button" class="btn-quick-tpl" onclick="loadDashSampleTemplate('hirdavat')">🔧 Hırdavat & Mekanik</button>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <button type="button" class="btn-quick-tpl" style="border-style: solid; background: #F1F5F9;" onclick="addDashMultipleRequestItemRows(3)">+ 3 Satır Ekle</button>
+                                <button type="button" class="btn-add-item-row" onclick="addDashRequestItemRow()">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    + Yeni Kalem Ekle
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Kalemler Tablosu -->
+                        <div class="items-table-scroll">
+                            <table class="items-builder-table" id="dashRequestItemsTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 34px; text-align: center;">#</th>
+                                        <th style="width: 28%;">Malzeme / Hizmet Adı <span style="color: #EF4444;">*</span></th>
+                                        <th style="width: 12%;">Miktar <span style="color: #EF4444;">*</span></th>
+                                        <th style="width: 13%;">Birim</th>
+                                        <th style="width: 15%;">Tahmini B. Fiyat (₺)</th>
+                                        <th style="width: 14%;">Tahmini Kalem Tutarı</th>
+                                        <th style="width: 18%;">Kalem Açıklaması / Şartname</th>
+                                        <th style="width: 44px; text-align: center;">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashRequestItemsTableBody">
+                                    <!-- JavaScript ile doldurulacak -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Kalemler Özet Çubuğu -->
+                        <div class="items-summary-strip">
+                            <div class="items-summary-metric">
+                                <span>📦 Toplam Kalem:</span>
+                                <strong id="dashSummaryTotalItems">0 Kalem</strong>
+                            </div>
+                            <div class="items-summary-metric">
+                                <span>📊 Toplam Miktar:</span>
+                                <strong id="dashSummaryTotalQty">0 Birim</strong>
+                            </div>
+                            <div class="items-summary-metric">
+                                <span>💰 Otomatik Hesaplanmış Tahmini Bütçe:</span>
+                                <strong id="dashSummaryTotalBudget" style="color: #059669; font-size: 0.95rem;">0,00 ₺</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. GENEL TEKNİK ŞARTNAME & NOTLAR -->
                     <div class="form-group">
-                        <label class="form-label" for="reqNotes">Teknik Şartname & Açıklama</label>
-                        <textarea id="reqNotes" class="form-control" rows="3" placeholder="Tedarikçilerin teklif verirken dikkat etmesi gereken teknik kriterler..."></textarea>
+                        <label class="form-label" for="reqNotes">Genel Teknik Şartname & Teslimat / Ödeme Koşulları</label>
+                        <textarea id="reqNotes" class="form-control" rows="2" placeholder="Tedarikçilerin teklif verirken dikkat etmesi gereken genel şartlar, nakliye/montaj durumu, garanti ve teslimat şartları..."></textarea>
                     </div>
                 </div>
                 <div class="modal-foot">
                     <button type="button" class="btn-cancel" onclick="closeRequestModal()">Vazgeç</button>
-                    <button type="submit" class="btn-primary">Talebi Yayınla</button>
+                    <button type="submit" id="dashCreateSubmitBtn" class="btn-primary">Talebi ve İstenilenler Listesini Yayınla</button>
                 </div>
             </form>
         </div>
@@ -249,21 +314,18 @@
                     <div class="form-group">
                         <label class="form-label" for="priceProductSelect">Ürün Seçin <span class="req-star">*</span></label>
                         <select id="priceProductSelect" class="form-control" required onchange="handleProductPriceSelect(this)">
-                            <option value="1" data-id="1" data-price="185" data-stock="450">Endüstriyel Rulman 6204-2RS (Mevcut: 185 ₺)</option>
-                            <option value="2" data-id="2" data-price="1450" data-stock="120">Lineer Kızak ve Araba Seti HGR25 (Mevcut: 1.450 ₺)</option>
-                            <option value="3" data-id="3" data-price="640" data-stock="85">Pnömatik 5/2 Yön Kontrol Valfi (Mevcut: 640 ₺)</option>
-                            <option value="4" data-id="4" data-price="320" data-stock="200">Karbür Parmak Freze 10mm 4 Ağız (Mevcut: 320 ₺)</option>
+                            <option value="" disabled selected>Katalogdan bir ürün seçin...</option>
                         </select>
                     </div>
 
                     <div class="form-row-2">
                         <div class="form-group">
                             <label class="form-label" for="newUnitPrice">Yeni Birim Fiyat (₺) <span class="req-star">*</span></label>
-                            <input type="number" id="newUnitPrice" class="form-control" value="195" min="0.01" step="any" required />
+                            <input type="number" id="newUnitPrice" class="form-control" placeholder="0.00" min="0.01" step="any" required />
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="newStockQty">Güncel Stok Adedi</label>
-                            <input type="number" id="newStockQty" class="form-control" value="450" min="0" />
+                            <input type="number" id="newStockQty" class="form-control" placeholder="0" min="0" />
                         </div>
                     </div>
 
@@ -275,6 +337,114 @@
                 <div class="modal-foot">
                     <button type="button" class="btn-cancel" onclick="closePriceModal()">İptal</button>
                     <button type="submit" class="btn-primary">Fiyatı Güncelle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== GENEL TEDARİKÇİ ÇOKLU KALEM TEKLİF VERME MODALI ==================== -->
+    <div class="custom-modal-backdrop" id="supplierBidModal" onclick="if(event.target === this) closeBidModal();">
+        <div class="custom-modal-dialog is-extra-wide">
+            <div class="custom-modal-header">
+                <h3 class="custom-modal-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span id="bidModalTitleText">Talebe Kalem Bazlı Fiyat Teklifi Ver</span>
+                </h3>
+                <button type="button" class="custom-modal-close" onclick="closeBidModal()">&times;</button>
+            </div>
+
+            <form id="submitOfferForm" onsubmit="handleBidSubmit(event)">
+                <input type="hidden" name="RequestID" id="bidRequestID" />
+                <input type="hidden" name="OfferedPrice" id="bidOfferedPrice" value="0" />
+
+                <div class="custom-modal-body">
+                    <!-- Talep Üst Bilgi Kartı -->
+                    <div style="background: #F8FAFC; padding: 12px 16px; border-radius: 10px; border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <span style="font-size: 0.74rem; color: #64748B; font-weight: 600;" id="bidReqCodeBadge">Talep #REQ-0000</span>
+                            <h4 id="bidProductTitle" style="color: #0F172A; margin: 2px 0 0 0; font-size: 1rem; font-weight: 800;"></h4>
+                            <div id="bidBuyerInfoSub" style="font-size: 0.78rem; color: #64748B; margin-top: 2px;"></div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 0.74rem; color: #64748B; font-weight: 600;">Hedef Teslim / Bütçe</span>
+                            <div id="bidDeadlineBudgetSub" style="font-size: 0.84rem; font-weight: 700; color: #2563EB;"></div>
+                        </div>
+                    </div>
+
+                    <!-- 📋 KALEM BAZLI FİYATLANDIRMA TABLOSU -->
+                    <div class="bid-items-grid-container" style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+                            <span style="font-size: 0.88rem; font-weight: 700; color: #0F172A; display: flex; align-items: center; gap: 6px;">
+                                📋 Talep Edilen Malzemeler & Kalem Birim Fiyat Teklifiniz (<span id="bidItemsCountBadge">0 Kalem</span>)
+                            </span>
+                            <span style="font-size: 0.76rem; color: #64748B;">Her kalem için birim fiyat giriniz, toplam tutar otomatik hesaplanacaktır</span>
+                        </div>
+
+                        <div style="overflow-x: auto; border: 1px solid #E2E8F0; border-radius: 8px; background: #FFFFFF; max-height: 260px; overflow-y: auto;">
+                            <table class="bid-items-table" id="bidItemsTable" style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+                                <thead>
+                                    <tr style="background: #F8FAFC; color: #475569; border-bottom: 1px solid #E2E8F0; text-align: left;">
+                                        <th style="width: 32px; text-align: center; padding: 8px;">#</th>
+                                        <th style="width: 30%; padding: 8px;">Talep Edilen Malzeme & Şartname</th>
+                                        <th style="width: 12%; padding: 8px;">Miktar</th>
+                                        <th style="width: 14%; padding: 8px;">Alıcı Ref. B. Fiyat</th>
+                                        <th style="width: 18%; padding: 8px;">Teklif Ettiğiniz B. Fiyat (₺) <span style="color: #EF4444;">*</span></th>
+                                        <th style="width: 14%; padding: 8px;">Kalem Tutarı (₺)</th>
+                                        <th style="width: 16%; padding: 8px;">Kalem Notu / Marka-Stok</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bidItemsTableBody">
+                                    <!-- JavaScript ile doldurulacak -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Otomatik Hesaplanmış Toplam Teklif Hero Kartı -->
+                        <div class="bid-summary-hero" style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; margin-top: 4px;">
+                            <div>
+                                <span style="font-size: 0.75rem; font-weight: 700; color: #065F46; text-transform: uppercase; letter-spacing: 0.04em;">Fiyatlandırılan Kalemler:</span>
+                                <div style="font-size: 0.88rem; font-weight: 700; color: #065F46; margin-top: 2px;" id="bidPricedItemsSummary">0 / 0 Kalem Fiyatlandırıldı</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="font-size: 0.74rem; font-weight: 700; color: #065F46; text-transform: uppercase; letter-spacing: 0.04em;">Otomatik Genel Toplam Teklif Tutarı (KDV Hariç):</span>
+                                <div class="bid-total-big-val" id="bidCalculatedTotal" style="font-size: 1.25rem; font-weight: 800; color: #047857;">0,00 ₺</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. TESLİMAT SÜRESİ, GEÇERLİLİK VE TİCARİ ŞARTLAR -->
+                    <div class="modal-form-row" style="grid-template-columns: 1fr 1.2fr 2fr; display: grid; gap: 12px; margin-top: 14px;">
+                        <div class="modal-form-group">
+                            <label class="modal-form-label" style="font-size: 0.78rem; font-weight: 600; color: #475569; display: block; margin-bottom: 4px;">
+                                Teslimat Süresi (Gün) <span style="color: #EF4444;">*</span>
+                            </label>
+                            <input type="number" name="DeliveryDays" id="bidDeliveryDays" required min="1" max="365" value="7" class="form-control" />
+                        </div>
+
+                        <div class="modal-form-group">
+                            <label class="modal-form-label" style="font-size: 0.78rem; font-weight: 600; color: #475569; display: block; margin-bottom: 4px;">Teklif Geçerlilik Süresi</label>
+                            <select name="ValidityDays" id="bidValidityDays" class="form-control">
+                                <option value="15">15 Gün</option>
+                                <option value="30" selected>30 Gün</option>
+                                <option value="60">60 Gün</option>
+                                <option value="90">90 Gün</option>
+                            </select>
+                        </div>
+
+                        <div class="modal-form-group">
+                            <label class="modal-form-label" style="font-size: 0.78rem; font-weight: 600; color: #475569; display: block; margin-bottom: 4px;">Genel Tedarikçi Açıklaması & Ticari Şartlar</label>
+                            <textarea name="SupplierNotes" id="bidSupplierNotes" rows="2" placeholder="Nakliye firmamıza ait, 2 yıl garanti, peşin veya 30 gün vade..." class="form-control" style="height: 38px; min-height: 38px;"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-foot" style="padding: 14px 20px; border-top: 1px solid #E2E8F0; display: flex; justify-content: flex-end; gap: 8px;">
+                    <button type="button" class="btn-cancel" onclick="closeBidModal()">Vazgeç</button>
+                    <button type="submit" id="bidSubmitBtn" class="btn-primary" style="background: #10B981; border-color: #10B981;">
+                        Teklifi İlet
+                    </button>
                 </div>
             </form>
         </div>

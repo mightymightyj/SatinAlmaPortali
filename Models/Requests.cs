@@ -29,5 +29,6 @@ namespace satinalmaportali2.Models
 
         // Navigation Properties
         public virtual ICollection<RequestOffers> Offers { get; set; } = new List<RequestOffers>();
+        public virtual ICollection<RequestItem> Items { get; set; } = new List<RequestItem>();
     }
 }

@@ -249,7 +249,7 @@
                         <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
                     </svg>
                 </div>
-                <div class="metric-number">350+</div>
+                <div class="metric-number">@(ViewBag.TotalBuyers ?? 0)</div>
                 <div class="metric-label">Kayıtlı Alıcı Firma</div>
             </div>
 
@@ -265,7 +265,7 @@
                         <line x1="3" y1="18" x2="3.01" y2="18"></line>
                     </svg>
                 </div>
-                <div class="metric-number">250+</div>
+                <div class="metric-number">@(ViewBag.TotalSuppliers ?? 0)</div>
                 <div class="metric-label">Onaylı Sanayi Tedarikçisi</div>
             </div>
 
@@ -278,7 +278,7 @@
                         <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
                     </svg>
                 </div>
-                <div class="metric-number">400+</div>
+                <div class="metric-number">@(ViewBag.OpenRequestsCount ?? 0)</div>
                 <div class="metric-label">Açık Satınalma İhalesi</div>
             </div>
 
@@ -289,7 +289,7 @@
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                     </svg>
                 </div>
-                <div class="metric-number">300+</div>
+                <div class="metric-number">@(ViewBag.CompletedOffersCount ?? 0)</div>
                 <div class="metric-label">Tamamlanan Kurumsal Teklif</div>
             </div>
 
@@ -302,7 +302,7 @@
                         <line x1="12" y1="22.08" x2="12" y2="12"></line>
                     </svg>
                 </div>
-                <div class="metric-number">1M+</div>
+                <div class="metric-number">@(ViewBag.TotalItemsCount ?? 0)</div>
                 <div class="metric-label">Endüstriyel Ürün Portföyü</div>
             </div>
 

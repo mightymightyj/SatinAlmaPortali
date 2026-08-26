@@ -678,43 +678,7 @@ try {
  * 6 Sütun x 8 Satır = 48 Ürünü Kurumsal Havuzdan Dinamik Seç ve Rastgele Çeşitlendir
  */
 function generateCorporate48Products() {
-    let pool = [...B2B_PRODUCT_CATALOG];
-
-    // Havuz 48 adede ulaşana kadar gerçekçi kurumsal varyasyonlar türet
-    while (pool.length < 48) {
-        const base = B2B_PRODUCT_CATALOG[Math.floor(Math.random() * B2B_PRODUCT_CATALOG.length)];
-        const supplier = CORPORATE_VERIFIED_SUPPLIERS[Math.floor(Math.random() * CORPORATE_VERIFIED_SUPPLIERS.length)];
-        const variationPrice = Math.floor((Math.random() * 0.16 - 0.08) * base.price);
-        const netPrice = Math.max(150, base.price + variationPrice);
-        const oldPrice = Math.round(netPrice * (1 + (Math.floor(Math.random() * 12 + 10) / 100)));
-        const discRate = Math.round(((oldPrice - netPrice) / oldPrice) * 100);
-
-        const newItem = {
-            ...base,
-            id: 2000 + pool.length,
-            sku: base.sku + "-S" + (pool.length % 5 + 1),
-            title: base.title + (pool.length % 2 === 0 ? " [Toptan Sanayi Paketi]" : " [Kurumsal Proje Serisi]"),
-            seller: supplier.name,
-            sellerScore: supplier.score,
-            sellerBadge: supplier.badge,
-            sellerLocation: supplier.location,
-            price: netPrice,
-            oldPrice: oldPrice,
-            discount: discRate,
-            rating: (4.6 + Math.random() * 0.4).toFixed(1),
-            reviewsCount: Math.floor(Math.random() * 600 + 45),
-            stockStatus: (Math.floor(Math.random() * 150 + 20)) + " " + base.unit + " (Merkez Stok)"
-        };
-        pool.push(newItem);
-    }
-
-    // Fisher-Yates Karıştırma (Her girişte farklı ürünler gelsin)
-    for (let i = pool.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [pool[i], pool[j]] = [pool[j], pool[i]];
-    }
-
-    activeProducts = pool.slice(0, 48);
+    activeProducts = [...B2B_PRODUCT_CATALOG];
     return activeProducts;
 }
 
@@ -722,7 +686,7 @@ function generateCorporate48Products() {
  * Para Birimi Formatlayıcı (Türk Lirası)
  */
 function formatB2BMoney(amount) {
-    return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(amount);
+    return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(amount || 0);
 }
 
 /**
@@ -737,8 +701,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const container = document.getElementById('trendyolProductGrid');
     if (!container) return;
 
-    generateCorporate48Products();
-    renderCorporateVitrin();
+    // Sahte verileri sıfırla ve veritabanındaki gerçek ürünleri yükle
+    B2B_PRODUCT_CATALOG.length = 0;
+    activeProducts = [];
     setupCorporateEvents();
     loadDbVitrinProducts();
 });
@@ -747,22 +712,20 @@ document.addEventListener('DOMContentLoaded', function () {
  * Veritabanında (items tablosunda) kayıtlı gerçek ürünleri vitrine dahil et
  */
 async function loadDbVitrinProducts() {
+    const grid = document.getElementById('trendyolProductGrid');
     try {
         const response = await fetch('/Home/GetVitrinProductsJson');
         const data = await response.json();
-        if (data.success && Array.isArray(data.products) && data.products.length > 0) {
-            data.products.forEach(p => {
-                if (!activeProducts.some(ap => ap.id === p.id)) {
-                    activeProducts.unshift(p);
-                }
-                if (!B2B_PRODUCT_CATALOG.some(cp => cp.id === p.id)) {
-                    B2B_PRODUCT_CATALOG.unshift(p);
-                }
-            });
+        if (data.success && Array.isArray(data.products)) {
+            B2B_PRODUCT_CATALOG.length = 0;
+            data.products.forEach(p => B2B_PRODUCT_CATALOG.push(p));
+            activeProducts = [...B2B_PRODUCT_CATALOG];
             renderCorporateVitrin();
         }
     } catch (err) {
         console.warn('DB vitrin ürünleri yüklenirken hata:', err);
+        activeProducts = [];
+        renderCorporateVitrin();
     }
 }
 
@@ -1419,14 +1382,7 @@ async function submitSellerOffer(e) {
         const result = await response.json();
         if (result.success) {
             closeTyModal('tySellerOfferModal');
-            showB2BToast(result.message, "success");
-
-            // Yeni ürünü anında vitrinin en başına ekle ve yeniden render et
-            if (result.item) {
-                activeProducts.unshift(result.item);
-                B2B_PRODUCT_CATALOG.unshift(result.item);
-                renderCorporateVitrin();
-            }
+            showB2BToast(result.message + " İlanınızı 'Satıştaki Ürünlerim' panelinden yönetebilirsiniz.", "success");
 
             // Formu sıfırla
             e.target.reset();
@@ -1547,17 +1503,14 @@ async function initB2BCartSync() {
 }
 
 /**
- * Sepete ürün ekler
+ * Sepete ürün ekler (Sunucu doğrulamalı)
  */
-function addToCart(productId, qty = 1, showDrawer = false) {
+async function addToCart(productId, qty = 1, showDrawer = false) {
     const product = activeProducts.find(p => p.id === productId) || B2B_PRODUCT_CATALOG.find(p => p.id === productId);
     if (!product) {
         showB2BToast("⚠️ Ürün bilgisi bulunamadı.", "danger");
-        return;
+        return false;
     }
-
-    let cart = getB2BCart();
-    const existingIndex = cart.findIndex(item => item.productId === productId);
 
     const itemToAdd = {
         productId: product.id,
@@ -1570,42 +1523,59 @@ function addToCart(productId, qty = 1, showDrawer = false) {
         image: product.image || ''
     };
 
-    if (existingIndex > -1) {
-        cart[existingIndex].quantity += qty;
-    } else {
-        cart.push(itemToAdd);
+    try {
+        // Sunucu doğrulaması (Kendi ürününü satın alma engeli)
+        const response = await fetch('/Cart/AddToCart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                productID: itemToAdd.productId,
+                title: itemToAdd.title,
+                sku: itemToAdd.sku,
+                category: itemToAdd.category,
+                price: itemToAdd.price,
+                quantity: qty,
+                seller: itemToAdd.seller,
+                image: itemToAdd.image
+            })
+        });
+
+        const data = await response.json();
+        if (data && data.success === false) {
+            showB2BToast("⚠️ " + (data.message || "Bu ürünü sepete ekleyemezsiniz."), "danger");
+            return false;
+        }
+
+        let cart = getB2BCart();
+        const existingIndex = cart.findIndex(item => item.productId === productId);
+
+        if (existingIndex > -1) {
+            cart[existingIndex].quantity += qty;
+        } else {
+            cart.push(itemToAdd);
+        }
+
+        saveB2BCart(cart);
+        showB2BToast(`🛒 "${product.title}" sepete eklendi!`, "success");
+
+        if (showDrawer) {
+            openCartDrawer();
+        }
+        return true;
+    } catch (e) {
+        console.warn("AddToCart error:", e);
+        return false;
     }
-
-    saveB2BCart(cart);
-    showB2BToast(`🛒 "${product.title}" sepete eklendi!`, "success");
-
-    if (showDrawer) {
-        openCartDrawer();
-    }
-
-    // Sunucu veritabanında asenkron kaydet (cihazlar arası sepetin korunması için)
-    fetch('/Cart/AddToCart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            productID: itemToAdd.productId,
-            title: itemToAdd.title,
-            sku: itemToAdd.sku,
-            category: itemToAdd.category,
-            price: itemToAdd.price,
-            quantity: qty,
-            seller: itemToAdd.seller,
-            image: itemToAdd.image
-        })
-    }).catch(e => console.warn("AddToCart server sync:", e));
 }
 
 /**
  * Doğrudan Satın Al (Hemen Satın Al): Ürünü sepete ekleyip direkt Checkout modalını açar
  */
-function directBuy(productId) {
-    addToCart(productId, 1, false);
-    openCheckoutModal();
+async function directBuy(productId) {
+    const success = await addToCart(productId, 1, false);
+    if (success) {
+        openCheckoutModal();
+    }
 }
 
 /**
@@ -1977,4 +1947,26 @@ async function submitCorporateOrder(e) {
 
     return false;
 }
+
+/**
+ * SignalR üzerinden anlık gelen yeni ürünü vitrine ekler
+ */
+window.addRealtimeProductToVitrin = function(item) {
+    if (!item || !item.id) return;
+    if (activeProducts.some(p => p.id === item.id)) return;
+
+    activeProducts.unshift(item);
+    if (typeof B2B_PRODUCT_CATALOG !== 'undefined') {
+        B2B_PRODUCT_CATALOG.unshift(item);
+    }
+    renderCorporateVitrin();
+};
+
+/**
+ * SignalR üzerinden sepet güncellendiğinde tüm sekmelerde sepeti senkronize eder
+ */
+window.syncCartFromSignalR = function() {
+    initB2BCartSync();
+};
+
 

@@ -8,7 +8,15 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/satinalmaportali2.styles.css" asp-append-version="true" />
 </head>
-<body>
+@{
+    var currentCompId = User.FindFirst("CompanyID")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
+    var currentCompName = User.FindFirst("CompanyName")?.Value ?? "";
+}
+<body data-current-company-id="@currentCompId" data-current-company-name="@currentCompName">
+    <script>
+        window.CURRENT_USER_COMPANY_ID = "@currentCompId";
+        window.CURRENT_USER_COMPANY_NAME = "@Html.Raw(currentCompName)";
+    </script>
     
     <!-- Top Navigation Header -->
     <header class="blue-top-header">

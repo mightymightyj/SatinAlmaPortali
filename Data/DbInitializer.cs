@@ -77,11 +77,32 @@ namespace satinalmaportali2.Data
                             createdat TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                             updatedat TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                         );
+
+                        CREATE TABLE IF NOT EXISTS request_items (
+                            requestitemid SERIAL PRIMARY KEY,
+                            requestid INT NOT NULL,
+                            itemorder INT DEFAULT 1,
+                            itemname VARCHAR(255) NOT NULL,
+                            quantity DECIMAL(18,2) NOT NULL DEFAULT 1,
+                            unit VARCHAR(50) DEFAULT 'Adet',
+                            estimatedunitprice DECIMAL(18,2),
+                            itemdescription TEXT,
+                            createdat TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                        );
+
+                        CREATE TABLE IF NOT EXISTS request_offer_items (
+                            offeritemid SERIAL PRIMARY KEY,
+                            offerid INT NOT NULL,
+                            requestitemid INT NOT NULL,
+                            unitprice DECIMAL(18,2) NOT NULL DEFAULT 0,
+                            linetotal DECIMAL(18,2) NOT NULL DEFAULT 0,
+                            notes TEXT
+                        );
                     ");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Orders/CartItems table check/create note: " + ex.Message);
+                    Console.WriteLine("Orders/CartItems/RequestItems table check/create note: " + ex.Message);
                 }
 
                 // ====================================================
@@ -171,11 +192,6 @@ namespace satinalmaportali2.Data
                 // STEP 4: Fix NULL DistrictID in Addresses table
                 // ====================================================
                 await FixAddressDistrictIdsAsync(context);
-
-                // ====================================================
-                // STEP 5: Seed 10 Supplier Test Accounts (Password: Test1234*_)
-                // ====================================================
-                await SeedSupplierTestAccountsAsync(context);
             }
             catch (Exception ex)
             {

@@ -5,18 +5,39 @@ using System.Linq;
 
 namespace satinalmaportali2.Models
 {
+    public class CreateRequestItemInputModel
+    {
+        public int ItemOrder { get; set; } = 1;
+
+        [Required(ErrorMessage = "Kalem / Malzeme adı zorunludur.")]
+        [Display(Name = "Kalem / Malzeme Adı")]
+        public string ItemName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Miktar zorunludur.")]
+        [Range(0.01, 10000000, ErrorMessage = "Lütfen 0'dan büyük geçerli bir miktar giriniz.")]
+        [Display(Name = "Miktar")]
+        public decimal Quantity { get; set; } = 1;
+
+        [Display(Name = "Birim")]
+        public string Unit { get; set; } = "Adet";
+
+        [Display(Name = "Tahmini Birim Fiyat (₺)")]
+        [Range(0, 1000000000, ErrorMessage = "Geçerli bir birim fiyat giriniz.")]
+        public decimal? EstimatedUnitPrice { get; set; }
+
+        [Display(Name = "Kalem Açıklaması / Şartname")]
+        public string? ItemDescription { get; set; }
+    }
+
     public class CreateRequestInputModel
     {
         [Display(Name = "Alıcı Bilgileri")]
         public string? BuyerInfo { get; set; }
 
-        [Required(ErrorMessage = "Aranan ürün veya hizmet adı girilmesi zorunludur.")]
-        [Display(Name = "Aranan Ürün / Hizmet")]
+        [Display(Name = "Talep Başlığı / Konusu")]
         public string ProductName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Talep adedi girilmesi zorunludur.")]
-        [Range(1, 10000000, ErrorMessage = "Lütfen 1 veya daha büyük geçerli bir miktar giriniz.")]
-        [Display(Name = "Talep Edilen Miktar")]
+        [Display(Name = "Toplam Miktar")]
         public int Quantity { get; set; } = 1;
 
         [Display(Name = "Talep Tipi / Kategori")]
@@ -31,7 +52,17 @@ namespace satinalmaportali2.Models
         [Display(Name = "Hedef Teslim / Son Teklif Tarihi")]
         public DateTime? TargetDeliveryDate { get; set; }
 
-        [Display(Name = "Teknik Şartname & Açıklama")]
+        [Display(Name = "Teknik Şartname & Genel Notlar")]
+        public string? Notes { get; set; }
+
+        // Dinamik İstenilenler Listesi (Talep Kalemleri)
+        public List<CreateRequestItemInputModel> Items { get; set; } = new();
+    }
+
+    public class SubmitOfferItemInputModel
+    {
+        public int RequestItemID { get; set; }
+        public decimal UnitPrice { get; set; }
         public string? Notes { get; set; }
     }
 
@@ -55,6 +86,35 @@ namespace satinalmaportali2.Models
 
         [Display(Name = "Tedarikçi Notları / Şartlar")]
         public string? SupplierNotes { get; set; }
+
+        // Kalem Bazlı Teklif Listesi
+        public List<SubmitOfferItemInputModel> Items { get; set; } = new();
+    }
+
+    public class RequestItemDto
+    {
+        public int RequestItemID { get; set; }
+        public int RequestID { get; set; }
+        public int ItemOrder { get; set; }
+        public string ItemName { get; set; } = string.Empty;
+        public decimal Quantity { get; set; }
+        public string Unit { get; set; } = "Adet";
+        public decimal? EstimatedUnitPrice { get; set; }
+        public decimal? EstimatedTotalPrice => EstimatedUnitPrice.HasValue ? EstimatedUnitPrice.Value * Quantity : null;
+        public string? ItemDescription { get; set; }
+    }
+
+    public class RequestOfferItemDto
+    {
+        public int OfferItemID { get; set; }
+        public int OfferID { get; set; }
+        public int RequestItemID { get; set; }
+        public string ItemName { get; set; } = string.Empty;
+        public decimal Quantity { get; set; } = 1;
+        public string Unit { get; set; } = "Adet";
+        public decimal UnitPrice { get; set; }
+        public decimal LineTotal { get; set; }
+        public string? Notes { get; set; }
     }
 
     public class RequestOfferItemViewModel
@@ -78,6 +138,8 @@ namespace satinalmaportali2.Models
         public string? PreviousRejectionReason { get; set; }
         public bool IsAccepted => Status == "Kabul Edildi";
         public bool IsRejected => Status == "Reddedildi";
+
+        public List<RequestOfferItemDto> OfferItems { get; set; } = new();
     }
 
     public class RequestListItemViewModel
@@ -98,6 +160,9 @@ namespace satinalmaportali2.Models
         public int? CategoryID { get; set; }
         public DateTime? ApprovedDate { get; set; }
         public string? RejectionReason { get; set; }
+
+        public int ItemCount { get; set; } = 1;
+        public List<RequestItemDto> Items { get; set; } = new();
 
         public int OfferCount { get; set; }
         public decimal? BestOfferPrice { get; set; }
@@ -131,6 +196,9 @@ namespace satinalmaportali2.Models
         public DateTime? TargetDeliveryDate { get; set; }
         public DateTime? ApprovedDate { get; set; }
         public string? RejectionReason { get; set; }
+
+        public int ItemCount { get; set; } = 1;
+        public List<RequestItemDto> Items { get; set; } = new();
 
         public bool IsOwner { get; set; }
         public bool IsSupplier { get; set; }
@@ -186,6 +254,7 @@ namespace satinalmaportali2.Models
         public string ProductName { get; set; } = string.Empty;
         public int Quantity { get; set; }
         public decimal? EstimatedBudget { get; set; }
+        public int ItemCount { get; set; } = 1;
         public int OfferCount { get; set; }
         public string Status { get; set; } = "Beklemede";
     }
@@ -216,6 +285,8 @@ namespace satinalmaportali2.Models
         public bool IsFastestDelivery { get; set; }
         public decimal? BudgetVariancePct { get; set; }
         public decimal? SavingsAmountComparedToMax { get; set; }
+
+        public List<RequestOfferItemDto> OfferItems { get; set; } = new();
     }
 
     public class OfferComparisonViewModel
@@ -223,6 +294,7 @@ namespace satinalmaportali2.Models
         public Requests? SelectedRequest { get; set; }
         public List<RequestSelectorDto> AvailableRequests { get; set; } = new();
         public List<OfferComparisonItemDto> Offers { get; set; } = new();
+        public List<RequestItemDto> Items { get; set; } = new();
 
         public int TotalOfferCount => Offers.Count;
         public decimal? LowestOfferPrice { get; set; }

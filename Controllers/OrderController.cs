@@ -36,8 +36,45 @@ namespace satinalmaportali2.Controllers
             return 0;
         }
 
+        private static bool IsProductOwnedByCompany(ItemsModel item, int currentCompanyId, string currentCompanyName, Company? comp)
+        {
+            if (currentCompanyId <= 0 && string.IsNullOrWhiteSpace(currentCompanyName))
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(item.Properties) && currentCompanyId > 0)
+            {
+                if (item.Properties.Contains($"FirmaID: {currentCompanyId}") ||
+                    item.Properties.Contains($"CompanyID: {currentCompanyId}") ||
+                    item.Properties.Contains($"FirmaID:{currentCompanyId}") ||
+                    item.Properties.Contains($"CompanyID:{currentCompanyId}"))
+                {
+                    return true;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(item.Brand))
+            {
+                var brand = item.Brand.Trim();
+                if (!string.IsNullOrWhiteSpace(currentCompanyName) && string.Equals(brand, currentCompanyName.Trim(), StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                if (comp != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(comp.CompanyName) && string.Equals(brand, comp.CompanyName.Trim(), StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    if (!string.IsNullOrWhiteSpace(comp.CompanyOfficial) && string.Equals(brand, comp.CompanyOfficial.Trim(), StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    if (!string.IsNullOrWhiteSpace(comp.CompanyMail) && string.Equals(brand, comp.CompanyMail.Trim(), StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Doğrudan sepetteki ürünler veya hızlı satın alma için sipariş oluşturan AJAX endpoint.
+        /// Firma kendi satışa sunduğu ürünü satın alamaz.
         /// </summary>
         [HttpPost]
         public async Task<IActionResult> CreateOrder([FromBody] CreateOrderInputModel? input)
@@ -57,11 +94,12 @@ namespace satinalmaportali2.Controllers
                 int currentCompanyId = GetCurrentCompanyId();
                 string currentCompanyName = User.FindFirst("CompanyName")?.Value ?? "";
                 string currentEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? input.BuyerEmail ?? "";
+                Company? comp = null;
 
                 // Firma varlık doğrulaması
                 if (currentCompanyId > 0)
                 {
-                    var comp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId);
+                    comp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId);
                     if (comp != null)
                     {
                         if (string.IsNullOrWhiteSpace(currentCompanyName)) currentCompanyName = comp.CompanyName ?? comp.CompanyOfficial ?? "";
@@ -71,6 +109,23 @@ namespace satinalmaportali2.Controllers
                     else
                     {
                         currentCompanyId = 0;
+                    }
+                }
+
+                // Kendi ürününü satın alma kontrolü
+                var itemProductIds = input.Items.Where(i => i.ProductID > 0).Select(i => i.ProductID).Distinct().ToList();
+                if (itemProductIds.Any())
+                {
+                    var checkedDbItems = await _context.Items.AsNoTracking()
+                        .Where(i => itemProductIds.Contains(i.ItemID))
+                        .ToListAsync();
+
+                    foreach (var dbIt in checkedDbItems)
+                    {
+                        if (IsProductOwnedByCompany(dbIt, currentCompanyId, currentCompanyName, comp))
+                        {
+                            return Json(new { success = false, message = $"Kendi satışa sunduğunuz ürünü ({dbIt.ItemName}) satın alamazsınız." });
+                        }
                     }
                 }
 

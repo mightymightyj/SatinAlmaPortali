@@ -35,5 +35,7 @@ namespace satinalmaportali2.Models
 
         [ForeignKey("SupplierID")]
         public virtual Company? Supplier { get; set; }
+
+        public virtual ICollection<RequestOfferItem> OfferItems { get; set; } = new List<RequestOfferItem>();
     }
 }

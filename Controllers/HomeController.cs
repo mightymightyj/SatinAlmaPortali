@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using satinalmaportali2.Data;
+using satinalmaportali2.Hubs;
 using satinalmaportali2.Models;
 using satinalmaportali2.Services;
 using System.Diagnostics;
@@ -10,10 +12,12 @@ namespace satinalmaportali2.Controllers {
     public class HomeController : Controller {
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
+        private readonly IHubContext<PortalHub> _hubContext;
 
-        public HomeController(ApplicationDbContext context, EmailService emailService) {
+        public HomeController(ApplicationDbContext context, EmailService emailService, IHubContext<PortalHub> hubContext) {
             _context = context;
             _emailService = emailService;
+            _hubContext = hubContext;
         }
 
         public async Task<IActionResult> Index() {
@@ -51,6 +55,19 @@ namespace satinalmaportali2.Controllers {
                 var flatDropdownList = new List<HierarchicalCategoryItem>();
                 FlattenHierarchy(tree, flatDropdownList);
 
+                // Gerçek veritabanı istatistikleri
+                var totalBuyers = await _context.Companies.CountAsync(c => c.CompanyTypeID == 2 || c.CompanyTypeID == 3);
+                var totalSuppliers = await _context.Companies.CountAsync(c => c.CompanyTypeID == 1 || c.CompanyTypeID == 3);
+                var openRequests = await _context.Requests.CountAsync(r => r.Status == "Açık" || r.Status == "Beklemede" || r.Status == "İncelemede" || string.IsNullOrEmpty(r.Status));
+                var completedOffers = await _context.RequestOffers.CountAsync(o => o.Status == "Kabul Edildi" || o.Status == "Onaylandı");
+                var totalItems = await _context.Items.CountAsync();
+
+                ViewBag.TotalBuyers = totalBuyers;
+                ViewBag.TotalSuppliers = totalSuppliers;
+                ViewBag.OpenRequestsCount = openRequests;
+                ViewBag.CompletedOffersCount = completedOffers;
+                ViewBag.TotalItemsCount = totalItems;
+
                 ViewBag.CategoryTree = tree;
                 ViewBag.HierarchicalCategories = flatDropdownList;
                 ViewBag.Categories = dbCategories;
@@ -60,6 +77,11 @@ namespace satinalmaportali2.Controllers {
                 ViewBag.CategoryTree = new List<HierarchicalCategoryItem>();
                 ViewBag.HierarchicalCategories = new List<HierarchicalCategoryItem>();
                 ViewBag.Categories = new List<Category>();
+                ViewBag.TotalBuyers = 0;
+                ViewBag.TotalSuppliers = 0;
+                ViewBag.OpenRequestsCount = 0;
+                ViewBag.CompletedOffersCount = 0;
+                ViewBag.TotalItemsCount = 0;
             }
             return View();
         }
@@ -207,37 +229,86 @@ namespace satinalmaportali2.Controllers {
             return RedirectToAction("Iletisim");
         }
 
+        private async Task<(int companyId, string companyName, Company? company)> GetCurrentCompanyContextAsync()
+        {
+            string? currentCompanyName = User.FindFirst("CompanyName")?.Value;
+            string? idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("CompanyID");
+            int currentCompanyId = 0;
+            if (!string.IsNullOrEmpty(idClaim) && int.TryParse(idClaim, out int cid))
+            {
+                currentCompanyId = cid;
+            }
+
+            Company? comp = null;
+            if (currentCompanyId > 0)
+            {
+                comp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId);
+                if (string.IsNullOrWhiteSpace(currentCompanyName))
+                {
+                    currentCompanyName = comp?.CompanyName ?? comp?.CompanyOfficial;
+                }
+            }
+
+            return (currentCompanyId, currentCompanyName ?? string.Empty, comp);
+        }
+
+        public static bool IsProductOwnedByCompany(ItemsModel item, int currentCompanyId, string currentCompanyName, Company? comp)
+        {
+            if (currentCompanyId <= 0 && string.IsNullOrWhiteSpace(currentCompanyName))
+                return false;
+
+            // 1. Properties içindeki FirmaID kontrolü
+            if (!string.IsNullOrWhiteSpace(item.Properties) && currentCompanyId > 0)
+            {
+                if (item.Properties.Contains($"FirmaID: {currentCompanyId}") || 
+                    item.Properties.Contains($"CompanyID: {currentCompanyId}") ||
+                    item.Properties.Contains($"FirmaID:{currentCompanyId}") ||
+                    item.Properties.Contains($"CompanyID:{currentCompanyId}"))
+                {
+                    return true;
+                }
+            }
+
+            // 2. Brand alanı üzerinden firma adı / yetkili / e-posta eşleşmesi
+            if (!string.IsNullOrWhiteSpace(item.Brand))
+            {
+                var brand = item.Brand.Trim();
+                if (!string.IsNullOrWhiteSpace(currentCompanyName) && string.Equals(brand, currentCompanyName.Trim(), StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                if (comp != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(comp.CompanyName) && string.Equals(brand, comp.CompanyName.Trim(), StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    if (!string.IsNullOrWhiteSpace(comp.CompanyOfficial) && string.Equals(brand, comp.CompanyOfficial.Trim(), StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    if (!string.IsNullOrWhiteSpace(comp.CompanyMail) && string.Equals(brand, comp.CompanyMail.Trim(), StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>
-        /// Tedarikçi olarak kurumsal ürün ilanı ve toptan satış listeleme endpoint'i (AJAX)
+        /// Tedarikçinin vitrine doğrudan ürün/portföy ilanı eklemesini sağlayan AJAX endpoint'i
         /// </summary>
         [HttpPost]
         public async Task<IActionResult> SubmitSellerOffer([FromBody] CreateProductListingInputModel input)
         {
             if (input == null || string.IsNullOrWhiteSpace(input.ProductName) || input.UnitPrice <= 0)
             {
-                return Json(new { success = false, message = "Lütfen ürün adını ve geçerli bir birim fiyatı eksiksiz doldurunuz." });
+                return Json(new { success = false, message = "Lütfen ürün adını ve geçerli bir birim fiyat giriniz." });
             }
 
             try
             {
                 // 1. Oturum açmış firmanın bilgilerini tespit et
-                string? currentCompanyName = User.FindFirst("CompanyName")?.Value;
-                string? idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("CompanyID");
-                int currentCompanyId = 0;
-                if (!string.IsNullOrEmpty(idClaim) && int.TryParse(idClaim, out int cid))
-                {
-                    currentCompanyId = cid;
-                }
+                var (currentCompanyId, currentCompanyName, comp) = await GetCurrentCompanyContextAsync();
 
-                if (currentCompanyId > 0 && string.IsNullOrWhiteSpace(currentCompanyName))
-                {
-                    var comp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId);
-                    currentCompanyName = comp?.CompanyName ?? comp?.CompanyOfficial;
-                }
-
-                string finalBrand = !string.IsNullOrWhiteSpace(input.Brand) 
-                    ? input.Brand.Trim() 
-                    : (!string.IsNullOrWhiteSpace(currentCompanyName) ? currentCompanyName.Trim() : "Onaylı Tedarikçi");
+                string finalBrand = !string.IsNullOrWhiteSpace(currentCompanyName) 
+                    ? currentCompanyName.Trim() 
+                    : (!string.IsNullOrWhiteSpace(input.Brand) ? input.Brand.Trim() : "Onaylı Tedarikçi");
 
                 // 2. Kategori ID Çözümleme
                 int? finalCatId = input.CategoryID;
@@ -287,6 +358,16 @@ namespace satinalmaportali2.Controllers {
                     }
                 }
 
+                string propText = currentCompanyId > 0 ? $"FirmaID: {currentCompanyId}" : "";
+                if (!string.IsNullOrWhiteSpace(input.Properties))
+                {
+                    propText = string.IsNullOrEmpty(propText) ? input.Properties.Trim() : $"{propText} | {input.Properties.Trim()}";
+                }
+                else
+                {
+                    propText = string.IsNullOrEmpty(propText) ? $"Kategori: {finalCatName}" : $"{propText} | Kategori: {finalCatName}";
+                }
+
                 // 4. Veritabanına (items tablosu) yeni ürün kaydını ekle
                 var newItem = new ItemsModel
                 {
@@ -296,7 +377,7 @@ namespace satinalmaportali2.Controllers {
                     CategoryID = finalCatId,
                     Brand = finalBrand,
                     ItemDescryption = !string.IsNullOrWhiteSpace(input.ItemDescription) ? input.ItemDescription.Trim() : null,
-                    Properties = !string.IsNullOrWhiteSpace(input.Properties) ? input.Properties.Trim() : $"Kategori: {finalCatName}"
+                    Properties = propText
                 };
 
                 _context.Items.Add(newItem);
@@ -304,39 +385,53 @@ namespace satinalmaportali2.Controllers {
 
                 string formattedSku = $"SKU-B2B-{newItem.ItemID:D4}";
 
+                var productPayload = new
+                {
+                    id = newItem.ItemID,
+                    sku = formattedSku,
+                    title = newItem.ItemName,
+                    brand = finalBrand,
+                    seller = finalBrand,
+                    sellerScore = 9.9,
+                    sellerBadge = "Yeni İlan / Onaylı",
+                    sellerLocation = "Türkiye",
+                    category = finalCatName.ToLowerInvariant().Contains("metal") ? "metal" : 
+                               finalCatName.ToLowerInvariant().Contains("it") || finalCatName.ToLowerInvariant().Contains("bilişim") ? "it" :
+                               finalCatName.ToLowerInvariant().Contains("kimya") ? "chemical" : "hardware",
+                    categoryName = finalCatName,
+                    price = (decimal)(newItem.ItemPrice ?? 0),
+                    oldPrice = Math.Round((decimal)(newItem.ItemPrice ?? 0) * 1.18m, 0),
+                    discount = 15,
+                    moq = "1 Adet",
+                    unit = "Adet",
+                    taxText = "+ %20 KDV",
+                    stockStatus = $"{newItem.Quantity ?? 100} Adet Hazır Stok",
+                    leadTime = "1-2 İş Günü",
+                    tierPricing = $"1-4 Adet: {(decimal)(newItem.ItemPrice ?? 0):N0} ₺ | 5+ Adet: {Math.Round((decimal)(newItem.ItemPrice ?? 0) * 0.92m, 0):N0} ₺",
+                    image = !string.IsNullOrWhiteSpace(input.ImageUrl) 
+                        ? input.ImageUrl 
+                        : "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&auto=format&fit=crop&q=80",
+                    badge = "Doğrudan Üreticiden",
+                    badgeType = "manufacturer",
+                    sellerCompanyId = currentCompanyId,
+                    sellerCompanyName = currentCompanyName
+                };
+
+                // Asenkron SignalR yayını (Tüm bağlı alıcılara ve vitrine anında düşsün)
+                try
+                {
+                    await _hubContext.Clients.Group("group_global").SendAsync("OnProductListed", productPayload);
+                }
+                catch (Exception hubEx)
+                {
+                    Console.WriteLine($"SignalR OnProductListed error: {hubEx.Message}");
+                }
+
                 return Json(new
                 {
                     success = true,
                     message = $"🏢 \"{newItem.ItemName}\" ürün ilanınız [{finalCatName}] kategorisinde başarıyla yayına alındı.",
-                    item = new
-                    {
-                        id = newItem.ItemID,
-                        sku = formattedSku,
-                        title = newItem.ItemName,
-                        brand = finalBrand,
-                        seller = finalBrand,
-                        sellerScore = 9.9,
-                        sellerBadge = "Yeni İlan / Onaylı",
-                        sellerLocation = "Türkiye",
-                        category = finalCatName.ToLowerInvariant().Contains("metal") ? "metal" : 
-                                   finalCatName.ToLowerInvariant().Contains("it") || finalCatName.ToLowerInvariant().Contains("bilişim") ? "it" :
-                                   finalCatName.ToLowerInvariant().Contains("kimya") ? "chemical" : "hardware",
-                        categoryName = finalCatName,
-                        price = (decimal)(newItem.ItemPrice ?? 0),
-                        oldPrice = Math.Round((decimal)(newItem.ItemPrice ?? 0) * 1.18m, 0),
-                        discount = 15,
-                        moq = "1 Adet",
-                        unit = "Adet",
-                        taxText = "+ %20 KDV",
-                        stockStatus = $"{newItem.Quantity ?? 100} Adet Hazır Stok",
-                        leadTime = "1-2 İş Günü",
-                        tierPricing = $"1-4 Adet: {(decimal)(newItem.ItemPrice ?? 0):N0} ₺ | 5+ Adet: {Math.Round((decimal)(newItem.ItemPrice ?? 0) * 0.92m, 0):N0} ₺",
-                        image = !string.IsNullOrWhiteSpace(input.ImageUrl) 
-                            ? input.ImageUrl 
-                            : "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&auto=format&fit=crop&q=80",
-                        badge = "Doğrudan Üreticiden",
-                        badgeType = "manufacturer"
-                    }
+                    item = productPayload
                 });
             }
             catch (Exception ex)
@@ -360,29 +455,33 @@ namespace satinalmaportali2.Controllers {
 
             try
             {
-                string? idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("CompanyID");
-                int currentCompanyId = 0;
-                if (!string.IsNullOrEmpty(idClaim) && int.TryParse(idClaim, out int cid))
-                {
-                    currentCompanyId = cid;
-                }
-
-                if (currentCompanyId > 0)
-                {
-                    var compExists = await _context.Companies.AnyAsync(c => c.CompanyID == currentCompanyId);
-                    if (!compExists)
-                    {
-                        currentCompanyId = 0;
-                    }
-                }
+                var (currentCompanyId, currentCompanyName, comp) = await GetCurrentCompanyContextAsync();
 
                 string prodName = "Kurumsal Vitrin Ürünü";
+                Company? supplierCompany = null;
+
                 if (input.ProductID.HasValue && input.ProductID.Value > 0)
                 {
                     var item = await _context.Items.AsNoTracking().FirstOrDefaultAsync(i => i.ItemID == input.ProductID.Value);
-                    if (item != null && !string.IsNullOrWhiteSpace(item.ItemName))
+                    if (item != null)
                     {
-                        prodName = item.ItemName;
+                        // Kendi ürününe teklif isteme kontrolü
+                        if (IsProductOwnedByCompany(item, currentCompanyId, currentCompanyName, comp))
+                        {
+                            return Json(new { success = false, message = "Kendi satışa koyduğunuz ürün için teklif talebinde bulunamazsınız." });
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(item.ItemName))
+                        {
+                            prodName = item.ItemName;
+                        }
+
+                        // Tedarikçi firmayı tespit et
+                        if (!string.IsNullOrWhiteSpace(item.Brand))
+                        {
+                            supplierCompany = await _context.Companies.AsNoTracking()
+                                .FirstOrDefaultAsync(c => c.CompanyName != null && c.CompanyName.ToLower() == item.Brand.Trim().ToLower());
+                        }
                     }
                 }
 
@@ -414,6 +513,65 @@ namespace satinalmaportali2.Controllers {
 
                 string rfqCode = $"RFQ-{newRequest.RequestID:D4}";
 
+                // Asenkron SignalR & E-posta Bildirimleri
+                try
+                {
+                    var rfqPayload = new
+                    {
+                        requestId = newRequest.RequestID,
+                        requestCode = rfqCode,
+                        productName = prodName,
+                        quantity = input.Quantity,
+                        buyerInfo = input.BuyerCompany.Trim(),
+                        targetPrice = input.TargetPrice,
+                        targetPriceFormatted = input.TargetPrice.HasValue ? $"{input.TargetPrice.Value:N0} ₺" : "Belirtilmedi",
+                        paymentTerms = input.PaymentTerms ?? "",
+                        deliveryCity = input.DeliveryCity ?? "",
+                        requestDate = DateTime.UtcNow.ToString("dd.MM.yyyy HH:mm"),
+                        notes = finalNotes
+                    };
+
+                    if (supplierCompany != null && supplierCompany.CompanyID > 0)
+                    {
+                        await _hubContext.Clients.Group($"company_{supplierCompany.CompanyID}").SendAsync("OnRfqCreated", rfqPayload);
+
+                        // Asenkron e-posta bildirimi
+                        if (!string.IsNullOrWhiteSpace(supplierCompany.CompanyMail))
+                        {
+                            _ = Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    string subject = $"📋 Yeni Teklif Talebi (RFQ) Geldi: {rfqCode} - {prodName}";
+                                    string body = $@"<h3>Sayın {supplierCompany.CompanyName ?? supplierCompany.CompanyOfficial},</h3>
+<p>Portaldaki ürününüz için yeni bir kurumsal teklif talebi (RFQ) oluşturuldu.</p>
+<ul>
+    <li><strong>Talep Kodu:</strong> {rfqCode}</li>
+    <li><strong>Alıcı Firma:</strong> {input.BuyerCompany}</li>
+    <li><strong>Ürün:</strong> {prodName}</li>
+    <li><strong>İstenen Miktar:</strong> {input.Quantity} Adet</li>
+    <li><strong>Hedef Fiyat:</strong> {(input.TargetPrice.HasValue ? input.TargetPrice.Value.ToString("N0") + " ₺" : "Belirtilmedi")}</li>
+    <li><strong>Ödeme Koşulu:</strong> {input.PaymentTerms}</li>
+    <li><strong>Teslimat İli:</strong> {input.DeliveryCity}</li>
+</ul>
+<p>Talebi incelemek ve teklif vermek için yönetim panelinize giriş yapabilirsiniz.</p>";
+                                    await _emailService.SendEmailAsync(supplierCompany.CompanyMail, subject, body);
+                                }
+                                catch (Exception mailEx)
+                                {
+                                    Console.WriteLine($"RFQ Email Error: {mailEx.Message}");
+                                }
+                            });
+                        }
+                    }
+
+                    await _hubContext.Clients.Group("role_admin").SendAsync("OnRfqCreated", rfqPayload);
+                }
+                catch (Exception hubEx)
+                {
+                    Console.WriteLine($"SignalR SubmitQuoteRequest error: {hubEx.Message}");
+                }
+
                 return Json(new
                 {
                     success = true,
@@ -431,18 +589,27 @@ namespace satinalmaportali2.Controllers {
         }
 
         /// <summary>
-        /// Veritabanındaki kurumsal ilan ve ürünleri JSON formatında vitrin için listeler
+        /// Veritabanındaki kurumsal ilan ve ürünleri JSON formatında vitrin için listeler.
+        /// Oturum açmış firma kendi satışa sunduğu ürünleri anasayfa vitrininde görmez.
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetVitrinProductsJson()
         {
             try
             {
-                var items = await _context.Items
+                var (currentCompanyId, currentCompanyName, comp) = await GetCurrentCompanyContextAsync();
+
+                var allItems = await _context.Items
                     .AsNoTracking()
                     .OrderByDescending(i => i.ItemID)
-                    .Take(50)
+                    .Take(100)
                     .ToListAsync();
+
+                // Kendi ürünlerini filtrele (Anasayfada kendi ürünlerini görmesin)
+                var items = allItems
+                    .Where(it => !IsProductOwnedByCompany(it, currentCompanyId, currentCompanyName, comp))
+                    .Take(50)
+                    .ToList();
 
                 var catIds = items.Where(i => i.CategoryID.HasValue).Select(i => i.CategoryID!.Value).Distinct().ToList();
                 var catMap = await _context.Category
@@ -506,5 +673,29 @@ namespace satinalmaportali2.Controllers {
         public int Level { get; set; }
         public bool HasChildren { get; set; }
         public List<HierarchicalCategoryItem> Children { get; set; } = new();
+    }
+
+    public class CreateProductListingInputModel {
+        public string ProductName { get; set; } = string.Empty;
+        public int? CategoryID { get; set; }
+        public string? CategoryName { get; set; }
+        public decimal UnitPrice { get; set; }
+        public string? StockQuantity { get; set; }
+        public string? ItemDescription { get; set; }
+        public string? Brand { get; set; }
+        public string? Properties { get; set; }
+        public string? ImageUrl { get; set; }
+    }
+
+    public class SubmitVitrinQuoteInputModel {
+        public int? ProductID { get; set; }
+        public string BuyerCompany { get; set; } = string.Empty;
+        public string? BuyerTax { get; set; }
+        public int Quantity { get; set; }
+        public decimal? TargetPrice { get; set; }
+        public string? PaymentTerms { get; set; }
+        public string? DeliveryCity { get; set; }
+        public string? Notes { get; set; }
+        public bool SampleRequested { get; set; }
     }
 }

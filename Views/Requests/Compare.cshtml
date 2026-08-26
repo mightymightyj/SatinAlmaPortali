@@ -462,15 +462,15 @@
             <!-- Seçili Talep Detay Şeridi -->
             <div class="req-summary-grid">
                 <div class="req-info-block">
-                    <span class="req-info-label">Talep Kodu & Ürün Tanımı</span>
+                    <span class="req-info-label">Talep Kodu & Başlık</span>
                     <span class="req-info-value">REQ-@req.RequestID.ToString("D4"): @req.ProductName</span>
-                    <span class="req-info-sub">Kategori: @(req.RequestType ?? "Satın Alma") • Talep Tarihi: @(req.RequestDate?.ToString("dd.MM.yyyy") ?? "-")</span>
+                    <span class="req-info-sub">Kategori: @(req.RequestType ?? "Satın Alma") • @(Model.Items.Any() ? $"{Model.Items.Count} Kalem" : "1 Kalem")</span>
                 </div>
 
                 <div class="req-info-block">
-                    <span class="req-info-label">Talep Miktarı</span>
-                    <span class="req-info-value">@qty.ToString("N0") Adet</span>
-                    <span class="req-info-sub">Hedef Miktar</span>
+                    <span class="req-info-label">Toplam Talep Miktarı</span>
+                    <span class="req-info-value">@qty.ToString("N0") Birim</span>
+                    <span class="req-info-sub">Tüm Kalemler Toplamı</span>
                 </div>
 
                 <div class="req-info-block">
@@ -499,10 +499,44 @@
                 </div>
             </div>
 
+            @if (Model.Items != null && Model.Items.Any())
+            {
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px 16px;">
+                    <strong style="display: block; font-size: 0.84rem; color: #0F172A; margin-bottom: 8px;">📋 İstenilen Malzeme ve Hizmet Kalemleri (@Model.Items.Count Kalem):</strong>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid #E2E8F0; color: #64748B; text-align: left;">
+                                    <th style="padding: 6px 8px; width: 35px;">#</th>
+                                    <th style="padding: 6px 8px;">Kalem Adı</th>
+                                    <th style="padding: 6px 8px;">Miktar</th>
+                                    <th style="padding: 6px 8px;">Tahmini B. Fiyat</th>
+                                    <th style="padding: 6px 8px;">Tahmini Toplam</th>
+                                    <th style="padding: 6px 8px;">Şartname / Açıklama</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var it in Model.Items)
+                                {
+                                    <tr style="border-bottom: 1px solid #F1F5F9;">
+                                        <td style="padding: 6px 8px; font-weight: 700; color: #64748B;">@it.ItemOrder</td>
+                                        <td style="padding: 6px 8px;"><strong style="color: #0F172A;">@it.ItemName</strong></td>
+                                        <td style="padding: 6px 8px; font-weight: 600; color: #2563EB;">@it.Quantity.ToString("N0") @it.Unit</td>
+                                        <td style="padding: 6px 8px; color: #475569;">@(it.EstimatedUnitPrice.HasValue ? it.EstimatedUnitPrice.Value.ToString("N2") + " ₺" : "—")</td>
+                                        <td style="padding: 6px 8px; font-weight: 700; color: #059669;">@(it.EstimatedTotalPrice.HasValue ? it.EstimatedTotalPrice.Value.ToString("N2") + " ₺" : "—")</td>
+                                        <td style="padding: 6px 8px; color: #64748B; font-size: 0.78rem;">@(it.ItemDescription ?? "—")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
             @if (!string.IsNullOrWhiteSpace(req.Notes))
             {
                 <div style="background: #F8FAFC; padding: 10px 14px; border-radius: 8px; border: 1px solid #E2E8F0; font-size: 0.82rem; color: #475569;">
-                    <strong>Teknik Şartname & Notlar:</strong> @req.Notes
+                    <strong>Genel Teknik Şartname & Notlar:</strong> @req.Notes
                 </div>
             }
         }

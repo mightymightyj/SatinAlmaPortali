@@ -40,31 +40,56 @@
             // Toast Bildirimi Göster
             showRealtimeToast('📋 Yeni Satın Alma Talebi: ' + data.requestCode + ' - ' + data.productName, 'info');
 
+            var currentCompId = (window.CURRENT_USER_COMPANY_ID || document.body.getAttribute('data-current-company-id') || '').toString();
+            var isOwner = (data.senderId && currentCompId && data.senderId.toString() === currentCompId);
+
             // 1. Requests/Index Tablosuna Satır Ekle
-            var reqTbody = document.getElementById('requestsTableBody') || 
-                           (document.querySelector('.requests-table tbody'));
+            var reqTbody = document.getElementById('requestsTableBody') || document.querySelector('.req-data-table tbody');
             if (reqTbody) {
+                // Eğer "Talep Bulunamadı" boş mesaj satırı varsa kaldır
+                var emptyRow = reqTbody.querySelector('td[colspan]');
+                if (emptyRow) {
+                    emptyRow.parentElement.remove();
+                }
+
                 var newTr = document.createElement('tr');
                 newTr.className = 'realtime-updated';
                 newTr.setAttribute('data-request-id', data.requestId);
-                newTr.setAttribute('data-status', data.status);
-                newTr.setAttribute('data-category', data.category);
+                newTr.setAttribute('data-status', data.status || 'Beklemede');
+                newTr.setAttribute('data-product-name', data.productName || '');
+                newTr.setAttribute('data-is-owner', isOwner ? 'true' : 'false');
+                newTr.setAttribute('data-has-my-offer', 'false');
+
+                var buyerInitial = (data.buyerInfo && data.buyerInfo.length > 0) ? escapeHtml(data.buyerInfo[0].toUpperCase()) : 'A';
+                var itemCountBadge = data.itemCount && data.itemCount > 1 
+                    ? '<span style="display: inline-flex; align-items: center; gap: 3px; font-size: 0.70rem; font-weight: 700; color: #1D4ED8; background: #EFF6FF; border: 1px solid #BFDBFE; padding: 1px 7px; border-radius: 6px;" title="Bu talep ' + data.itemCount + ' kalem içermektedir">📋 ' + data.itemCount + ' Kalem</span>' 
+                    : '';
+
+                var hasBuyerHeader = document.querySelector('.req-data-table th:nth-child(2)')?.textContent?.includes('Alıcı');
+                var buyerTd = hasBuyerHeader !== false ? (
+                    '<td><div class="buyer-info-box">' +
+                    '<div class="buyer-avatar-circle">' + buyerInitial + '</div>' +
+                    '<div><span class="buyer-name-title">' + escapeHtml(data.buyerInfo || 'Kurumsal Alıcı') + '</span>' +
+                    (isOwner ? '<span style="display: inline-block; font-size: 0.70rem; font-weight: 700; color: #2563EB; background: #EFF6FF; padding: 1px 6px; border-radius: 4px;">Benim Talebim</span>' : '<span class="buyer-tag-sub">Kurumsal Alıcı</span>') +
+                    '</div></div></td>'
+                ) : '';
+
+                var actionBtn = isOwner 
+                    ? '<button type="button" class="btn-action-delete" title="Talebi Kalıcı Olarak Sil" onclick="handleDeleteRequest(' + data.requestId + ', event)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>'
+                    : '<button type="button" class="btn-action-bid" data-bid-btn-id="' + data.requestId + '" onclick="openOfferModal(' + data.requestId + ', \'' + escapeHtml(data.productName).replace(/'/g, "\\'") + '\', \'\', \'7\', \'\')">Teklif Ver</button>';
 
                 newTr.innerHTML = 
-                    '<td><span class="req-id-badge">' + escapeHtml(data.requestCode) + '</span></td>' +
-                    '<td><div class="req-title-wrap"><strong class="req-name">' + escapeHtml(data.productName) + '</strong>' +
-                    (data.notes ? '<small class="req-desc-sub">' + escapeHtml(data.notes.substring(0, 55)) + (data.notes.length > 55 ? '...' : '') + '</small>' : '') +
+                    '<td><div class="req-id-box"><span class="req-id-badge">#' + escapeHtml(data.requestCode) + '</span><span class="req-date-text">' + escapeHtml(data.requestDate) + '</span></div></td>' +
+                    buyerTd +
+                    '<td><div class="product-info-wrap"><div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"><strong class="product-name-text">' + escapeHtml(data.productName) + '</strong>' + itemCountBadge + '</div><div class="product-meta-row" style="margin-top: 3px;"><span class="type-chip">' + escapeHtml(data.category || 'Satın Alma') + '</span></div>' +
+                    (data.notes ? '<span class="product-notes-snippet" title="' + escapeHtml(data.notes) + '">💬 ' + escapeHtml(data.notes) + '</span>' : '') +
                     '</div></td>' +
-                    '<td><span class="category-badge-pill">' + escapeHtml(data.category) + '</span></td>' +
-                    '<td><div class="company-badge-wrap"><span class="company-name-text">' + escapeHtml(data.buyerInfo) + '</span></div></td>' +
-                    '<td><strong class="qty-text">' + Number(data.quantity).toLocaleString('tr-TR') + ' Adet</strong></td>' +
-                    '<td><span class="price-val text-muted">' + (data.estimatedBudgetFormatted || 'Belirtilmedi') + '</span></td>' +
-                    '<td><span class="offer-count-badge is-zero"><span class="dot"></span>0 Teklif</span></td>' +
-                    '<td><span class="badge-status is-pending">⏳ ' + escapeHtml(data.status) + '</span></td>' +
-                    '<td><span class="date-text">' + escapeHtml(data.requestDate) + '</span></td>' +
-                    '<td class="text-right"><div class="action-btn-group">' +
-                    '<button type="button" class="btn-action-primary" onclick="openDetailModal(' + data.requestId + ')">İncele & Teklif</button>' +
-                    '</div></td>';
+                    '<td><div class="quantity-budget-wrap"><span class="qty-chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>' + Number(data.quantity || 1).toLocaleString('tr-TR') + ' Adet</span>' +
+                    '<span class="budget-chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>' + escapeHtml(data.estimatedBudgetFormatted || 'Belirtilmedi') + '</span></div></td>' +
+                    '<td><div class="deadline-wrap"><span class="deadline-date-text">' + escapeHtml(data.targetDeliveryDate || 'Belirtilmedi') + '</span><span class="days-remaining-pill is-normal">Yeni Açıldı</span></div></td>' +
+                    '<td><div class="offers-cell-wrap"><button type="button" class="offers-interactive-pill is-empty" data-offer-pill-id="' + data.requestId + '" onclick="openDetailModal(' + data.requestId + ')" title="Talep Detayını İncele"><span class="pill-offer-count-text">Teklif Bekleniyor</span></button></div></td>' +
+                    '<td><div class="status-cell-wrap" data-status-wrap-id="' + data.requestId + '"><span class="status-dot-badge is-pending" data-status-badge-id="' + data.requestId + '"><span class="status-dot"></span>' + escapeHtml(data.status || 'Beklemede') + '</span></div></td>' +
+                    '<td style="text-align: right;"><div class="actions-cluster" data-actions-cluster-id="' + data.requestId + '">' + actionBtn + '</div></td>';
 
                 reqTbody.insertBefore(newTr, reqTbody.firstChild);
             }
@@ -72,34 +97,41 @@
             // 2. Buyer Dashboard Tablosuna Ekle
             var buyerTbody = document.querySelector('#buyerRequestsTable tbody');
             if (buyerTbody) {
+                var emptyBuyerRow = buyerTbody.querySelector('td[colspan]');
+                if (emptyBuyerRow) emptyBuyerRow.parentElement.remove();
+
                 var bTr = document.createElement('tr');
                 bTr.className = 'realtime-updated';
-                bTr.setAttribute('data-status', data.status);
+                bTr.setAttribute('data-status', data.status || 'Beklemede');
                 bTr.innerHTML = 
                     '<td><div class="req-title-cell"><span class="req-code">' + escapeHtml(data.requestCode) + '</span>' +
-                    '<strong class="req-name">' + escapeHtml(data.productName) + '</strong>' +
+                    '<strong class="req-name">' + escapeHtml(data.productName) + (data.itemCount > 1 ? ' (' + data.itemCount + ' Kalem)' : '') + '</strong>' +
                     '<small class="req-date">' + escapeHtml(data.requestDate) + '</small></div></td>' +
-                    '<td><span class="category-tag">' + escapeHtml(data.category) + '</span></td>' +
+                    '<td><span class="category-tag">' + escapeHtml(data.category || 'Satın Alma') + '</span></td>' +
                     '<td><strong class="budget-amount">' + (data.estimatedBudgetFormatted || 'Belirtilmedi') + '</strong></td>' +
-                    '<td><span class="status-badge badge-blue"><span class="status-dot"></span>' + escapeHtml(data.status) + '</span></td>' +
+                    '<td><span class="status-badge badge-blue"><span class="status-dot"></span>' + escapeHtml(data.status || 'Açık') + '</span></td>' +
                     '<td class="text-right"><a href="/Requests" class="btn-table-action">İncele</a></td>';
                 buyerTbody.insertBefore(bTr, buyerTbody.firstChild);
             }
 
-            // 3. Supplier RFQ Tablosuna Ekle
+            // 3. Supplier RFQ Tablosuna Ekle (Kendi talebi değilse)
             var suppTbody = document.querySelector('#supplierRfqTable tbody');
-            if (suppTbody) {
+            if (suppTbody && !isOwner) {
+                var emptySuppRow = suppTbody.querySelector('td[colspan]');
+                if (emptySuppRow) emptySuppRow.parentElement.remove();
+
                 var sTr = document.createElement('tr');
                 sTr.className = 'realtime-updated';
-                sTr.setAttribute('data-status', data.status);
+                sTr.setAttribute('data-status', data.status || 'Beklemede');
+                sTr.setAttribute('data-request-id', data.requestId);
+                sTr.setAttribute('data-rfq-code', data.requestCode);
                 sTr.innerHTML = 
-                    '<td><div class="req-title-cell"><span class="req-code">' + escapeHtml(data.requestCode) + '</span>' +
-                    '<strong class="req-name">' + escapeHtml(data.productName) + '</strong>' +
-                    '<small class="req-date">' + escapeHtml(data.buyerInfo) + '</small></div></td>' +
-                    '<td><span class="category-tag">' + escapeHtml(data.category) + '</span></td>' +
-                    '<td><strong class="budget-amount">' + (data.estimatedBudgetFormatted || 'Belirtilmedi') + '</strong></td>' +
-                    '<td><span class="status-badge badge-blue"><span class="status-dot"></span>Açık İhale</span></td>' +
-                    '<td class="text-right"><button type="button" class="btn-table-action" onclick="openOfferModal(\'' + data.requestCode + '\', \'' + escapeHtml(data.productName) + '\')">Teklif Ver</button></td>';
+                    '<td><div class="req-title-cell"><strong class="vendor-name">' + escapeHtml(data.buyerInfo || 'Kurumsal Alıcı') + '</strong><span class="req-code">' + escapeHtml(data.requestCode) + '</span></div></td>' +
+                    '<td><span class="req-name" title="' + escapeHtml(data.productName) + '">' + escapeHtml(data.productName) + '</span></td>' +
+                    '<td><strong>' + Number(data.quantity || 1).toLocaleString('tr-TR') + ' Adet</strong></td>' +
+                    '<td><div class="deadline-cell"><span>' + escapeHtml(data.targetDeliveryDate || 'Belirtilmedi') + '</span><small class="days-left-pill">Yeni Açıldı</small></div></td>' +
+                    '<td><span class="status-badge badge-amber" data-rfq-status-badge="' + data.requestId + '"><span class="status-dot"></span>Cevap Bekliyor</span></td>' +
+                    '<td class="text-right" data-rfq-action-cell="' + data.requestId + '"><button type="button" class="btn-table-action is-primary-action" onclick="openOfferModal(' + data.requestId + ', \'' + escapeHtml(data.productName).replace(/'/g, "\\'") + '\', \'\')">Teklif Ver</button></td>';
                 suppTbody.insertBefore(sTr, suppTbody.firstChild);
             }
 
@@ -112,6 +144,9 @@
         // B) YENİ TEKLİF VERİLDİĞİNDE VEYA REVİZE EDİLDİĞİNDE (OnOfferSubmitted)
         connection.on("OnOfferSubmitted", function (data) {
             console.log("[SignalR] Yeni Teklif Düştü:", data);
+            var currentCompId = (window.CURRENT_USER_COMPANY_ID || document.body.getAttribute('data-current-company-id') || '').toString();
+            var isMyBid = (data.isMyBid === true) || (data.supplierId && currentCompId && data.supplierId.toString() === currentCompId);
+            data.isMyBid = isMyBid;
             updatePortalDomForOfferSubmitted(data);
 
             // Eğer Talep Detay Modalı O Anda Bu Talep İçin Açıksa, Listeyi Dinamik Tazele
@@ -294,6 +329,75 @@
                 opt.textContent = data.categoryName;
                 sel.appendChild(opt);
             });
+        });
+
+        // M) YENİ ÜRÜN İLANI EKLENDİĞİNDE (OnProductListed)
+        connection.on("OnProductListed", function (item) {
+            console.log("[SignalR] Yeni Ürün İlanı Yayınlandı:", item);
+
+            // Mevcut kullanıcının firma ID / Adı kontrolü
+            var myCompId = window.CURRENT_USER_COMPANY_ID || (document.body ? document.body.getAttribute('data-current-company-id') : null);
+            var myCompName = window.CURRENT_USER_COMPANY_NAME || (document.body ? document.body.getAttribute('data-current-company-name') : null);
+
+            // Eğer ürünü ekleyen firma kendisiyse vitrine ekleme (kendi ürününü görmeme kuralı)
+            if (myCompId && item.sellerCompanyId && String(myCompId) === String(item.sellerCompanyId)) {
+                return;
+            }
+            if (myCompName && item.seller && myCompName.trim().toLowerCase() === item.seller.trim().toLowerCase()) {
+                return;
+            }
+
+            showRealtimeToast('🏢 Yeni Kurumsal İlan: ' + item.title + (item.price ? ' (' + Number(item.price).toLocaleString('tr-TR') + ' ₺)' : ''), 'info');
+
+            // Vitrin aktif ise vitrine anında ekle
+            if (typeof window.addRealtimeProductToVitrin === 'function') {
+                window.addRealtimeProductToVitrin(item);
+            } else if (typeof activeProducts !== 'undefined' && typeof renderCorporateVitrin === 'function') {
+                if (!activeProducts.some(function(p) { return p.id === item.id; })) {
+                    activeProducts.unshift(item);
+                    if (typeof B2B_PRODUCT_CATALOG !== 'undefined') B2B_PRODUCT_CATALOG.unshift(item);
+                    renderCorporateVitrin();
+                }
+            }
+
+            // Anasayfa toplam ürün sayacını artır
+            var counterEl = document.getElementById('totalProductsCount') || document.querySelector('.vitrin-total-count');
+            if (counterEl) {
+                var cVal = parseInt(counterEl.textContent.replace(/\D/g, '')) || 0;
+                counterEl.textContent = (cVal + 1) + ' Ürün';
+            }
+        });
+
+        // N) SEPET GÜNCELLENDİĞİNDE (OnCartUpdated - Çoklu Sekme / Cihaz Senkronizasyonu)
+        connection.on("OnCartUpdated", function (data) {
+            console.log("[SignalR] Sepet Senkronizasyon Sinyali:", data);
+            if (typeof window.syncCartFromSignalR === 'function') {
+                window.syncCartFromSignalR();
+            } else if (typeof initB2BCartSync === 'function') {
+                initB2BCartSync();
+            }
+        });
+
+        // O) YENİ RFQ TEKLİF TALEBİ GELDİĞİNDE (OnRfqCreated)
+        connection.on("OnRfqCreated", function (data) {
+            console.log("[SignalR] Yeni RFQ Talebi:", data);
+            showRealtimeToast('📋 Yeni RFQ Teklif Talebi: #' + data.requestCode + ' (' + data.productName + ') - ' + data.buyerInfo, 'info');
+
+            // RFQ tablosu açıksa satır ekle
+            var rfqTbody = document.querySelector('#supplierRfqTable tbody, #rfqRequestsTable tbody');
+            if (rfqTbody) {
+                var rTr = document.createElement('tr');
+                rTr.className = 'realtime-updated';
+                rTr.innerHTML = 
+                    '<td><div class="req-title-cell"><span class="req-code">' + escapeHtml(data.requestCode) + '</span>' +
+                    '<strong class="req-name">' + escapeHtml(data.productName) + '</strong>' +
+                    '<small class="req-date">' + escapeHtml(data.buyerInfo) + ' - ' + escapeHtml(data.requestDate) + '</small></div></td>' +
+                    '<td><span class="category-tag">Vitrin RFQ</span></td>' +
+                    '<td><strong class="budget-amount">' + escapeHtml(data.targetPriceFormatted || 'Belirtilmedi') + '</strong></td>' +
+                    '<td><span class="status-badge badge-blue"><span class="status-dot"></span>Açık RFQ</span></td>' +
+                    '<td class="text-right"><button type="button" class="btn-table-action" onclick="openOfferModal(\'' + data.requestCode + '\', \'' + escapeHtml(data.productName) + '\')">Teklif Ver</button></td>';
+                rfqTbody.insertBefore(rTr, rfqTbody.firstChild);
+            }
         });
 
         // =========================================================================

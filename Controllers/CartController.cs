@@ -4,8 +4,10 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using satinalmaportali2.Data;
+using satinalmaportali2.Hubs;
 using satinalmaportali2.Models;
 
 namespace satinalmaportali2.Controllers
@@ -13,10 +15,12 @@ namespace satinalmaportali2.Controllers
     public class CartController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IHubContext<PortalHub> _hubContext;
 
-        public CartController(ApplicationDbContext context)
+        public CartController(ApplicationDbContext context, IHubContext<PortalHub> hubContext)
         {
             _context = context;
+            _hubContext = hubContext;
         }
 
         private int GetCurrentCompanyId()
@@ -27,6 +31,58 @@ namespace satinalmaportali2.Controllers
                 return cid;
             }
             return 0;
+        }
+
+        private async Task<(int companyId, string companyName, Company? company)> GetCurrentCompanyContextAsync()
+        {
+            int companyId = GetCurrentCompanyId();
+            string currentCompanyName = User.FindFirst("CompanyName")?.Value ?? "";
+            Company? comp = null;
+            if (companyId > 0)
+            {
+                comp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == companyId);
+                if (string.IsNullOrWhiteSpace(currentCompanyName))
+                {
+                    currentCompanyName = comp?.CompanyName ?? comp?.CompanyOfficial ?? "";
+                }
+            }
+            return (companyId, currentCompanyName, comp);
+        }
+
+        private static bool IsProductOwnedByCompany(ItemsModel item, int currentCompanyId, string currentCompanyName, Company? comp)
+        {
+            if (currentCompanyId <= 0 && string.IsNullOrWhiteSpace(currentCompanyName))
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(item.Properties) && currentCompanyId > 0)
+            {
+                if (item.Properties.Contains($"FirmaID: {currentCompanyId}") ||
+                    item.Properties.Contains($"CompanyID: {currentCompanyId}") ||
+                    item.Properties.Contains($"FirmaID:{currentCompanyId}") ||
+                    item.Properties.Contains($"CompanyID:{currentCompanyId}"))
+                {
+                    return true;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(item.Brand))
+            {
+                var brand = item.Brand.Trim();
+                if (!string.IsNullOrWhiteSpace(currentCompanyName) && string.Equals(brand, currentCompanyName.Trim(), StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                if (comp != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(comp.CompanyName) && string.Equals(brand, comp.CompanyName.Trim(), StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    if (!string.IsNullOrWhiteSpace(comp.CompanyOfficial) && string.Equals(brand, comp.CompanyOfficial.Trim(), StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    if (!string.IsNullOrWhiteSpace(comp.CompanyMail) && string.Equals(brand, comp.CompanyMail.Trim(), StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
+            }
+
+            return false;
         }
 
         [HttpGet]
@@ -78,29 +134,55 @@ namespace satinalmaportali2.Controllers
         /// <summary>
         /// Tarayıcıdaki (localStorage) sepeti sunucudaki kullanıcı sepetiyle senkronize eder.
         /// Farklı cihaz veya tarayıcılardan giriş yapıldığında ürünlerin korunmasını sağlar.
+        /// Kullanıcının kendi satışa koyduğu ürünler sepete dahil edilmez.
         /// </summary>
         [HttpPost]
         public async Task<IActionResult> SyncCart([FromBody] List<CartItemInputModel>? localItems)
         {
             try
             {
-                int companyId = GetCurrentCompanyId();
+                var (companyId, currentCompanyName, comp) = await GetCurrentCompanyContextAsync();
                 if (companyId <= 0)
                 {
                     return Json(new { success = true, isAuthenticated = false, items = localItems ?? new List<CartItemInputModel>() });
+                }
+
+                // Firmanın kendi ürünleri varsa bunları localItems'tan ve veritabanı sepetinden temizle
+                var productIds = localItems != null ? localItems.Select(l => l.ProductID).Distinct().ToList() : new List<int>();
+                var ownDbItems = await _context.Items
+                    .AsNoTracking()
+                    .Where(i => productIds.Contains(i.ItemID))
+                    .ToListAsync();
+
+                var ownProductIds = ownDbItems
+                    .Where(i => IsProductOwnedByCompany(i, companyId, currentCompanyName, comp))
+                    .Select(i => i.ItemID)
+                    .ToHashSet();
+
+                if (localItems != null && ownProductIds.Any())
+                {
+                    localItems = localItems.Where(l => !ownProductIds.Contains(l.ProductID)).ToList();
                 }
 
                 var dbItems = await _context.CartItems
                     .Where(c => c.CompanyID == companyId)
                     .ToListAsync();
 
-                bool changes = false;
+                // Veritabanı sepetindeki olası kendi ürünlerini sil
+                var cartItemsToRemove = dbItems.Where(d => ownProductIds.Contains(d.ProductID)).ToList();
+                if (cartItemsToRemove.Any())
+                {
+                    _context.CartItems.RemoveRange(cartItemsToRemove);
+                    dbItems.RemoveAll(d => ownProductIds.Contains(d.ProductID));
+                }
+
+                bool changes = cartItemsToRemove.Any();
 
                 if (localItems != null && localItems.Any())
                 {
                     foreach (var lItem in localItems)
                     {
-                        if (lItem.ProductID <= 0) continue;
+                        if (lItem.ProductID <= 0 || ownProductIds.Contains(lItem.ProductID)) continue;
 
                         var existing = dbItems.FirstOrDefault(d => d.ProductID == lItem.ProductID);
                         if (existing != null)
@@ -169,6 +251,7 @@ namespace satinalmaportali2.Controllers
 
         /// <summary>
         /// Kullanıcının veritabanı sepetine ürün ekler veya miktarını artırır.
+        /// Firma kendi satışa sunduğu ürünü sepete ekleyemez.
         /// </summary>
         [HttpPost]
         public async Task<IActionResult> AddToCart([FromBody] CartItemInputModel? input)
@@ -180,7 +263,17 @@ namespace satinalmaportali2.Controllers
 
             try
             {
-                int companyId = GetCurrentCompanyId();
+                var (companyId, currentCompanyName, comp) = await GetCurrentCompanyContextAsync();
+
+                if (companyId > 0)
+                {
+                    var dbItem = await _context.Items.AsNoTracking().FirstOrDefaultAsync(i => i.ItemID == input.ProductID);
+                    if (dbItem != null && IsProductOwnedByCompany(dbItem, companyId, currentCompanyName, comp))
+                    {
+                        return Json(new { success = false, message = "Kendi satışa sunduğunuz ürünü sepete ekleyemez ve satın alamazsınız." });
+                    }
+                }
+
                 if (companyId <= 0)
                 {
                     return Json(new { success = true, isAuthenticated = false, message = "Misafir oturumu." });
@@ -216,6 +309,7 @@ namespace satinalmaportali2.Controllers
                 }
 
                 await _context.SaveChangesAsync();
+                await BroadcastCartUpdatedAsync(companyId);
                 return Json(new { success = true, isAuthenticated = true });
             }
             catch (Exception ex)
@@ -258,6 +352,7 @@ namespace satinalmaportali2.Controllers
                         item.UpdatedAt = DateTime.UtcNow;
                     }
                     await _context.SaveChangesAsync();
+                    await BroadcastCartUpdatedAsync(companyId);
                 }
 
                 return Json(new { success = true, isAuthenticated = true });
@@ -294,6 +389,7 @@ namespace satinalmaportali2.Controllers
                 {
                     _context.CartItems.Remove(item);
                     await _context.SaveChangesAsync();
+                    await BroadcastCartUpdatedAsync(companyId);
                 }
 
                 return Json(new { success = true, isAuthenticated = true });
@@ -326,6 +422,7 @@ namespace satinalmaportali2.Controllers
                 {
                     _context.CartItems.RemoveRange(items);
                     await _context.SaveChangesAsync();
+                    await BroadcastCartUpdatedAsync(companyId);
                 }
 
                 return Json(new { success = true, isAuthenticated = true });
@@ -333,6 +430,29 @@ namespace satinalmaportali2.Controllers
             catch (Exception ex)
             {
                 return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        private async Task BroadcastCartUpdatedAsync(int companyId)
+        {
+            if (companyId <= 0) return;
+            try
+            {
+                var cartItems = await _context.CartItems
+                    .AsNoTracking()
+                    .Where(c => c.CompanyID == companyId)
+                    .ToListAsync();
+
+                await _hubContext.Clients.Group($"company_{companyId}").SendAsync("OnCartUpdated", new
+                {
+                    companyId = companyId,
+                    uniqueItemCount = cartItems.Count,
+                    totalCount = cartItems.Sum(i => i.Quantity)
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"SignalR BroadcastCartUpdatedAsync error: {ex.Message}");
             }
         }
     }

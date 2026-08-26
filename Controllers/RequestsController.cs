@@ -137,9 +137,10 @@ namespace satinalmaportali2.Controllers
                     .AsNoTracking()
                     .ToDictionaryAsync(c => c.CompanyID, c => c.CompanyName ?? c.CompanyOfficial ?? $"Firma #{c.CompanyID}");
 
-                // Veritabanındaki gerçek talepleri ve teklifleri çek
+                // Veritabanındaki gerçek talepleri, kalemleri ve teklifleri çek
                 var dbRequests = await _context.Requests
                     .Include(r => r.Offers)
+                    .Include(r => r.Items)
                     .AsNoTracking()
                     .OrderByDescending(r => r.RequestDate)
                     .ToListAsync();
@@ -154,13 +155,28 @@ namespace satinalmaportali2.Controllers
 
                         string prodName = !string.IsNullOrWhiteSpace(req.ProductName)
                             ? req.ProductName
-                            : (!string.IsNullOrWhiteSpace(req.RequestType) ? req.RequestType : "Belirtilmemiş Ürün");
+                            : (!string.IsNullOrWhiteSpace(req.RequestType) ? req.RequestType : "Satın Alma Talebi");
 
                         bool isOwner = IsRequestOwnedByCurrentCompany(req, currentCompanyId, currentCompany);
                         var myOffer = currentCompanyId > 0 ? req.Offers.FirstOrDefault(o => o.SupplierID == currentCompanyId) : null;
                         var bestOffer = req.Offers.Any() ? req.Offers.Min(o => o.OfferedPrice) : (decimal?)null;
                         var (cleanNotes, myRejectionReason, _, _, _) = ParseSupplierNotes(myOffer?.SupplierNotes);
                         int revisedOffersCount = req.Offers.Count(o => ParseSupplierNotes(o.SupplierNotes).IsRevised);
+
+                        var itemsList = req.Items.OrderBy(i => i.ItemOrder).Select(i => new RequestItemDto
+                        {
+                            RequestItemID = i.RequestItemID,
+                            RequestID = i.RequestID,
+                            ItemOrder = i.ItemOrder,
+                            ItemName = i.ItemName,
+                            Quantity = i.Quantity,
+                            Unit = i.Unit ?? "Adet",
+                            EstimatedUnitPrice = i.EstimatedUnitPrice,
+                            ItemDescription = i.ItemDescription
+                        }).ToList();
+
+                        int itemCount = itemsList.Count > 0 ? itemsList.Count : 1;
+                        int totalQty = itemsList.Count > 0 ? (int)Math.Round(itemsList.Sum(i => i.Quantity)) : (req.Quantity ?? 1);
 
                         requestList.Add(new RequestListItemViewModel
                         {
@@ -170,7 +186,9 @@ namespace satinalmaportali2.Controllers
                             RecieverID = req.RecieverID,
                             BuyerInfo = buyerName,
                             ProductName = prodName,
-                            Quantity = req.Quantity ?? 1,
+                            Quantity = totalQty,
+                            ItemCount = itemCount,
+                            Items = itemsList,
                             RequestType = !string.IsNullOrWhiteSpace(req.RequestType) ? req.RequestType : "Satın Alma",
                             Status = !string.IsNullOrWhiteSpace(req.Status) ? req.Status : "Beklemede",
                             Notes = req.Notes,
@@ -232,7 +250,8 @@ namespace satinalmaportali2.Controllers
                     r.BuyerInfo.ToLower().Contains(query) ||
                     r.ProductName.ToLower().Contains(query) ||
                     r.RequestType.ToLower().Contains(query) ||
-                    (r.Notes != null && r.Notes.ToLower().Contains(query))
+                    (r.Notes != null && r.Notes.ToLower().Contains(query)) ||
+                    r.Items.Any(i => i.ItemName.ToLower().Contains(query) || (i.ItemDescription != null && i.ItemDescription.ToLower().Contains(query)))
                 ).ToList();
             }
 
@@ -269,15 +288,17 @@ namespace satinalmaportali2.Controllers
         }
 
         /// <summary>
-        /// Yeni Talep Oluşturma POST Action
+        /// Yeni Talep Oluşturma POST Action (İstenilenler Listesi Desteği ile)
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateRequestInputModel input)
         {
-            if (!ModelState.IsValid)
+            var validItems = input.Items != null ? input.Items.Where(i => !string.IsNullOrWhiteSpace(i.ItemName) && i.Quantity > 0).ToList() : new List<CreateRequestItemInputModel>();
+
+            if (validItems.Count == 0 && string.IsNullOrWhiteSpace(input.ProductName))
             {
-                TempData["ErrorMessage"] = "Lütfen tüm zorunlu alanları (Ürün Adı ve Adet) doldurunuz.";
+                TempData["ErrorMessage"] = "Lütfen talep başlığı veya en az 1 istenilen ürün/hizmet kalemi ekleyiniz.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -288,27 +309,74 @@ namespace satinalmaportali2.Controllers
                 string companyName = currentCompany?.CompanyName ?? currentCompany?.CompanyOfficial ?? GetCurrentCompanyName();
                 string finalBuyerInfo = !string.IsNullOrWhiteSpace(companyName) ? companyName : (!string.IsNullOrWhiteSpace(input.BuyerInfo) ? input.BuyerInfo : "Kurumsal Alıcı");
 
+                string finalTitle = !string.IsNullOrWhiteSpace(input.ProductName) 
+                    ? input.ProductName.Trim() 
+                    : (validItems.Count > 0 ? (validItems[0].ItemName + (validItems.Count > 1 ? $" ve {validItems.Count - 1} diğer kalem" : "")) : "Satın Alma Talebi");
+
+                int totalQuantity = validItems.Count > 0 ? (int)Math.Round(validItems.Sum(i => i.Quantity)) : (input.Quantity > 0 ? input.Quantity : 1);
+
+                decimal? totalEstimatedBudget = input.EstimatedBudget;
+                if (!totalEstimatedBudget.HasValue || totalEstimatedBudget.Value <= 0)
+                {
+                    decimal calcBudget = validItems.Sum(i => (i.EstimatedUnitPrice ?? 0) * i.Quantity);
+                    if (calcBudget > 0)
+                    {
+                        totalEstimatedBudget = calcBudget;
+                    }
+                }
+
                 var newRequest = new Requests
                 {
                     RequestDate = DateTime.UtcNow,
                     SenderID = currentCompanyId > 0 ? currentCompanyId : null,
                     BuyerInfo = finalBuyerInfo,
-                    ProductName = input.ProductName,
-                    Quantity = input.Quantity,
+                    ProductName = finalTitle,
+                    Quantity = totalQuantity,
                     RequestType = string.IsNullOrWhiteSpace(input.RequestType) ? "Satın Alma" : input.RequestType,
                     CategoryID = input.CategoryID,
-                    EstimatedBudget = input.EstimatedBudget,
+                    EstimatedBudget = totalEstimatedBudget,
                     TargetDeliveryDate = input.TargetDeliveryDate,
                     Status = "Beklemede",
                     Notes = input.Notes
                 };
+
+                if (validItems.Count > 0)
+                {
+                    int order = 1;
+                    foreach (var item in validItems)
+                    {
+                        newRequest.Items.Add(new RequestItem
+                        {
+                            ItemOrder = order++,
+                            ItemName = item.ItemName.Trim(),
+                            Quantity = item.Quantity,
+                            Unit = string.IsNullOrWhiteSpace(item.Unit) ? "Adet" : item.Unit.Trim(),
+                            EstimatedUnitPrice = item.EstimatedUnitPrice,
+                            ItemDescription = item.ItemDescription?.Trim(),
+                            CreatedAt = DateTime.UtcNow
+                        });
+                    }
+                }
+                else
+                {
+                    newRequest.Items.Add(new RequestItem
+                    {
+                        ItemOrder = 1,
+                        ItemName = finalTitle,
+                        Quantity = totalQuantity,
+                        Unit = "Adet",
+                        EstimatedUnitPrice = totalEstimatedBudget.HasValue && totalQuantity > 0 ? totalEstimatedBudget.Value / totalQuantity : null,
+                        ItemDescription = input.Notes,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
 
                 _context.Requests.Add(newRequest);
                 await _context.SaveChangesAsync();
 
                 await BroadcastRequestCreatedAsync(newRequest);
 
-                TempData["SuccessMessage"] = $"'{input.ProductName}' ürün talebiniz ({input.Quantity} Adet) başarıyla oluşturuldu ve tedarikçilere açıldı!";
+                TempData["SuccessMessage"] = $"'{finalTitle}' talebiniz ({newRequest.Items.Count} Kalem, Toplam {totalQuantity} Birim) başarıyla oluşturuldu ve tedarikçilere açıldı!";
             }
             catch (Exception ex)
             {
@@ -320,14 +388,21 @@ namespace satinalmaportali2.Controllers
         }
 
         /// <summary>
-        /// Dashboard veya sayfa üzerinden AJAX ile Talep Oluşturma Endpoint'i
+        /// Dashboard veya sayfa üzerinden AJAX ile Talep Oluşturma Endpoint'i (İstenilenler Listesi Desteği ile)
         /// </summary>
         [HttpPost]
         public async Task<IActionResult> CreateAjax([FromBody] CreateRequestInputModel input)
         {
-            if (input == null || string.IsNullOrWhiteSpace(input.ProductName) || input.Quantity <= 0)
+            if (input == null)
             {
-                return Json(new { success = false, message = "Lütfen ürün adı ve geçerli bir miktar giriniz." });
+                return Json(new { success = false, message = "Geçersiz talep verisi." });
+            }
+
+            var validItems = input.Items != null ? input.Items.Where(i => !string.IsNullOrWhiteSpace(i.ItemName) && i.Quantity > 0).ToList() : new List<CreateRequestItemInputModel>();
+
+            if (validItems.Count == 0 && string.IsNullOrWhiteSpace(input.ProductName))
+            {
+                return Json(new { success = false, message = "Lütfen bir talep başlığı veya en az 1 istenilen ürün/hizmet kalemi ekleyiniz." });
             }
 
             try
@@ -337,20 +412,67 @@ namespace satinalmaportali2.Controllers
                 string companyName = currentCompany?.CompanyName ?? currentCompany?.CompanyOfficial ?? GetCurrentCompanyName();
                 string finalBuyerInfo = !string.IsNullOrWhiteSpace(companyName) ? companyName : (!string.IsNullOrWhiteSpace(input.BuyerInfo) ? input.BuyerInfo : "Kurumsal Alıcı");
 
+                string finalTitle = !string.IsNullOrWhiteSpace(input.ProductName) 
+                    ? input.ProductName.Trim() 
+                    : (validItems.Count > 0 ? (validItems[0].ItemName + (validItems.Count > 1 ? $" ve {validItems.Count - 1} diğer kalem" : "")) : "Satın Alma Talebi");
+
+                int totalQuantity = validItems.Count > 0 ? (int)Math.Round(validItems.Sum(i => i.Quantity)) : (input.Quantity > 0 ? input.Quantity : 1);
+
+                decimal? totalEstimatedBudget = input.EstimatedBudget;
+                if (!totalEstimatedBudget.HasValue || totalEstimatedBudget.Value <= 0)
+                {
+                    decimal calcBudget = validItems.Sum(i => (i.EstimatedUnitPrice ?? 0) * i.Quantity);
+                    if (calcBudget > 0)
+                    {
+                        totalEstimatedBudget = calcBudget;
+                    }
+                }
+
                 var newRequest = new Requests
                 {
                     RequestDate = DateTime.UtcNow,
                     SenderID = currentCompanyId > 0 ? currentCompanyId : null,
                     BuyerInfo = finalBuyerInfo,
-                    ProductName = input.ProductName,
-                    Quantity = input.Quantity,
+                    ProductName = finalTitle,
+                    Quantity = totalQuantity,
                     RequestType = string.IsNullOrWhiteSpace(input.RequestType) ? "Satın Alma" : input.RequestType,
                     CategoryID = input.CategoryID,
-                    EstimatedBudget = input.EstimatedBudget,
+                    EstimatedBudget = totalEstimatedBudget,
                     TargetDeliveryDate = input.TargetDeliveryDate,
                     Status = "Beklemede",
                     Notes = input.Notes
                 };
+
+                if (validItems.Count > 0)
+                {
+                    int order = 1;
+                    foreach (var item in validItems)
+                    {
+                        newRequest.Items.Add(new RequestItem
+                        {
+                            ItemOrder = order++,
+                            ItemName = item.ItemName.Trim(),
+                            Quantity = item.Quantity,
+                            Unit = string.IsNullOrWhiteSpace(item.Unit) ? "Adet" : item.Unit.Trim(),
+                            EstimatedUnitPrice = item.EstimatedUnitPrice,
+                            ItemDescription = item.ItemDescription?.Trim(),
+                            CreatedAt = DateTime.UtcNow
+                        });
+                    }
+                }
+                else
+                {
+                    newRequest.Items.Add(new RequestItem
+                    {
+                        ItemOrder = 1,
+                        ItemName = finalTitle,
+                        Quantity = totalQuantity,
+                        Unit = "Adet",
+                        EstimatedUnitPrice = totalEstimatedBudget.HasValue && totalQuantity > 0 ? totalEstimatedBudget.Value / totalQuantity : null,
+                        ItemDescription = input.Notes,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
 
                 _context.Requests.Add(newRequest);
                 await _context.SaveChangesAsync();
@@ -361,7 +483,9 @@ namespace satinalmaportali2.Controllers
                 {
                     success = true,
                     requestId = newRequest.RequestID,
-                    message = $"'{newRequest.ProductName}' talebi başarıyla oluşturuldu!"
+                    itemCount = newRequest.Items.Count,
+                    totalQuantity = totalQuantity,
+                    message = $"'{newRequest.ProductName}' talebi ({newRequest.Items.Count} Kalem) başarıyla oluşturuldu!"
                 });
             }
             catch (Exception ex)
@@ -549,7 +673,10 @@ namespace satinalmaportali2.Controllers
 
                 var currentCompany = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId);
 
-                var request = await _context.Requests.Include(r => r.Offers).FirstOrDefaultAsync(r => r.RequestID == input.RequestID);
+                var request = await _context.Requests
+                    .Include(r => r.Offers)
+                    .Include(r => r.Items)
+                    .FirstOrDefaultAsync(r => r.RequestID == input.RequestID);
                 if (request == null)
                 {
                     return Json(new { success = false, message = "Talep bulunamadı." });
@@ -570,7 +697,25 @@ namespace satinalmaportali2.Controllers
                     return Json(new { success = false, message = "Bu talep sonuçlanmış veya kapatılmış olduğu için teklif verilemez / düzenlenemez." });
                 }
 
+                // Kalemler gönderildiyse toplam fiyatı hesapla/doğrula
+                decimal calculatedTotalPrice = input.OfferedPrice;
+                if (input.Items != null && input.Items.Any(i => i.UnitPrice > 0))
+                {
+                    decimal sumLineTotals = 0;
+                    foreach (var it in input.Items)
+                    {
+                        var reqItem = request.Items.FirstOrDefault(ri => ri.RequestItemID == it.RequestItemID);
+                        decimal qty = reqItem?.Quantity ?? 1;
+                        sumLineTotals += (it.UnitPrice * qty);
+                    }
+                    if (sumLineTotals > 0)
+                    {
+                        calculatedTotalPrice = sumLineTotals;
+                    }
+                }
+
                 var existingOffer = await _context.RequestOffers
+                    .Include(o => o.OfferItems)
                     .FirstOrDefaultAsync(o => o.RequestID == input.RequestID && o.SupplierID == currentCompanyId);
 
                 if (existingOffer != null)
@@ -590,7 +735,7 @@ namespace satinalmaportali2.Controllers
                     decimal prevPrice = existingOffer.OfferedPrice;
                     string prevRej = parsedPrev.RejectionReason ?? parsedPrev.PreviousRejectionReason ?? "Alıcı tarafından reddedildi";
 
-                    existingOffer.OfferedPrice = input.OfferedPrice;
+                    existingOffer.OfferedPrice = calculatedTotalPrice;
                     existingOffer.DeliveryDays = input.DeliveryDays;
                     existingOffer.ValidityDays = input.ValidityDays;
                     existingOffer.OfferDate = DateTime.UtcNow;
@@ -607,6 +752,34 @@ namespace satinalmaportali2.Controllers
                         existingOffer.SupplierNotes = input.SupplierNotes;
                     }
 
+                    // Kalem bazlı teklifleri güncelle
+                    if (existingOffer.OfferItems != null && existingOffer.OfferItems.Any())
+                    {
+                        _context.RequestOfferItems.RemoveRange(existingOffer.OfferItems);
+                    }
+
+                    existingOffer.OfferItems ??= new List<RequestOfferItem>();
+
+                    if (input.Items != null && input.Items.Any())
+                    {
+                        foreach (var it in input.Items)
+                        {
+                            if (it.UnitPrice >= 0)
+                            {
+                                var reqItem = request.Items?.FirstOrDefault(ri => ri.RequestItemID == it.RequestItemID);
+                                decimal qty = reqItem?.Quantity ?? 1;
+                                existingOffer.OfferItems.Add(new RequestOfferItem
+                                {
+                                    OfferID = existingOffer.OfferID,
+                                    RequestItemID = it.RequestItemID,
+                                    UnitPrice = it.UnitPrice,
+                                    LineTotal = it.UnitPrice * qty,
+                                    Notes = it.Notes?.Trim()
+                                });
+                            }
+                        }
+                    }
+
                     if (request.Status == "Beklemede")
                     {
                         request.Status = "Teklif Alındı";
@@ -620,8 +793,8 @@ namespace satinalmaportali2.Controllers
                     {
                         success = true,
                         message = wasRejected
-                            ? $"Reddedilen teklifiniz {input.OfferedPrice:N2} ₺ olarak revize edildi ve alıcıya tekrar iletildi!"
-                            : $"Teklifiniz {input.OfferedPrice:N2} ₺ olarak başarıyla güncellendi!"
+                            ? $"Reddedilen teklifiniz {calculatedTotalPrice:N2} ₺ olarak revize edildi ve alıcıya tekrar iletildi!"
+                            : $"Teklifiniz {calculatedTotalPrice:N2} ₺ olarak başarıyla güncellendi!"
                     });
                 }
                 else
@@ -630,7 +803,7 @@ namespace satinalmaportali2.Controllers
                     {
                         RequestID = input.RequestID,
                         SupplierID = currentCompanyId,
-                        OfferedPrice = input.OfferedPrice,
+                        OfferedPrice = calculatedTotalPrice,
                         DeliveryDays = input.DeliveryDays,
                         ValidityDays = input.ValidityDays,
                         OfferDate = DateTime.UtcNow,
@@ -638,6 +811,29 @@ namespace satinalmaportali2.Controllers
                         SupplierNotes = input.SupplierNotes
                     };
                     _context.RequestOffers.Add(newOffer);
+                    await _context.SaveChangesAsync(); // OfferID üretilmesi için
+
+                    // Kalem bazlı teklifleri ekle
+                    if (input.Items != null && input.Items.Any())
+                    {
+                        foreach (var it in input.Items)
+                        {
+                            if (it.UnitPrice >= 0)
+                            {
+                                var reqItem = request.Items.FirstOrDefault(ri => ri.RequestItemID == it.RequestItemID);
+                                decimal qty = reqItem?.Quantity ?? 1;
+                                _context.RequestOfferItems.Add(new RequestOfferItem
+                                {
+                                    OfferID = newOffer.OfferID,
+                                    RequestItemID = it.RequestItemID,
+                                    UnitPrice = it.UnitPrice,
+                                    LineTotal = it.UnitPrice * qty,
+                                    Notes = it.Notes?.Trim()
+                                });
+                            }
+                        }
+                        await _context.SaveChangesAsync();
+                    }
 
                     if (request.Status == "Beklemede")
                     {
@@ -648,7 +844,7 @@ namespace satinalmaportali2.Controllers
                     await TriggerOfferReceivedEmailNotificationAsync(request, currentCompany, input);
                     await BroadcastOfferSubmittedAsync(request, newOffer, currentCompany, false, null);
 
-                    return Json(new { success = true, message = $"{input.OfferedPrice:N2} ₺ tutarındaki teklifiniz başarıyla iletildi!" });
+                    return Json(new { success = true, message = $"{calculatedTotalPrice:N2} ₺ tutarındaki teklifiniz başarıyla iletildi!" });
                 }
             }
             catch (Exception ex)
@@ -662,13 +858,28 @@ namespace satinalmaportali2.Controllers
         {
             try
             {
+                var itemsDto = newRequest.Items.OrderBy(i => i.ItemOrder).Select(i => new
+                {
+                    requestItemId = i.RequestItemID,
+                    itemName = i.ItemName,
+                    quantity = i.Quantity,
+                    unit = i.Unit,
+                    estimatedUnitPrice = i.EstimatedUnitPrice,
+                    itemDescription = i.ItemDescription
+                }).ToList();
+
+                int itemCount = itemsDto.Count > 0 ? itemsDto.Count : 1;
+                int totalQuantity = newRequest.Quantity ?? (itemsDto.Count > 0 ? (int)Math.Round(itemsDto.Sum(i => i.quantity)) : 1);
+
                 await _hubContext.Clients.All.SendAsync("OnRequestCreated", new
                 {
                     requestId = newRequest.RequestID,
                     requestCode = $"REQ-{newRequest.RequestID:D4}",
                     productName = newRequest.ProductName ?? "Satın Alma Talebi",
                     category = newRequest.RequestType ?? "Satın Alma",
-                    quantity = newRequest.Quantity ?? 1,
+                    quantity = totalQuantity,
+                    itemCount = itemCount,
+                    items = itemsDto,
                     estimatedBudget = newRequest.EstimatedBudget,
                     estimatedBudgetFormatted = newRequest.EstimatedBudget.HasValue ? newRequest.EstimatedBudget.Value.ToString("N2") + " ₺" : "Belirtilmedi",
                     senderId = newRequest.SenderID,
@@ -1496,17 +1707,32 @@ namespace satinalmaportali2.Controllers
         /// Talep Detayları ve Gelen Teklifleri JSON olarak döndüren Endpoint (Modal için)
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> GetRequestDetails(int id)
+        public async Task<IActionResult> GetRequestDetails(string id)
         {
             try
             {
+                int numericId = 0;
+                if (!int.TryParse(id, out numericId))
+                {
+                    var digitsOnly = new string((id ?? "").Where(char.IsDigit).ToArray());
+                    int.TryParse(digitsOnly, out numericId);
+                }
+
+                if (numericId <= 0)
+                {
+                    return Json(new { success = false, message = "Geçersiz talep numarası." });
+                }
+
                 int currentCompanyId = GetCurrentCompanyId();
 
                 var req = await _context.Requests
                     .Include(r => r.Offers)
                         .ThenInclude(o => o.Supplier)
+                    .Include(r => r.Offers)
+                        .ThenInclude(o => o.OfferItems)
+                    .Include(r => r.Items)
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(r => r.RequestID == id);
+                    .FirstOrDefaultAsync(r => r.RequestID == numericId);
 
                 if (req == null)
                 {
@@ -1516,10 +1742,52 @@ namespace satinalmaportali2.Controllers
                 var currentCompany = currentCompanyId > 0 ? await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId) : null;
                 bool isOwner = IsRequestOwnedByCurrentCompany(req, currentCompanyId, currentCompany);
 
+                var itemsList = req.Items.OrderBy(i => i.ItemOrder).Select(i => new
+                {
+                    requestItemId = i.RequestItemID,
+                    itemOrder = i.ItemOrder,
+                    itemName = i.ItemName,
+                    quantity = i.Quantity,
+                    unit = i.Unit ?? "Adet",
+                    estimatedUnitPrice = i.EstimatedUnitPrice,
+                    estimatedUnitPriceFormatted = i.EstimatedUnitPrice.HasValue ? i.EstimatedUnitPrice.Value.ToString("N2") + " ₺" : null,
+                    estimatedTotalPrice = i.EstimatedUnitPrice.HasValue ? (i.EstimatedUnitPrice.Value * i.Quantity) : (decimal?)null,
+                    estimatedTotalPriceFormatted = i.EstimatedUnitPrice.HasValue ? (i.EstimatedUnitPrice.Value * i.Quantity).ToString("N2") + " ₺" : null,
+                    itemDescription = i.ItemDescription ?? ""
+                }).ToList();
+
+                if (itemsList.Count == 0 && !string.IsNullOrWhiteSpace(req.ProductName))
+                {
+                    itemsList.Add(new
+                    {
+                        requestItemId = 0,
+                        itemOrder = 1,
+                        itemName = req.ProductName,
+                        quantity = (decimal)(req.Quantity ?? 1),
+                        unit = "Adet",
+                        estimatedUnitPrice = req.EstimatedBudget.HasValue && req.Quantity > 0 ? (req.EstimatedBudget.Value / req.Quantity.Value) : (decimal?)null,
+                        estimatedUnitPriceFormatted = req.EstimatedBudget.HasValue && req.Quantity > 0 ? (req.EstimatedBudget.Value / req.Quantity.Value).ToString("N2") + " ₺" : null,
+                        estimatedTotalPrice = req.EstimatedBudget,
+                        estimatedTotalPriceFormatted = req.EstimatedBudget.HasValue ? req.EstimatedBudget.Value.ToString("N2") + " ₺" : null,
+                        itemDescription = req.Notes ?? ""
+                    });
+                }
+
                 var offersList = req.Offers.Select(o =>
                 {
                     var parsed = ParseSupplierNotes(o.SupplierNotes);
                     var fallbackReason = o.Status == "Reddedildi" ? (parsed.RejectionReason ?? "Talep için başka bir tedarikçinin teklifi kabul edildi.") : null;
+
+                    var offerItemsList = (o.OfferItems ?? new List<RequestOfferItem>()).Select(oi => new
+                    {
+                        offerItemId = oi.OfferItemID,
+                        requestItemId = oi.RequestItemID,
+                        unitPrice = oi.UnitPrice,
+                        unitPriceFormatted = oi.UnitPrice.ToString("N2") + " ₺",
+                        lineTotal = oi.LineTotal,
+                        lineTotalFormatted = oi.LineTotal.ToString("N2") + " ₺",
+                        notes = oi.Notes ?? ""
+                    }).ToList();
 
                     return new
                     {
@@ -1540,11 +1808,14 @@ namespace satinalmaportali2.Controllers
                         previousPrice = parsed.PreviousPrice,
                         previousPriceFormatted = parsed.PreviousPrice.HasValue ? parsed.PreviousPrice.Value.ToString("N2") + " ₺" : null,
                         previousRejectionReason = parsed.PreviousRejectionReason,
-                        isMyOffer = o.SupplierID == currentCompanyId
+                        isMyOffer = o.SupplierID == currentCompanyId,
+                        offerItems = offerItemsList
                     };
                 }).OrderBy(o => o.offeredPrice).ToList();
 
                 var myOffer = offersList.FirstOrDefault(o => o.isMyOffer);
+
+                int totalQty = itemsList.Count > 0 ? (int)Math.Round(itemsList.Sum(i => (decimal)i.quantity)) : (req.Quantity ?? 1);
 
                 return Json(new
                 {
@@ -1554,7 +1825,9 @@ namespace satinalmaportali2.Controllers
                     requestDate = req.RequestDate?.ToString("dd.MM.yyyy HH:mm") ?? "",
                     productName = req.ProductName ?? "",
                     buyerInfo = req.BuyerInfo ?? "",
-                    quantity = req.Quantity ?? 1,
+                    quantity = totalQty,
+                    itemCount = itemsList.Count,
+                    items = itemsList,
                     requestType = req.RequestType ?? "Satın Alma",
                     estimatedBudget = req.EstimatedBudget,
                     estimatedBudgetFormatted = req.EstimatedBudget.HasValue ? req.EstimatedBudget.Value.ToString("N2") + " ₺" : "Belirtilmedi",
@@ -1578,10 +1851,22 @@ namespace satinalmaportali2.Controllers
         /// Fiyat Kıyaslama Modalı için seçilen talebin tekliflerini ve analiz metriklerini JSON olarak döner.
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> GetComparisonData(int id)
+        public async Task<IActionResult> GetComparisonData(string id)
         {
             try
             {
+                int numericId = 0;
+                if (!int.TryParse(id, out numericId))
+                {
+                    var digitsOnly = new string((id ?? "").Where(char.IsDigit).ToArray());
+                    int.TryParse(digitsOnly, out numericId);
+                }
+
+                if (numericId <= 0)
+                {
+                    return Json(new { success = false, message = "Geçersiz talep numarası." });
+                }
+
                 int currentCompanyId = GetCurrentCompanyId();
                 string userType = GetCurrentUserType();
                 var currentCompany = currentCompanyId > 0 ? await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId) : null;
@@ -1590,8 +1875,9 @@ namespace satinalmaportali2.Controllers
                 var req = await _context.Requests
                     .Include(r => r.Offers)
                         .ThenInclude(o => o.Supplier)
+                    .Include(r => r.Items)
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(r => r.RequestID == id);
+                    .FirstOrDefaultAsync(r => r.RequestID == numericId);
 
                 if (req == null)
                 {
@@ -1603,12 +1889,44 @@ namespace satinalmaportali2.Controllers
                 {
                     return Json(new { success = false, message = "Fiyat kıyaslama analizi yalnızca talep sahibi tarafından görüntülenebilir." });
                 }
-                int qty = req.Quantity.HasValue && req.Quantity.Value > 0 ? req.Quantity.Value : 1;
+
+                var itemsList = req.Items.OrderBy(i => i.ItemOrder).Select(i => new
+                {
+                    requestItemId = i.RequestItemID,
+                    itemOrder = i.ItemOrder,
+                    itemName = i.ItemName,
+                    quantity = i.Quantity,
+                    unit = i.Unit ?? "Adet",
+                    estimatedUnitPrice = i.EstimatedUnitPrice,
+                    estimatedUnitPriceFormatted = i.EstimatedUnitPrice.HasValue ? i.EstimatedUnitPrice.Value.ToString("N2") + " ₺" : null,
+                    estimatedTotalPrice = i.EstimatedUnitPrice.HasValue ? (i.EstimatedUnitPrice.Value * i.Quantity) : (decimal?)null,
+                    estimatedTotalPriceFormatted = i.EstimatedUnitPrice.HasValue ? (i.EstimatedUnitPrice.Value * i.Quantity).ToString("N2") + " ₺" : null,
+                    itemDescription = i.ItemDescription ?? ""
+                }).ToList();
+
+                if (itemsList.Count == 0 && !string.IsNullOrWhiteSpace(req.ProductName))
+                {
+                    itemsList.Add(new
+                    {
+                        requestItemId = 0,
+                        itemOrder = 1,
+                        itemName = req.ProductName,
+                        quantity = (decimal)(req.Quantity ?? 1),
+                        unit = "Adet",
+                        estimatedUnitPrice = req.EstimatedBudget.HasValue && req.Quantity > 0 ? (req.EstimatedBudget.Value / req.Quantity.Value) : (decimal?)null,
+                        estimatedUnitPriceFormatted = req.EstimatedBudget.HasValue && req.Quantity > 0 ? (req.EstimatedBudget.Value / req.Quantity.Value).ToString("N2") + " ₺" : null,
+                        estimatedTotalPrice = req.EstimatedBudget,
+                        estimatedTotalPriceFormatted = req.EstimatedBudget.HasValue ? req.EstimatedBudget.Value.ToString("N2") + " ₺" : null,
+                        itemDescription = req.Notes ?? ""
+                    });
+                }
+
+                int qty = itemsList.Count > 0 ? (int)Math.Round(itemsList.Sum(i => (decimal)i.quantity)) : (req.Quantity ?? 1);
 
                 var rawOffers = req.Offers.Select(o =>
                 {
                     var supName = o.Supplier != null ? (o.Supplier.CompanyName ?? o.Supplier.CompanyOfficial ?? "Tedarikçi Firma") : $"Firma #{o.SupplierID}";
-                    var unitPrice = Math.Round(o.OfferedPrice / qty, 2);
+                    var unitPrice = Math.Round(o.OfferedPrice / (qty > 0 ? qty : 1), 2);
                     var parsed = ParseSupplierNotes(o.SupplierNotes);
                     var fallbackReason = o.Status == "Reddedildi" ? (parsed.RejectionReason ?? "Talep için başka bir tedarikçinin teklifi kabul edildi.") : null;
 
@@ -1703,6 +2021,8 @@ namespace satinalmaportali2.Controllers
                     productName = req.ProductName ?? "",
                     requestType = req.RequestType ?? "Satın Alma",
                     quantity = qty,
+                    itemCount = itemsList.Count,
+                    items = itemsList,
                     estimatedBudget = req.EstimatedBudget,
                     estimatedBudgetFormatted = req.EstimatedBudget.HasValue ? req.EstimatedBudget.Value.ToString("N2") + " ₺" : "Belirtilmedi",
                     targetDeliveryDate = req.TargetDeliveryDate?.ToString("dd.MM.yyyy") ?? "Belirtilmedi",
@@ -1832,6 +2152,7 @@ namespace satinalmaportali2.Controllers
             // Alıcının taleplerini çek (dropdown seçici için)
             var allRequests = await _context.Requests
                 .Include(r => r.Offers)
+                .Include(r => r.Items)
                 .AsNoTracking()
                 .OrderByDescending(r => r.RequestDate)
                 .ToListAsync();
@@ -1843,6 +2164,7 @@ namespace satinalmaportali2.Controllers
                 RequestID = r.RequestID,
                 ProductName = r.ProductName ?? r.RequestType ?? "Talep",
                 Quantity = r.Quantity ?? 1,
+                ItemCount = r.Items.Any() ? r.Items.Count : 1,
                 EstimatedBudget = r.EstimatedBudget,
                 OfferCount = r.Offers.Count,
                 Status = r.Status ?? "Beklemede"
@@ -1860,10 +2182,23 @@ namespace satinalmaportali2.Controllers
                 targetRequest = myRequests.FirstOrDefault(r => r.Offers.Any()) ?? myRequests.FirstOrDefault();
             }
 
+            var reqItemsList = targetRequest?.Items.OrderBy(i => i.ItemOrder).Select(i => new RequestItemDto
+            {
+                RequestItemID = i.RequestItemID,
+                RequestID = i.RequestID,
+                ItemOrder = i.ItemOrder,
+                ItemName = i.ItemName,
+                Quantity = i.Quantity,
+                Unit = i.Unit ?? "Adet",
+                EstimatedUnitPrice = i.EstimatedUnitPrice,
+                ItemDescription = i.ItemDescription
+            }).ToList() ?? new List<RequestItemDto>();
+
             var viewModel = new OfferComparisonViewModel
             {
                 SelectedRequest = targetRequest,
                 AvailableRequests = availableRequestsDto,
+                Items = reqItemsList,
                 IsOwner = targetRequest != null && IsRequestOwnedByCurrentCompany(targetRequest, currentCompanyId, currentCompany)
             };
 

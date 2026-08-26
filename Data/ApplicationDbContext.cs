@@ -15,7 +15,9 @@ namespace satinalmaportali2.Data
         public DbSet<CompanyTypes> CompanyTypes { get; set; }
         public DbSet<MembershipTypes> MembershipTypes { get; set; }
         public DbSet<Requests> Requests { get; set; }
+        public DbSet<RequestItem> RequestItems { get; set; }
         public DbSet<RequestOffers> RequestOffers { get; set; }
+        public DbSet<RequestOfferItem> RequestOfferItems { get; set; }
         public DbSet<Reviews> Reviews { get; set; }
         public DbSet<ItemsModel> Items { get; set; }
         public DbSet<Forms> Forms { get; set; }
@@ -96,6 +98,18 @@ namespace satinalmaportali2.Data
                     .WithOne(o => o.Request)
                     .HasForeignKey(o => o.RequestID)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(e => e.Items)
+                    .WithOne(i => i.Request)
+                    .HasForeignKey(i => i.RequestID)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<RequestItem>(entity =>
+            {
+                entity.ToTable("request_items");
+                entity.HasKey(e => e.RequestItemID);
+                entity.Property(e => e.RequestItemID).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<RequestOffers>(entity =>
@@ -108,6 +122,23 @@ namespace satinalmaportali2.Data
                     .WithMany()
                     .HasForeignKey(e => e.SupplierID)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasMany(e => e.OfferItems)
+                    .WithOne(oi => oi.Offer)
+                    .HasForeignKey(oi => oi.OfferID)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<RequestOfferItem>(entity =>
+            {
+                entity.ToTable("request_offer_items");
+                entity.HasKey(e => e.OfferItemID);
+                entity.Property(e => e.OfferItemID).ValueGeneratedOnAdd();
+
+                entity.HasOne(e => e.RequestItem)
+                    .WithMany()
+                    .HasForeignKey(e => e.RequestItemID)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<Reviews>(entity =>
