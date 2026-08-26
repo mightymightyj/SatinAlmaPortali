@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using satinalmaportali2.Data;
+using satinalmaportali2.Hubs;
 using satinalmaportali2.Models;
 using satinalmaportali2.Services;
 
@@ -31,6 +32,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
     options.UseNpgsql(connectionString);
 });
+
+// SignalR Gerçek Zamanlı İletişim Servisi
+builder.Services.AddSignalR();
 
 // Dashboard Servis Kaydı
 builder.Services.AddScoped<IDashboardService, DashboardService>();
@@ -78,5 +82,8 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
+
+// SignalR Hub Endpoint
+app.MapHub<PortalHub>("/hubs/portal");
 
 app.Run();

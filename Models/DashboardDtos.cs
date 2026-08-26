@@ -201,6 +201,7 @@ namespace satinalmaportali2.Models {
 
     public class SupplierDashboardViewModel {
         public DataState State { get; set; } = DataState.Ok;
+        public int? CompanyID { get; set; }
         public int SelectedYear { get; set; }
         public IReadOnlyList<int> AvailableYears { get; set; } = Array.Empty<int>();
         public SupplierSummaryDto Summary { get; set; } = new();

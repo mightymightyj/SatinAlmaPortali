@@ -220,9 +220,14 @@
                                 }
                             </td>
                             <td class="text-right">
-                                <button type="button" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem;" onclick="openShipmentModal(@o.OrderID, '@o.OrderNumber', '@o.OrderStatus', '@o.TrackingNumber', '@o.ShippingCarrier')">
-                                    Sevkiyatı Yönet
-                                </button>
+                                <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
+                                    <button type="button" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem;" onclick="openShipmentModal(@o.OrderID, '@o.OrderNumber', '@o.OrderStatus', '@o.TrackingNumber', '@o.ShippingCarrier')">
+                                        Sevkiyatı Yönet
+                                    </button>
+                                    <button type="button" class="btn-primary" style="padding: 5px 11px; font-size: 0.76rem; font-weight: 700; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border: none; border-radius: 6px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3); cursor: pointer;" id="btn-rate-buyer-@o.OrderID" onclick="openSellerRateBuyerModal(@o.OrderID, '@o.BuyerCompanyName?.Replace("'", "\\'") ')">
+                                        ★ Alıcıyı Değerlendir
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     }
@@ -283,8 +288,158 @@
     </div>
 </div>
 
+<!-- Modal: 10 Yıldız Alıcı Değerlendirme Modalı (Satıcı -> Alıcı) -->
+<div id="suppRateBuyerModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this)closeSellerRateBuyerModal()">
+    <div class="ty-modal-box" style="background: var(--card-bg, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 14px; width: 100%; max-width: 520px; padding: 26px; box-shadow: 0 25px 35px -5px rgba(0,0,0,0.25);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+            <div>
+                <span class="status-badge badge-emerald" style="font-size: 0.72rem; padding: 2px 8px;">İKİ TARAFLI DEĞERLENDİRME</span>
+                <h3 id="sellerRateBuyerModalTitle" style="font-size: 1.2rem; font-weight: 800; color: var(--text, #0f172a); margin-top: 6px; margin-bottom: 2px;">Alıcı Firmayı Değerlendir</h3>
+                <small style="color: var(--muted); font-size: 0.8rem;">Bu değerlendirme alıcı firmanın B2B güvenilirlik karnesine ve profil puanına yansır.</small>
+            </div>
+            <button type="button" onclick="closeSellerRateBuyerModal()" style="border: none; background: transparent; font-size: 1.3rem; cursor: pointer; color: var(--muted);">&times;</button>
+        </div>
+
+        <form id="sellerRateBuyerForm" onsubmit="submitSellerRateBuyer(event)">
+            <input type="hidden" id="sellerRateOrderID" />
+            <input type="hidden" id="sellerRateScore" value="10" />
+
+            <!-- 10 Yıldız Seçici -->
+            <div style="text-align: center; margin-bottom: 16px; background: rgba(16,185,129,0.06); padding: 14px; border-radius: 10px; border: 1px solid rgba(16,185,129,0.2);">
+                <label style="display: block; font-size: 0.84rem; font-weight: 700; color: var(--text); margin-bottom: 6px;">Alıcı Genel Güvenilirlik Puanı (10 Yıldız)</label>
+                <div style="display: flex; justify-content: center; gap: 4px;" id="sellerStarPickerWrap">
+                    @for (int i = 1; i <= 10; i++)
+                    {
+                        <button type="button" class="btn-star-pick-supp" data-val="@i" onclick="pickSellerRateScore(@i)" onmouseenter="previewSellerRateScore(@i)" onmouseleave="restoreSellerRateScore()" style="background: none; border: none; font-size: 1.8rem; color: #10b981; cursor: pointer; padding: 2px; transition: transform 0.15s;">★</button>
+                    }
+                </div>
+                <div id="sellerScoreText" style="font-size: 1.05rem; font-weight: 800; color: #059669; margin-top: 6px;">★ 10.0 / 10 - Mükemmel Alıcı</div>
+            </div>
+
+            <!-- Alt Kriterler (10 Üzerinden) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                <div>
+                    <label style="font-size: 0.74rem; font-weight: 700; display: block; margin-bottom: 4px;">💳 Ödeme / Vadeli Süreç (1-10)</label>
+                    <input type="number" id="sellerRatePayment" class="form-control" value="10" min="1" max="10" step="0.5" style="font-size: 0.85rem; padding: 6px 10px;" />
+                </div>
+                <div>
+                    <label style="font-size: 0.74rem; font-weight: 700; display: block; margin-bottom: 4px;">🤝 Mal Kabul & İletişim (1-10)</label>
+                    <input type="number" id="sellerRateComm" class="form-control" value="10" min="1" max="10" step="0.5" style="font-size: 0.85rem; padding: 6px 10px;" />
+                </div>
+            </div>
+
+            <!-- Yorum -->
+            <div class="form-group" style="margin-bottom: 18px;">
+                <label style="font-size: 0.82rem; font-weight: 700; display: block; margin-bottom: 4px;">Tedarikçi Görüşünüz (Opsiyonel)</label>
+                <textarea id="sellerRateComment" class="form-control" rows="3" placeholder="Alıcı firmanın ödeme intizamı, teslim alma hızı ve işbirliği yaklaşımı nasıldı?" style="font-size: 0.85rem;"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn-cancel" onclick="closeSellerRateBuyerModal()">Vazgeç</button>
+                <button type="submit" class="btn-primary" style="padding: 10px 20px; font-weight: 700; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border: none;">
+                    Alıcıyı Değerlendir
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 @section Scripts {
     <script>
+        let currentSellerPickedScore = 10;
+
+        function pickSellerRateScore(val) {
+            currentSellerPickedScore = val;
+            document.getElementById('sellerRateScore').value = val;
+            updateSellerStarsDisplay(val);
+        }
+
+        function previewSellerRateScore(val) {
+            updateSellerStarsDisplay(val);
+        }
+
+        function restoreSellerRateScore() {
+            updateSellerStarsDisplay(currentSellerPickedScore);
+        }
+
+        function updateSellerStarsDisplay(val) {
+            const stars = document.querySelectorAll('#sellerStarPickerWrap .btn-star-pick-supp');
+            stars.forEach(btn => {
+                const bVal = parseInt(btn.getAttribute('data-val'));
+                if (bVal <= val) {
+                    btn.style.color = '#10b981';
+                    btn.style.opacity = '1';
+                } else {
+                    btn.style.color = '#cbd5e1';
+                    btn.style.opacity = '0.7';
+                }
+            });
+
+            const labels = {
+                1: "★ 1.0 / 10 - Çok Güvensiz",
+                2: "★ 2.0 / 10 - Sorunlu Süreç",
+                3: "★ 3.0 / 10 - Gecikmeli Ödeme",
+                4: "★ 4.0 / 10 - Yetersiz İşbirliği",
+                5: "★ 5.0 / 10 - Orta Seviye",
+                6: "★ 6.0 / 10 - Ortalama Alıcı",
+                7: "★ 7.0 / 10 - İyi",
+                8: "★ 8.0 / 10 - Güvenilir",
+                9: "★ 9.0 / 10 - Çok İyi",
+                10: "★ 10.0 / 10 - Mükemmel Kurumsal Alıcı"
+            };
+            document.getElementById('sellerScoreText').textContent = labels[val] || `★ ${val} / 10`;
+        }
+
+        function openSellerRateBuyerModal(orderId, buyerName) {
+            document.getElementById('sellerRateOrderID').value = orderId;
+            document.getElementById('sellerRateBuyerModalTitle').textContent = (buyerName ? buyerName + ' ' : '') + '10 Yıldız Değerlendir';
+            pickSellerRateScore(10);
+            document.getElementById('suppRateBuyerModal').style.display = 'flex';
+        }
+
+        function closeSellerRateBuyerModal() {
+            document.getElementById('suppRateBuyerModal').style.display = 'none';
+        }
+
+        async function submitSellerRateBuyer(e) {
+            e.preventDefault();
+            const orderId = parseInt(document.getElementById('sellerRateOrderID').value);
+            const score = parseFloat(document.getElementById('sellerRateScore').value);
+            const payment = parseFloat(document.getElementById('sellerRatePayment').value);
+            const comm = parseFloat(document.getElementById('sellerRateComm').value);
+            const text = document.getElementById('sellerRateComment').value;
+
+            try {
+                const res = await fetch('/Review/SubmitSellerReview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        orderID: orderId,
+                        reviewScore: score,
+                        paymentPunctualityScore: payment,
+                        communicationScore: comm,
+                        reviewText: text
+                    })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    closeSellerRateBuyerModal();
+                    alert(data.message);
+                    const btn = document.getElementById('btn-rate-buyer-' + orderId);
+                    if (btn) {
+                        btn.textContent = `✓ Alıcı Değerlendirildi (★ ${score}/10)`;
+                        btn.style.background = '#0f172a';
+                        btn.style.boxShadow = 'none';
+                    }
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) {
+                alert('Alıcı değerlendirmesi gönderilirken hata: ' + err);
+            }
+        }
+
         function setSuppStatusFilter(statusVal) {
             document.getElementById('suppSelectedStatusInput').value = statusVal;
             document.getElementById('suppOrdersFilterForm').submit();

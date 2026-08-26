@@ -1007,6 +1007,7 @@ namespace satinalmaportali2.Services
                 return new SupplierDashboardViewModel
                 {
                     State = DataState.Ok,
+                    CompanyID = currentCompanyId,
                     SelectedYear = selectedYear,
                     AvailableYears = years,
                     Summary = summary,

@@ -115,6 +115,18 @@ namespace satinalmaportali2.Data
                 entity.ToTable("reviews");
                 entity.HasKey(e => e.ReviewID);
                 entity.Property(e => e.ReviewID).ValueGeneratedOnAdd();
+                entity.HasOne(e => e.Order)
+                      .WithMany()
+                      .HasForeignKey(e => e.OrderID)
+                      .OnDelete(DeleteBehavior.SetNull);
+                entity.HasOne(e => e.TargetCompany)
+                      .WithMany()
+                      .HasForeignKey(e => e.CompanyID)
+                      .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.ReviewerCompany)
+                      .WithMany()
+                      .HasForeignKey(e => e.ReviewerCompanyID)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
 
             modelBuilder.Entity<ItemsModel>(entity =>

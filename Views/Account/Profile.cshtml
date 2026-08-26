@@ -1,3 +1,4 @@
+@using satinalmaportali2.Helpers
 @model satinalmaportali2.Models.ProfileViewModel
 @{
     ViewData["Title"] = "Hesabım";
@@ -67,6 +68,15 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 @(Model.MembershipTypeName ?? "Standart Üyelik")
             </span>
+            <span class="profile-badge" style="background: rgba(37,99,235,0.1); color: #2563eb; border: 1px solid rgba(37,99,235,0.25); cursor: pointer;" onclick="switchProfileTab('orders')">
+                📦 @Model.MyOrders.Count Sipariş
+            </span>
+            <span class="profile-badge" style="background: rgba(16,185,129,0.1); color: #059669; border: 1px solid rgba(16,185,129,0.25); cursor: pointer;" onclick="switchProfileTab('purchased-items')">
+                🛒 @Model.PurchasedProducts.Count Alınan Ürün
+            </span>
+            <span class="profile-badge" style="background: rgba(245,158,11,0.1); color: #d97706; border: 1px solid rgba(245,158,11,0.25); cursor: pointer;" onclick="switchProfileTab('reviews')">
+                ★ @Model.BuyerScore.ToString("0.0") / 10 Güvenilirlik
+            </span>
         </div>
 
         <!-- Profil Düzenle Aksiyon Butonu -->
@@ -107,8 +117,43 @@
             </div>
         }
 
-        <!-- Profil Fotoğrafı & Logo Yönetimi Kartı -->
-        <div class="profile-card profile-card-avatar-mgmt">
+        <!-- Hesabım Üst Gezinme Sekmeleri (Profile Navigation Tabs) -->
+        <nav class="profile-nav-tabs-wrapper" aria-label="Hesap Bölümleri">
+            <button type="button" class="profile-nav-tab @(Model.ActiveTab == "profile" ? "active" : "")" data-tab="profile" onclick="switchProfileTab('profile', this)">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span>Firma Bilgilerim</span>
+            </button>
+            <button type="button" class="profile-nav-tab @(Model.ActiveTab == "orders" ? "active" : "")" data-tab="orders" onclick="switchProfileTab('orders', this)">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                </svg>
+                <span>Siparişlerim</span>
+                <span class="tab-counter-badge">@Model.MyOrders.Count</span>
+            </button>
+            <button type="button" class="profile-nav-tab @(Model.ActiveTab == "purchased-items" ? "active" : "")" data-tab="purchased-items" onclick="switchProfileTab('purchased-items', this)">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+                <span>Önceden Aldığım Ürünler</span>
+                <span class="tab-counter-badge">@Model.PurchasedProducts.Count</span>
+            </button>
+            <button type="button" class="profile-nav-tab @(Model.ActiveTab == "reviews" ? "active" : "")" data-tab="reviews" onclick="switchProfileTab('reviews', this)">
+                <span style="color: #f59e0b; font-size: 1rem;">★</span>
+                <span>Tedarikçi Karnesi</span>
+                <span class="tab-counter-badge">@Model.BuyerReviewCount</span>
+            </button>
+        </nav>
+
+        <!-- ==================== SEKME 1: FİRMA & HESAP BİLGİLERİM ==================== -->
+        <div id="profileTabPanel-profile" class="profile-tab-panel" style="@(Model.ActiveTab == "profile" ? "display: block;" : "display: none;")">
+            <!-- Profil Fotoğrafı & Logo Yönetimi Kartı -->
+            <div class="profile-card profile-card-avatar-mgmt">
             <div class="profile-card-header">
                 <div class="profile-card-icon profile-card-icon-blue">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -361,6 +406,80 @@
                 </div>
                 <div class="profile-card-body">
                     <p class="profile-detail-text">@(string.IsNullOrWhiteSpace(Model.CompanyDetailText) ? "Henüz bir açıklama eklenmemiş. 'Bilgileri Düzenle' butonunu kullanarak firmanız hakkında detaylı bilgi ekleyebilirsiniz." : Model.CompanyDetailText)</p>
+                </div>
+            </div>
+
+            <!-- Tedarikçilerden Alınan 10 Yıldızlı Değerlendirmeler & Alıcı Güvenilirlik Karnesi -->
+            <div class="profile-card">
+                <div class="profile-card-header">
+                    <div class="profile-card-icon" style="background: rgba(16, 185, 129, 0.12); color: #059669;">
+                        <span style="font-size: 1.25rem;">★</span>
+                    </div>
+                    <div class="profile-header-text">
+                        <h2>Tedarikçi Değerlendirmeleri &amp; Alıcı Güvenilirlik Skoru</h2>
+                        <span class="profile-header-subtitle">Sipariş verdiğiniz kurumsal tedarikçilerin firmanız hakkında verdiği 10 yıldızlı değerlendirmeler</span>
+                    </div>
+                </div>
+                <div class="profile-card-body">
+                    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 20px 24px; margin-bottom: 20px;">
+                        <div>
+                            <div style="font-size: 0.78rem; color: #059669; font-weight: 700; text-transform: uppercase;">10 Yıldız Üzerinden Alıcı Skoru</div>
+                            <div style="font-size: 2.3rem; font-weight: 900; color: #0f172a; line-height: 1.1; margin: 4px 0;">
+                                ★ @Model.BuyerScore.ToString("0.0") <small style="font-size: 1rem; color: #64748b; font-weight: 600;">/ 10</small>
+                            </div>
+                            <div style="display: inline-flex; gap: 3px; margin-bottom: 4px;">
+                                @for (int i = 1; i <= 10; i++)
+                                {
+                                    var filled = i <= Math.Round(Model.BuyerScore);
+                                    <span style="font-size: 1rem; color: @(filled ? "#10b981" : "#cbd5e1");">★</span>
+                                }
+                            </div>
+                            <div style="font-size: 0.8rem; color: #64748b;">@Model.BuyerReviewCount Tedarikçi Değerlendirmesine Dayanıyor</div>
+                        </div>
+
+                        <div style="text-align: right;">
+                            <span class="profile-badge" style="background: #ecfdf5; color: #059669; border: 1px solid rgba(16,185,129,0.3); padding: 8px 16px; font-size: 0.88rem; font-weight: 700; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                Onaylı &amp; Güvenilir Kurumsal Alıcı
+                            </span>
+                        </div>
+                    </div>
+
+                    @if (!Model.ReceivedReviews.Any())
+                    {
+                        <div style="padding: 24px; text-align: center; color: #64748b; font-size: 0.88rem; background: rgba(0,0,0,0.01); border-radius: 8px;">
+                            🛒 Sipariş verdiğiniz tedarikçiler mal kabul ve ödeme süreçlerinizi değerlendirdikçe 10 yıldızlı puanlarınız ve yorumlar burada listelenecektir.
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            @foreach (var r in Model.ReceivedReviews)
+                            {
+                                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                        <div>
+                                            <strong style="color: #0f172a; font-size: 0.92rem;">🏢 @r.ReviewerName</strong>
+                                            <span style="font-size: 0.75rem; color: #64748b; margin-left: 8px;">📅 @r.ReviewDate.ToString("dd.MM.yyyy")</span>
+                                            @if (!string.IsNullOrWhiteSpace(r.OrderNumber))
+                                            {
+                                                <small style="color: #2563eb; margin-left: 6px;">(Sipariş: @r.OrderNumber)</small>
+                                            }
+                                        </div>
+                                        <span style="background: rgba(16,185,129,0.1); color: #059669; font-weight: 800; padding: 3px 10px; border-radius: 6px; font-size: 0.85rem;">
+                                            ★ @r.ReviewScore.ToString("0.0") / 10
+                                        </span>
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(r.ReviewText))
+                                    {
+                                        <p style="font-size: 0.88rem; color: #334155; margin: 0; line-height: 1.5;">
+                                            "@r.ReviewText"
+                                        </p>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
                 </div>
             </div>
 
@@ -653,9 +772,411 @@
                 </div>
             </div>
         </div>
+        </div> <!-- /profileTabPanel-profile -->
+
+        <!-- ==================== SEKME 2: SİPARİŞLERİM ==================== -->
+        <div id="profileTabPanel-orders" class="profile-tab-panel" style="@(Model.ActiveTab == "orders" ? "display: block;" : "display: none;")">
+            <div class="profile-card">
+                <div class="profile-card-header" style="justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div class="profile-card-icon profile-card-icon-blue">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                            </svg>
+                        </div>
+                        <div class="profile-header-text">
+                            <h2>Verilen Siparişlerim &amp; Sevkiyat Takibi</h2>
+                            <span class="profile-header-subtitle">Toplam @Model.MyOrders.Count kurumsal siparişiniz ve kargo durumları listeleniyor</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="profileOrdersSearchInput" class="profile-filter-input" placeholder="Sipariş no, tedarikçi veya ürün ara..." oninput="filterProfileOrders()" />
+                    </div>
+                </div>
+
+                <div class="profile-card-body">
+                    <!-- Durum Filtre Çipleri -->
+                    <div class="order-status-filter-bar">
+                        <button type="button" class="btn-status-chip active" data-status="all" onclick="filterProfileOrdersByStatus('all', this)">Tümü (@Model.MyOrders.Count)</button>
+                        <button type="button" class="btn-status-chip" data-status="Onaylandı" onclick="filterProfileOrdersByStatus('Onaylandı', this)">Onaylandı (@Model.MyOrders.Count(o => o.OrderStatus == "Onaylandı"))</button>
+                        <button type="button" class="btn-status-chip" data-status="Hazırlanıyor" onclick="filterProfileOrdersByStatus('Hazırlanıyor', this)">Hazırlanıyor (@Model.MyOrders.Count(o => o.OrderStatus == "Hazırlanıyor"))</button>
+                        <button type="button" class="btn-status-chip" data-status="Kargoya Verildi" onclick="filterProfileOrdersByStatus('Kargoya Verildi', this)">Kargoda (@Model.MyOrders.Count(o => o.OrderStatus == "Kargoya Verildi"))</button>
+                        <button type="button" class="btn-status-chip" data-status="Teslim Edildi" onclick="filterProfileOrdersByStatus('Teslim Edildi', this)">Teslim Edildi (@Model.MyOrders.Count(o => o.OrderStatus == "Teslim Edildi"))</button>
+                    </div>
+
+                    @if (!Model.MyOrders.Any())
+                    {
+                        <div class="empty-state-box">
+                            <div class="empty-icon">📦</div>
+                            <h3 style="color: #0f172a; margin-bottom: 6px; font-weight: 800;">Henüz Bir Siparişiniz Bulunmuyor</h3>
+                            <p style="color: #64748b; font-size: 0.88rem; max-width: 480px; margin: 0 auto 18px auto;">
+                                Kurumsal tedarik portalımızdaki binlerce onaylı endüstriyel ürünü inceleyip ilk siparişinizi kolayca oluşturabilirsiniz.
+                            </p>
+                            <a href="/#b2b-vitrin" class="btn-primary" style="padding: 10px 20px; font-size: 0.88rem; text-decoration: none; border-radius: 8px;">
+                                B2B Vitrindeki Ürünleri İncele →
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div id="profileOrdersListContainer" style="display: flex; flex-direction: column; gap: 16px;">
+                            @foreach (var o in Model.MyOrders)
+                            {
+                                var isDelivered = o.OrderStatus == "Teslim Edildi";
+                                var isShipped = o.OrderStatus == "Kargoya Verildi";
+                                var badgeClass = isDelivered ? "badge-emerald" : (isShipped ? "badge-amber" : "badge-blue");
+
+                                <div class="profile-order-card" data-order-status="@o.OrderStatus" data-search-text="@(o.OrderNumber) @(o.SupplierCompanyName) @(string.Join(" ", o.OrderItems.Select(i => i.ProductName)))">
+                                    <div class="profile-order-card-header">
+                                        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                                            <div>
+                                                <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Sipariş Numarası</span>
+                                                <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a; font-family: monospace;">#@o.OrderNumber</div>
+                                            </div>
+                                            <div style="border-left: 1px solid #e2e8f0; padding-left: 14px;">
+                                                <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Sipariş Tarihi</span>
+                                                <div style="font-size: 0.85rem; font-weight: 600; color: #334155;">@o.OrderDate.ToString("dd MMMM yyyy, HH:mm")</div>
+                                            </div>
+                                            <div style="border-left: 1px solid #e2e8f0; padding-left: 14px;">
+                                                <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Tedarikçi Firma</span>
+                                                <div style="font-size: 0.85rem; font-weight: 700; color: #2563eb;">
+                                                    <a href="/Seller/@(o.SupplierCompanyID ?? 1)" target="_blank" style="color: inherit; text-decoration: none;" title="10★ Satıcı Sayfasını Gör">
+                                                        @o.SupplierCompanyName ↗
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <span class="status-badge @badgeClass" style="font-size: 0.82rem; padding: 4px 10px; font-weight: 700; border-radius: 999px;">
+                                                <span class="status-dot"></span>
+                                                @o.OrderStatus
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Siparişteki Kalemler -->
+                                    <div class="profile-order-items-wrap">
+                                        @foreach (var item in o.OrderItems)
+                                        {
+                                            <div class="profile-order-item-row">
+                                                <div style="display: flex; align-items: center; gap: 12px;">
+                                                    <div class="item-icon-box">📦</div>
+                                                    <div>
+                                                        <div style="font-weight: 700; font-size: 0.9rem; color: #0f172a;">@item.ProductName</div>
+                                                        <div style="font-size: 0.75rem; color: #64748b;">
+                                                            Stok Kodu: <span style="font-family: monospace;">@(item.Sku ?? "SKU-B2B")</span> | Kategori: @(item.CategoryName ?? "Endüstriyel")
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div style="text-align: right;">
+                                                    <div style="font-size: 0.82rem; color: #64748b;">@item.UnitPrice.ToString("N2", ChartHelper.Tr) ₺ &times; @item.Quantity Adet</div>
+                                                    <strong style="font-size: 0.95rem; color: #0f172a;">@item.LineTotal.ToString("N2", ChartHelper.Tr) ₺</strong>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    @if (!string.IsNullOrWhiteSpace(o.TrackingNumber))
+                                    {
+                                        <div class="profile-order-cargo-info">
+                                            <span>🚚 <strong>Kargo &amp; Sevkiyat:</strong> @o.ShippingCarrier</span>
+                                            <span><strong>Takip No:</strong> <code style="background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1;">@o.TrackingNumber</code></span>
+                                        </div>
+                                    }
+
+                                    <div class="profile-order-card-footer">
+                                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                            <div>
+                                                <span style="font-size: 0.72rem; color: #64748b; font-weight: 600;">Genel Toplam (KDV Dahil)</span>
+                                                <div style="font-size: 1.2rem; font-weight: 900; color: #059669;">
+                                                    @o.GrandTotal.ToString("N2", ChartHelper.Tr) ₺
+                                                </div>
+                                            </div>
+                                            <span class="status-badge badge-emerald" style="font-size: 0.72rem; padding: 2px 8px;">
+                                                @o.PaymentMethod (@o.PaymentStatus)
+                                            </span>
+                                        </div>
+
+                                        <div style="display: flex; gap: 8px; align-items: center;">
+                                            <button type="button" class="btn-primary" style="padding: 7px 16px; font-size: 0.82rem; font-weight: 700; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none; border-radius: 6px; box-shadow: 0 2px 6px rgba(245,158,11,0.3); cursor: pointer;" onclick="openProfileRateModal(@o.OrderID, this.getAttribute('data-seller-name'))" data-seller-name="@(o.SupplierCompanyName ?? "Onaylı Tedarikçi")">
+                                                ★ Satıcıyı Değerlendir
+                                            </button>
+                                            <button type="button" class="btn-table-action" style="font-size: 0.8rem; padding: 6px 12px;" onclick="showProfileOrderModal(@o.OrderID, '@o.OrderNumber', '@o.GrandTotal.ToString("N2", ChartHelper.Tr) ₺', '@o.OrderStatus', '@o.PaymentMethod', '@o.DeliveryCity - @o.DeliveryAddress?.Replace("'", "\\'") ', '@o.TrackingNumber', '@o.ShippingCarrier')">
+                                                Sipariş Detayı
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SEKME 3: ÖNCEDEN ALDIĞIM ÜRÜNLER ==================== -->
+        <div id="profileTabPanel-purchased-items" class="profile-tab-panel" style="@(Model.ActiveTab == "purchased-items" ? "display: block;" : "display: none;")">
+            <div class="profile-card">
+                <div class="profile-card-header" style="justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div class="profile-card-icon profile-card-icon-green">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="9" cy="21" r="1"></circle>
+                                <circle cx="20" cy="21" r="1"></circle>
+                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                            </svg>
+                        </div>
+                        <div class="profile-header-text">
+                            <h2>Önceden Aldığım Ürünler Kataloğu</h2>
+                            <span class="profile-header-subtitle">Daha önce sipariş verip teslim aldığınız ürünleri inceleyebilir, tek tıkla tekrar satın alabilir veya satıcıyı değerlendirebilirsiniz.</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="purchasedProductsSearchInput" class="profile-filter-input" placeholder="Satın aldığım ürünlerde ara..." oninput="filterPurchasedProducts()" />
+                    </div>
+                </div>
+
+                <div class="profile-card-body">
+                    @if (!Model.PurchasedProducts.Any())
+                    {
+                        <div class="empty-state-box">
+                            <div class="empty-icon">🛒</div>
+                            <h3 style="color: #0f172a; margin-bottom: 6px; font-weight: 800;">Henüz Satın Aldığınız Bir Ürün Bulunmuyor</h3>
+                            <p style="color: #64748b; font-size: 0.88rem; max-width: 460px; margin: 0 auto 18px auto;">
+                                Verdiğiniz siparişler tamamlandıkça daha önce satın aldığınız tüm endüstriyel ürün ve malzemeler burada hızlı sipariş için listelenecektir.
+                            </p>
+                            <a href="/#b2b-vitrin" class="btn-primary" style="padding: 10px 20px; font-size: 0.88rem; text-decoration: none; border-radius: 8px;">
+                                B2B Vitrinini İncele →
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="purchased-items-grid" id="purchasedProductsGrid">
+                            @foreach (var p in Model.PurchasedProducts)
+                            {
+                                <div class="purchased-product-card" data-product-name="@p.ProductName" data-sku="@p.Sku" data-supplier="@p.SupplierCompanyName">
+                                    <div class="purchased-card-top">
+                                        <span class="purchased-category-chip">@p.CategoryName</span>
+                                        <span class="purchased-sku-chip" title="Stok Kodu">@(p.Sku ?? "SKU-B2B")</span>
+                                    </div>
+
+                                    <div class="purchased-card-body">
+                                        <div class="purchased-icon-wrap">
+                                            <span style="font-size: 2rem;">⚙️</span>
+                                        </div>
+                                        <h3 class="purchased-title" title="@p.ProductName">@p.ProductName</h3>
+                                        
+                                        <div class="purchased-supplier-line">
+                                            <span style="font-size: 0.75rem; color: #64748b;">Tedarikçi:</span>
+                                            <a href="/Seller/@(p.SupplierCompanyID ?? 1)" target="_blank" style="font-size: 0.78rem; font-weight: 700; color: #2563eb; text-decoration: none;">
+                                                @p.SupplierCompanyName ↗
+                                            </a>
+                                        </div>
+
+                                        <div class="purchased-metrics-bar">
+                                            <div class="purchased-metric-col">
+                                                <span class="p-met-label">Birim Fiyat</span>
+                                                <span class="p-met-val font-semibold">@p.UnitPrice.ToString("N2", ChartHelper.Tr) ₺</span>
+                                            </div>
+                                            <div class="purchased-metric-col">
+                                                <span class="p-met-label">Toplam Alım</span>
+                                                <span class="p-met-val font-semibold" style="color: #059669;">@p.TotalQuantityPurchased Adet</span>
+                                            </div>
+                                            <div class="purchased-metric-col">
+                                                <span class="p-met-label">Son Sipariş</span>
+                                                <span class="p-met-val" style="font-size: 0.75rem;">@p.LastPurchaseDate.ToString("dd.MM.yyyy")</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="purchased-card-footer">
+                                        <button type="button" class="btn-primary btn-reorder" onclick="handleReorderItem(this.getAttribute('data-product-name'), @p.UnitPrice, this.getAttribute('data-supplier-name'))" data-product-name="@p.ProductName" data-supplier-name="@(p.SupplierCompanyName ?? "Onaylı Tedarikçi")">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                <polyline points="23 4 23 10 17 10"></polyline>
+                                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                            </svg>
+                                            <span>Tekrar Satın Al</span>
+                                        </button>
+                                        <button type="button" class="btn-table-action" style="font-size: 0.76rem; padding: 6px 10px; color: #d97706; cursor: pointer;" onclick="openProfileRateModal(@p.LastOrderID, this.getAttribute('data-seller-name'))" data-seller-name="@(p.SupplierCompanyName ?? "Onaylı Tedarikçi")">
+                                            ★ Satıcıyı Değerlendir
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SEKME 4: TEDARİKÇİ DEĞERLENDİRMELERİ ==================== -->
+        <div id="profileTabPanel-reviews" class="profile-tab-panel" style="@(Model.ActiveTab == "reviews" ? "display: block;" : "display: none;")">
+            <div class="profile-card">
+                <div class="profile-card-header">
+                    <div class="profile-card-icon" style="background: rgba(16, 185, 129, 0.12); color: #059669;">
+                        <span style="font-size: 1.25rem;">★</span>
+                    </div>
+                    <div class="profile-header-text">
+                        <h2>Tedarikçi Değerlendirmeleri &amp; Alıcı Güvenilirlik Skoru</h2>
+                        <span class="profile-header-subtitle">Sipariş verdiğiniz kurumsal tedarikçilerin firmanız hakkında verdiği 10 yıldızlı değerlendirmeler</span>
+                    </div>
+                </div>
+                <div class="profile-card-body">
+                    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 20px 24px; margin-bottom: 20px;">
+                        <div>
+                            <div style="font-size: 0.78rem; color: #059669; font-weight: 700; text-transform: uppercase;">10 Yıldız Üzerinden Alıcı Skoru</div>
+                            <div style="font-size: 2.3rem; font-weight: 900; color: #0f172a; line-height: 1.1; margin: 4px 0;">
+                                ★ @Model.BuyerScore.ToString("0.0") <small style="font-size: 1rem; color: #64748b; font-weight: 600;">/ 10</small>
+                            </div>
+                            <div style="display: inline-flex; gap: 3px; margin-bottom: 4px;">
+                                @for (int i = 1; i <= 10; i++)
+                                {
+                                    var filled = i <= Math.Round(Model.BuyerScore);
+                                    <span style="font-size: 1rem; color: @(filled ? "#10b981" : "#cbd5e1");">★</span>
+                                }
+                            </div>
+                            <div style="font-size: 0.8rem; color: #64748b;">@Model.BuyerReviewCount Tedarikçi Değerlendirmesine Dayanıyor</div>
+                        </div>
+
+                        <div style="text-align: right;">
+                            <span class="profile-badge" style="background: #ecfdf5; color: #059669; border: 1px solid rgba(16,185,129,0.3); padding: 8px 16px; font-size: 0.88rem; font-weight: 700; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                Onaylı &amp; Güvenilir Kurumsal Alıcı
+                            </span>
+                        </div>
+                    </div>
+
+                    @if (!Model.ReceivedReviews.Any())
+                    {
+                        <div style="padding: 24px; text-align: center; color: #64748b; font-size: 0.88rem; background: rgba(0,0,0,0.01); border-radius: 8px;">
+                            🛒 Sipariş verdiğiniz tedarikçiler mal kabul ve ödeme süreçlerinizi değerlendirdikçe 10 yıldızlı puanlarınız ve yorumlar burada listelenecektir.
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            @foreach (var r in Model.ReceivedReviews)
+                            {
+                                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                        <div>
+                                            <strong style="color: #0f172a; font-size: 0.92rem;">🏢 @r.ReviewerName</strong>
+                                            <span style="font-size: 0.75rem; color: #64748b; margin-left: 8px;">📅 @r.ReviewDate.ToString("dd.MM.yyyy")</span>
+                                            @if (!string.IsNullOrWhiteSpace(r.OrderNumber))
+                                            {
+                                                <small style="color: #2563eb; margin-left: 6px;">(Sipariş: @r.OrderNumber)</small>
+                                            }
+                                        </div>
+                                        <span style="background: rgba(16,185,129,0.1); color: #059669; font-weight: 800; padding: 3px 10px; border-radius: 6px; font-size: 0.85rem;">
+                                            ★ @r.ReviewScore.ToString("0.0") / 10
+                                        </span>
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(r.ReviewText))
+                                    {
+                                        <p style="font-size: 0.88rem; color: #334155; margin: 0; line-height: 1.5;">
+                                            "@r.ReviewText"
+                                        </p>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
 
     </div>
 </section>
+
+<!-- Modal: Sipariş Detayı (Hesabım) -->
+<div id="profileOrderDetailModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this)closeProfileOrderModal()">
+    <div class="ty-modal-box" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; width: 100%; max-width: 520px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+            <div>
+                <span class="status-badge badge-emerald" style="font-size: 0.72rem; padding: 2px 8px;">SİPARİŞ AYRINTILARI</span>
+                <h3 id="pModalOrderNo" style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-top: 6px; margin-bottom: 4px;"></h3>
+            </div>
+            <button type="button" onclick="closeProfileOrderModal()" style="border: none; background: transparent; font-size: 1.3rem; cursor: pointer; color: #64748b;">✕</button>
+        </div>
+
+        <div style="background: rgba(0,0,0,0.02); border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 16px; font-size: 0.85rem; display: flex; flex-direction: column; gap: 8px;">
+            <div><strong>Durum:</strong> <span id="pModalOrderStatus"></span></div>
+            <div><strong>Toplam Tutar:</strong> <span id="pModalGrandTotal" style="font-weight: 700; color: #059669;"></span></div>
+            <div><strong>Ödeme Yöntemi:</strong> <span id="pModalPaymentMethod"></span></div>
+            <div><strong>Teslimat Adresi:</strong> <span id="pModalDeliveryAddress"></span></div>
+            <div id="pModalTrackingWrap" style="display: none;"><strong>Kargo Takip:</strong> <span id="pModalTracking"></span></div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end;">
+            <button type="button" class="btn-cancel" onclick="closeProfileOrderModal()">Kapat</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Satıcı Değerlendirme Modalı (Hesabım) -->
+<div id="profileRateModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.7); backdrop-filter: blur(5px); z-index: 99999; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this)closeProfileRateModal()">
+    <div class="ty-modal-box" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; width: 100%; max-width: 520px; padding: 26px; box-shadow: 0 25px 35px -5px rgba(0,0,0,0.25);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+            <div>
+                <span class="status-badge badge-emerald" style="font-size: 0.72rem; padding: 2px 8px;">DOĞRULANMIŞ SATIN ALIM</span>
+                <h3 id="profileRateModalTitle" style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-top: 6px; margin-bottom: 2px;">Satıcıyı Değerlendir</h3>
+                <small style="color: #64748b; font-size: 0.8rem;">Bu değerlendirme satıcının onaylı kurumsal profiline ve karne istatistiklerine yansıyacaktır.</small>
+            </div>
+            <button type="button" onclick="closeProfileRateModal()" style="border: none; background: transparent; font-size: 1.3rem; cursor: pointer; color: #64748b;">&times;</button>
+        </div>
+
+        <form id="profileRateForm" onsubmit="submitProfileRate(event)">
+            <input type="hidden" id="pRateOrderID" />
+            <input type="hidden" id="pRateScore" value="10" />
+
+            <!-- 10 Yıldız Seçici -->
+            <div style="text-align: center; margin-bottom: 16px; background: rgba(245,158,11,0.05); padding: 14px; border-radius: 10px; border: 1px solid rgba(245,158,11,0.15);">
+                <label style="display: block; font-size: 0.84rem; font-weight: 700; color: #0f172a; margin-bottom: 6px;">Satıcı Genel Memnuniyet Puanı (10 Yıldız)</label>
+                <div style="display: flex; justify-content: center; gap: 4px;" id="profileStarPickerWrap">
+                    @for (int i = 1; i <= 10; i++)
+                    {
+                        <button type="button" class="btn-profile-star-pick" data-val="@i" onclick="pickProfileScore(@i)" onmouseenter="previewProfileScore(@i)" onmouseleave="restoreProfileScore()" style="background: none; border: none; font-size: 1.8rem; color: #f59e0b; cursor: pointer; padding: 2px; transition: transform 0.15s;">★</button>
+                    }
+                </div>
+                <div id="profileScoreText" style="font-size: 1.05rem; font-weight: 800; color: #d97706; margin-top: 6px;">★ 10.0 / 10 - Mükemmel</div>
+            </div>
+
+            <!-- Alt Kriterler (10 Üzerinden) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                <div>
+                    <label style="font-size: 0.74rem; font-weight: 700; display: block; margin-bottom: 4px;">🚚 Teslimat Hızı</label>
+                    <input type="number" id="pRateDelivery" class="form-control" value="10" min="1" max="10" step="0.5" style="font-size: 0.85rem; padding: 6px 10px;" />
+                </div>
+                <div>
+                    <label style="font-size: 0.74rem; font-weight: 700; display: block; margin-bottom: 4px;">📦 Ürün Kalitesi</label>
+                    <input type="number" id="pRateQuality" class="form-control" value="10" min="1" max="10" step="0.5" style="font-size: 0.85rem; padding: 6px 10px;" />
+                </div>
+                <div>
+                    <label style="font-size: 0.74rem; font-weight: 700; display: block; margin-bottom: 4px;">💬 İletişim / Süreç</label>
+                    <input type="number" id="pRateComm" class="form-control" value="10" min="1" max="10" step="0.5" style="font-size: 0.85rem; padding: 6px 10px;" />
+                </div>
+            </div>
+
+            <!-- Yorum -->
+            <div class="form-group" style="margin-bottom: 18px;">
+                <label style="font-size: 0.82rem; font-weight: 700; display: block; margin-bottom: 4px;">Yorumunuz (Opsiyonel)</label>
+                <textarea id="pRateComment" class="form-control" rows="3" placeholder="Teslimat süreci, ambalaj ve şartnameye uygunluk nasıldı?" style="font-size: 0.85rem;"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn-cancel" onclick="closeProfileRateModal()">Vazgeç</button>
+                <button type="submit" class="btn-primary" style="padding: 10px 20px; font-weight: 700; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none;">
+                    Değerlendir &amp; Gönder
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <!-- Single File Input (NO multiple allowed) -->
 <input type="file" id="profilePhotoInput" accept="image/jpeg, image/png, image/webp, image/gif, image/jpg" style="display: none;" onchange="handleSingleFileSelected(this)" />
@@ -1149,5 +1670,523 @@
         container.innerHTML = alertHtml;
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
+    // ==================== HESABIM SEKMELERİ VE SİPARİŞLERİM FONKSİYONLARI ====================
+    function switchProfileTab(tabName, btnElement) {
+        document.querySelectorAll('.profile-tab-panel').forEach(p => p.style.display = 'none');
+        document.querySelectorAll('.profile-nav-tab').forEach(b => b.classList.remove('active'));
+
+        const targetPanel = document.getElementById('profileTabPanel-' + tabName);
+        if (targetPanel) {
+            targetPanel.style.display = 'block';
+        }
+
+        if (btnElement) {
+            btnElement.classList.add('active');
+        } else {
+            const matchingBtn = document.querySelector(`.profile-nav-tab[data-tab="${tabName}"]`);
+            if (matchingBtn) matchingBtn.classList.add('active');
+        }
+
+        if (history.pushState) {
+            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?tab=' + tabName;
+            window.history.pushState({ path: newUrl }, '', newUrl);
+        }
+    }
+
+    let currentOrderStatusFilter = 'all';
+
+    function filterProfileOrdersByStatus(statusVal, btn) {
+        currentOrderStatusFilter = statusVal;
+        document.querySelectorAll('.order-status-filter-bar .btn-status-chip').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        filterProfileOrders();
+    }
+
+    function filterProfileOrders() {
+        const query = (document.getElementById('profileOrdersSearchInput')?.value || '').toLowerCase().trim();
+        const cards = document.querySelectorAll('#profileOrdersListContainer .profile-order-card');
+
+        cards.forEach(card => {
+            const status = card.getAttribute('data-order-status') || '';
+            const searchHaystack = (card.getAttribute('data-search-text') || '').toLowerCase();
+
+            const matchesStatus = (currentOrderStatusFilter === 'all') || (status === currentOrderStatusFilter);
+            const matchesQuery = !query || searchHaystack.includes(query);
+
+            if (matchesStatus && matchesQuery) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    function filterPurchasedProducts() {
+        const query = (document.getElementById('purchasedProductsSearchInput')?.value || '').toLowerCase().trim();
+        const cards = document.querySelectorAll('#purchasedProductsGrid .purchased-product-card');
+
+        cards.forEach(card => {
+            const title = (card.getAttribute('data-product-name') || '').toLowerCase();
+            const sku = (card.getAttribute('data-sku') || '').toLowerCase();
+            const supplier = (card.getAttribute('data-supplier') || '').toLowerCase();
+
+            const matches = !query || title.includes(query) || sku.includes(query) || supplier.includes(query);
+            card.style.display = matches ? 'flex' : 'none';
+        });
+    }
+
+    function handleReorderItem(productName, price, supplier) {
+        alert(`🛒 "${productName}" ürünü talebiniz kaydedildi!\nBirim Fiyat: ${price} ₺\nTedarikçi: ${supplier}\n\nÜrünü sepetinize ekleyip siparişi tamamlamak için B2B Vitrine yönlendiriliyorsunuz.`);
+        window.location.href = '/#b2b-vitrin';
+    }
+
+    function showProfileOrderModal(id, number, total, status, payMethod, address, tracking, carrier) {
+        var modal = document.getElementById('profileOrderDetailModal');
+        if (!modal) return;
+        document.getElementById('pModalOrderNo').textContent = number;
+        document.getElementById('pModalOrderStatus').textContent = status;
+        document.getElementById('pModalGrandTotal').textContent = total;
+        document.getElementById('pModalPaymentMethod').textContent = payMethod;
+        document.getElementById('pModalDeliveryAddress').textContent = address;
+
+        var trackWrap = document.getElementById('pModalTrackingWrap');
+        if (tracking && tracking !== 'null' && tracking.trim() !== '') {
+            trackWrap.style.display = 'block';
+            document.getElementById('pModalTracking').textContent = (carrier ? carrier + ' - ' : '') + tracking;
+        } else {
+            trackWrap.style.display = 'none';
+        }
+
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('opacity', '1', 'important');
+        modal.style.setProperty('pointer-events', 'auto', 'important');
+        modal.classList.add('show');
+    }
+
+    function closeProfileOrderModal() {
+        var modal = document.getElementById('profileOrderDetailModal');
+        if (modal) {
+            modal.style.setProperty('display', 'none', 'important');
+            modal.style.setProperty('opacity', '0', 'important');
+            modal.style.setProperty('pointer-events', 'none', 'important');
+            modal.classList.remove('show');
+        }
+    }
+
+    let profilePickedScore = 10;
+
+    function pickProfileScore(val) {
+        profilePickedScore = val;
+        document.getElementById('pRateScore').value = val;
+        updateProfileStarsDisplay(val);
+    }
+
+    function previewProfileScore(val) {
+        updateProfileStarsDisplay(val);
+    }
+
+    function restoreProfileScore() {
+        updateProfileStarsDisplay(profilePickedScore);
+    }
+
+    function updateProfileStarsDisplay(val) {
+        const stars = document.querySelectorAll('#profileStarPickerWrap .btn-profile-star-pick');
+        stars.forEach(btn => {
+            const bVal = parseInt(btn.getAttribute('data-val'));
+            if (bVal <= val) {
+                btn.style.color = '#f59e0b';
+                btn.style.opacity = '1';
+            } else {
+                btn.style.color = '#cbd5e1';
+                btn.style.opacity = '0.7';
+            }
+        });
+
+        const labels = {
+            1: "★ 1.0 / 10 - Çok Zayıf",
+            2: "★ 2.0 / 10 - Yetersiz",
+            3: "★ 3.0 / 10 - Zayıf",
+            4: "★ 4.0 / 10 - Geliştirilmeli",
+            5: "★ 5.0 / 10 - Orta Seviye",
+            6: "★ 6.0 / 10 - Ortalama",
+            7: "★ 7.0 / 10 - Başarılı",
+            8: "★ 8.0 / 10 - İyi",
+            9: "★ 9.0 / 10 - Çok İyi",
+            10: "★ 10.0 / 10 - Mükemmel"
+        };
+        const textElem = document.getElementById('profileScoreText');
+        if (textElem) textElem.textContent = labels[val] || `★ ${val} / 10`;
+    }
+
+    function openProfileRateModal(orderId, sellerName) {
+        try {
+            var modal = document.getElementById('profileRateModal');
+            if (!modal) {
+                console.error('profileRateModal bulunamadı');
+                return;
+            }
+            var idInput = document.getElementById('pRateOrderID');
+            if (idInput) idInput.value = orderId;
+
+            var titleElem = document.getElementById('profileRateModalTitle');
+            if (titleElem) {
+                var cleanSeller = (sellerName && sellerName.trim() !== '') ? sellerName.trim() + ' - ' : '';
+                titleElem.textContent = cleanSeller + 'Satıcıyı Değerlendir';
+            }
+            pickProfileScore(10);
+
+            modal.style.setProperty('display', 'flex', 'important');
+            modal.style.setProperty('opacity', '1', 'important');
+            modal.style.setProperty('pointer-events', 'auto', 'important');
+            modal.classList.add('show');
+        } catch (err) {
+            console.error('openProfileRateModal hatası:', err);
+        }
+    }
+
+    function closeProfileRateModal() {
+        var modal = document.getElementById('profileRateModal');
+        if (modal) {
+            modal.style.setProperty('display', 'none', 'important');
+            modal.style.setProperty('opacity', '0', 'important');
+            modal.style.setProperty('pointer-events', 'none', 'important');
+            modal.classList.remove('show');
+        }
+    }
+
+    async function submitProfileRate(e) {
+        e.preventDefault();
+        const orderId = parseInt(document.getElementById('pRateOrderID').value);
+        const score = parseFloat(document.getElementById('pRateScore').value);
+        const delivery = parseFloat(document.getElementById('pRateDelivery').value);
+        const quality = parseFloat(document.getElementById('pRateQuality').value);
+        const comm = parseFloat(document.getElementById('pRateComm').value);
+        const text = document.getElementById('pRateComment').value;
+
+        try {
+            const res = await fetch('/Review/SubmitBuyerReview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    orderID: orderId,
+                    reviewScore: score,
+                    deliveryScore: delivery,
+                    qualityScore: quality,
+                    communicationScore: comm,
+                    reviewText: text
+                })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                closeProfileRateModal();
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        } catch (err) {
+            alert('Değerlendirme kaydedilirken hata: ' + err);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        const hash = window.location.hash.replace('#', '');
+
+        if (tabParam) {
+            switchProfileTab(tabParam);
+        } else if (hash === 'siparislerim' || hash === 'orders') {
+            switchProfileTab('orders');
+        } else if (hash === 'urunlerim' || hash === 'purchased-items') {
+            switchProfileTab('purchased-items');
+        } else if (hash === 'degerlendirmeler' || hash === 'reviews') {
+            switchProfileTab('reviews');
+        }
+    });
 </script>
 }
+
+<style>
+    /* ==================== HESABIM SEKMELERİ & SİPARİŞLERİM STİLLERİ ==================== */
+    .profile-nav-tabs-wrapper {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        background: #ffffff;
+        padding: 6px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        overflow-x: auto;
+    }
+    .profile-nav-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border-radius: 8px;
+        border: none;
+        background: transparent;
+        color: #64748b;
+        font-size: 0.88rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    .profile-nav-tab:hover {
+        color: #0f172a;
+        background: #f8fafc;
+    }
+    .profile-nav-tab.active {
+        background: #2563eb;
+        color: #ffffff;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+    .tab-counter-badge {
+        background: rgba(255,255,255,0.25);
+        color: inherit;
+        font-size: 0.72rem;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-weight: 800;
+    }
+    .profile-nav-tab:not(.active) .tab-counter-badge {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    /* Sipariş Kartı */
+    .profile-order-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .profile-order-card:hover {
+        box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    }
+    .profile-order-card-header {
+        padding: 16px 20px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .profile-order-items-wrap {
+        padding: 12px 20px;
+    }
+    .profile-order-item-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .profile-order-item-row:last-child {
+        border-bottom: none;
+    }
+    .item-icon-box {
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+    .profile-order-cargo-info {
+        background: #f0fdf4;
+        border: 1px dashed #86efac;
+        padding: 8px 16px;
+        margin: 0 20px 12px 20px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        color: #166534;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .profile-order-card-footer {
+        padding: 14px 20px;
+        background: #ffffff;
+        border-top: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    /* Filtre Çipleri ve Arama Girişi */
+    .order-status-filter-bar {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+    }
+    .btn-status-chip {
+        padding: 6px 14px;
+        border-radius: 999px;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .btn-status-chip:hover, .btn-status-chip.active {
+        background: #0f172a;
+        color: #ffffff;
+        border-color: #0f172a;
+    }
+    .profile-filter-input {
+        padding: 8px 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.84rem;
+        width: 240px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .profile-filter-input:focus {
+        border-color: #2563eb;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+    }
+
+    /* Önceden Alınan Ürünler Kartları Grid */
+    .purchased-items-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 18px;
+    }
+    .purchased-product-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .purchased-product-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(0,0,0,0.06);
+    }
+    .purchased-card-top {
+        padding: 12px 14px 6px 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .purchased-category-chip {
+        font-size: 0.7rem;
+        color: #64748b;
+        font-weight: 700;
+        text-transform: uppercase;
+        background: #f1f5f9;
+        padding: 2px 8px;
+        border-radius: 4px;
+    }
+    .purchased-sku-chip {
+        font-size: 0.72rem;
+        font-family: monospace;
+        color: #94a3b8;
+    }
+    .purchased-card-body {
+        padding: 10px 14px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    .purchased-icon-wrap {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        background: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 10px;
+    }
+    .purchased-title {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0 0 6px 0;
+        line-height: 1.35;
+    }
+    .purchased-supplier-line {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 12px;
+    }
+    .purchased-metrics-bar {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 8px 12px;
+        display: flex;
+        justify-content: space-between;
+        margin-top: auto;
+    }
+    .purchased-metric-col {
+        display: flex;
+        flex-direction: column;
+    }
+    .p-met-label {
+        font-size: 0.68rem;
+        color: #64748b;
+        font-weight: 600;
+    }
+    .p-met-val {
+        font-size: 0.85rem;
+        color: #0f172a;
+    }
+    .purchased-card-footer {
+        padding: 10px 14px;
+        background: #ffffff;
+        border-top: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-reorder {
+        flex: 1;
+        padding: 7px 12px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        border-radius: 6px;
+    }
+
+    /* Boş Durum Kutusu */
+    .empty-state-box {
+        text-align: center;
+        padding: 48px 24px;
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 12px;
+    }
+    .empty-icon {
+        font-size: 2.8rem;
+        margin-bottom: 12px;
+    }
+</style>

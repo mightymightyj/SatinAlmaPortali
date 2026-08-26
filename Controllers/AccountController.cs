@@ -141,7 +141,9 @@ namespace satinalmaportali2.Controllers {
                 }
 
                 int count = await _context.Companies.CountAsync();
-                return Content($"VERİTABANI BAĞLANTISI BAŞARILI!\nKaydolmuş Firma Sayısı: {count}\n\nTablolar:\n{string.Join("\n", tables)}\n\nCompany Kolonları:\n{string.Join("\n", columns)}");
+                var companyList = await _context.Companies.Select(c => new { c.CompanyID, c.CompanyMail, c.CompanyName, c.CompanyTypeID }).Take(15).ToListAsync();
+                var listText = string.Join("\n", companyList.Select(c => $"ID: {c.CompanyID} | Mail: {c.CompanyMail} | Name: {c.CompanyName} | Type: {c.CompanyTypeID}"));
+                return Content($"VERİTABANI BAĞLANTISI BAŞARILI!\nKaydolmuş Firma Sayısı: {count}\n\nFirmalar:\n{listText}\n\nTablolar:\n{string.Join("\n", tables)}\n\nCompany Kolonları:\n{string.Join("\n", columns)}");
             }
             catch (Exception ex) {
                 var inner = ex.InnerException?.Message ?? "";
@@ -326,7 +328,7 @@ namespace satinalmaportali2.Controllers {
         }
 
         [HttpGet]
-        public async Task<IActionResult> Profile() {
+        public async Task<IActionResult> Profile([FromQuery] string? tab = "profile") {
             var company = await GetCurrentUserCompanyAsync();
             if (company == null) {
                 if (User.Identity?.IsAuthenticated != true) {
@@ -350,7 +352,8 @@ namespace satinalmaportali2.Controllers {
                 CompanyTypeID = company.CompanyTypeID,
                 CompanyTypeName = "Kurumsal Hesap (Alıcı & Tedarikçi)",
                 MembershipTypeID = company.MembershipTypeID,
-                AddressID = company.AddressID
+                AddressID = company.AddressID,
+                ActiveTab = !string.IsNullOrWhiteSpace(tab) ? tab.Trim().ToLower() : "profile"
             };
 
             // Load MembershipType name
@@ -388,6 +391,72 @@ namespace satinalmaportali2.Controllers {
                     }
                 }
             }
+
+            // Tedarikçilerden Alınan 10 Yıldızlı Alıcı Değerlendirmelerini Yükle
+            var buyerReviews = await _context.Reviews
+                .Include(r => r.Order)
+                .AsNoTracking()
+                .Where(r => r.CompanyID == company.CompanyID && r.ReviewType == "SellerToBuyer" && r.ReviewScore.HasValue)
+                .OrderByDescending(r => r.ReviewDate)
+                .ToListAsync();
+
+            viewModel.BuyerReviewCount = buyerReviews.Count;
+            viewModel.BuyerScore = buyerReviews.Any() ? Math.Round(buyerReviews.Average(r => r.ReviewScore!.Value), 1) : 10.0;
+            viewModel.ReceivedReviews = buyerReviews.Select(r => new ReviewDetailItemDto
+            {
+                ReviewID = r.ReviewID,
+                ReviewScore = r.ReviewScore ?? 10.0,
+                DeliveryScore = r.DeliveryScore, // Ödeme dakikliği
+                CommunicationScore = r.CommunicationScore,
+                ReviewText = r.ReviewText,
+                ReviewDate = r.ReviewDate,
+                ReviewerName = r.ReviewerName ?? "Onaylı Tedarikçi",
+                OrderNumber = r.Order?.OrderNumber,
+                ReviewType = "SellerToBuyer"
+            }).ToList();
+
+            // Kullanıcının Geçmiş Siparişlerini ve Önceden Satın Aldığı Ürünleri Yükle
+            var buyerOrders = await _context.Orders
+                .Include(o => o.OrderItems)
+                .AsNoTracking()
+                .Where(o => (o.BuyerCompanyID.HasValue && o.BuyerCompanyID.Value == company.CompanyID) ||
+                            (!string.IsNullOrWhiteSpace(o.BuyerEmail) && company.CompanyMail != null && o.BuyerEmail.ToLower() == company.CompanyMail.ToLower()) ||
+                            (!string.IsNullOrWhiteSpace(o.BuyerCompanyName) && company.CompanyName != null && o.BuyerCompanyName.ToLower() == company.CompanyName.ToLower()))
+                .OrderByDescending(o => o.OrderDate)
+                .ToListAsync();
+
+            viewModel.MyOrders = buyerOrders;
+
+            // Önceden Alınan Ürünler Listesi (Ürün veya ItemID bazında gruplama)
+            var allItemsWithOrders = buyerOrders
+                .SelectMany(o => o.OrderItems.Select(oi => new { Item = oi, Order = o }))
+                .ToList();
+
+            var groupedItems = allItemsWithOrders
+                .GroupBy(x => !string.IsNullOrWhiteSpace(x.Item.ProductName) ? x.Item.ProductName.Trim().ToLower() : (x.Item.ItemID?.ToString() ?? "unknown"))
+                .ToList();
+
+            var purchasedList = new List<PurchasedProductDto>();
+            foreach (var g in groupedItems)
+            {
+                var latestEntry = g.OrderByDescending(x => x.Order.OrderDate).First();
+                purchasedList.Add(new PurchasedProductDto
+                {
+                    ItemID = latestEntry.Item.ItemID,
+                    ProductName = latestEntry.Item.ProductName,
+                    Sku = latestEntry.Item.Sku,
+                    CategoryName = latestEntry.Item.CategoryName ?? "Endüstriyel",
+                    UnitPrice = latestEntry.Item.UnitPrice,
+                    TotalQuantityPurchased = g.Sum(x => x.Item.Quantity),
+                    LastPurchaseDate = latestEntry.Order.OrderDate,
+                    SupplierCompanyName = latestEntry.Item.SupplierCompanyName ?? latestEntry.Order.SupplierCompanyName ?? "Onaylı Tedarikçi",
+                    SupplierCompanyID = latestEntry.Item.SupplierCompanyID ?? latestEntry.Order.SupplierCompanyID,
+                    LastOrderID = latestEntry.Order.OrderID,
+                    LastOrderNumber = latestEntry.Order.OrderNumber
+                });
+            }
+
+            viewModel.PurchasedProducts = purchasedList.OrderByDescending(p => p.LastPurchaseDate).ToList();
 
             return View(viewModel);
         }
