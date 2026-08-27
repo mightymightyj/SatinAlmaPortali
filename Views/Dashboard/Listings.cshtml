@@ -139,27 +139,34 @@
         </div>
 
         <!-- Durum Filtresi (Sekmeler) -->
-        <div style="display: flex; gap: 6px; align-items: center;">
+        <nav class="year-filter" aria-label="Stok durumu filtresi">
             <input type="hidden" name="status" id="selectedStatusInput" value="@(Model.SelectedStatus ?? "Tümü")" />
             
-            <button type="button" class="btn-tree-tool @(string.IsNullOrEmpty(Model.SelectedStatus) || Model.SelectedStatus == "Tümü" ? "is-active" : "")" 
-                    onclick="setStatusFilter('Tümü')" style="padding: 7px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px;">
-                Tümü (@Model.TotalCount)
+            <button type="button" class="year-pill @(string.IsNullOrEmpty(Model.SelectedStatus) || Model.SelectedStatus == "Tümü" ? "is-active" : "")" 
+                    onclick="setStatusFilter('Tümü')">
+                <span>Tümü</span>
+                <span class="status-count-badge">@Model.TotalCount</span>
             </button>
-            <button type="button" class="btn-tree-tool @(Model.SelectedStatus == "Stokta" ? "is-active" : "")" 
-                    onclick="setStatusFilter('Stokta')" style="padding: 7px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; color: #10b981;">
-                ● Stokta (@Model.ActiveCount)
+            <button type="button" class="year-pill status-pill-in-stock @(Model.SelectedStatus == "Stokta" ? "is-active" : "")" 
+                    onclick="setStatusFilter('Stokta')">
+                <span class="status-indicator-dot dot-green"></span>
+                <span>Stokta</span>
+                <span class="status-count-badge">@Model.ActiveCount</span>
             </button>
-            <button type="button" class="btn-tree-tool @(Model.SelectedStatus == "Kritik" ? "is-active" : "")" 
-                    onclick="setStatusFilter('Kritik')" style="padding: 7px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; color: #f59e0b;">
-                ▲ Kritik (@Model.LowStockCount)
+            <button type="button" class="year-pill status-pill-critical @(Model.SelectedStatus == "Kritik" ? "is-active" : "")" 
+                    onclick="setStatusFilter('Kritik')">
+                <span style="font-size: 0.72rem; line-height: 1;">▲</span>
+                <span>Kritik</span>
+                <span class="status-count-badge">@Model.LowStockCount</span>
             </button>
             
             @if (!string.IsNullOrWhiteSpace(Model.SearchQuery) || (!string.IsNullOrWhiteSpace(Model.SelectedCategory) && Model.SelectedCategory != "Tümü") || (!string.IsNullOrWhiteSpace(Model.SelectedStatus) && Model.SelectedStatus != "Tümü"))
             {
-                <a asp-action="Listings" class="btn-cancel" style="padding: 7px 12px; font-size: 0.82rem; text-decoration: none;" title="Filtreleri Temizle">✕ Temizle</a>
+                <a asp-action="Listings" class="btn-cancel" style="padding: 7px 12px; font-size: 0.82rem; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Filtreleri Temizle">
+                    <span>✕</span> Temizle
+                </a>
             }
-        </div>
+        </nav>
     </form>
 </div>
 

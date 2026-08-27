@@ -78,15 +78,24 @@
                     ? '<button type="button" class="btn-action-delete" title="Talebi Kalıcı Olarak Sil" onclick="handleDeleteRequest(' + data.requestId + ', event)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>'
                     : '<button type="button" class="btn-action-bid" data-bid-btn-id="' + data.requestId + '" onclick="openOfferModal(' + data.requestId + ', \'' + escapeHtml(data.productName).replace(/'/g, "\\'") + '\', \'\', \'7\', \'\')">Teklif Ver</button>';
 
+                var budgetHtml = (data.estimatedBudget && data.estimatedBudget > 0)
+                    ? '<span class="budget-amount">' + Number(data.estimatedBudget).toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' ₺</span>'
+                    : ((data.estimatedBudgetFormatted && data.estimatedBudgetFormatted !== 'Belirtilmedi' && data.estimatedBudgetFormatted !== '0 ₺')
+                        ? '<span class="budget-amount">' + escapeHtml(data.estimatedBudgetFormatted) + '</span>'
+                        : '<span style="font-size: 0.74rem; color: #94A3B8;">Bütçe Açık</span>');
+
+                var deadlineHtml = (data.targetDeliveryDate && data.targetDeliveryDate !== 'Belirtilmedi')
+                    ? '<div class="deadline-cell"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg><span>' + escapeHtml(data.targetDeliveryDate) + '</span></div>'
+                    : '<div class="deadline-cell"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg><span style="color: #94A3B8; font-weight: normal;">Belirtilmedi</span></div>';
+
                 newTr.innerHTML = 
                     '<td><div class="req-id-box"><span class="req-id-badge">#' + escapeHtml(data.requestCode) + '</span><span class="req-date-text">' + escapeHtml(data.requestDate) + '</span></div></td>' +
                     buyerTd +
                     '<td><div class="product-info-wrap"><div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"><strong class="product-name-text">' + escapeHtml(data.productName) + '</strong>' + itemCountBadge + '</div><div class="product-meta-row" style="margin-top: 3px;"><span class="type-chip">' + escapeHtml(data.category || 'Satın Alma') + '</span></div>' +
                     (data.notes ? '<span class="product-notes-snippet" title="' + escapeHtml(data.notes) + '">💬 ' + escapeHtml(data.notes) + '</span>' : '') +
                     '</div></td>' +
-                    '<td><div class="quantity-budget-wrap"><span class="qty-chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>' + Number(data.quantity || 1).toLocaleString('tr-TR') + ' Adet</span>' +
-                    '<span class="budget-chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>' + escapeHtml(data.estimatedBudgetFormatted || 'Belirtilmedi') + '</span></div></td>' +
-                    '<td><div class="deadline-wrap"><span class="deadline-date-text">' + escapeHtml(data.targetDeliveryDate || 'Belirtilmedi') + '</span><span class="days-remaining-pill is-normal">Yeni Açıldı</span></div></td>' +
+                    '<td><div class="quantity-budget-wrap"><span class="qty-chip"><span>' + Number(data.quantity || 1).toLocaleString('tr-TR') + ' Adet</span></span>' + budgetHtml + '</div></td>' +
+                    '<td>' + deadlineHtml + '</td>' +
                     '<td><div class="offers-cell-wrap"><button type="button" class="offers-interactive-pill is-empty" data-offer-pill-id="' + data.requestId + '" onclick="openDetailModal(' + data.requestId + ')" title="Talep Detayını İncele"><span class="pill-offer-count-text">Teklif Bekleniyor</span></button></div></td>' +
                     '<td><div class="status-cell-wrap" data-status-wrap-id="' + data.requestId + '"><span class="status-dot-badge is-pending" data-status-badge-id="' + data.requestId + '"><span class="status-dot"></span>' + escapeHtml(data.status || 'Beklemede') + '</span></div></td>' +
                     '<td style="text-align: right;"><div class="actions-cluster" data-actions-cluster-id="' + data.requestId + '">' + actionBtn + '</div></td>';

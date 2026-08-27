@@ -415,7 +415,7 @@ namespace satinalmaportali2.Services
         }
 
         /// <summary>
-        /// Satın alma talebine gelen yeni fiyat teklifi için zengin HTML e-posta içeriği üretir.
+        /// Satın alma talebine gelen yeni fiyat teklifi için zengin HTML e-posta içeriği üretir (Tekil veya Çok Kalemli Destekli).
         /// </summary>
         public string GetOfferReceivedEmailHtml(
             string toEmail,
@@ -430,12 +430,11 @@ namespace satinalmaportali2.Services
             int? deliveryDays,
             int? validityDays,
             string? offerNotes,
-            string requestsUrl)
+            string requestsUrl,
+            List<OfferItemEmailDto>? items = null)
         {
             var sendTime = DateTime.UtcNow.AddHours(3).ToString("dd.MM.yyyy HH:mm");
-            var unitPrice = quantity > 0 ? (offerPrice / quantity) : offerPrice;
             var formattedTotalPrice = offerPrice.ToString("N2", new System.Globalization.CultureInfo("tr-TR"));
-            var formattedUnitPrice = unitPrice.ToString("N2", new System.Globalization.CultureInfo("tr-TR"));
             var deliveryText = deliveryDays.HasValue && deliveryDays.Value > 0 ? $"{deliveryDays.Value} İş Günü" : "Hemen Teslim";
             var validityText = validityDays.HasValue && validityDays.Value > 0 ? $"{validityDays.Value} Gün" : "30 Gün";
             var displayUnit = string.IsNullOrWhiteSpace(unit) ? "Adet" : unit;
@@ -443,25 +442,123 @@ namespace satinalmaportali2.Services
             var displaySupplier = string.IsNullOrWhiteSpace(supplierName) ? "Onaylı Tedarikçi Firma" : supplierName;
             var displayRfq = string.IsNullOrWhiteSpace(rfqCode) ? "#TALEP-2026" : (rfqCode.StartsWith("#") ? rfqCode : $"#{rfqCode}");
 
-            // Ürün görseli HTML yapısı
-            string productImageHtml;
-            if (!string.IsNullOrWhiteSpace(productImageUrl))
+            bool hasMultiItems = items != null && items.Any();
+
+            // 1. Kalemler Tablosu (Varsa)
+            string itemsTableHtml = "";
+            if (hasMultiItems && items != null)
             {
-                productImageHtml = $@"
-                    <div style='text-align:center;margin-bottom:20px;'>
-                        <img src='{productImageUrl}' alt='{productName}' style='max-width:100%;max-height:240px;object-fit:cover;border-radius:14px;border:1px solid #e2e8f0;box-shadow:0 6px 18px rgba(0,0,0,0.06);display:inline-block;' />
+                var rowsSb = new System.Text.StringBuilder();
+                int idx = 1;
+                foreach (var it in items)
+                {
+                    var itName = string.IsNullOrWhiteSpace(it.ItemName) ? $"Kalem #{idx}" : it.ItemName;
+                    var itQty = it.Quantity.ToString("0.##", new System.Globalization.CultureInfo("tr-TR"));
+                    var itUnit = string.IsNullOrWhiteSpace(it.Unit) ? "Adet" : it.Unit;
+                    var itUnitPrice = it.UnitPrice.ToString("N2", new System.Globalization.CultureInfo("tr-TR"));
+                    var itLineTotal = (it.LineTotal > 0 ? it.LineTotal : (it.UnitPrice * it.Quantity)).ToString("N2", new System.Globalization.CultureInfo("tr-TR"));
+
+                    string itDescPart = !string.IsNullOrWhiteSpace(it.ItemDescription) 
+                        ? $"<div style='color:#64748b;font-size:12px;margin-top:3px;'>📝 {it.ItemDescription}</div>" 
+                        : "";
+                    string itNotePart = !string.IsNullOrWhiteSpace(it.Notes) 
+                        ? $"<div style='color:#2563eb;font-size:12px;margin-top:3px;font-style:italic;'>💬 Satıcı Notu: {it.Notes}</div>" 
+                        : "";
+
+                    rowsSb.Append($@"
+                        <tr style='border-bottom:1px solid #e2e8f0;'>
+                            <td style='padding:12px 14px;font-size:13px;font-weight:700;color:#64748b;vertical-align:top;text-align:center;'>{idx}</td>
+                            <td style='padding:12px 14px;font-size:13.5px;color:#0f172a;vertical-align:top;'>
+                                <strong style='color:#0f172a;'>{itName}</strong>
+                                {itDescPart}
+                                {itNotePart}
+                            </td>
+                            <td style='padding:12px 14px;font-size:13px;color:#1e293b;text-align:center;vertical-align:top;white-space:nowrap;'>
+                                <span style='display:inline-block;background:#eff6ff;color:#1d4ed8;padding:4px 10px;border-radius:6px;font-weight:700;border:1px solid #bfdbfe;'>
+                                    {itQty} {itUnit}
+                                </span>
+                            </td>
+                            <td style='padding:12px 14px;font-size:13.5px;color:#0f172a;text-align:right;font-weight:600;vertical-align:top;white-space:nowrap;'>
+                                {itUnitPrice} ₺
+                            </td>
+                            <td style='padding:12px 14px;font-size:13.5px;color:#15803d;text-align:right;font-weight:800;vertical-align:top;white-space:nowrap;'>
+                                {itLineTotal} ₺
+                            </td>
+                        </tr>");
+                    idx++;
+                }
+
+                itemsTableHtml = $@"
+                    <div style='margin-bottom:24px;'>
+                        <div style='color:#0f172a;font-size:15px;font-weight:800;margin-bottom:10px;letter-spacing:-0.2px;'>
+                            📋 Kalem Bazlı Teklif Fiyat Dökümü ({items.Count} Kalem / Malzeme)
+                        </div>
+                        <div style='border:1.5px solid #e2e8f0;border-radius:14px;overflow:hidden;background:#ffffff;box-shadow:0 2px 8px rgba(0,0,0,0.02);'>
+                            <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='border-collapse:collapse;width:100%;'>
+                                <thead>
+                                    <tr style='background:#f8fafc;border-bottom:2px solid #e2e8f0;'>
+                                        <th style='padding:10px 14px;text-align:center;color:#475569;font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;width:35px;'>#</th>
+                                        <th style='padding:10px 14px;text-align:left;color:#475569;font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;'>Malzeme / Kalem</th>
+                                        <th style='padding:10px 14px;text-align:center;color:#475569;font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;width:95px;'>Miktar</th>
+                                        <th style='padding:10px 14px;text-align:right;color:#475569;font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;width:115px;'>Birim Fiyat</th>
+                                        <th style='padding:10px 14px;text-align:right;color:#475569;font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;width:125px;'>Kalem Tutarı</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {rowsSb}
+                                </tbody>
+                                <tfoot>
+                                    <tr style='background:#f0fdf4;border-top:2px solid #86efac;'>
+                                        <td colspan='4' style='padding:12px 14px;text-align:right;font-size:13px;font-weight:800;color:#166534;'>
+                                            GENEL TEKLİF TOPLAMI:
+                                        </td>
+                                        <td style='padding:12px 14px;text-align:right;font-size:16px;font-weight:900;color:#15803d;white-space:nowrap;'>
+                                            {formattedTotalPrice} ₺
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>";
+            }
+
+            // 2. Üst Özet Kartı (Tek Kalem vs Çok Kalem)
+            string productHeaderCardHtml;
+            if (hasMultiItems && items != null && items.Count > 1)
+            {
+                productHeaderCardHtml = $@"
+                    <div style='background:#ffffff;border:1.5px solid #e2e8f0;border-radius:18px;padding:22px 24px;margin-bottom:24px;box-shadow:0 4px 16px rgba(0,0,0,0.03);text-align:center;'>
+                        <span style='display:inline-block;padding:5px 14px;background:#eff6ff;color:#2563eb;font-size:12px;font-weight:800;border-radius:20px;border:1px solid #bfdbfe;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;'>
+                            📋 Çok Kalemli Satın Alma Talebi
+                        </span>
+                        <h2 style='margin:0 0 8px;color:#0f172a;font-size:20px;font-weight:800;line-height:1.35;'>
+                            {productName}
+                        </h2>
+                        <div style='color:#64748b;font-size:13.5px;'>
+                            Bu talep toplam <strong>{items.Count} farklı malzeme kalemini</strong> içermektedir.
+                        </div>
                     </div>";
             }
             else
             {
-                productImageHtml = $@"
-                    <div style='background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);border:1.5px dashed #93c5fd;border-radius:14px;padding:32px 20px;text-align:center;margin-bottom:20px;'>
-                        <div style='width:64px;height:64px;background:#ffffff;border-radius:16px;line-height:64px;font-size:32px;margin:0 auto 12px;box-shadow:0 4px 14px rgba(37,99,235,0.15);'>
-                            📦
+                string singleImgPart = !string.IsNullOrWhiteSpace(productImageUrl)
+                    ? $"<div style='text-align:center;margin-bottom:16px;'><img src='{productImageUrl}' alt='{productName}' style='max-width:100%;max-height:220px;object-fit:cover;border-radius:12px;border:1px solid #e2e8f0;' /></div>"
+                    : "<div style='background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);border:1.5px dashed #93c5fd;border-radius:14px;padding:24px 20px;text-align:center;margin-bottom:16px;'><div style='font-size:32px;margin-bottom:6px;'>📦</div><span style='color:#1e40af;font-size:13px;font-weight:800;text-transform:uppercase;'>Satın Alma Ürün Talebi</span></div>";
+
+                productHeaderCardHtml = $@"
+                    <div style='background:#ffffff;border:1.5px solid #e2e8f0;border-radius:18px;padding:24px;margin-bottom:24px;box-shadow:0 4px 16px rgba(0,0,0,0.03);'>
+                        {singleImgPart}
+                        <h2 style='margin:0 0 8px;color:#0f172a;font-size:19px;font-weight:800;line-height:1.35;text-align:center;'>
+                            {productName}
+                        </h2>
+                        <div style='text-align:center;margin-top:12px;'>
+                            <span style='display:inline-block;padding:6px 14px;background:#eff6ff;color:#2563eb;font-size:13px;font-weight:700;border-radius:8px;border:1px solid #bfdbfe;margin:0 4px 6px;'>
+                                📦 Talep Miktarı: <strong>{quantity} {displayUnit}</strong>
+                            </span>
+                            <span style='display:inline-block;padding:6px 14px;background:#f8fafc;color:#475569;font-size:13px;font-weight:700;border-radius:8px;border:1px solid #e2e8f0;margin:0 4px 6px;'>
+                                🏢 Tedarikçi: <strong>{displaySupplier}</strong>
+                            </span>
                         </div>
-                        <span style='color:#1e40af;font-size:13px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;'>
-                            Satın Alma Ürün Talebi
-                        </span>
                     </div>";
             }
 
@@ -505,7 +602,7 @@ namespace satinalmaportali2.Services
             <td align='center' style='padding:40px 16px;'>
                 
                 <!-- Ana Konteyner Kart -->
-                <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='max-width:620px;background-color:#ffffff;border-radius:24px;box-shadow:0 10px 40px rgba(0,0,0,0.07);border:1px solid #e2e8f0;overflow:hidden;'>
+                <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='max-width:640px;background-color:#ffffff;border-radius:24px;box-shadow:0 10px 40px rgba(0,0,0,0.07);border:1px solid #e2e8f0;overflow:hidden;'>
                     
                     <!-- Header Banner (Gradient) -->
                     <tr>
@@ -538,7 +635,7 @@ namespace satinalmaportali2.Services
                                 🎉 Yeni Fiyat Teklifi Geldi!
                             </h1>
                             <p style='margin:10px 0 0;color:rgba(255,255,255,0.9);font-size:14px;font-weight:400;'>
-                                Satın alma talebiniz için bir tedarikçi fiyat teklifi sundu
+                                Satın alma talebiniz için {displaySupplier} detaylı fiyat teklifi sundu
                             </p>
 
                             <!-- Talep Kodu Rozeti -->
@@ -559,30 +656,11 @@ namespace satinalmaportali2.Services
                                 Merhaba {displayBuyer},
                             </p>
                             <p style='margin:0 0 24px;color:#475569;font-size:14.5px;line-height:1.7;'>
-                                Oluşturmuş olduğunuz satın alma talebi için <strong>{displaySupplier}</strong> tarafından yeni bir fiyat teklifi hazırlanarak tarafınıza iletilmiştir. Teklif özetini aşağıda görebilirsiniz:
+                                Oluşturmuş olduğunuz <strong>{displayRfq}</strong> numaralı satın alma talebi için <strong>{displaySupplier}</strong> tarafından yeni bir fiyat teklifi hazırlanarak iletilmiştir:
                             </p>
 
-                            <!-- ÜRÜN KARTI (Görsel + Ürün Adı + Miktar) -->
-                            <div style='background:#ffffff;border:1.5px solid #e2e8f0;border-radius:18px;padding:24px;margin-bottom:24px;box-shadow:0 4px 16px rgba(0,0,0,0.03);'>
-                                
-                                <!-- Ürün Görseli -->
-                                {productImageHtml}
-
-                                <!-- Ürün Başlığı -->
-                                <h2 style='margin:0 0 8px;color:#0f172a;font-size:19px;font-weight:800;line-height:1.35;text-align:center;'>
-                                    {productName}
-                                </h2>
-
-                                <!-- Miktar ve Talep Bilgisi Rozetleri -->
-                                <div style='text-align:center;margin-top:12px;'>
-                                    <span style='display:inline-block;padding:6px 14px;background:#eff6ff;color:#2563eb;font-size:13px;font-weight:700;border-radius:8px;border:1px solid #bfdbfe;margin:0 4px 6px;'>
-                                        📦 Talep Miktarı: <strong>{quantity} {displayUnit}</strong>
-                                    </span>
-                                    <span style='display:inline-block;padding:6px 14px;background:#f8fafc;color:#475569;font-size:13px;font-weight:700;border-radius:8px;border:1px solid #e2e8f0;margin:0 4px 6px;'>
-                                        🏢 Satıcı: <strong>{displaySupplier}</strong>
-                                    </span>
-                                </div>
-                            </div>
+                            <!-- Üst Özet Kartı -->
+                            {productHeaderCardHtml}
 
                             <!-- FİYAT VURGULAMA KART (Yeşil / Premium Highlight) -->
                             <div style='background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);border:1.5px solid #86efac;border-radius:16px;padding:22px 24px;margin-bottom:24px;text-align:center;box-shadow:0 4px 16px rgba(22,163,74,0.1);'>
@@ -592,10 +670,11 @@ namespace satinalmaportali2.Services
                                 <div style='color:#15803d;font-size:34px;font-weight:900;letter-spacing:-0.5px;line-height:1.1;'>
                                     {formattedTotalPrice} ₺
                                 </div>
-                                <div style='color:#166534;font-size:13px;font-weight:600;margin-top:6px;'>
-                                    (Birim Fiyat: ~{formattedUnitPrice} ₺ / {displayUnit})
-                                </div>
+                                {(!hasMultiItems && quantity > 0 ? $"<div style='color:#166534;font-size:13px;font-weight:600;margin-top:6px;'>(Birim Fiyat: ~{(offerPrice / quantity).ToString("N2", new System.Globalization.CultureInfo("tr-TR"))} ₺ / {displayUnit})</div>" : "")}
                             </div>
+
+                            <!-- KALEM BAZLI TABLO (Varsa) -->
+                            {itemsTableHtml}
 
                             <!-- TEKLİF DETAYLARI TABLOSU -->
                             <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='margin-bottom:24px;border-collapse:separate;border-spacing:0 8px;'>
@@ -624,9 +703,9 @@ namespace satinalmaportali2.Services
                             <div style='margin:32px 0 24px;text-align:center;'>
                                 <table role='presentation' cellpadding='0' cellspacing='0' border='0' style='margin:0 auto;'>
                                     <tr>
-                                        <td style='border-radius:14px;background:linear-gradient(135deg,#1e40af 0%,#2563eb 100%);box-shadow:0 6px 20px rgba(37,99,235,0.38);'>
-                                            <a href='{requestsUrl}' target='_blank' style='display:inline-block;padding:16px 40px;color:#ffffff;font-size:15.5px;font-weight:800;text-decoration:none;letter-spacing:0.3px;'>
-                                                📋 Taleplerime Git ve İncele &rarr;
+                                        <td align='center' bgcolor='#2563eb' style='border-radius:14px;background-color:#2563eb;box-shadow:0 6px 20px rgba(37,99,235,0.38);'>
+                                            <a href='{requestsUrl}' target='_blank' style='display:inline-block;padding:16px 40px;background-color:#2563eb;color:#ffffff;font-size:15.5px;font-weight:800;text-decoration:none;border-radius:14px;letter-spacing:0.3px;'>
+                                                📋 Teklifi İncele ve Değerlendir &rarr;
                                             </a>
                                         </td>
                                     </tr>
@@ -641,7 +720,7 @@ namespace satinalmaportali2.Services
                                             <tr>
                                                 <td style='vertical-align:top;padding-right:10px;font-size:16px;'>💡</td>
                                                 <td style='color:#166534;font-size:13px;line-height:1.5;font-weight:500;'>
-                                                    <strong>Sonraki Adım:</strong> Taleplerim sayfasına giderek teklifi onaylayabilir, reddedebilir veya satıcı ile doğrudan görüşme başlatabilirsiniz.
+                                                    <strong>Sonraki Adım:</strong> Taleplerim sayfasına giderek bu teklifi onaylayabilir, reddedebilir veya diğer gelen tekliflerle karşılaştırabilirsiniz.
                                                 </td>
                                             </tr>
                                         </table>
@@ -655,7 +734,7 @@ namespace satinalmaportali2.Services
                                     Buton çalışmıyorsa aşağıdaki bağlantıyı tarayıcınıza yapıştırın:
                                 </p>
                                 <p style='margin:0;word-break:break-all;'>
-                                    <a href='{requestsUrl}' style='color:#3b82f6;font-size:11.5px;text-decoration:underline;'>{requestsUrl}</a>
+                                    <a href='{requestsUrl}' target='_blank' style='color:#3b82f6;font-size:11.5px;text-decoration:underline;'>{requestsUrl}</a>
                                 </p>
                             </div>
 
@@ -686,7 +765,7 @@ namespace satinalmaportali2.Services
         }
 
         /// <summary>
-        /// Satın alma talebine yeni teklif geldiğinde alıcıya HTML e-posta bildirimi gönderir.
+        /// Satın alma talebine yeni teklif geldiğinde alıcıya HTML e-posta bildirimi gönderir (Kalem listesi destekli).
         /// </summary>
         public async Task<bool> SendOfferReceivedEmailAsync(
             string toEmail,
@@ -701,7 +780,8 @@ namespace satinalmaportali2.Services
             int? deliveryDays,
             int? validityDays,
             string? offerNotes,
-            string requestsUrl)
+            string requestsUrl,
+            List<OfferItemEmailDto>? items = null)
         {
             try
             {
@@ -718,7 +798,8 @@ namespace satinalmaportali2.Services
                     deliveryDays,
                     validityDays,
                     offerNotes,
-                    requestsUrl);
+                    requestsUrl,
+                    items);
 
                 var formattedPrice = offerPrice.ToString("N0", new System.Globalization.CultureInfo("tr-TR"));
                 var displayRfq = string.IsNullOrWhiteSpace(rfqCode) ? "Talep" : rfqCode;
@@ -735,7 +816,7 @@ namespace satinalmaportali2.Services
         }
 
         /// <summary>
-        /// Teklifi kabul edilen kazanan tedarikçiye tebrik ve süreç tamamlama e-postası gönderir.
+        /// Teklifi kabul edilen kazanan tedarikçiye tebrik ve süreç tamamlama e-postası gönderir (Kalem listesi destekli).
         /// </summary>
         public async Task<bool> SendOfferAcceptedEmailAsync(
             string toEmail,
@@ -747,7 +828,8 @@ namespace satinalmaportali2.Services
             string unit,
             decimal offeredPrice,
             int? deliveryDays,
-            string requestsUrl)
+            string requestsUrl,
+            List<OfferItemEmailDto>? items = null)
         {
             try
             {
@@ -758,6 +840,65 @@ namespace satinalmaportali2.Services
                 var displayUnit = string.IsNullOrWhiteSpace(unit) ? "Adet" : unit;
                 var displayRfq = string.IsNullOrWhiteSpace(rfqCode) ? "#TALEP" : (rfqCode.StartsWith("#") ? rfqCode : $"#{rfqCode}");
                 var deliveryText = deliveryDays.HasValue && deliveryDays.Value > 0 ? $"{deliveryDays.Value} İş Günü" : "Belirtilen Süre";
+
+                string itemsTableHtml = "";
+                if (items != null && items.Any())
+                {
+                    var rowsSb = new System.Text.StringBuilder();
+                    int idx = 1;
+                    foreach (var it in items)
+                    {
+                        var itName = string.IsNullOrWhiteSpace(it.ItemName) ? $"Kalem #{idx}" : it.ItemName;
+                        var itQty = it.Quantity.ToString("0.##", new System.Globalization.CultureInfo("tr-TR"));
+                        var itUnit = string.IsNullOrWhiteSpace(it.Unit) ? "Adet" : it.Unit;
+                        var itUnitPrice = it.UnitPrice.ToString("N2", new System.Globalization.CultureInfo("tr-TR"));
+                        var itLineTotal = (it.LineTotal > 0 ? it.LineTotal : (it.UnitPrice * it.Quantity)).ToString("N2", new System.Globalization.CultureInfo("tr-TR"));
+
+                        rowsSb.Append($@"
+                            <tr style='border-bottom:1px solid #e2e8f0;'>
+                                <td style='padding:10px 12px;font-size:13px;font-weight:700;color:#64748b;text-align:center;'>{idx}</td>
+                                <td style='padding:10px 12px;font-size:13.5px;color:#0f172a;'>
+                                    <strong>{itName}</strong>
+                                    {(string.IsNullOrWhiteSpace(it.ItemDescription) ? "" : $"<div style='color:#64748b;font-size:12px;'>{it.ItemDescription}</div>")}
+                                </td>
+                                <td style='padding:10px 12px;font-size:13px;color:#1e293b;text-align:center;white-space:nowrap;'>
+                                    <span style='background:#ecfdf5;color:#065f46;padding:3px 8px;border-radius:6px;font-weight:700;'>{itQty} {itUnit}</span>
+                                </td>
+                                <td style='padding:10px 12px;font-size:13.5px;color:#0f172a;text-align:right;font-weight:600;white-space:nowrap;'>{itUnitPrice} ₺</td>
+                                <td style='padding:10px 12px;font-size:13.5px;color:#059669;text-align:right;font-weight:800;white-space:nowrap;'>{itLineTotal} ₺</td>
+                            </tr>");
+                        idx++;
+                    }
+
+                    itemsTableHtml = $@"
+                        <div style='margin-bottom:24px;'>
+                            <div style='color:#0f172a;font-size:14.5px;font-weight:800;margin-bottom:8px;'>
+                                📋 Onaylanan Kalemler ({items.Count} Kalem)
+                            </div>
+                            <div style='border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden;background:#ffffff;'>
+                                <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='border-collapse:collapse;width:100%;'>
+                                    <thead>
+                                        <tr style='background:#f8fafc;border-bottom:2px solid #e2e8f0;'>
+                                            <th style='padding:8px 12px;text-align:center;color:#475569;font-size:11px;font-weight:800;text-transform:uppercase;'>#</th>
+                                            <th style='padding:8px 12px;text-align:left;color:#475569;font-size:11px;font-weight:800;text-transform:uppercase;'>Malzeme</th>
+                                            <th style='padding:8px 12px;text-align:center;color:#475569;font-size:11px;font-weight:800;text-transform:uppercase;'>Miktar</th>
+                                            <th style='padding:8px 12px;text-align:right;color:#475569;font-size:11px;font-weight:800;text-transform:uppercase;'>Birim Fiyat</th>
+                                            <th style='padding:8px 12px;text-align:right;color:#475569;font-size:11px;font-weight:800;text-transform:uppercase;'>Tutar</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {rowsSb}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr style='background:#ecfdf5;border-top:2px solid #6ee7b7;'>
+                                            <td colspan='4' style='padding:10px 12px;text-align:right;font-size:12.5px;font-weight:800;color:#065f46;'>TOPLAM KABUL EDİLEN TUTAR:</td>
+                                            <td style='padding:10px 12px;text-align:right;font-size:15px;font-weight:900;color:#059669;white-space:nowrap;'>{formattedPrice} ₺</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>";
+                }
 
                 var htmlBody = $@"
 <!DOCTYPE html>
@@ -771,7 +912,7 @@ namespace satinalmaportali2.Services
     <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='background-color:#f1f5f9;'>
         <tr>
             <td align='center' style='padding:40px 16px;'>
-                <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='max-width:620px;background-color:#ffffff;border-radius:24px;box-shadow:0 10px 40px rgba(0,0,0,0.07);border:1px solid #e2e8f0;overflow:hidden;'>
+                <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='max-width:640px;background-color:#ffffff;border-radius:24px;box-shadow:0 10px 40px rgba(0,0,0,0.07);border:1px solid #e2e8f0;overflow:hidden;'>
                     <tr>
                         <td style='background:linear-gradient(135deg,#065f46 0%,#059669 50%,#10b981 100%);padding:36px 44px;text-align:center;'>
                             <div style='background:rgba(255,255,255,0.2);display:inline-block;padding:8px 16px;border-radius:20px;margin-bottom:12px;'>
@@ -803,9 +944,11 @@ namespace satinalmaportali2.Services
                                     {formattedPrice} ₺
                                 </div>
                                 <div style='color:#166534;font-size:13px;font-weight:600;margin-top:4px;'>
-                                    Teslimat Süresi: {deliveryText} · Miktar: {quantity} {displayUnit}
+                                    Teslimat Süresi: {deliveryText} {(items != null && items.Any() ? $"· {items.Count} Kalem" : $"· Miktar: {quantity} {displayUnit}")}
                                 </div>
                             </div>
+
+                            {itemsTableHtml}
 
                             <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='margin-bottom:24px;border-collapse:separate;border-spacing:0 8px;'>
                                 <tr>
@@ -813,7 +956,7 @@ namespace satinalmaportali2.Services
                                     <td style='color:#0f172a;font-size:14px;font-weight:700;padding:8px 14px;background:#f8fafc;border-radius:8px;'>{displayBuyer}</td>
                                 </tr>
                                 <tr>
-                                    <td style='width:160px;color:#64748b;font-size:13px;font-weight:700;padding:8px 0;'>📦 Ürün / Hizmet:</td>
+                                    <td style='width:160px;color:#64748b;font-size:13px;font-weight:700;padding:8px 0;'>📦 Talep Başlığı:</td>
                                     <td style='color:#0f172a;font-size:14px;font-weight:700;padding:8px 14px;background:#f8fafc;border-radius:8px;'>{productName}</td>
                                 </tr>
                                 <tr>
@@ -823,9 +966,20 @@ namespace satinalmaportali2.Services
                             </table>
 
                             <div style='margin:30px 0;text-align:center;'>
-                                <a href='{requestsUrl}' target='_blank' style='display:inline-block;padding:15px 38px;background:linear-gradient(135deg,#059669,#10b981);color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;border-radius:12px;box-shadow:0 4px 16px rgba(16,185,129,0.35);'>
-                                    📋 Taleplerim Sayfasında Görüntüle &rarr;
-                                </a>
+                                <table role='presentation' cellpadding='0' cellspacing='0' border='0' style='margin:0 auto;'>
+                                    <tr>
+                                        <td align='center' bgcolor='#059669' style='border-radius:12px;background-color:#059669;box-shadow:0 4px 16px rgba(16,185,129,0.35);'>
+                                            <a href='{requestsUrl}' target='_blank' style='display:inline-block;padding:15px 38px;background-color:#059669;color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;border-radius:12px;letter-spacing:0.3px;'>
+                                                📋 Taleplerim Sayfasında Görüntüle &rarr;
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <div style='margin-top:14px;text-align:center;'>
+                                <p style='margin:0 0 4px;color:#94a3b8;font-size:11.5px;'>Buton çalışmıyorsa aşağıdaki bağlantıyı tarayıcınıza yapıştırın:</p>
+                                <p style='margin:0;word-break:break-all;'><a href='{requestsUrl}' target='_blank' style='color:#059669;font-size:11.5px;text-decoration:underline;'>{requestsUrl}</a></p>
                             </div>
                         </td>
                     </tr>
@@ -866,7 +1020,8 @@ namespace satinalmaportali2.Services
             string unit,
             decimal offeredPrice,
             string rejectionReason,
-            string requestsUrl)
+            string requestsUrl,
+            List<OfferItemEmailDto>? items = null)
         {
             try
             {
@@ -890,7 +1045,7 @@ namespace satinalmaportali2.Services
     <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='background-color:#f1f5f9;'>
         <tr>
             <td align='center' style='padding:40px 16px;'>
-                <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='max-width:620px;background-color:#ffffff;border-radius:24px;box-shadow:0 10px 40px rgba(0,0,0,0.07);border:1px solid #e2e8f0;overflow:hidden;'>
+                <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='max-width:640px;background-color:#ffffff;border-radius:24px;box-shadow:0 10px 40px rgba(0,0,0,0.07);border:1px solid #e2e8f0;overflow:hidden;'>
                     <tr>
                         <td style='background:linear-gradient(135deg,#334155 0%,#475569 100%);padding:32px 44px;text-align:center;'>
                             <h1 style='margin:0;color:#ffffff;font-size:22px;font-weight:800;'>
@@ -907,7 +1062,7 @@ namespace satinalmaportali2.Services
                                 Sayın {displaySupplier},
                             </p>
                             <p style='margin:0 0 20px;color:#475569;font-size:14.5px;line-height:1.7;'>
-                                <strong>{displayBuyer}</strong> tarafından açılan <strong>{productName}</strong> ({quantity} {displayUnit}) talebi için sunmuş olduğunuz <strong>{formattedPrice} ₺</strong> tutarındaki fiyat teklifiniz değerlendirilmiştir.
+                                <strong>{displayBuyer}</strong> tarafından açılan <strong>{productName}</strong> {(items != null && items.Any() ? $"({items.Count} Kalem)" : $"({quantity} {displayUnit})")} talebi için sunmuş olduğunuz <strong>{formattedPrice} ₺</strong> tutarındaki fiyat teklifiniz değerlendirilmiştir.
                             </p>
 
                             <!-- Reddetme Sebebi Kutusu -->
@@ -954,5 +1109,20 @@ namespace satinalmaportali2.Services
                 return false;
             }
         }
+    }
+
+    /// <summary>
+    /// E-postalarda kalem listesi dökümü için kullanılan veri modeli.
+    /// </summary>
+    public class OfferItemEmailDto
+    {
+        public int ItemOrder { get; set; } = 1;
+        public string ItemName { get; set; } = string.Empty;
+        public decimal Quantity { get; set; } = 1;
+        public string Unit { get; set; } = "Adet";
+        public decimal UnitPrice { get; set; }
+        public decimal LineTotal { get; set; }
+        public string? ItemDescription { get; set; }
+        public string? Notes { get; set; }
     }
 }

@@ -228,6 +228,12 @@ namespace satinalmaportali2.Controllers
             int approvedKpi = requestList.Count(r => r.Status == "Onaylandı" || r.Status == "Kabul Edildi" || r.Status == "Tamamlandı");
             int totalQtyKpi = requestList.Sum(r => r.Quantity);
 
+            // Giriş yapılmamışsa oturum gerektiren sekmeler 'all' sekmesine yönlendirilir
+            if (currentCompanyId <= 0 && (tab == "my-requests" || tab == "incoming-offers" || tab == "my-bids"))
+            {
+                tab = "all";
+            }
+
             // Sekme Filtrelemesi (Tab)
             if (tab == "my-requests" && currentCompanyId > 0)
             {
@@ -519,7 +525,10 @@ namespace satinalmaportali2.Controllers
 
                 var currentCompany = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId);
 
-                var request = await _context.Requests.Include(r => r.Offers).FirstOrDefaultAsync(r => r.RequestID == input.RequestID);
+                var request = await _context.Requests
+                    .Include(r => r.Offers)
+                    .Include(r => r.Items)
+                    .FirstOrDefaultAsync(r => r.RequestID == input.RequestID);
                 if (request == null)
                 {
                     TempData["ErrorMessage"] = "Teklif verilmek istenen talep bulunamadı.";
@@ -546,6 +555,7 @@ namespace satinalmaportali2.Controllers
 
                 // Daha önce verilmiş teklif var mı kontrol et
                 var existingOffer = await _context.RequestOffers
+                    .Include(o => o.OfferItems)
                     .FirstOrDefaultAsync(o => o.RequestID == input.RequestID && o.SupplierID == currentCompanyId);
 
                 bool wasRejected = false;
@@ -641,7 +651,7 @@ namespace satinalmaportali2.Controllers
                 }
 
                 // Alıcı firmaya e-posta bildirimini arka planda gönder
-                await TriggerOfferReceivedEmailNotificationAsync(request, currentCompany, input);
+                await TriggerOfferReceivedEmailNotificationAsync(request, currentCompany, input, input.OfferedPrice);
             }
             catch (Exception ex)
             {
@@ -704,7 +714,7 @@ namespace satinalmaportali2.Controllers
                     decimal sumLineTotals = 0;
                     foreach (var it in input.Items)
                     {
-                        var reqItem = request.Items.FirstOrDefault(ri => ri.RequestItemID == it.RequestItemID);
+                        var reqItem = request.Items?.FirstOrDefault(ri => ri.RequestItemID == it.RequestItemID);
                         decimal qty = reqItem?.Quantity ?? 1;
                         sumLineTotals += (it.UnitPrice * qty);
                     }
@@ -786,7 +796,7 @@ namespace satinalmaportali2.Controllers
                     }
 
                     await _context.SaveChangesAsync();
-                    await TriggerOfferReceivedEmailNotificationAsync(request, currentCompany, input);
+                    await TriggerOfferReceivedEmailNotificationAsync(request, currentCompany, input, calculatedTotalPrice);
                     await BroadcastOfferSubmittedAsync(request, existingOffer, currentCompany, wasRejected, wasRejected ? prevPrice : null);
 
                     return Json(new
@@ -820,7 +830,7 @@ namespace satinalmaportali2.Controllers
                         {
                             if (it.UnitPrice >= 0)
                             {
-                                var reqItem = request.Items.FirstOrDefault(ri => ri.RequestItemID == it.RequestItemID);
+                                var reqItem = request.Items?.FirstOrDefault(ri => ri.RequestItemID == it.RequestItemID);
                                 decimal qty = reqItem?.Quantity ?? 1;
                                 _context.RequestOfferItems.Add(new RequestOfferItem
                                 {
@@ -841,7 +851,7 @@ namespace satinalmaportali2.Controllers
                     }
 
                     await _context.SaveChangesAsync();
-                    await TriggerOfferReceivedEmailNotificationAsync(request, currentCompany, input);
+                    await TriggerOfferReceivedEmailNotificationAsync(request, currentCompany, input, calculatedTotalPrice);
                     await BroadcastOfferSubmittedAsync(request, newOffer, currentCompany, false, null);
 
                     return Json(new { success = true, message = $"{calculatedTotalPrice:N2} ₺ tutarındaki teklifiniz başarıyla iletildi!" });
@@ -1044,12 +1054,13 @@ namespace satinalmaportali2.Controllers
         }
 
         /// <summary>
-        /// Talebi açan alıcı firmaya yeni teklif geldiğinde otomatik zengin HTML e-postası tetikler.
+        /// Talebi açan alıcı firmaya yeni teklif geldiğinde otomatik zengin HTML e-postası tetikler (Kalem listesi destekli).
         /// </summary>
         private async Task TriggerOfferReceivedEmailNotificationAsync(
             Requests request,
             Company? currentCompany,
-            SubmitOfferInputModel input)
+            SubmitOfferInputModel input,
+            decimal? finalTotalPrice = null)
         {
             try
             {
@@ -1109,18 +1120,76 @@ namespace satinalmaportali2.Controllers
                     }
                 }
 
-                // 3. Hedef alıcı e-posta adresi mevcutsa arka planda MailKit ile gönder
+                // 3. Kalem listesini hazırla
+                var emailItems = new List<OfferItemEmailDto>();
+                var reqItems = request.Items ?? await _context.RequestItems
+                    .Where(ri => ri.RequestID == request.RequestID)
+                    .OrderBy(ri => ri.ItemOrder)
+                    .ToListAsync();
+
+                if (input.Items != null && input.Items.Any(i => i.UnitPrice >= 0))
+                {
+                    int order = 1;
+                    foreach (var it in input.Items)
+                    {
+                        var reqItem = reqItems?.FirstOrDefault(ri => ri.RequestItemID == it.RequestItemID);
+                        decimal qty = reqItem?.Quantity ?? 1;
+                        string unit = reqItem?.Unit ?? "Adet";
+                        string name = reqItem?.ItemName ?? $"Kalem #{order}";
+                        string? desc = reqItem?.ItemDescription;
+                        decimal unitPrice = it.UnitPrice;
+                        decimal lineTotal = unitPrice * qty;
+
+                        emailItems.Add(new OfferItemEmailDto
+                        {
+                            ItemOrder = order++,
+                            ItemName = name,
+                            Quantity = qty,
+                            Unit = unit,
+                            UnitPrice = unitPrice,
+                            LineTotal = lineTotal,
+                            ItemDescription = desc,
+                            Notes = it.Notes
+                        });
+                    }
+                }
+                else if (reqItems != null && reqItems.Any())
+                {
+                    int order = 1;
+                    decimal totalInputPrice = finalTotalPrice ?? input.OfferedPrice;
+                    decimal totalQty = reqItems.Sum(ri => ri.Quantity);
+                    foreach (var ri in reqItems)
+                    {
+                        decimal proportion = totalQty > 0 ? (ri.Quantity / totalQty) : (1m / reqItems.Count);
+                        decimal lineTot = Math.Round(totalInputPrice * proportion, 2);
+                        decimal uPrice = ri.Quantity > 0 ? Math.Round(lineTot / ri.Quantity, 2) : lineTot;
+
+                        emailItems.Add(new OfferItemEmailDto
+                        {
+                            ItemOrder = order++,
+                            ItemName = ri.ItemName,
+                            Quantity = ri.Quantity,
+                            Unit = ri.Unit ?? "Adet",
+                            UnitPrice = uPrice,
+                            LineTotal = lineTot,
+                            ItemDescription = ri.ItemDescription,
+                            Notes = null
+                        });
+                    }
+                }
+
+                // 4. Hedef alıcı e-posta adresi mevcutsa arka planda MailKit ile gönder
                 if (!string.IsNullOrWhiteSpace(targetEmail))
                 {
                     string supplierName = currentCompany?.CompanyName 
                         ?? currentCompany?.CompanyOfficial 
                         ?? GetCurrentCompanyName();
 
-                    string requestsUrl = $"{Request.Scheme}://{Request.Host}/Requests?tab=incoming-offers";
+                    string requestsUrl = $"{Request.Scheme}://{Request.Host}/Requests?tab=incoming-offers&requestId={request.RequestID}";
                     string rfqCode = $"REQ-{request.RequestID:D4}";
-                    string prodName = request.ProductName ?? "Satın Alma Talebi";
-                    int qty = request.Quantity ?? 1;
-                    decimal offerPrice = input.OfferedPrice;
+                    string prodName = request.ProductName ?? (reqItems != null && reqItems.Any() ? string.Join(", ", reqItems.Take(2).Select(i => i.ItemName)) + (reqItems.Count > 2 ? $" (+{reqItems.Count - 2} kalem)" : "") : "Satın Alma Talebi");
+                    int qty = request.Quantity ?? (reqItems != null && reqItems.Any() ? (int)Math.Round(reqItems.Sum(i => i.Quantity)) : 1);
+                    decimal offerPrice = finalTotalPrice ?? (emailItems.Any() ? emailItems.Sum(i => i.LineTotal) : input.OfferedPrice);
                     int deliveryDays = input.DeliveryDays;
                     int validityDays = input.ValidityDays;
                     string? notes = input.SupplierNotes;
@@ -1142,7 +1211,8 @@ namespace satinalmaportali2.Controllers
                                 deliveryDays: deliveryDays,
                                 validityDays: validityDays,
                                 offerNotes: notes,
-                                requestsUrl: requestsUrl);
+                                requestsUrl: requestsUrl,
+                                items: emailItems.Any() ? emailItems : null);
                         }
                         catch (Exception mailEx)
                         {
@@ -1180,68 +1250,53 @@ namespace satinalmaportali2.Controllers
             int redIdx = notes.IndexOf(redTag, StringComparison.OrdinalIgnoreCase);
             if (redIdx >= 0)
             {
-                int endIdx = notes.IndexOf("]", redIdx, StringComparison.OrdinalIgnoreCase);
+                int endIdx = notes.IndexOf(']', redIdx);
                 if (endIdx > redIdx)
                 {
-                    rejectionReason = notes.Substring(redIdx + redTag.Length, endIdx - (redIdx + redTag.Length)).Trim();
-                    notes = notes.Remove(redIdx, endIdx - redIdx + 1);
-                }
-                else
-                {
-                    rejectionReason = notes.Substring(redIdx + redTag.Length).Trim();
-                    notes = notes.Substring(0, redIdx);
+                    int start = redIdx + redTag.Length;
+                    rejectionReason = notes.Substring(start, endIdx - start).Trim();
+                    notes = notes.Remove(redIdx, (endIdx - redIdx) + 1);
                 }
             }
 
-            // 2. Revize Etiketi Ayrıştırma: [Revize:EskiFiyat=...|EskiRed=...] veya [Revize Teklif...]
+            // 2. Revizyon Bilgisi Ayrıştırma: [Revize:EskiFiyat=...|EskiRed=...]
             const string revTag = "[Revize:";
             int revIdx = notes.IndexOf(revTag, StringComparison.OrdinalIgnoreCase);
             if (revIdx >= 0)
             {
-                isRevised = true;
-                int endIdx = notes.IndexOf("]", revIdx, StringComparison.OrdinalIgnoreCase);
-                string revContent = (endIdx > revIdx)
-                    ? notes.Substring(revIdx + revTag.Length, endIdx - (revIdx + revTag.Length))
-                    : notes.Substring(revIdx + revTag.Length);
-
-                var parts = revContent.Split('|');
-                foreach (var p in parts)
+                int endIdx = notes.IndexOf(']', revIdx);
+                if (endIdx > revIdx)
                 {
-                    var kv = p.Split('=');
-                    if (kv.Length == 2)
+                    isRevised = true;
+                    int start = revIdx + revTag.Length;
+                    string content = notes.Substring(start, endIdx - start);
+
+                    var parts = content.Split('|');
+                    foreach (var p in parts)
                     {
-                        var k = kv[0].Trim().ToLower();
-                        var v = kv[1].Trim();
-                        if (k == "eskifiyat")
+                        var kv = p.Split('=');
+                        if (kv.Length == 2)
                         {
-                            if (decimal.TryParse(v, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsedP))
-                                prevPrice = parsedP;
-                            else if (decimal.TryParse(v, System.Globalization.NumberStyles.Any, new System.Globalization.CultureInfo("tr-TR"), out var parsedPTr))
-                                prevPrice = parsedPTr;
-                        }
-                        else if (k == "eskired")
-                        {
-                            prevRejectionReason = v;
+                            var key = kv[0].Trim();
+                            var val = kv[1].Trim();
+                            if (key.Equals("EskiFiyat", StringComparison.OrdinalIgnoreCase))
+                            {
+                                if (decimal.TryParse(val, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal ep))
+                                {
+                                    prevPrice = ep;
+                                }
+                            }
+                            else if (key.Equals("EskiRed", StringComparison.OrdinalIgnoreCase))
+                            {
+                                prevRejectionReason = val;
+                            }
                         }
                     }
+                    notes = notes.Remove(revIdx, (endIdx - revIdx) + 1);
                 }
-
-                if (endIdx > revIdx)
-                    notes = notes.Remove(revIdx, endIdx - revIdx + 1);
-                else
-                    notes = notes.Substring(0, revIdx);
-            }
-            else if (notes.IndexOf("[Revize", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                isRevised = true;
-                int genericRevIdx = notes.IndexOf("[Revize", StringComparison.OrdinalIgnoreCase);
-                int endIdx = notes.IndexOf("]", genericRevIdx, StringComparison.OrdinalIgnoreCase);
-                if (endIdx > genericRevIdx)
-                    notes = notes.Remove(genericRevIdx, endIdx - genericRevIdx + 1);
-                else
-                    notes = notes.Substring(0, genericRevIdx);
             }
 
+            // Not metnini temizle
             string clean = notes.Replace("|", " ").Trim();
             while (clean.Contains("  "))
             {
@@ -1268,6 +1323,39 @@ namespace satinalmaportali2.Controllers
                 int qty = request.Quantity ?? 1;
                 string requestsUrl = $"{Request.Scheme}://{Request.Host}/Requests?tab=my-bids";
 
+                // Kalemleri hazırla
+                var reqItems = request.Items ?? _context.RequestItems
+                    .Where(ri => ri.RequestID == request.RequestID)
+                    .OrderBy(ri => ri.ItemOrder)
+                    .ToList();
+
+                var winOfferItems = winningOffer.OfferItems ?? _context.RequestOfferItems
+                    .Where(oi => oi.OfferID == winningOffer.OfferID)
+                    .ToList();
+
+                var winEmailItems = new List<OfferItemEmailDto>();
+                int wOrder = 1;
+                foreach (var oi in winOfferItems)
+                {
+                    var reqItem = reqItems.FirstOrDefault(ri => ri.RequestItemID == oi.RequestItemID);
+                    decimal itemQty = reqItem?.Quantity ?? 1;
+                    string itemUnit = reqItem?.Unit ?? "Adet";
+                    string itemName = reqItem?.ItemName ?? $"Kalem #{wOrder}";
+                    string? itemDesc = reqItem?.ItemDescription;
+
+                    winEmailItems.Add(new OfferItemEmailDto
+                    {
+                        ItemOrder = wOrder++,
+                        ItemName = itemName,
+                        Quantity = itemQty,
+                        Unit = itemUnit,
+                        UnitPrice = oi.UnitPrice,
+                        LineTotal = oi.LineTotal > 0 ? oi.LineTotal : (oi.UnitPrice * itemQty),
+                        ItemDescription = itemDesc,
+                        Notes = oi.Notes
+                    });
+                }
+
                 // 1. Kazanan tedarikçiye kabul e-postası
                 if (winningOffer.Supplier != null && !string.IsNullOrWhiteSpace(winningOffer.Supplier.CompanyMail))
                 {
@@ -1290,7 +1378,8 @@ namespace satinalmaportali2.Controllers
                                 unit: "Adet",
                                 offeredPrice: winPrice,
                                 deliveryDays: winDelivery,
-                                requestsUrl: requestsUrl);
+                                requestsUrl: requestsUrl,
+                                items: winEmailItems.Any() ? winEmailItems : null);
                         }
                         catch (Exception ex)
                         {
@@ -1310,6 +1399,31 @@ namespace satinalmaportali2.Controllers
                         var (_, reason, _, _, _) = ParseSupplierNotes(rej.SupplierNotes);
                         var finalReason = reason ?? "Talep için başka bir tedarikçinin teklifi kabul edildi.";
 
+                        var rejOfferItems = rej.OfferItems ?? _context.RequestOfferItems
+                            .Where(oi => oi.OfferID == rej.OfferID)
+                            .ToList();
+
+                        var rejEmailItems = new List<OfferItemEmailDto>();
+                        int rOrder = 1;
+                        foreach (var oi in rejOfferItems)
+                        {
+                            var reqItem = reqItems.FirstOrDefault(ri => ri.RequestItemID == oi.RequestItemID);
+                            decimal itemQty = reqItem?.Quantity ?? 1;
+                            string itemUnit = reqItem?.Unit ?? "Adet";
+                            string itemName = reqItem?.ItemName ?? $"Kalem #{rOrder}";
+
+                            rejEmailItems.Add(new OfferItemEmailDto
+                            {
+                                ItemOrder = rOrder++,
+                                ItemName = itemName,
+                                Quantity = itemQty,
+                                Unit = itemUnit,
+                                UnitPrice = oi.UnitPrice,
+                                LineTotal = oi.LineTotal > 0 ? oi.LineTotal : (oi.UnitPrice * itemQty),
+                                Notes = oi.Notes
+                            });
+                        }
+
                         _ = Task.Run(async () =>
                         {
                             try
@@ -1324,7 +1438,8 @@ namespace satinalmaportali2.Controllers
                                     unit: "Adet",
                                     offeredPrice: rejPrice,
                                     rejectionReason: finalReason,
-                                    requestsUrl: requestsUrl);
+                                    requestsUrl: requestsUrl,
+                                    items: rejEmailItems.Any() ? rejEmailItems : null);
                             }
                             catch (Exception ex)
                             {
@@ -1362,6 +1477,36 @@ namespace satinalmaportali2.Controllers
                     var rejName = rejectedOffer.Supplier.CompanyName ?? rejectedOffer.Supplier.CompanyOfficial ?? "Tedarikçi Firma";
                     var finalReason = !string.IsNullOrWhiteSpace(reason) ? reason.Trim() : "Alıcı firma tarafından doğrudan reddedildi.";
 
+                    var reqItems = request.Items ?? _context.RequestItems
+                        .Where(ri => ri.RequestID == request.RequestID)
+                        .OrderBy(ri => ri.ItemOrder)
+                        .ToList();
+
+                    var rejOfferItems = rejectedOffer.OfferItems ?? _context.RequestOfferItems
+                        .Where(oi => oi.OfferID == rejectedOffer.OfferID)
+                        .ToList();
+
+                    var rejEmailItems = new List<OfferItemEmailDto>();
+                    int rOrder = 1;
+                    foreach (var oi in rejOfferItems)
+                    {
+                        var reqItem = reqItems.FirstOrDefault(ri => ri.RequestItemID == oi.RequestItemID);
+                        decimal itemQty = reqItem?.Quantity ?? 1;
+                        string itemUnit = reqItem?.Unit ?? "Adet";
+                        string itemName = reqItem?.ItemName ?? $"Kalem #{rOrder}";
+
+                        rejEmailItems.Add(new OfferItemEmailDto
+                        {
+                            ItemOrder = rOrder++,
+                            ItemName = itemName,
+                            Quantity = itemQty,
+                            Unit = itemUnit,
+                            UnitPrice = oi.UnitPrice,
+                            LineTotal = oi.LineTotal > 0 ? oi.LineTotal : (oi.UnitPrice * itemQty),
+                            Notes = oi.Notes
+                        });
+                    }
+
                     _ = Task.Run(async () =>
                     {
                         try
@@ -1376,7 +1521,8 @@ namespace satinalmaportali2.Controllers
                                 unit: "Adet",
                                 offeredPrice: rejectedOffer.OfferedPrice,
                                 rejectionReason: finalReason,
-                                requestsUrl: requestsUrl);
+                                requestsUrl: requestsUrl,
+                                items: rejEmailItems.Any() ? rejEmailItems : null);
                         }
                         catch (Exception ex)
                         {
@@ -1410,8 +1556,9 @@ namespace satinalmaportali2.Controllers
                 var currentCompany = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId);
 
                 var offer = await _context.RequestOffers
-                    .Include(o => o.Request)
+                    .Include(o => o.OfferItems)
                     .Include(o => o.Supplier)
+                    .Include(o => o.Request).ThenInclude(r => r.Items)
                     .FirstOrDefaultAsync(o => o.OfferID == offerId);
 
                 if (offer == null || offer.Request == null)
@@ -1441,6 +1588,7 @@ namespace satinalmaportali2.Controllers
                 // Varsa aynı talebe ait diğer teklifleri 'Reddedildi' yap ve şeffaf red gerekçesi ekle
                 var otherOffers = await _context.RequestOffers
                     .Include(o => o.Supplier)
+                    .Include(o => o.OfferItems)
                     .Where(o => o.RequestID == request.RequestID && o.OfferID != offerId)
                     .ToListAsync();
 
@@ -1466,12 +1614,12 @@ namespace satinalmaportali2.Controllers
                 // SignalR ile anlık ekran güncellemesi ve bildirim gönder
                 await BroadcastOfferAcceptedAsync(request, offer, otherOffers);
 
-                TempData["SuccessMessage"] = $"Tebrikler! #{request.RequestID} numaralı talep için {offer.OfferedPrice:N2} ₺ tutarındaki teklif kabul edildi ve talep başarıyla ONAYLANDI.";
+                TempData["SuccessMessage"] = $"{offer.Supplier?.CompanyName ?? "Tedarikçi"} firmasının {offer.OfferedPrice:N2} ₺ tutarındaki teklifi onaylandı ve talep sonuçlandı!";
             }
             catch (Exception ex)
             {
                 var detail = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-                TempData["ErrorMessage"] = "Teklif onaylanırken hata oluştu: " + detail;
+                TempData["ErrorMessage"] = "Teklif kabul edilirken hata oluştu: " + detail;
             }
 
             return RedirectToAction(nameof(Index));
@@ -1499,8 +1647,9 @@ namespace satinalmaportali2.Controllers
                 var currentCompany = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId);
 
                 var offer = await _context.RequestOffers
-                    .Include(o => o.Request)
+                    .Include(o => o.OfferItems)
                     .Include(o => o.Supplier)
+                    .Include(o => o.Request).ThenInclude(r => r.Items)
                     .FirstOrDefaultAsync(o => o.OfferID == input.OfferId);
 
                 if (offer == null || offer.Request == null)
@@ -1523,6 +1672,7 @@ namespace satinalmaportali2.Controllers
 
                 var otherOffers = await _context.RequestOffers
                     .Include(o => o.Supplier)
+                    .Include(o => o.OfferItems)
                     .Where(o => o.RequestID == request.RequestID && o.OfferID != input.OfferId)
                     .ToListAsync();
 
@@ -1581,8 +1731,9 @@ namespace satinalmaportali2.Controllers
                 var currentCompany = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId);
 
                 var offer = await _context.RequestOffers
-                    .Include(o => o.Request)
+                    .Include(o => o.OfferItems)
                     .Include(o => o.Supplier)
+                    .Include(o => o.Request).ThenInclude(r => r.Items)
                     .FirstOrDefaultAsync(o => o.OfferID == offerId);
 
                 if (offer == null || offer.Request == null)
@@ -1653,8 +1804,9 @@ namespace satinalmaportali2.Controllers
                 var currentCompany = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId);
 
                 var offer = await _context.RequestOffers
-                    .Include(o => o.Request)
+                    .Include(o => o.OfferItems)
                     .Include(o => o.Supplier)
+                    .Include(o => o.Request).ThenInclude(r => r.Items)
                     .FirstOrDefaultAsync(o => o.OfferID == input.OfferId);
 
                 if (offer == null || offer.Request == null)

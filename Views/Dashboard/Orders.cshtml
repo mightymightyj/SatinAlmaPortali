@@ -118,30 +118,34 @@
             </div>
         </div>
 
-        <div style="display: flex; gap: 6px; align-items: center;">
+        <nav class="year-filter" aria-label="Sipariş durumu filtresi">
             <input type="hidden" name="status" id="selectedStatusInput" value="@(Model.SelectedStatus ?? "Tümü")" />
-            <button type="button" class="btn-tree-tool @(string.IsNullOrEmpty(Model.SelectedStatus) || Model.SelectedStatus == "Tümü" ? "is-active" : "")" 
-                    onclick="setStatusFilter('Tümü')" style="padding: 7px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px;">
-                Tümü (@Model.TotalOrderCount)
+            <button type="button" class="year-pill @(string.IsNullOrEmpty(Model.SelectedStatus) || Model.SelectedStatus == "Tümü" ? "is-active" : "")" 
+                    onclick="setStatusFilter('Tümü')">
+                <span>Tümü</span>
+                <span class="status-count-badge">@Model.TotalOrderCount</span>
             </button>
-            <button type="button" class="btn-tree-tool @(Model.SelectedStatus == "Onaylandı" ? "is-active" : "")" 
-                    onclick="setStatusFilter('Onaylandı')" style="padding: 7px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; color: #3b82f6;">
-                Onaylandı
+            <button type="button" class="year-pill @(Model.SelectedStatus == "Onaylandı" ? "is-active" : "")" 
+                    onclick="setStatusFilter('Onaylandı')">
+                <span class="status-indicator-dot dot-blue"></span>
+                <span>Onaylandı</span>
             </button>
-            <button type="button" class="btn-tree-tool @(Model.SelectedStatus == "Kargoya Verildi" ? "is-active" : "")" 
-                    onclick="setStatusFilter('Kargoya Verildi')" style="padding: 7px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; color: #f59e0b;">
-                🚚 Kargoda
+            <button type="button" class="year-pill @(Model.SelectedStatus == "Kargoya Verildi" ? "is-active" : "")" 
+                    onclick="setStatusFilter('Kargoya Verildi')">
+                <span class="status-indicator-dot dot-amber"></span>
+                <span>🚚 Kargoda</span>
             </button>
-            <button type="button" class="btn-tree-tool @(Model.SelectedStatus == "Teslim Edildi" ? "is-active" : "")" 
-                    onclick="setStatusFilter('Teslim Edildi')" style="padding: 7px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; color: #10b981;">
-                ✓ Teslim Edildi
+            <button type="button" class="year-pill status-pill-in-stock @(Model.SelectedStatus == "Teslim Edildi" ? "is-active" : "")" 
+                    onclick="setStatusFilter('Teslim Edildi')">
+                <span class="status-indicator-dot dot-green"></span>
+                <span>✓ Teslim Edildi</span>
             </button>
 
             @if (!string.IsNullOrWhiteSpace(Model.SearchQuery) || (!string.IsNullOrWhiteSpace(Model.SelectedStatus) && Model.SelectedStatus != "Tümü"))
             {
-                <a asp-action="Orders" class="btn-cancel" style="padding: 7px 12px; font-size: 0.82rem; text-decoration: none;">✕ Temizle</a>
+                <a asp-action="Orders" class="btn-cancel" style="padding: 7px 12px; font-size: 0.82rem; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><span>✕</span> Temizle</a>
             }
-        </div>
+        </nav>
     </form>
 </div>
 

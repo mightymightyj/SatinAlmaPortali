@@ -948,7 +948,10 @@ namespace satinalmaportali2.Controllers
 
             try
             {
-                var request = await _context.Requests.Include(r => r.Offers).FirstOrDefaultAsync(r => r.RequestID == input.RequestID);
+                var request = await _context.Requests
+                    .Include(r => r.Offers)
+                    .Include(r => r.Items)
+                    .FirstOrDefaultAsync(r => r.RequestID == input.RequestID);
                 if (request == null)
                 {
                     var notFoundMsg = "Teklif verilmek istenen talep bulunamadı.";
@@ -975,7 +978,9 @@ namespace satinalmaportali2.Controllers
                     return RedirectToAction(nameof(Index), new { tab = "simulation" });
                 }
 
-                var existingOffer = await _context.RequestOffers.FirstOrDefaultAsync(o => o.RequestID == input.RequestID && o.SupplierID == supplier.CompanyID);
+                var existingOffer = await _context.RequestOffers
+                    .Include(o => o.OfferItems)
+                    .FirstOrDefaultAsync(o => o.RequestID == input.RequestID && o.SupplierID == supplier.CompanyID);
                 string succMsg;
                 if (existingOffer != null)
                 {
@@ -1077,6 +1082,33 @@ namespace satinalmaportali2.Controllers
                         string ownerName = ownerCompany.CompanyOfficial ?? ownerCompany.CompanyName ?? "Sayın Alıcı";
                         string supplierName = supplier.CompanyName ?? supplier.CompanyOfficial ?? "Tedarikçi";
 
+                        var emailItems = new List<OfferItemEmailDto>();
+                        if (request.Items != null && request.Items.Any())
+                        {
+                            int order = 1;
+                            decimal totalQty = request.Items.Sum(ri => ri.Quantity);
+                            foreach (var ri in request.Items)
+                            {
+                                decimal proportion = totalQty > 0 ? (ri.Quantity / totalQty) : (1m / request.Items.Count);
+                                decimal lineTot = Math.Round(input.OfferedPrice * proportion, 2);
+                                decimal uPrice = ri.Quantity > 0 ? Math.Round(lineTot / ri.Quantity, 2) : lineTot;
+
+                                emailItems.Add(new OfferItemEmailDto
+                                {
+                                    ItemOrder = order++,
+                                    ItemName = ri.ItemName,
+                                    Quantity = ri.Quantity,
+                                    Unit = ri.Unit ?? "Adet",
+                                    UnitPrice = uPrice,
+                                    LineTotal = lineTot,
+                                    ItemDescription = ri.ItemDescription,
+                                    Notes = null
+                                });
+                            }
+                        }
+
+                        string requestsUrl = $"{Request.Scheme}://{Request.Host}/Requests?tab=incoming-offers&requestId={request.RequestID}";
+
                         _ = Task.Run(async () =>
                         {
                             try
@@ -1094,7 +1126,8 @@ namespace satinalmaportali2.Controllers
                                     deliveryDays: input.DeliveryDays ?? 7,
                                     validityDays: input.ValidityDays ?? 30,
                                     offerNotes: input.SupplierNotes,
-                                    requestsUrl: "https://localhost:5003/Requests");
+                                    requestsUrl: requestsUrl,
+                                    items: emailItems.Any() ? emailItems : null);
                             }
                             catch (Exception emailEx)
                             {

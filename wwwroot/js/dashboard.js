@@ -123,9 +123,9 @@ function initDashRequestItems() {
     var tbody = document.getElementById('dashRequestItemsTableBody');
     if (!tbody) return;
     if (tbody.children.length === 0) {
-        addDashRequestItemRow('', 1, 'Adet', '', '');
-        addDashRequestItemRow('', 1, 'Adet', '', '');
-        addDashRequestItemRow('', 1, 'Adet', '', '');
+        addDashRequestItemRow('', 1, '', '');
+        addDashRequestItemRow('', 1, '', '');
+        addDashRequestItemRow('', 1, '', '');
     }
     recalculateDashRequestTotals();
 }
@@ -138,22 +138,22 @@ function loadDashSampleTemplate(type) {
 
     if (type === 'elektrik') {
         if (mainTitle) mainTitle.value = 'Fabrika Elektrik & Otomasyon Revizyonu Malzemeleri';
-        addDashRequestItemRow('Schneider 24V 10A Ray Tipi Güç Kaynağı', 2, 'Adet', 2250, 'DIN Ray montaj, IP20');
-        addDashRequestItemRow('Siemens S7-1200 PLC CPU 1214C DC/DC/DC', 1, 'Adet', 18500, '6ES7214-1AG40-0XB0 veya muadili');
-        addDashRequestItemRow('Wago 2.5mm² Ray Klemens (Gri)', 150, 'Adet', 14, 'Yaylı bağlantı');
-        addDashRequestItemRow('Öznur 3x2.5mm² NYAF Çok Damarlı Kablo', 100, 'Metre', 38, 'Halogen Free (HFFR)');
+        addDashRequestItemRow('Schneider 24V 10A Ray Tipi Güç Kaynağı', 2, 2250, 'DIN Ray montaj, IP20');
+        addDashRequestItemRow('Siemens S7-1200 PLC CPU 1214C DC/DC/DC', 1, 18500, '6ES7214-1AG40-0XB0 veya muadili');
+        addDashRequestItemRow('Wago 2.5mm² Ray Klemens (Gri)', 150, 14, 'Yaylı bağlantı');
+        addDashRequestItemRow('Öznur 3x2.5mm² NYAF Çok Damarlı Kablo', 100, 38, 'Halogen Free (HFFR)');
     } else if (type === 'ofis') {
         if (mainTitle) mainTitle.value = 'Merkez Ofis 2026 Q2 Kırtasiye ve Sarf Malzeme Alımı';
-        addDashRequestItemRow('A4 80gr 1. Hamur Fotokopi Kağıdı (5x500)', 25, 'Koli', 920, 'Navigator veya Copier Bond');
-        addDashRequestItemRow('Mavi Tükenmez Kalem 0.7mm', 10, 'Paket', 110, '50\'li paket');
-        addDashRequestItemRow('Masaüstü Şeffaf Telli Dosya', 300, 'Adet', 4.5, 'PP malzeme');
-        addDashRequestItemRow('Zımba Teli No:24/6', 15, 'Kutu', 35, '1000\'li kutu');
+        addDashRequestItemRow('A4 80gr 1. Hamur Fotokopi Kağıdı (5x500)', 25, 920, 'Navigator veya Copier Bond');
+        addDashRequestItemRow('Mavi Tükenmez Kalem 0.7mm', 10, 110, '50\'li paket');
+        addDashRequestItemRow('Masaüstü Şeffaf Telli Dosya', 300, 4.5, 'PP malzeme');
+        addDashRequestItemRow('Zımba Teli No:24/6', 15, 35, '1000\'li kutu');
     } else if (type === 'hirdavat') {
         if (mainTitle) mainTitle.value = 'Mekanik Bakım & Atölye Hırdavat İhtiyaçları';
-        addDashRequestItemRow('M8x30mm İnbus 8.8 Çelik Cıvata', 500, 'Adet', 4.2, 'DIN 912 Galvanizli');
-        addDashRequestItemRow('Loctite 243 Orta Mukavemet Civata Sabitleyici 50ml', 4, 'Adet', 490, 'Orijinal ambalaj');
-        addDashRequestItemRow('Bosch 125x1.0mm Paslanmaz Kesme Taşı', 100, 'Adet', 38, 'Inox uyumlu');
-        addDashRequestItemRow('WD-40 Çok Amaçlı Pas Sökücü Sprey 400ml', 12, 'Adet', 210, 'Akıllı pipetli');
+        addDashRequestItemRow('M8x30mm İnbus 8.8 Çelik Cıvata', 500, 4.2, 'DIN 912 Galvanizli');
+        addDashRequestItemRow('Loctite 243 Orta Mukavemet Civata Sabitleyici 50ml', 4, 490, 'Orijinal ambalaj');
+        addDashRequestItemRow('Bosch 125x1.0mm Paslanmaz Kesme Taşı', 100, 38, 'Inox uyumlu');
+        addDashRequestItemRow('WD-40 Çok Amaçlı Pas Sökücü Sprey 400ml', 12, 210, 'Akıllı pipetli');
     }
     recalculateDashRequestTotals();
     showAppToast('✓ Hazır örnek kalem listesi yüklendi.', true);
@@ -161,11 +161,11 @@ function loadDashSampleTemplate(type) {
 
 function addDashMultipleRequestItemRows(count) {
     for (var i = 0; i < count; i++) {
-        addDashRequestItemRow('', 1, 'Adet', '', '');
+        addDashRequestItemRow('', 1, '', '');
     }
 }
 
-function addDashRequestItemRow(name, qty, unit, price, desc) {
+function addDashRequestItemRow(name, qty, price, desc) {
     var tbody = document.getElementById('dashRequestItemsTableBody');
     if (!tbody) return;
 
@@ -173,29 +173,16 @@ function addDashRequestItemRow(name, qty, unit, price, desc) {
     var tr = document.createElement('tr');
     tr.className = 'dash-item-data-row';
 
+    var parsedQty = parseInt(qty, 10);
+    if (isNaN(parsedQty) || parsedQty < 1) parsedQty = 1;
+
     tr.innerHTML = `
         <td style="text-align: center; font-weight: 700; color: #64748B;" class="dash-item-order-num">${rowCount}</td>
         <td>
             <input type="text" class="item-input dash-item-name" value="${escapeHtml(name || '')}" placeholder="Örn: Schneider 24V 10A Güç Kaynağı" required oninput="recalculateDashRequestTotals()" />
         </td>
         <td>
-            <input type="number" class="item-input dash-item-qty" min="0.01" step="any" value="${qty !== undefined && qty !== null && qty !== '' ? qty : 1}" required oninput="recalculateDashRequestTotals()" />
-        </td>
-        <td>
-            <select class="item-select dash-item-unit" onchange="recalculateDashRequestTotals()">
-                <option value="Adet" ${unit === 'Adet' ? 'selected' : ''}>Adet</option>
-                <option value="Kg" ${unit === 'Kg' ? 'selected' : ''}>Kg</option>
-                <option value="Metre" ${unit === 'Metre' ? 'selected' : ''}>Metre</option>
-                <option value="Litre" ${unit === 'Litre' ? 'selected' : ''}>Litre</option>
-                <option value="Paket" ${unit === 'Paket' ? 'selected' : ''}>Paket</option>
-                <option value="Koli" ${unit === 'Koli' ? 'selected' : ''}>Koli</option>
-                <option value="Rulo" ${unit === 'Rulo' ? 'selected' : ''}>Rulo</option>
-                <option value="Takım" ${unit === 'Takım' ? 'selected' : ''}>Takım</option>
-                <option value="Ton" ${unit === 'Ton' ? 'selected' : ''}>Ton</option>
-                <option value="Saat" ${unit === 'Saat' ? 'selected' : ''}>Saat</option>
-                <option value="Hizmet" ${unit === 'Hizmet' ? 'selected' : ''}>Hizmet</option>
-                <option value="Kutu" ${unit === 'Kutu' ? 'selected' : ''}>Kutu</option>
-            </select>
+            <input type="number" class="item-input dash-item-qty" min="1" step="1" value="${parsedQty}" placeholder="Adet" required oninput="this.value = this.value.replace(/[^0-9]/g, ''); recalculateDashRequestTotals()" />
         </td>
         <td>
             <input type="number" class="item-input dash-item-price" min="0" step="any" value="${price || ''}" placeholder="0,00" oninput="recalculateDashRequestTotals()" />
@@ -221,10 +208,9 @@ function cloneDashRequestItemRow(btn) {
     if (!tr) return;
     var name = tr.querySelector('.dash-item-name')?.value || '';
     var qty = tr.querySelector('.dash-item-qty')?.value || 1;
-    var unit = tr.querySelector('.dash-item-unit')?.value || 'Adet';
     var price = tr.querySelector('.dash-item-price')?.value || '';
     var desc = tr.querySelector('.dash-item-desc')?.value || '';
-    addDashRequestItemRow(name, qty, unit, price, desc);
+    addDashRequestItemRow(name, qty, price, desc);
 }
 
 function removeDashRequestItemRow(btn) {
@@ -266,7 +252,7 @@ function recalculateDashRequestTotals() {
     var hasAnyBudget = false;
 
     rows.forEach(function (row) {
-        var qtyVal = parseFloat(row.querySelector('.dash-item-qty')?.value || '0');
+        var qtyVal = parseInt(row.querySelector('.dash-item-qty')?.value || '0', 10);
         var priceVal = parseFloat(row.querySelector('.dash-item-price')?.value || '0');
         var totalBadge = row.querySelector('.item-line-total-badge');
 
@@ -289,7 +275,7 @@ function recalculateDashRequestTotals() {
     var summaryBudgetEl = document.getElementById('dashSummaryTotalBudget');
 
     if (summaryItemsEl) summaryItemsEl.textContent = totalItems + ' Kalem';
-    if (summaryQtyEl) summaryQtyEl.textContent = Number(totalQty).toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' Birim';
+    if (summaryQtyEl) summaryQtyEl.textContent = Number(totalQty).toLocaleString('tr-TR') + ' Adet';
     if (summaryBudgetEl) {
         if (hasAnyBudget) {
             summaryBudgetEl.textContent = Number(totalBudget).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
@@ -345,8 +331,8 @@ async function handleCreateRequestSubmit(event) {
 
     rows.forEach(function (row, idx) {
         var itName = row.querySelector('.dash-item-name')?.value?.trim() || '';
-        var qty = parseFloat(row.querySelector('.dash-item-qty')?.value || '0');
-        var unit = row.querySelector('.dash-item-unit')?.value || 'Adet';
+        var qty = parseInt(row.querySelector('.dash-item-qty')?.value || '0', 10);
+        var unit = 'Adet';
         var priceStr = row.querySelector('.dash-item-price')?.value;
         var price = priceStr ? parseFloat(priceStr) : null;
         var desc = row.querySelector('.dash-item-desc')?.value?.trim() || null;
@@ -356,7 +342,7 @@ async function handleCreateRequestSubmit(event) {
                 itemOrder: idx + 1,
                 itemName: itName,
                 quantity: qty,
-                unit: unit,
+                unit: 'Adet',
                 estimatedUnitPrice: price,
                 itemDescription: desc
             });

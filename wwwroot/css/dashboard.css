@@ -408,29 +408,130 @@ body.app-body {
 .year-filter {
     display: flex;
     gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
-.year-pill {
+.year-pill,
+.btn-tree-tool {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     background: #FFFFFF;
     border: 1px solid #E2E8F0;
     color: #64748B;
-    padding: 6px 14px;
+    padding: 7px 14px;
     border-radius: 8px;
-    font-size: 0.8rem;
+    font-size: 0.82rem;
     font-weight: 600;
     text-decoration: none;
+    cursor: pointer;
+    line-height: 1.2;
+    transition: all 0.15s ease;
+    font-family: inherit;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.year-pill:hover,
+.btn-tree-tool:hover {
+    color: var(--ink, #0F172A);
+    border-color: #CBD5E1;
+    background: #F8FAFC;
+}
+
+.year-pill.is-active,
+.btn-tree-tool.is-active {
+    background: var(--blue, #2563EB);
+    border-color: var(--blue, #2563EB);
+    color: #FFFFFF !important;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+}
+
+.year-pill.is-active .status-count-badge,
+.btn-tree-tool.is-active .status-count-badge {
+    background: rgba(255, 255, 255, 0.25);
+    color: #FFFFFF;
+}
+
+.year-pill .status-count-badge,
+.btn-tree-tool .status-count-badge {
+    display: inline-block;
+    background: #F1F5F9;
+    color: #475569;
+    padding: 1px 7px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    font-weight: 700;
     transition: all 0.15s ease;
 }
 
-.year-pill:hover {
-    color: var(--ink);
-    border-color: #CBD5E1;
+.year-pill .status-indicator-dot,
+.btn-tree-tool .status-indicator-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+    flex: none;
 }
 
-.year-pill.is-active {
-    background: var(--blue);
-    border-color: var(--blue);
-    color: #FFFFFF;
+.year-pill .status-indicator-dot.dot-green,
+.btn-tree-tool .status-indicator-dot.dot-green {
+    background: #10B981;
+}
+
+.year-pill .status-indicator-dot.dot-blue,
+.btn-tree-tool .status-indicator-dot.dot-blue {
+    background: #3B82F6;
+}
+
+.year-pill .status-indicator-dot.dot-amber,
+.btn-tree-tool .status-indicator-dot.dot-amber {
+    background: #F59E0B;
+}
+
+.year-pill.is-active .status-indicator-dot,
+.btn-tree-tool.is-active .status-indicator-dot {
+    background: #FFFFFF !important;
+}
+
+.year-pill.status-pill-in-stock,
+.btn-tree-tool.status-pill-in-stock {
+    color: #059669;
+}
+
+.year-pill.status-pill-in-stock:hover,
+.btn-tree-tool.status-pill-in-stock:hover {
+    background: #ECFDF5;
+    border-color: #A7F3D0;
+    color: #047857;
+}
+
+.year-pill.status-pill-in-stock.is-active,
+.btn-tree-tool.status-pill-in-stock.is-active {
+    background: #059669;
+    border-color: #059669;
+    color: #FFFFFF !important;
+    box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);
+}
+
+.year-pill.status-pill-critical,
+.btn-tree-tool.status-pill-critical {
+    color: #D97706;
+}
+
+.year-pill.status-pill-critical:hover,
+.btn-tree-tool.status-pill-critical:hover {
+    background: #FFFBEB;
+    border-color: #FDE68A;
+    color: #B45309;
+}
+
+.year-pill.status-pill-critical.is-active,
+.btn-tree-tool.status-pill-critical.is-active {
+    background: #D97706;
+    border-color: #D97706;
+    color: #FFFFFF !important;
+    box-shadow: 0 2px 6px rgba(217, 119, 6, 0.25);
 }
 
 /* ==================== 4 KPI KARTI (image_16df7c İLE BİREBİR) ==================== */
