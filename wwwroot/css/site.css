@@ -7201,3 +7201,57 @@ html, body {
     animation: realtimePriceFlash 2s ease-out;
 }
 
+/* ==================== GLOBAL CUSTOM MODAL OVERLAY STYLES ==================== */
+.custom-modal-backdrop {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(15, 23, 42, 0.65) !important;
+    backdrop-filter: blur(4px) !important;
+    z-index: 10000 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 16px !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transition: opacity 0.2s ease, visibility 0.2s ease !important;
+}
+
+.custom-modal-backdrop.is-open {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
+.custom-modal-dialog {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    transform: translateY(12px);
+    transition: transform 0.2s ease;
+    overflow: hidden;
+}
+
+.custom-modal-dialog.is-wide {
+    max-width: 820px;
+}
+
+.custom-modal-dialog.is-extra-wide {
+    max-width: 1080px;
+    width: 95vw;
+}
+
+.custom-modal-backdrop.is-open .custom-modal-dialog {
+    transform: translateY(0);
+}
+

@@ -444,12 +444,31 @@ function openPriceModal(itemId, itemName, currentPrice, currentStock) {
     var priceInput = document.getElementById('newUnitPrice');
     var stockInput = document.getElementById('newStockQty');
     var hiddenIdInput = document.getElementById('priceProductId');
+    var titleEl = modal.querySelector('.modal-head h3');
 
     if (itemId && select) {
+        var existingOpt = Array.from(select.options).find(function(o) { return o.value == itemId; });
+        if (!existingOpt) {
+            var newOpt = document.createElement('option');
+            newOpt.value = itemId;
+            newOpt.setAttribute('data-id', itemId);
+            newOpt.setAttribute('data-price', currentPrice !== undefined ? currentPrice : '0');
+            newOpt.setAttribute('data-stock', currentStock !== undefined ? currentStock : '0');
+            newOpt.textContent = (itemName || ('Ürün #' + itemId)) + (currentPrice ? ' (Mevcut: ' + Number(currentPrice).toLocaleString('tr-TR') + ' ₺)' : '');
+            select.appendChild(newOpt);
+            newOpt.selected = true;
+        } else {
+            existingOpt.selected = true;
+            if (itemName) existingOpt.textContent = itemName + (currentPrice ? ' (Mevcut: ' + Number(currentPrice).toLocaleString('tr-TR') + ' ₺)' : '');
+            if (currentPrice !== undefined) existingOpt.setAttribute('data-price', currentPrice);
+            if (currentStock !== undefined) existingOpt.setAttribute('data-stock', currentStock);
+        }
+
         select.value = itemId;
-        if (priceInput && currentPrice) priceInput.value = currentPrice;
-        if (stockInput && currentStock) stockInput.value = currentStock;
+        if (priceInput && currentPrice !== undefined && currentPrice !== null) priceInput.value = currentPrice;
+        if (stockInput && currentStock !== undefined && currentStock !== null) stockInput.value = currentStock;
         if (hiddenIdInput) hiddenIdInput.value = itemId;
+        if (titleEl) titleEl.textContent = itemName ? (itemName + ' - Fiyat & Stok Düzenle') : 'Katalog Ürün Fiyatı Güncelle';
     } else if (select && select.selectedOptions.length > 0) {
         var opt = select.selectedOptions[0];
         var p = opt.getAttribute('data-price') || opt.value;
@@ -458,11 +477,12 @@ function openPriceModal(itemId, itemName, currentPrice, currentStock) {
         if (priceInput && p) priceInput.value = p;
         if (stockInput && s) stockInput.value = s;
         if (hiddenIdInput) hiddenIdInput.value = id;
+        if (titleEl) titleEl.textContent = 'Katalog Ürün Fiyatı Güncelle';
     }
 
     modal.classList.add('is-open');
     modal.setAttribute('aria-hidden', 'false');
-    if (priceInput) setTimeout(function () { priceInput.focus(); }, 50);
+    if (priceInput) setTimeout(function () { priceInput.focus(); priceInput.select(); }, 60);
 }
 
 function closePriceModal() {
@@ -500,9 +520,16 @@ async function handlePriceUpdateSubmit(event) {
     var newStock = parseInt(document.getElementById('newStockQty')?.value || '0', 10);
     var note = document.getElementById('priceChangeNote')?.value || '';
 
-    if (newPrice <= 0) {
+    if (isNaN(newPrice) || newPrice <= 0) {
         showAppToast('Lütfen geçerli bir birim fiyat giriniz.', false);
         return;
+    }
+
+    var submitBtn = event.target.querySelector('button[type="submit"]');
+    var originalText = submitBtn ? submitBtn.innerHTML : 'Fiyatı Güncelle';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '⏳ Güncelleniyor...';
     }
 
     try {
@@ -522,12 +549,76 @@ async function handlePriceUpdateSubmit(event) {
         var result = await response.json();
         if (result.success) {
             closePriceModal();
-            showAppToast('✓ ' + result.message, true);
+            showAppToast('✓ ' + (result.message || 'Ürün fiyat ve stok bilgisi başarıyla güncellendi.'), true);
+
+            // ==================== ASENKRON DOM GÜNCELLEMESİ ====================
+            // 1. Listings.cshtml tablosundaki satırı canlı güncelle
+            var listingRow = document.getElementById('listing-row-' + itemId);
+            if (listingRow) {
+                // Fiyat hücresi
+                var priceCell = listingRow.querySelector('td:nth-child(4) strong');
+                if (priceCell) {
+                    priceCell.textContent = Number(newPrice).toLocaleString('tr-TR', { maximumFractionDigits: 0 }) + ' ₺';
+                    priceCell.classList.add('realtime-price-flash');
+                    setTimeout(function() { priceCell.classList.remove('realtime-price-flash'); }, 2000);
+                }
+
+                // Stok hücresi ve rozeti
+                var stockCol = listingRow.querySelector('td:nth-child(3)');
+                if (stockCol) {
+                    var stockStrong = stockCol.querySelector('strong');
+                    var statusBadge = stockCol.querySelector('.status-badge');
+                    var isOut = newStock <= 0;
+                    var isCrit = newStock > 0 && newStock <= 10;
+                    var statusText = isOut ? 'Tükendi' : (isCrit ? 'Kritik' : 'Stokta');
+
+                    if (stockStrong) {
+                        stockStrong.textContent = newStock + ' Adet';
+                        stockStrong.className = isOut ? 'text-danger' : (isCrit ? 'text-warning' : '');
+                    }
+                    if (statusBadge) {
+                        statusBadge.className = 'status-badge ' + (isOut ? 'badge-coral' : (isCrit ? 'badge-amber' : 'badge-emerald'));
+                        statusBadge.innerHTML = '<span class="status-dot"></span> ' + statusText;
+                    }
+                }
+
+                // Düzenle butonundaki parametreleri güncelle
+                var editBtn = listingRow.querySelector('.btn-table-action');
+                if (editBtn) {
+                    editBtn.setAttribute('onclick', "openPriceModal(" + itemId + ", '" + escapeHtml(productName).replace(/'/g, "\\'") + "', " + newPrice + ", " + newStock + ")");
+                }
+
+                listingRow.classList.add('realtime-updated');
+                setTimeout(function() { listingRow.classList.remove('realtime-updated'); }, 2400);
+            }
+
+            // 2. Supplier.cshtml tablosundaki satırı canlı güncelle (varsa)
+            var suppRow = document.getElementById('featured-prod-row-' + itemId);
+            if (suppRow) {
+                var sPrice = suppRow.querySelector('.featured-price-val');
+                var sStock = suppRow.querySelector('.featured-stock-val');
+                if (sPrice) {
+                    sPrice.textContent = Number(newPrice).toLocaleString('tr-TR') + ' ₺';
+                    sPrice.classList.add('realtime-price-flash');
+                }
+                if (sStock) sStock.textContent = newStock + ' Adet';
+            }
+
+            // 3. Option data niteliklerini güncelle
+            if (opt) {
+                opt.setAttribute('data-price', newPrice);
+                opt.setAttribute('data-stock', newStock);
+            }
         } else {
             showAppToast('Hata: ' + (result.message || 'Fiyat güncellenemedi.'), false);
         }
     } catch (err) {
         showAppToast('Sunucu bağlantı hatası: ' + err.message, false);
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
     }
 }
 

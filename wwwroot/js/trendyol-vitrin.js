@@ -3,6 +3,53 @@
  * 6 Sütun x 8 Satır (48 Ürün) Profesyonel Kurumsal Ürün & Tedarikçi Motoru
  */
 
+// Tedarikçi Firma İsimleri ve Veritabanı ID Eşleme Haritası
+const B2B_SELLER_ID_MAP = {
+    "atlas metal": 1,
+    "sac sanayi": 1,
+    "lazer kesim": 1,
+    "ege plastik": 2,
+    "ambalaj": 2,
+    "nova elektronik": 3,
+    "otomasyon": 3,
+    "sunucu": 3,
+    "ağ & altyapı": 3,
+    "barkod": 3,
+    "karadeniz kereste": 4,
+    "ahşap": 4,
+    "palet": 4,
+    "zirve kimya": 5,
+    "kuzey kimya": 5,
+    "polimer": 5,
+    "yapıştırıcı": 5,
+    "birlik rulman": 6,
+    "toros": 6,
+    "hırdavat": 6,
+    "güvenlik": 6,
+    "yıldız lojistik": 7,
+    "tekno enerji": 8,
+    "kablo": 8,
+    "şalt": 8,
+    "pano": 8,
+    "başak cıvata": 9,
+    "bağlantı elemanları": 9,
+    "vizyon endüstriyel": 10,
+    "vasıflı çelik": 10,
+    "freze": 10
+};
+
+function getSellerCompanyId(item) {
+    if (!item) return 1;
+    if (typeof item.sellerCompanyId === 'number' && item.sellerCompanyId > 0) {
+        return item.sellerCompanyId;
+    }
+    const raw = (item.seller || item.brand || '').toLowerCase();
+    for (const [key, id] of Object.entries(B2B_SELLER_ID_MAP)) {
+        if (raw.includes(key)) return id;
+    }
+    return (item.id ? ((Math.abs(item.id) % 10) + 1) : 1);
+}
+
 // Zengin B2B Endüstriyel Ürün Kataloğu (Kurumsal Şirket Odaklı)
 const B2B_PRODUCT_CATALOG = [
     // Bilişim & IT Altyapı
@@ -785,7 +832,7 @@ function renderCorporateVitrin() {
             <article class="b2b-product-card" data-id="${item.id}" data-category="${item.category}">
                 <!-- Kart Üst Barı: Tedarikçi & Lokasyon -->
                 <div class="b2b-card-supplier-bar" title="Tedarikçi: ${item.seller} (${item.sellerLocation})">
-                    <a href="/Seller/${item.sellerCompanyId || 1}" target="_blank" class="b2b-verified-badge" title="${item.seller} - 10 Yıldızlı Satıcı Sayfasını İncele" style="text-decoration: none; color: inherit; display: inline-flex; align-items: center;">
+                    <a href="/Seller/${getSellerCompanyId(item)}" target="_blank" class="b2b-verified-badge" title="${item.seller} - 10 Yıldızlı Satıcı Sayfasını İncele" style="text-decoration: none; color: inherit; display: inline-flex; align-items: center;">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="#059669" stroke="currentColor" stroke-width="1.5">
                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                             <polyline points="22 4 12 14.01 9 11.01" stroke="#fff" stroke-width="2.5"></polyline>
@@ -1009,7 +1056,7 @@ function openProductQuickView(productId) {
     document.getElementById('qvModalScore').textContent = `★ ${product.sellerScore} / 10`;
     const qvSellerLink = document.getElementById('qvModalSellerLink');
     if (qvSellerLink) {
-        qvSellerLink.href = `/Seller/${product.sellerCompanyId || 1}`;
+        qvSellerLink.href = `/Seller/${getSellerCompanyId(product)}`;
     }
     document.getElementById('qvModalPrice').textContent = formatB2BMoney(product.price);
     document.getElementById('qvModalOldPrice').textContent = formatB2BMoney(product.oldPrice);

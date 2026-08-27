@@ -291,6 +291,55 @@ namespace satinalmaportali2.Controllers
                     RequestDate = r.RequestDate
                 }).ToList();
 
+                // 7. Değerlendirmeler Listesi & Siparişler (10★ İtibar Karnesi Testi)
+                var dbReviews = await _context.Reviews
+                    .Include(r => r.Order)
+                    .Include(r => r.TargetCompany)
+                    .Include(r => r.ReviewerCompany)
+                    .AsNoTracking()
+                    .OrderByDescending(r => r.ReviewDate)
+                    .ToListAsync();
+
+                var dbOrders = await _context.Orders
+                    .AsNoTracking()
+                    .OrderByDescending(o => o.OrderID)
+                    .ToListAsync();
+
+                viewModel.Reviews = dbReviews.Select(r => new ReviewAdminDto
+                {
+                    ReviewID = r.ReviewID,
+                    CompanyID = r.CompanyID,
+                    TargetCompanyName = r.TargetCompany?.CompanyName ?? (!string.IsNullOrWhiteSpace(r.Order?.SupplierCompanyName) ? r.Order.SupplierCompanyName : "Firma #" + r.CompanyID),
+                    ReviewerCompanyID = r.ReviewerCompanyID,
+                    ReviewerName = !string.IsNullOrWhiteSpace(r.ReviewerName) ? r.ReviewerName : (r.ReviewerCompany?.CompanyName ?? "Onaylı B2B Kullanıcı"),
+                    ReviewType = r.ReviewType ?? "BuyerToSeller",
+                    ReviewScore = r.ReviewScore ?? 10.0,
+                    DeliveryScore = r.DeliveryScore,
+                    QualityScore = r.QualityScore,
+                    CommunicationScore = r.CommunicationScore,
+                    ReviewText = r.ReviewText,
+                    ReviewDate = r.ReviewDate,
+                    OrderNumber = r.Order?.OrderNumber,
+                    OrderID = r.OrderID,
+                    IsVerifiedPurchase = r.IsVerifiedPurchase
+                }).ToList();
+
+                viewModel.AvailableOrders = dbOrders.Select(o => new OrderSummaryDto
+                {
+                    OrderID = o.OrderID,
+                    OrderNumber = o.OrderNumber,
+                    BuyerCompanyName = o.BuyerCompanyName,
+                    SupplierCompanyName = o.SupplierCompanyName,
+                    GrandTotal = o.GrandTotal,
+                    OrderDate = o.OrderDate,
+                    OrderStatus = o.OrderStatus
+                }).ToList();
+
+                viewModel.Stats.TotalReviews = dbReviews.Count;
+                viewModel.Stats.AveragePlatformScore = dbReviews.Any() ? Math.Round(dbReviews.Average(r => r.ReviewScore ?? 10.0), 1) : 10.0;
+                viewModel.Stats.BuyerToSellerReviewsCount = dbReviews.Count(r => r.ReviewType == "BuyerToSeller");
+                viewModel.Stats.SellerToBuyerReviewsCount = dbReviews.Count(r => r.ReviewType == "SellerToBuyer");
+
                 // Filtreleme (Kategoriler & Firmalar)
                 if (!string.IsNullOrWhiteSpace(search))
                 {
@@ -1212,6 +1261,231 @@ namespace satinalmaportali2.Controllers
             }
 
             return RedirectToAction(nameof(Index), new { tab = "settings" });
+        }
+
+        // =========================================================================
+        // 10★ DEĞERLENDİRME & KARNE TEST SİMÜLASYONU ACTIONS
+        // =========================================================================
+
+        [HttpPost]
+        [Route("SimulateReview")]
+        public async Task<IActionResult> SimulateReview(SimulateReviewInputModel input)
+        {
+            if (!await CheckIsSuperAdminAsync())
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Yetkisiz işlem." });
+                return Forbid();
+            }
+
+            if (!ModelState.IsValid || input.TargetCompanyID <= 0 || input.ReviewScore < 1.0 || input.ReviewScore > 10.0)
+            {
+                var reqMsg = "Lütfen değerlendirilecek hedef firmayı ve 1-10 arasında geçerli bir puan seçiniz.";
+                if (IsAjaxRequest()) return Json(new { success = false, message = reqMsg });
+                TempData["AdminError"] = reqMsg;
+                return RedirectToAction(nameof(Index), new { tab = "reviews" });
+            }
+
+            try
+            {
+                var targetComp = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyID == input.TargetCompanyID);
+                if (targetComp == null)
+                {
+                    var notFoundMsg = "Değerlendirilecek hedef firma sistemde bulunamadı.";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = notFoundMsg });
+                    TempData["AdminError"] = notFoundMsg;
+                    return RedirectToAction(nameof(Index), new { tab = "reviews" });
+                }
+
+                string reviewerName = input.ReviewerName?.Trim() ?? "";
+                if (string.IsNullOrWhiteSpace(reviewerName) && input.ReviewerCompanyID.HasValue && input.ReviewerCompanyID.Value > 0)
+                {
+                    var revComp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == input.ReviewerCompanyID.Value);
+                    if (revComp != null) reviewerName = revComp.CompanyName;
+                }
+                if (string.IsNullOrWhiteSpace(reviewerName))
+                {
+                    reviewerName = input.ReviewType == "BuyerToSeller" ? "Doğrulanmış Kurumsal Alıcı (Test)" : "Onaylı Tedarikçi Firma (Test)";
+                }
+
+                var newReview = new Reviews
+                {
+                    CompanyID = input.TargetCompanyID,
+                    ReviewerCompanyID = input.ReviewerCompanyID,
+                    ReviewerName = reviewerName,
+                    ReviewType = input.ReviewType,
+                    OrderID = input.OrderID,
+                    ReviewScore = input.ReviewScore,
+                    DeliveryScore = input.DeliveryScore ?? input.ReviewScore,
+                    QualityScore = input.QualityScore ?? input.ReviewScore,
+                    CommunicationScore = input.CommunicationScore ?? input.ReviewScore,
+                    ReviewText = input.ReviewText?.Trim(),
+                    ReviewDate = DateTime.UtcNow,
+                    IsVerifiedPurchase = input.IsVerifiedPurchase
+                };
+
+                _context.Reviews.Add(newReview);
+                await _context.SaveChangesAsync();
+
+                var succMsg = $"'{targetComp.CompanyName}' firması için {input.ReviewScore:0.0}★ değerindeki test değerlendirmesi başarıyla kaydedildi! (ID: #{newReview.ReviewID})";
+                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, reviewId = newReview.ReviewID });
+                TempData["AdminSuccess"] = succMsg;
+            }
+            catch (Exception ex)
+            {
+                var errMsg = "Değerlendirme simülasyonu hatası: " + ex.Message;
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["AdminError"] = errMsg;
+            }
+
+            return RedirectToAction(nameof(Index), new { tab = "reviews" });
+        }
+
+        [HttpPost]
+        [Route("DeleteReview")]
+        public async Task<IActionResult> DeleteReview(int id)
+        {
+            if (!await CheckIsSuperAdminAsync())
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Yetkisiz işlem." });
+                return Forbid();
+            }
+
+            if (id <= 0)
+            {
+                var reqMsg = "Geçersiz değerlendirme seçildi.";
+                if (IsAjaxRequest()) return Json(new { success = false, message = reqMsg });
+                TempData["AdminError"] = reqMsg;
+                return RedirectToAction(nameof(Index), new { tab = "reviews" });
+            }
+
+            try
+            {
+                var review = await _context.Reviews.FirstOrDefaultAsync(r => r.ReviewID == id);
+                if (review == null)
+                {
+                    var notFoundMsg = "Silinecek değerlendirme bulunamadı.";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = notFoundMsg });
+                    TempData["AdminError"] = notFoundMsg;
+                    return RedirectToAction(nameof(Index), new { tab = "reviews" });
+                }
+
+                _context.Reviews.Remove(review);
+                await _context.SaveChangesAsync();
+
+                var succMsg = $"#{id} numaralı değerlendirme başarıyla silindi.";
+                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, reviewId = id });
+                TempData["AdminSuccess"] = succMsg;
+            }
+            catch (Exception ex)
+            {
+                var errMsg = "Değerlendirme silinirken hata oluştu: " + ex.Message;
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["AdminError"] = errMsg;
+            }
+
+            return RedirectToAction(nameof(Index), new { tab = "reviews" });
+        }
+
+        [HttpPost]
+        [Route("GenerateDemoReviews")]
+        public async Task<IActionResult> GenerateDemoReviews()
+        {
+            if (!await CheckIsSuperAdminAsync())
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Yetkisiz işlem." });
+                return Forbid();
+            }
+
+            try
+            {
+                var corporateCompanies = await _context.Companies
+                    .Where(c => c.CompanyTypeID != 4 && !string.Equals(c.CompanyMail, "admin@tedarikportal.com", StringComparison.OrdinalIgnoreCase))
+                    .ToListAsync();
+
+                if (!corporateCompanies.Any())
+                {
+                    var noCompMsg = "Sistemde değerlendirme yapılacak kurumsal firma bulunamadı.";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = noCompMsg });
+                    TempData["AdminError"] = noCompMsg;
+                    return RedirectToAction(nameof(Index), new { tab = "reviews" });
+                }
+
+                var sampleBuyerComments = new[]
+                {
+                    "Siparişimiz eksiksiz ve taahhüt edilen süreden daha hızlı ulaştı. Ürün ambalajı ve kalitesi mükemmel.",
+                    "Kurumsal satın alma sürecimizde gösterilen ilgi ve teknik destek için teşekkür ederiz. 10/10 hizmet.",
+                    "Fiyat/performans açısından sektördeki en güvenilir tedarikçilerden biri. Sevkiyat çok hızlıydı.",
+                    "Malzeme kalitesi tam şartnamemize uygun. Faturalandırma ve sevkiyat süreçleri çok profesyonelce yürütüldü.",
+                    "Ürünler sağlam ulaştı, teknik dokümanlar eksiksiz iletildi. Tekrar çalışacağız."
+                };
+
+                var sampleSellerComments = new[]
+                {
+                    "Ödeme tam vadesinde ve eksiksiz gerçekleşti. Mal kabul süreci son derece hızlı ve profesyoneldi.",
+                    "Kurumsal iletişim son derece net ve yapıcı. Güvenilir ve saygın bir iş ortağı.",
+                    "Teslimat onayını ve evrak sürecini aynı gün tamamladılar. Çalışmaktan memnuniyet duyduğumuz bir alıcı.",
+                    "Sipariş şartlarına ve anlaşmaya tam uyum sağlandı. Teşekkür ederiz."
+                };
+
+                int createdCount = 0;
+                var rand = new Random();
+
+                foreach (var target in corporateCompanies)
+                {
+                    // Satıcı Değerlendirmesi (BuyerToSeller)
+                    var otherComps = corporateCompanies.Where(c => c.CompanyID != target.CompanyID).ToList();
+                    var reviewer = otherComps.Any() ? otherComps[rand.Next(otherComps.Count)] : null;
+
+                    var bReview = new Reviews
+                    {
+                        CompanyID = target.CompanyID,
+                        ReviewerCompanyID = reviewer?.CompanyID,
+                        ReviewerName = reviewer?.CompanyName ?? "Atlas Endüstri A.Ş. (Onaylı Alıcı)",
+                        ReviewType = "BuyerToSeller",
+                        ReviewScore = Math.Round(9.0 + rand.NextDouble(), 1), // 9.0 - 10.0
+                        DeliveryScore = 10.0,
+                        QualityScore = 9.8,
+                        CommunicationScore = 10.0,
+                        ReviewText = sampleBuyerComments[rand.Next(sampleBuyerComments.Length)],
+                        ReviewDate = DateTime.UtcNow.AddDays(-rand.Next(1, 15)),
+                        IsVerifiedPurchase = true
+                    };
+                    _context.Reviews.Add(bReview);
+                    createdCount++;
+
+                    // Alıcı Değerlendirmesi (SellerToBuyer)
+                    var sReview = new Reviews
+                    {
+                        CompanyID = target.CompanyID,
+                        ReviewerCompanyID = reviewer?.CompanyID,
+                        ReviewerName = reviewer?.CompanyName ?? "Mega Lojistik ve Ticaret A.Ş. (Onaylı Tedarikçi)",
+                        ReviewType = "SellerToBuyer",
+                        ReviewScore = Math.Round(9.2 + (rand.NextDouble() * 0.8), 1),
+                        DeliveryScore = 10.0,
+                        QualityScore = 10.0,
+                        CommunicationScore = 9.5,
+                        ReviewText = sampleSellerComments[rand.Next(sampleSellerComments.Length)],
+                        ReviewDate = DateTime.UtcNow.AddDays(-rand.Next(1, 15)),
+                        IsVerifiedPurchase = true
+                    };
+                    _context.Reviews.Add(sReview);
+                    createdCount++;
+                }
+
+                await _context.SaveChangesAsync();
+
+                var succMsg = $"Sistemdeki {corporateCompanies.Count} firma için toplam {createdCount} adet gerçekçi 10★ demo değerlendirme üretildi!";
+                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, count = createdCount });
+                TempData["AdminSuccess"] = succMsg;
+            }
+            catch (Exception ex)
+            {
+                var errMsg = "Demo değerlendirmeler üretilirken hata oluştu: " + ex.Message;
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["AdminError"] = errMsg;
+            }
+
+            return RedirectToAction(nameof(Index), new { tab = "reviews" });
         }
     }
 }

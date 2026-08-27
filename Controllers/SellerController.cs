@@ -31,26 +31,50 @@ namespace satinalmaportali2.Controllers
 
         /// <summary>
         /// Satıcı Sayfası (Tedarikçi Mağazası & 10 Yıldızlı Değerlendirme Karnesi)
-        /// URL: /Seller/Detail/{id} veya /Seller/{id}
+        /// URL: /Seller/{id}, /Seller/Detail/{id} veya /Seller?name=...
         /// </summary>
         [HttpGet]
         [Route("Seller/{id:int}")]
         [Route("Seller/Detail/{id:int}")]
-        public async Task<IActionResult> Detail(int id)
+        [Route("Seller/Detail")]
+        [Route("Seller")]
+        public async Task<IActionResult> Detail(int? id, string? name)
         {
-            if (id <= 0)
+            Company? company = null;
+
+            if (id.HasValue && id.Value > 0)
             {
-                return RedirectToAction("Index", "Home");
+                company = await _context.Companies
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.CompanyID == id.Value);
             }
 
-            var company = await _context.Companies
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.CompanyID == id);
+            if (company == null && !string.IsNullOrWhiteSpace(name))
+            {
+                var searchName = name.Trim().ToLower();
+                company = await _context.Companies
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(c => (c.CompanyName != null && c.CompanyName.ToLower().Contains(searchName)) ||
+                                             (c.CompanyOfficial != null && c.CompanyOfficial.ToLower().Contains(searchName)));
+            }
 
             if (company == null)
             {
-                // Eğer bulunamazsa ilk tedarikçiye veya anasayfaya yönlendir
-                TempData["ErrorMessage"] = "Aradığınız satıcı firma profili bulunamadı.";
+                // Eğer doğrudan ID bulunamadıysa ilk aktif tedarikçi firmaya yönlendir
+                company = await _context.Companies
+                    .AsNoTracking()
+                    .OrderBy(c => c.CompanyID)
+                    .FirstOrDefaultAsync(c => c.CompanyTypeID == 1 || c.CompanyTypeID == 3);
+
+                if (company == null)
+                {
+                    company = await _context.Companies.AsNoTracking().FirstOrDefaultAsync();
+                }
+            }
+
+            if (company == null)
+            {
+                TempData["ErrorMessage"] = "Sistemde kayıtlı satıcı firma profili bulunamadı.";
                 return RedirectToAction("Index", "Home");
             }
 

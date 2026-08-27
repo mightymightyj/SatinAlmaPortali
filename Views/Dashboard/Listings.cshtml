@@ -54,7 +54,7 @@
                 </svg>
             </span>
         </div>
-        <p class="kpi-value">@Model.TotalCount</p>
+        <p class="kpi-value" id="kpiTotalListings">@Model.TotalCount</p>
         <p class="kpi-delta is-good">
             <span>Yayında olan kurumsal ürün portföyü</span>
         </p>
@@ -71,7 +71,7 @@
                 </svg>
             </span>
         </div>
-        <p class="kpi-value">@Model.TotalCatalogValue.ToString("N0", ChartHelper.Tr) ₺</p>
+        <p class="kpi-value" id="kpiTotalCatalogValue">@Model.TotalCatalogValue.ToString("N0", ChartHelper.Tr) ₺</p>
         <p class="kpi-delta is-good">
             <span>Stoktaki hazır ürünlerin toptan değeri</span>
         </p>
@@ -87,7 +87,7 @@
                 </svg>
             </span>
         </div>
-        <p class="kpi-value">@Model.ActiveCount</p>
+        <p class="kpi-value" id="kpiActiveStockListings">@Model.ActiveCount</p>
         <p class="kpi-delta is-good">
             <span>Hızlı sevkiyata hazır ürünler</span>
         </p>
@@ -105,7 +105,7 @@
                 </svg>
             </span>
         </div>
-        <p class="kpi-value">@Model.LowStockCount</p>
+        <p class="kpi-value" id="kpiLowStockListings">@Model.LowStockCount</p>
         <p class="kpi-delta @(Model.LowStockCount > 0 ? "is-bad" : "is-good")">
             <span>@(Model.LowStockCount > 0 ? "Stok yenilenmesi gerekiyor" : "Tüm stok seviyeleri optimal")</span>
         </p>
@@ -168,7 +168,7 @@
     <header class="card-head">
         <div class="head-with-icon">
             <span class="blue-accent-x">📦</span>
-            <h2>Kayıtlı Ürün İlanları & Vitrin Listesi (@Model.Listings.Count)</h2>
+            <h2 id="listingsHeaderTitle">Kayıtlı Ürün İlanları & Vitrin Listesi (@Model.Listings.Count)</h2>
         </div>
         <div style="font-size: 0.82rem; color: var(--muted);">
             Veritabanı ile canlı senkronizedir.
@@ -422,21 +422,25 @@
             const category = document.getElementById('dashListingCategory')?.value || '';
             const categoryId = document.getElementById('dashListingCategoryId')?.value || '';
             const price = parseFloat(document.getElementById('dashListingPrice')?.value || '0');
-            const stock = document.getElementById('dashListingStock')?.value || '';
+            const stockInputVal = document.getElementById('dashListingStock')?.value || '100';
             const desc = document.getElementById('dashListingDesc')?.value || '';
+            const stockQty = parseInt(stockInputVal.replace(/\D/g, '') || '100', 10);
 
             if (!productName.trim()) {
-                alert("Lütfen ürün adını giriniz.");
+                if (typeof showRealtimeToast === 'function') showRealtimeToast("Lütfen ürün adını giriniz.", "error");
+                else alert("Lütfen ürün adını giriniz.");
                 return false;
             }
 
             if (!category) {
-                alert("Lütfen kategori ağacından bir kategori seçiniz.");
+                if (typeof showRealtimeToast === 'function') showRealtimeToast("Lütfen kategori ağacından bir kategori seçiniz.", "error");
+                else alert("Lütfen kategori ağacından bir kategori seçiniz.");
                 return false;
             }
 
             if (isNaN(price) || price <= 0) {
-                alert("Lütfen geçerli bir birim fiyat giriniz.");
+                if (typeof showRealtimeToast === 'function') showRealtimeToast("Lütfen geçerli bir birim fiyat giriniz.", "error");
+                else alert("Lütfen geçerli bir birim fiyat giriniz.");
                 return false;
             }
 
@@ -457,7 +461,7 @@
                         categoryID: categoryId ? parseInt(categoryId, 10) : null,
                         categoryName: category,
                         unitPrice: price,
-                        stockQuantity: stock,
+                        stockQuantity: stockQty + " Adet",
                         itemDescription: desc
                     })
                 });
@@ -465,6 +469,120 @@
                 const result = await response.json();
                 if (result.success) {
                     closeCreateListingModal();
+
+                    // ==================== ASENKRON TABLO GÜNCELLEMESİ ====================
+                    const item = result.item;
+                    const itemId = item ? item.id : Date.now();
+                    const brand = (item && item.brand) ? item.brand : '@Html.Raw(Model.CompanyName.Replace("'", "\\'"))';
+                    const sku = (item && item.sku) ? item.sku : ('SKU-B2B-' + itemId);
+                    const catName = (item && item.categoryName) ? item.categoryName : category;
+                    const itemPrice = (item && item.price) ? item.price : price;
+                    const itemStock = stockQty;
+                    const itemDesc = desc.trim();
+
+                    const tbody = document.getElementById('listingsTableBody');
+                    if (tbody) {
+                        // Boş durum satırı varsa temizle
+                        const emptyRow = tbody.querySelector('td[colspan="7"]');
+                        if (emptyRow) {
+                            tbody.innerHTML = '';
+                        }
+
+                        const isCrit = itemStock > 0 && itemStock <= 10;
+                        const isOut = itemStock <= 0;
+                        const statusCls = isOut ? 'badge-coral' : (isCrit ? 'badge-amber' : 'badge-emerald');
+                        const statusText = isOut ? 'Tükendi' : (isCrit ? 'Kritik' : 'Stokta');
+                        const safeName = productName.trim().replace(/'/g, "\\'");
+
+                        const newRowHtml = `
+                            <tr id="listing-row-${itemId}" class="realtime-updated">
+                                <td>
+                                    <div class="req-title-cell">
+                                        <strong style="font-size: 0.92rem;">${typeof escapeHtml === 'function' ? escapeHtml(productName.trim()) : productName.trim()}</strong>
+                                        <div style="display: flex; gap: 6px; align-items: center; margin-top: 3px;">
+                                            <small class="req-code">${typeof escapeHtml === 'function' ? escapeHtml(sku) : sku}</small>
+                                            <small style="background: rgba(100,116,139,0.12); padding: 1px 6px; border-radius: 4px; font-size: 0.72rem; color: var(--muted);">
+                                                🏢 ${typeof escapeHtml === 'function' ? escapeHtml(brand) : brand}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="category-tag">${typeof escapeHtml === 'function' ? escapeHtml(catName) : catName}</span>
+                                </td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                                        <strong class="${isOut ? 'text-danger' : (isCrit ? 'text-warning' : '')}" style="font-size: 0.9rem;">
+                                            ${itemStock} Adet
+                                        </strong>
+                                        <span class="status-badge ${statusCls}" style="font-size: 0.68rem; padding: 2px 6px; width: fit-content;">
+                                            <span class="status-dot"></span>
+                                            ${statusText}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong style="font-size: 0.95rem; color: var(--text);">
+                                        ${Number(itemPrice).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺
+                                    </strong>
+                                    <div style="font-size: 0.72rem; color: var(--muted);">+ %20 KDV</div>
+                                </td>
+                                <td>
+                                    <span class="status-badge badge-emerald" style="font-size: 0.75rem; padding: 3px 8px;">
+                                        <span class="status-dot"></span> Vitrinde Yayında
+                                    </span>
+                                </td>
+                                <td>
+                                    <span style="font-size: 0.8rem; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 220px;" title="${typeof escapeHtml === 'function' ? escapeHtml(itemDesc) : itemDesc}">
+                                        ${itemDesc ? (typeof escapeHtml === 'function' ? escapeHtml(itemDesc) : itemDesc) : '-'}
+                                    </span>
+                                </td>
+                                <td class="text-right">
+                                    <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                                        <button type="button" class="btn-table-action" onclick="openPriceModal(${itemId}, '${safeName}', ${itemPrice}, ${itemStock})" title="Fiyat ve Stok Düzenle">
+                                            Düzenle
+                                        </button>
+                                        <button type="button" class="btn-cancel" onclick="deleteListing(${itemId}, '${safeName}')" style="padding: 5px 9px; font-size: 0.78rem; color: #ef4444; border-color: rgba(239,68,68,0.3);" title="İlanı Sil">
+                                            Sil
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+
+                        tbody.insertAdjacentHTML('afterbegin', newRowHtml);
+                    }
+
+                    // KPI Sayaçlarını Canlı Güncelle
+                    const kpiCount = document.getElementById('kpiTotalListings');
+                    if (kpiCount) {
+                        const curCount = parseInt(kpiCount.textContent.replace(/\D/g, '') || '0', 10);
+                        kpiCount.textContent = (curCount + 1).toString();
+                    }
+
+                    const kpiVal = document.getElementById('kpiTotalCatalogValue');
+                    if (kpiVal) {
+                        const curVal = parseFloat(kpiVal.textContent.replace(/[^\d]/g, '') || '0');
+                        const addedVal = itemPrice * itemStock;
+                        kpiVal.textContent = Number(curVal + addedVal).toLocaleString('tr-TR', { maximumFractionDigits: 0 }) + ' ₺';
+                    }
+
+                    const kpiActive = document.getElementById('kpiActiveStockListings');
+                    if (kpiActive && itemStock > 0) {
+                        const curActive = parseInt(kpiActive.textContent.replace(/\D/g, '') || '0', 10);
+                        kpiActive.textContent = (curActive + 1).toString();
+                    }
+
+                    const headTitle = document.getElementById('listingsHeaderTitle');
+                    if (headTitle && tbody) {
+                        const rowCount = tbody.querySelectorAll('tr[id^="listing-row-"]').length;
+                        headTitle.textContent = `Kayıtlı Ürün İlanları & Vitrin Listesi (${rowCount})`;
+                    }
+
+                    // Form alanlarını sıfırla
+                    formEl.reset();
+                    clearDashCatTreeSelection();
+
                     if (typeof showRealtimeToast === 'function') {
                         showRealtimeToast('✓ ' + (result.message || 'Ürün ilanı başarıyla yayınlandı!'), 'success');
                     }
@@ -504,8 +622,41 @@
                 if (result.success) {
                     const row = document.getElementById('listing-row-' + id);
                     if (row) {
-                        row.remove();
+                        row.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                        row.style.opacity = '0';
+                        row.style.transform = 'translateX(20px)';
+                        setTimeout(function() {
+                            row.remove();
+                            const tbody = document.getElementById('listingsTableBody');
+                            if (tbody && tbody.querySelectorAll('tr[id^="listing-row-"]').length === 0) {
+                                tbody.innerHTML = `
+                                    <tr>
+                                        <td colspan="7" style="text-align: center; padding: 48px 16px; color: var(--muted);">
+                                            <div style="font-size: 2.5rem; margin-bottom: 12px;">📦</div>
+                                            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; color: var(--text);">Henüz listelenmiş bir ürün ilanı bulunamadı</h3>
+                                            <p style="font-size: 0.85rem; margin-bottom: 16px;">Kriterlere uygun ürün bulunamadı veya henüz bir ilan oluşturmadınız.</p>
+                                            <button type="button" class="btn-primary" onclick="openCreateListingModal()" style="display: inline-flex; align-items: center; gap: 6px; margin: 0 auto;">
+                                                + İlk Ürün İlanınızı Verin
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `;
+                            }
+                            const headTitle = document.getElementById('listingsHeaderTitle');
+                            if (headTitle && tbody) {
+                                const rowCount = tbody.querySelectorAll('tr[id^="listing-row-"]').length;
+                                headTitle.textContent = `Kayıtlı Ürün İlanları & Vitrin Listesi (${rowCount})`;
+                            }
+                        }, 300);
                     }
+
+                    // KPI sayaç -1
+                    const kpiCount = document.getElementById('kpiTotalListings');
+                    if (kpiCount) {
+                        const curCount = parseInt(kpiCount.textContent.replace(/\D/g, '') || '0', 10);
+                        if (curCount > 0) kpiCount.textContent = (curCount - 1).toString();
+                    }
+
                     if (typeof showRealtimeToast === 'function') {
                         showRealtimeToast('✓ ' + (result.message || 'Ürün ilanı silindi.'), 'info');
                     }

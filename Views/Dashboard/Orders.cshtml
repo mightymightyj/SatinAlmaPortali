@@ -197,9 +197,18 @@
                             <td>
                                 <strong>@o.SupplierCompanyName</strong>
                                 <div style="font-size: 0.75rem; color: var(--muted);">📍 @o.DeliveryCity</div>
-                                @if (o.SupplierCompanyID.HasValue)
+                                @{
+                                    var suppId = o.SupplierCompanyID ?? o.OrderItems.FirstOrDefault(oi => oi.SupplierCompanyID.HasValue)?.SupplierCompanyID;
+                                }
+                                @if (suppId.HasValue && suppId.Value > 0)
                                 {
-                                    <a href="/Seller/@o.SupplierCompanyID" target="_blank" style="font-size: 0.74rem; color: #2563eb; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 3px; margin-top: 3px;">
+                                    <a href="/Seller/@suppId.Value" target="_blank" style="font-size: 0.74rem; color: #2563eb; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 3px; margin-top: 3px;">
+                                        ★ Satıcı Karnesi (10★) →
+                                    </a>
+                                }
+                                else if (!string.IsNullOrWhiteSpace(o.SupplierCompanyName))
+                                {
+                                    <a href="/Seller/Detail?name=@Uri.EscapeDataString(o.SupplierCompanyName)" target="_blank" style="font-size: 0.74rem; color: #2563eb; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 3px; margin-top: 3px;">
                                         ★ Satıcı Karnesi (10★) →
                                     </a>
                                 }

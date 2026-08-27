@@ -12,8 +12,10 @@ namespace satinalmaportali2.Models
         public List<MembershipTypes> AvailableMembershipTypes { get; set; } = new();
         public List<RequestSummaryDto> OpenRequests { get; set; } = new();
         public List<ItemSummaryDto> RecentListings { get; set; } = new();
+        public List<ReviewAdminDto> Reviews { get; set; } = new();
+        public List<OrderSummaryDto> AvailableOrders { get; set; } = new();
 
-        public string ActiveTab { get; set; } = "overview"; // overview, categories, companies, simulation, settings
+        public string ActiveTab { get; set; } = "overview"; // overview, categories, companies, reviews, simulation, settings
         public string? SearchQuery { get; set; }
         public int? FilterCompanyType { get; set; }
     }
@@ -38,6 +40,11 @@ namespace satinalmaportali2.Models
 
         public int TotalListings { get; set; }
         public decimal TotalListingValue { get; set; }
+
+        public int TotalReviews { get; set; }
+        public double AveragePlatformScore { get; set; } = 10.0;
+        public int BuyerToSellerReviewsCount { get; set; }
+        public int SellerToBuyerReviewsCount { get; set; }
     }
 
     public class CategoryAdminDto
@@ -203,5 +210,59 @@ namespace satinalmaportali2.Models
         public int Quantity { get; set; }
         public string? Properties { get; set; }
         public string? ItemImage { get; set; }
+    }
+
+    public class ReviewAdminDto
+    {
+        public int ReviewID { get; set; }
+        public int? CompanyID { get; set; }
+        public string TargetCompanyName { get; set; } = string.Empty;
+        public int? ReviewerCompanyID { get; set; }
+        public string ReviewerName { get; set; } = string.Empty;
+        public string ReviewType { get; set; } = "BuyerToSeller"; // BuyerToSeller / SellerToBuyer
+        public double ReviewScore { get; set; } = 10.0;
+        public double? DeliveryScore { get; set; }
+        public double? QualityScore { get; set; }
+        public double? CommunicationScore { get; set; }
+        public string? ReviewText { get; set; }
+        public DateTime ReviewDate { get; set; }
+        public string? OrderNumber { get; set; }
+        public int? OrderID { get; set; }
+        public bool IsVerifiedPurchase { get; set; } = true;
+    }
+
+    public class OrderSummaryDto
+    {
+        public int OrderID { get; set; }
+        public string OrderNumber { get; set; } = string.Empty;
+        public string BuyerCompanyName { get; set; } = string.Empty;
+        public string SupplierCompanyName { get; set; } = string.Empty;
+        public decimal GrandTotal { get; set; }
+        public DateTime OrderDate { get; set; }
+        public string OrderStatus { get; set; } = string.Empty;
+    }
+
+    public class SimulateReviewInputModel
+    {
+        [Required(ErrorMessage = "Lütfen değerlendirilecek hedef firmayı seçin.")]
+        public int TargetCompanyID { get; set; }
+
+        public int? ReviewerCompanyID { get; set; }
+
+        public string? ReviewerName { get; set; }
+
+        public string ReviewType { get; set; } = "BuyerToSeller"; // "BuyerToSeller" or "SellerToBuyer"
+
+        public int? OrderID { get; set; }
+
+        [Range(1.0, 10.0, ErrorMessage = "Puan 1 ile 10 arasında olmalıdır.")]
+        public double ReviewScore { get; set; } = 10.0;
+
+        public double? DeliveryScore { get; set; } = 10.0;
+        public double? QualityScore { get; set; } = 10.0;
+        public double? CommunicationScore { get; set; } = 10.0;
+
+        public string? ReviewText { get; set; }
+        public bool IsVerifiedPurchase { get; set; } = true;
     }
 }

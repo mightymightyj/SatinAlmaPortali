@@ -392,30 +392,31 @@ namespace satinalmaportali2.Controllers {
                 }
             }
 
-            // Tedarikçilerden Alınan 10 Yıldızlı Alıcı Değerlendirmelerini Yükle
-            var buyerReviews = await _context.Reviews
+            // Firmamıza Yapılan 10 Yıldızlı Değerlendirmeleri Yükle (Hem Alıcılardan Hem Tedarikçilerden)
+            var allReceivedReviews = await _context.Reviews
                 .Include(r => r.Order)
                 .AsNoTracking()
-                .Where(r => r.CompanyID == company.CompanyID && r.ReviewType == "SellerToBuyer" && r.ReviewScore.HasValue)
+                .Where(r => r.CompanyID == company.CompanyID && r.ReviewScore.HasValue)
                 .OrderByDescending(r => r.ReviewDate)
                 .ToListAsync();
 
-            viewModel.BuyerReviewCount = buyerReviews.Count;
-            viewModel.BuyerScore = buyerReviews.Any() ? Math.Round(buyerReviews.Average(r => r.ReviewScore!.Value), 1) : 10.0;
-            viewModel.ReceivedReviews = buyerReviews.Select(r => new ReviewDetailItemDto
+            viewModel.BuyerReviewCount = allReceivedReviews.Count;
+            viewModel.BuyerScore = allReceivedReviews.Any() ? Math.Round(allReceivedReviews.Average(r => r.ReviewScore!.Value), 1) : 10.0;
+            viewModel.OverallScore = viewModel.BuyerScore;
+            viewModel.ReceivedReviews = allReceivedReviews.Select(r => new ReviewDetailItemDto
             {
                 ReviewID = r.ReviewID,
                 ReviewScore = r.ReviewScore ?? 10.0,
-                DeliveryScore = r.DeliveryScore, // Ödeme dakikliği
+                DeliveryScore = r.DeliveryScore,
                 CommunicationScore = r.CommunicationScore,
                 ReviewText = r.ReviewText,
                 ReviewDate = r.ReviewDate,
-                ReviewerName = r.ReviewerName ?? "Onaylı Tedarikçi",
+                ReviewerName = !string.IsNullOrWhiteSpace(r.ReviewerName) ? r.ReviewerName : (r.ReviewType == "BuyerToSeller" ? "Doğrulanmış Kurumsal Alıcı" : "Onaylı Tedarikçi"),
                 OrderNumber = r.Order?.OrderNumber,
-                ReviewType = "SellerToBuyer"
+                ReviewType = r.ReviewType ?? "BuyerToSeller"
             }).ToList();
 
-            // Kullanıcının Geçmiş Siparişlerini ve Önceden Satın Aldığı Ürünleri Yükle
+            // Kullanıcının Geçmiş Satın Alma Siparişlerini (Alışlarım) Yükle
             var buyerOrders = await _context.Orders
                 .Include(o => o.OrderItems)
                 .AsNoTracking()
@@ -425,7 +426,43 @@ namespace satinalmaportali2.Controllers {
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
 
+            var allCompanies = await _context.Companies
+                .AsNoTracking()
+                .Select(c => new { c.CompanyID, c.CompanyName, c.CompanyOfficial })
+                .ToListAsync();
+
+            foreach (var o in buyerOrders)
+            {
+                if (!o.SupplierCompanyID.HasValue && !string.IsNullOrWhiteSpace(o.SupplierCompanyName))
+                {
+                    var matched = allCompanies.FirstOrDefault(c =>
+                        (!string.IsNullOrWhiteSpace(c.CompanyName) && string.Equals(c.CompanyName.Trim(), o.SupplierCompanyName.Trim(), StringComparison.OrdinalIgnoreCase)) ||
+                        (!string.IsNullOrWhiteSpace(c.CompanyOfficial) && string.Equals(c.CompanyOfficial.Trim(), o.SupplierCompanyName.Trim(), StringComparison.OrdinalIgnoreCase)));
+                    if (matched != null)
+                    {
+                        o.SupplierCompanyID = matched.CompanyID;
+                    }
+                    else if (o.OrderItems.Any(oi => oi.SupplierCompanyID.HasValue))
+                    {
+                        o.SupplierCompanyID = o.OrderItems.First(oi => oi.SupplierCompanyID.HasValue).SupplierCompanyID;
+                    }
+                }
+            }
+
             viewModel.MyOrders = buyerOrders;
+
+            // Kullanıcının Satış Geçmişini (Gelen Satış Siparişleri - Tedarikçi Olarak) Yükle
+            var salesOrders = await _context.Orders
+                .Include(o => o.OrderItems)
+                .AsNoTracking()
+                .Where(o => (o.SupplierCompanyID.HasValue && o.SupplierCompanyID.Value == company.CompanyID) ||
+                            (!string.IsNullOrWhiteSpace(o.SupplierCompanyName) && company.CompanyName != null && o.SupplierCompanyName.ToLower() == company.CompanyName.ToLower()) ||
+                            (o.OrderItems.Any(oi => (oi.SupplierCompanyID.HasValue && oi.SupplierCompanyID.Value == company.CompanyID) ||
+                                                    (company.CompanyName != null && oi.SupplierCompanyName != null && oi.SupplierCompanyName.ToLower() == company.CompanyName.ToLower()))))
+                .OrderByDescending(o => o.OrderDate)
+                .ToListAsync();
+
+            viewModel.MySalesOrders = salesOrders;
 
             // Önceden Alınan Ürünler Listesi (Ürün veya ItemID bazında gruplama)
             var allItemsWithOrders = buyerOrders

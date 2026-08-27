@@ -40,14 +40,16 @@ namespace satinalmaportali2.Models
         // Dropdown Lists
         public List<CompanyTypes>? AvailableCompanyTypes { get; set; }
 
-        // Tedarikçilerden Alınan 10 Yıldızlı Alıcı Değerlendirmeleri
+        // 10 Yıldızlı Firma Değerlendirmeleri & Karne Bilgisi
         public double BuyerScore { get; set; } = 10.0;
         public int BuyerReviewCount { get; set; } = 0;
+        public double OverallScore { get; set; } = 10.0;
         public List<ReviewDetailItemDto> ReceivedReviews { get; set; } = new();
 
-        // Siparişlerim & Önceden Alınan Ürünler Bölümü
-        public string ActiveTab { get; set; } = "profile"; // "profile", "orders", "purchased-items", "reviews"
-        public List<Order> MyOrders { get; set; } = new();
+        // Siparişlerim & Satışlarım Bölümü
+        public string ActiveTab { get; set; } = "profile"; // "profile", "orders", "sales", "purchased-items", "reviews"
+        public List<Order> MyOrders { get; set; } = new(); // Verilen Alış Siparişleri
+        public List<Order> MySalesOrders { get; set; } = new(); // Gelen Satış Siparişleri (Tedarikçi Olarak)
         public List<PurchasedProductDto> PurchasedProducts { get; set; } = new();
     }
 

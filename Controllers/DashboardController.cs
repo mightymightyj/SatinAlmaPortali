@@ -420,6 +420,29 @@ namespace satinalmaportali2.Controllers
 
             var allOrders = await query.OrderByDescending(o => o.OrderID).ToListAsync(cancellationToken);
 
+            var allCompanies = await _context.Companies
+                .AsNoTracking()
+                .Select(c => new { c.CompanyID, c.CompanyName, c.CompanyOfficial })
+                .ToListAsync(cancellationToken);
+
+            foreach (var o in allOrders)
+            {
+                if (!o.SupplierCompanyID.HasValue && !string.IsNullOrWhiteSpace(o.SupplierCompanyName))
+                {
+                    var matched = allCompanies.FirstOrDefault(c => 
+                        (!string.IsNullOrWhiteSpace(c.CompanyName) && string.Equals(c.CompanyName.Trim(), o.SupplierCompanyName.Trim(), StringComparison.OrdinalIgnoreCase)) ||
+                        (!string.IsNullOrWhiteSpace(c.CompanyOfficial) && string.Equals(c.CompanyOfficial.Trim(), o.SupplierCompanyName.Trim(), StringComparison.OrdinalIgnoreCase)));
+                    if (matched != null)
+                    {
+                        o.SupplierCompanyID = matched.CompanyID;
+                    }
+                    else if (o.OrderItems.Any(oi => oi.SupplierCompanyID.HasValue))
+                    {
+                        o.SupplierCompanyID = o.OrderItems.First(oi => oi.SupplierCompanyID.HasValue).SupplierCompanyID;
+                    }
+                }
+            }
+
             var filtered = allOrders.AsEnumerable();
 
             if (!string.IsNullOrWhiteSpace(search))
@@ -469,11 +492,18 @@ namespace satinalmaportali2.Controllers
 
             if (companyId > 0)
             {
-                var suppOrdersQuery = query.Where(o => o.SupplierCompanyID == companyId || (o.SupplierCompanyName != null && o.SupplierCompanyName == currentCompanyName));
-                if (await suppOrdersQuery.AnyAsync(cancellationToken))
-                {
-                    query = suppOrdersQuery;
-                }
+                var comp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == companyId, cancellationToken);
+                string compName = comp?.CompanyName ?? currentCompanyName;
+                string compOfficial = comp?.CompanyOfficial ?? "";
+
+                query = query.Where(o => 
+                    (o.SupplierCompanyID.HasValue && o.SupplierCompanyID.Value == companyId) ||
+                    (!string.IsNullOrWhiteSpace(compName) && o.SupplierCompanyName != null && o.SupplierCompanyName.ToLower() == compName.ToLower()) ||
+                    (!string.IsNullOrWhiteSpace(compOfficial) && o.SupplierCompanyName != null && o.SupplierCompanyName.ToLower() == compOfficial.ToLower()) ||
+                    (o.OrderItems.Any(oi => (oi.SupplierCompanyID.HasValue && oi.SupplierCompanyID.Value == companyId) ||
+                                            (!string.IsNullOrWhiteSpace(compName) && oi.SupplierCompanyName != null && oi.SupplierCompanyName.ToLower() == compName.ToLower()) ||
+                                            (!string.IsNullOrWhiteSpace(compOfficial) && oi.SupplierCompanyName != null && oi.SupplierCompanyName.ToLower() == compOfficial.ToLower())))
+                );
             }
 
             var allOrders = await query.OrderByDescending(o => o.OrderID).ToListAsync(cancellationToken);

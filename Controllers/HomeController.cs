@@ -616,10 +616,41 @@ namespace satinalmaportali2.Controllers {
                     .Where(c => catIds.Contains(c.CategoryID))
                     .ToDictionaryAsync(c => c.CategoryID, c => c.CategoryName ?? "Genel");
 
+                var allCompanies = await _context.Companies
+                    .AsNoTracking()
+                    .Select(c => new { c.CompanyID, c.CompanyName, c.CompanyOfficial, c.CompanyMail })
+                    .ToListAsync();
+
                 var list = items.Select(it =>
                 {
                     string catName = it.CategoryID.HasValue && catMap.TryGetValue(it.CategoryID.Value, out var cN) ? cN : "Endüstriyel Ürünler";
                     decimal price = (decimal)(it.ItemPrice ?? 0);
+
+                    int sellerCompId = 1;
+                    if (!string.IsNullOrWhiteSpace(it.Properties))
+                    {
+                        var prop = it.Properties;
+                        if (prop.Contains("FirmaID:") || prop.Contains("CompanyID:"))
+                        {
+                            var match = System.Text.RegularExpressions.Regex.Match(prop, @"(?:FirmaID|CompanyID)\s*:\s*(\d+)");
+                            if (match.Success && int.TryParse(match.Groups[1].Value, out int pid))
+                            {
+                                sellerCompId = pid;
+                            }
+                        }
+                    }
+
+                    if (sellerCompId == 1 && !string.IsNullOrWhiteSpace(it.Brand))
+                    {
+                        var matchedComp = allCompanies.FirstOrDefault(c =>
+                            (!string.IsNullOrWhiteSpace(c.CompanyName) && string.Equals(c.CompanyName.Trim(), it.Brand.Trim(), StringComparison.OrdinalIgnoreCase)) ||
+                            (!string.IsNullOrWhiteSpace(c.CompanyOfficial) && string.Equals(c.CompanyOfficial.Trim(), it.Brand.Trim(), StringComparison.OrdinalIgnoreCase)));
+                        if (matchedComp != null)
+                        {
+                            sellerCompId = matchedComp.CompanyID;
+                        }
+                    }
+
                     return new
                     {
                         id = it.ItemID,
@@ -627,6 +658,7 @@ namespace satinalmaportali2.Controllers {
                         title = it.ItemName ?? "Kurumsal Ürün",
                         brand = !string.IsNullOrWhiteSpace(it.Brand) ? it.Brand : "Tedarikçi Portalı",
                         seller = !string.IsNullOrWhiteSpace(it.Brand) ? it.Brand : "Onaylı Tedarikçi",
+                        sellerCompanyId = sellerCompId,
                         sellerScore = 9.8,
                         sellerBadge = "Onaylı Tedarikçi",
                         sellerLocation = "Türkiye",
