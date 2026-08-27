@@ -785,13 +785,14 @@ function renderCorporateVitrin() {
             <article class="b2b-product-card" data-id="${item.id}" data-category="${item.category}">
                 <!-- Kart Üst Barı: Tedarikçi & Lokasyon -->
                 <div class="b2b-card-supplier-bar" title="Tedarikçi: ${item.seller} (${item.sellerLocation})">
-                    <span class="b2b-verified-badge" title="Doğrulanmış Kurumsal Tedarikçi">
+                    <a href="/Seller/${item.sellerCompanyId || 1}" target="_blank" class="b2b-verified-badge" title="${item.seller} - 10 Yıldızlı Satıcı Sayfasını İncele" style="text-decoration: none; color: inherit; display: inline-flex; align-items: center;">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="#059669" stroke="currentColor" stroke-width="1.5">
                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                             <polyline points="22 4 12 14.01 9 11.01" stroke="#fff" stroke-width="2.5"></polyline>
                         </svg>
                         <span class="supplier-name-text">${item.seller}</span>
-                    </span>
+                        <span style="background: rgba(245,158,11,0.15); color: #d97706; padding: 1px 5px; border-radius: 4px; font-weight: 800; font-size: 0.72rem; margin-left: 4px;">★ ${item.sellerScore}</span>
+                    </a>
                     <span class="b2b-location-pill">${item.sellerLocation ? item.sellerLocation.split('(')[0] : 'Türkiye'}</span>
                 </div>
 
@@ -1006,6 +1007,10 @@ function openProductQuickView(productId) {
     document.getElementById('qvModalSeller').textContent = product.seller;
     document.getElementById('qvModalLocation').textContent = product.sellerLocation || 'Türkiye';
     document.getElementById('qvModalScore').textContent = `★ ${product.sellerScore} / 10`;
+    const qvSellerLink = document.getElementById('qvModalSellerLink');
+    if (qvSellerLink) {
+        qvSellerLink.href = `/Seller/${product.sellerCompanyId || 1}`;
+    }
     document.getElementById('qvModalPrice').textContent = formatB2BMoney(product.price);
     document.getElementById('qvModalOldPrice').textContent = formatB2BMoney(product.oldPrice);
     document.getElementById('qvModalDiscount').textContent = `%${product.discount} İskonto`;

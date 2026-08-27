@@ -9,7 +9,6 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews()
     .AddRazorRuntimeCompilation();
-builder.Services.AddSignalR();
 builder.Services.AddMemoryCache();
 
 // E-posta Servisi (Gmail SMTP / MailKit)
@@ -33,6 +32,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
     options.UseNpgsql(connectionString);
 });
+
+// SignalR Gerçek Zamanlı İletişim Servisi
+builder.Services.AddSignalR();
 
 // Dashboard Servis Kaydı
 builder.Services.AddScoped<IDashboardService, DashboardService>();
@@ -82,5 +84,8 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
+
+// SignalR Hub Endpoint
+app.MapHub<PortalHub>("/hubs/portal");
 
 app.Run();

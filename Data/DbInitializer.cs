@@ -98,11 +98,40 @@ namespace satinalmaportali2.Data
                             linetotal DECIMAL(18,2) NOT NULL DEFAULT 0,
                             notes TEXT
                         );
+
+                        CREATE TABLE IF NOT EXISTS reviews (
+                            reviewid SERIAL PRIMARY KEY,
+                            requestid INT,
+                            orderid INT,
+                            orderitemid INT,
+                            companyid INT,
+                            reviewercompanyid INT,
+                            reviewername VARCHAR(255),
+                            reviewtype VARCHAR(50) DEFAULT 'BuyerToSeller',
+                            reviewscore DOUBLE PRECISION,
+                            deliveryscore DOUBLE PRECISION,
+                            qualityscore DOUBLE PRECISION,
+                            communicationscore DOUBLE PRECISION,
+                            reviewtext TEXT,
+                            reviewdate TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                            isverifiedpurchase BOOLEAN DEFAULT TRUE
+                        );
+
+                        ALTER TABLE reviews ADD COLUMN IF NOT EXISTS orderid INT;
+                        ALTER TABLE reviews ADD COLUMN IF NOT EXISTS orderitemid INT;
+                        ALTER TABLE reviews ADD COLUMN IF NOT EXISTS reviewercompanyid INT;
+                        ALTER TABLE reviews ADD COLUMN IF NOT EXISTS reviewername VARCHAR(255);
+                        ALTER TABLE reviews ADD COLUMN IF NOT EXISTS reviewtype VARCHAR(50) DEFAULT 'BuyerToSeller';
+                        ALTER TABLE reviews ADD COLUMN IF NOT EXISTS deliveryscore DOUBLE PRECISION;
+                        ALTER TABLE reviews ADD COLUMN IF NOT EXISTS qualityscore DOUBLE PRECISION;
+                        ALTER TABLE reviews ADD COLUMN IF NOT EXISTS communicationscore DOUBLE PRECISION;
+                        ALTER TABLE reviews ADD COLUMN IF NOT EXISTS reviewdate TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+                        ALTER TABLE reviews ADD COLUMN IF NOT EXISTS isverifiedpurchase BOOLEAN DEFAULT TRUE;
                     ");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Orders/CartItems/RequestItems table check/create note: " + ex.Message);
+                    Console.WriteLine("Orders/CartItems/RequestItems/Reviews table check/create note: " + ex.Message);
                 }
 
                 // ====================================================
@@ -192,6 +221,15 @@ namespace satinalmaportali2.Data
                 // STEP 4: Fix NULL DistrictID in Addresses table
                 // ====================================================
                 await FixAddressDistrictIdsAsync(context);
+                // ====================================================
+                // STEP 5: Seed 10 Supplier Test Accounts (Password: Test1234*_)
+                // ====================================================
+                await SeedSupplierTestAccountsAsync(context);
+
+                // ====================================================
+                // STEP 6: Seed Sample 10-Star Verified Reviews (Buyer <-> Seller)
+                // ====================================================
+                await SeedSampleVerifiedReviewsAsync(context);
             }
             catch (Exception ex)
             {
@@ -444,6 +482,216 @@ namespace satinalmaportali2.Data
             catch (Exception ex)
             {
                 Console.WriteLine("SeedSupplierTestAccounts note: " + ex.Message);
+            }
+        }
+
+        private static async Task SeedSampleVerifiedReviewsAsync(ApplicationDbContext context)
+        {
+            try
+            {
+                // Find test suppliers
+                var suppliers = await context.Companies.Where(c => c.CompanyTypeID == 1).Take(5).ToListAsync();
+                if (!suppliers.Any()) return;
+
+                // Find or create test buyer
+                var testBuyer = await context.Companies.FirstOrDefaultAsync(c => c.CompanyTypeID == 2 || c.CompanyTypeID == 3);
+                if (testBuyer == null)
+                {
+                    testBuyer = await context.Companies.FirstOrDefaultAsync();
+                }
+
+                int buyerId = testBuyer?.CompanyID ?? 1;
+                string buyerName = testBuyer?.CompanyName ?? "Kurumsal Alıcı A.Ş.";
+
+                var firstSupplier = suppliers.First();
+                var order = await context.Orders.FirstOrDefaultAsync(o => o.SupplierCompanyID == firstSupplier.CompanyID);
+                if (order == null)
+                {
+                    order = new Order
+                    {
+                        OrderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-0001",
+                        BuyerCompanyID = buyerId,
+                        BuyerCompanyName = buyerName,
+                        SupplierCompanyID = firstSupplier.CompanyID,
+                        SupplierCompanyName = firstSupplier.CompanyName ?? "Atlas Metal Sanayi",
+                        OrderDate = DateTime.UtcNow.AddDays(-10),
+                        DeliveryDate = DateTime.UtcNow.AddDays(-7),
+                        TotalAmount = 45000,
+                        TaxAmount = 9000,
+                        GrandTotal = 54000,
+                        PaymentMethod = "Kredi Kartı",
+                        PaymentStatus = "Ödendi",
+                        OrderStatus = "Teslim Edildi",
+                        DeliveryCity = "İstanbul",
+                        DeliveryAddress = "Organize Sanayi Bölgesi 4. Cadde No:12",
+                        ReceiverName = "Satın Alma Departmanı",
+                        TrackingNumber = "YRT-849201948",
+                        ShippingCarrier = "Yurtiçi Kargo",
+                        OrderItems = new List<OrderItem>
+                        {
+                            new OrderItem
+                            {
+                                ProductName = "Endüstriyel Lazer Kesim Sac Parçaları (3mm DKP)",
+                                Sku = "SKU-B2B-0101",
+                                UnitPrice = 45000,
+                                Quantity = 1,
+                                LineTotal = 45000,
+                                SupplierCompanyID = firstSupplier.CompanyID,
+                                SupplierCompanyName = firstSupplier.CompanyName
+                            }
+                        }
+                    };
+                    await context.Orders.AddAsync(order);
+                    await context.SaveChangesAsync();
+                }
+
+                // Tedarikçinin alıcı olarak verdiği siparişi de ekle (Önceden aldığım ürünler testi için)
+                var supplierAsBuyerOrder = await context.Orders.FirstOrDefaultAsync(o => o.BuyerCompanyID == firstSupplier.CompanyID);
+                if (supplierAsBuyerOrder == null && suppliers.Count > 1)
+                {
+                    var secondSupplier = suppliers[1];
+                    supplierAsBuyerOrder = new Order
+                    {
+                        OrderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-0002",
+                        BuyerCompanyID = firstSupplier.CompanyID,
+                        BuyerCompanyName = firstSupplier.CompanyName ?? "Atlas Metal Sanayi",
+                        BuyerEmail = firstSupplier.CompanyMail,
+                        SupplierCompanyID = secondSupplier.CompanyID,
+                        SupplierCompanyName = secondSupplier.CompanyName ?? "Ege Plastik & Ambalaj Ltd. Şti.",
+                        OrderDate = DateTime.UtcNow.AddDays(-4),
+                        DeliveryDate = DateTime.UtcNow.AddDays(-1),
+                        TotalAmount = 28500,
+                        TaxAmount = 5700,
+                        GrandTotal = 34200,
+                        PaymentMethod = "Banka Havalesi / EFT",
+                        PaymentStatus = "Ödendi",
+                        OrderStatus = "Teslim Edildi",
+                        DeliveryCity = "Ankara",
+                        DeliveryAddress = "Ostim Sanayi Sitesi 1234. Sokak No:45",
+                        ReceiverName = "Burak Çelik (Mal Kabul)",
+                        TrackingNumber = "MNG-728193810",
+                        ShippingCarrier = "MNG Kargo",
+                        OrderItems = new List<OrderItem>
+                        {
+                            new OrderItem
+                            {
+                                ProductName = "Özel İmalat Endüstriyel Koruma ve Paketleme Kasası",
+                                Sku = "SKU-AMB-2040",
+                                UnitPrice = 28500,
+                                Quantity = 2,
+                                CategoryName = "Ambalaj & Plastik",
+                                LineTotal = 57000,
+                                SupplierCompanyID = secondSupplier.CompanyID,
+                                SupplierCompanyName = secondSupplier.CompanyName
+                            }
+                        }
+                    };
+                    await context.Orders.AddAsync(supplierAsBuyerOrder);
+                    await context.SaveChangesAsync();
+                }
+
+                // testBuyer şifresini Test1234*_ olarak güncelle
+                if (testBuyer != null)
+                {
+                    testBuyer.CompanyPassword = PasswordHasher.HashPassword("Test1234*_");
+                    await context.SaveChangesAsync();
+                }
+
+                // Sample Verified Reviews from Buyers to Suppliers (10-star system)
+                bool hasReviews = await context.Reviews.AnyAsync(r => r.ReviewScore != null && r.ReviewScore > 0);
+                if (!hasReviews)
+                {
+                    var sampleBuyerReviews = new List<Reviews>
+                    {
+                        new Reviews
+                        {
+                            OrderID = order.OrderID,
+                            CompanyID = firstSupplier.CompanyID,
+                            ReviewerCompanyID = buyerId,
+                            ReviewerName = buyerName,
+                            ReviewType = "BuyerToSeller",
+                            ReviewScore = 10.0,
+                            DeliveryScore = 10.0,
+                            QualityScore = 10.0,
+                            CommunicationScore = 9.8,
+                            ReviewText = "Ürünler belirtilen teknik toleranslara birebir uygun üretilmiş ve 2 iş gününde fabrikamıza teslim edildi. Ambalajlama, irsaliye ve fatura süreçleri son derece profesyoneldi. 10/10.",
+                            ReviewDate = DateTime.UtcNow.AddDays(-6),
+                            IsVerifiedPurchase = true
+                        },
+                        new Reviews
+                        {
+                            OrderID = order.OrderID,
+                            CompanyID = firstSupplier.CompanyID,
+                            ReviewerCompanyID = buyerId,
+                            ReviewerName = "Borusan Tedarik & İmalat San. A.Ş.",
+                            ReviewType = "BuyerToSeller",
+                            ReviewScore = 9.7,
+                            DeliveryScore = 9.5,
+                            QualityScore = 10.0,
+                            CommunicationScore = 9.7,
+                            ReviewText = "Lazer kesim ve büküm kalitesi mükemmel. Satış temsilcisi sipariş sürecinin her aşamasında bilgilendirme yaptı. Güvenilir ve kurumsal bir tedarikçi.",
+                            ReviewDate = DateTime.UtcNow.AddDays(-4),
+                            IsVerifiedPurchase = true
+                        },
+                        new Reviews
+                        {
+                            OrderID = order.OrderID,
+                            CompanyID = firstSupplier.CompanyID,
+                            ReviewerCompanyID = buyerId,
+                            ReviewerName = "Aselsan Yan Sanayi İş Ortakları Ltd.",
+                            ReviewType = "BuyerToSeller",
+                            ReviewScore = 9.5,
+                            DeliveryScore = 9.6,
+                            QualityScore = 9.8,
+                            CommunicationScore = 9.2,
+                            ReviewText = "Şartnameye tam uygunluk sağlandı. Malzeme sertifikaları ve kalite test raporları kargo ile birlikte eksiksiz ulaştırıldı. Teşekkür ederiz.",
+                            ReviewDate = DateTime.UtcNow.AddDays(-2),
+                            IsVerifiedPurchase = true
+                        }
+                    };
+
+                    foreach (var sup in suppliers.Skip(1))
+                    {
+                        sampleBuyerReviews.Add(new Reviews
+                        {
+                            OrderID = order.OrderID,
+                            CompanyID = sup.CompanyID,
+                            ReviewerCompanyID = buyerId,
+                            ReviewerName = buyerName,
+                            ReviewType = "BuyerToSeller",
+                            ReviewScore = 9.8,
+                            DeliveryScore = 9.7,
+                            QualityScore = 9.9,
+                            CommunicationScore = 9.8,
+                            ReviewText = "Düzenli sipariş verdiğimiz güvenilir çözüm ortağımız. Malzeme kalitesi ve sevkiyat hızı sektör standartlarının üzerinde.",
+                            ReviewDate = DateTime.UtcNow.AddDays(-3),
+                            IsVerifiedPurchase = true
+                        });
+                    }
+
+                    // Sample Seller Review to Buyer (Two-Way Reputation)
+                    sampleBuyerReviews.Add(new Reviews
+                    {
+                        OrderID = order.OrderID,
+                        CompanyID = buyerId, // Target is buyer
+                        ReviewerCompanyID = firstSupplier.CompanyID, // Reviewer is seller
+                        ReviewerName = firstSupplier.CompanyName ?? "Atlas Metal Sanayi",
+                        ReviewType = "SellerToBuyer",
+                        ReviewScore = 10.0,
+                        CommunicationScore = 10.0,
+                        DeliveryScore = 10.0,
+                        ReviewText = "Alıcı firma ödeme ve mal kabul sürecinde son derece dakik ve şeffaf davrandı. Sipariş detayları ve onayları çok hızlı tamamlandı. Çalışmaktan büyük memnuniyet duyduğumuz kurumsal bir alıcı.",
+                        ReviewDate = DateTime.UtcNow.AddDays(-5),
+                        IsVerifiedPurchase = true
+                    });
+
+                    await context.Reviews.AddRangeAsync(sampleBuyerReviews);
+                    await context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("SeedSampleVerifiedReviews error: " + ex.Message);
             }
         }
     }

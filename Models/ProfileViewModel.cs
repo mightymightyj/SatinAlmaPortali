@@ -39,5 +39,30 @@ namespace satinalmaportali2.Models
 
         // Dropdown Lists
         public List<CompanyTypes>? AvailableCompanyTypes { get; set; }
+
+        // Tedarikçilerden Alınan 10 Yıldızlı Alıcı Değerlendirmeleri
+        public double BuyerScore { get; set; } = 10.0;
+        public int BuyerReviewCount { get; set; } = 0;
+        public List<ReviewDetailItemDto> ReceivedReviews { get; set; } = new();
+
+        // Siparişlerim & Önceden Alınan Ürünler Bölümü
+        public string ActiveTab { get; set; } = "profile"; // "profile", "orders", "purchased-items", "reviews"
+        public List<Order> MyOrders { get; set; } = new();
+        public List<PurchasedProductDto> PurchasedProducts { get; set; } = new();
+    }
+
+    public class PurchasedProductDto
+    {
+        public int? ItemID { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public string? Sku { get; set; }
+        public string? CategoryName { get; set; }
+        public decimal UnitPrice { get; set; }
+        public int TotalQuantityPurchased { get; set; }
+        public DateTime LastPurchaseDate { get; set; }
+        public string? SupplierCompanyName { get; set; }
+        public int? SupplierCompanyID { get; set; }
+        public int LastOrderID { get; set; }
+        public string? LastOrderNumber { get; set; }
     }
 }

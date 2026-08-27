@@ -7,7 +7,7 @@ namespace satinalmaportali2.Hubs
 {
     /// <summary>
     /// Satın Alma Portalı Merkezi Gerçek Zamanlı (SignalR) Hub'ı.
-    /// Talepler, teklifler, siparişler, fiyat güncellemeleri ve bildirimlerin canlı senkronizasyonunu yönetir.
+    /// Talepler, teklifler, siparişler, fiyat güncellemeleri, satıcı kanalları ve bildirimlerin canlı senkronizasyonunu yönetir.
     /// </summary>
     public class PortalHub : Hub
     {
@@ -84,6 +84,28 @@ namespace satinalmaportali2.Hubs
             if (requestId > 0)
             {
                 await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"request_{requestId}");
+            }
+        }
+
+        /// <summary>
+        /// Belirli bir satıcının profil sayfasını inceleyen kullanıcıların canlı değerlendirme kanalına katılması
+        /// </summary>
+        public async Task JoinSellerChannel(int sellerId)
+        {
+            if (sellerId > 0)
+            {
+                await Groups.AddToGroupAsync(Context.ConnectionId, $"seller_channel_{sellerId}");
+            }
+        }
+
+        /// <summary>
+        /// Satıcı kanalından ayrılma
+        /// </summary>
+        public async Task LeaveSellerChannel(int sellerId)
+        {
+            if (sellerId > 0)
+            {
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"seller_channel_{sellerId}");
             }
         }
     }

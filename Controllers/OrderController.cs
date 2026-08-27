@@ -171,6 +171,15 @@ namespace satinalmaportali2.Controllers
                         }
                     }
 
+                    if (!string.IsNullOrWhiteSpace(supplierName))
+                    {
+                        var matchedComp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyName != null && c.CompanyName.ToLower() == supplierName.Trim().ToLower());
+                        if (matchedComp != null)
+                        {
+                            supplierCompId = matchedComp.CompanyID;
+                        }
+                    }
+
                     orderItemsList.Add(new OrderItem
                     {
                         ItemID = matchedItemId,
@@ -201,6 +210,7 @@ namespace satinalmaportali2.Controllers
                     BuyerTaxOffice = input.BuyerTaxOffice,
                     BuyerEmail = currentEmail,
                     BuyerPhone = input.BuyerPhone ?? input.ReceiverPhone,
+                    SupplierCompanyID = orderItemsList.FirstOrDefault(oi => oi.SupplierCompanyID.HasValue)?.SupplierCompanyID,
                     SupplierCompanyName = orderItemsList.FirstOrDefault()?.SupplierCompanyName ?? "Onaylı Tedarikçi",
                     OrderDate = DateTime.UtcNow,
                     DeliveryDate = DateTime.UtcNow.AddDays(3),
