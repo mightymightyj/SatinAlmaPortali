@@ -1173,13 +1173,13 @@
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px; margin-bottom: 32px;">
+            <div style="display: flex; flex-direction: column; gap: 28px; margin-bottom: 32px;">
                 
-                <!-- KART 1: FİRMA ADINA SATIŞ İLANI / ÜRÜN OLUŞTUR (YENİ) -->
+                <!-- KART 1: FİRMA ADINA SATIŞ İLANI / ÜRÜN OLUŞTUR -->
                 <div class="content-card" style="padding: 24px; border-top: 4px solid #2563EB;">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
-                        <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-heading);">
-                            🛒 Firma Adına Satış İlanı Ver
+                        <h3 style="font-size: 1.10rem; font-weight: 700; color: var(--text-heading); display: flex; align-items: center; gap: 8px;">
+                            🛒 <span>Firma Adına Satış İlanı Ver</span>
                         </h3>
                         <span class="badge badge-supplier" style="background: #EFF6FF; color: #2563EB; border: 1px solid #BFDBFE;">Vitrin Simülatörü</span>
                     </div>
@@ -1188,26 +1188,27 @@
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="ImageBase64" id="simListingImageBase64" />
 
-                        <div style="display: flex; flex-direction: column; gap: 14px;">
-                            <div class="form-field">
-                                <label class="form-label" for="simListingSupplier">Satıcı / Tedarikçi Firma *</label>
-                                <select id="simListingSupplier" name="SupplierCompanyID" class="form-select" required onchange="handleSimListingSupplierChange(this)">
-                                    <option value="">— İlanı Verecek Firmayı Seçin —</option>
-                                    @foreach (var comp in Model.Companies)
-                                    {
-                                        <option value="@comp.CompanyID" data-name="@comp.CompanyName">
-                                            #@comp.CompanyID - @comp.CompanyName [Yetkili: @comp.CompanyOfficial]
-                                        </option>
-                                    }
-                                </select>
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
+                            <div class="form-field-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
+                                <div class="form-field">
+                                    <label class="form-label" for="simListingSupplier">Satıcı / Tedarikçi Firma *</label>
+                                    <select id="simListingSupplier" name="SupplierCompanyID" class="form-select" required onchange="handleSimListingSupplierChange(this)">
+                                        <option value="">— İlanı Verecek Firmayı Seçin —</option>
+                                        @foreach (var comp in Model.Companies)
+                                        {
+                                            <option value="@comp.CompanyID" data-name="@comp.CompanyName">
+                                                #@comp.CompanyID - @comp.CompanyName [Yetkili: @comp.CompanyOfficial]
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label" for="simListingName">Ürün / İlan Adı *</label>
+                                    <input type="text" id="simListingName" name="ItemName" class="form-input" placeholder="Örn: Endüstriyel Rulman 6204-2RS" required />
+                                </div>
                             </div>
 
-                            <div class="form-field">
-                                <label class="form-label" for="simListingName">Ürün / İlan Adı *</label>
-                                <input type="text" id="simListingName" name="ItemName" class="form-input" placeholder="Örn: Endüstriyel Rulman 6204-2RS" required />
-                            </div>
-
-                            <div class="form-field-grid">
+                            <div class="form-field-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
                                 <div class="form-field">
                                     <label class="form-label" for="simListingPrice">Birim Satış Fiyatı (₺) *</label>
                                     <input type="number" step="0.01" min="0.01" id="simListingPrice" name="ItemPrice" class="form-input" placeholder="185.00" required />
@@ -1216,9 +1217,6 @@
                                     <label class="form-label" for="simListingQty">Stok Adedi *</label>
                                     <input type="number" id="simListingQty" name="Quantity" class="form-input" min="1" value="250" required />
                                 </div>
-                            </div>
-
-                            <div class="form-field-grid">
                                 <div class="form-field">
                                     <label class="form-label" for="simListingCat">Kategori</label>
                                     <select id="simListingCat" name="CategoryID" class="form-select">
@@ -1235,23 +1233,24 @@
                                 </div>
                             </div>
 
-                            <div class="form-field">
-                                <label class="form-label" for="simListingDesc">Ürün Açıklaması & Şartlar</label>
-                                <textarea id="simListingDesc" name="ItemDescryption" class="form-textarea" rows="2" placeholder="Ürün özellikleri, malzeme kalitesi, toptan gönderim detayları..."></textarea>
-                            </div>
-
-                            <div class="form-field">
-                                <label class="form-label">Ürün Görseli (İsteğe Bağlı)</label>
-                                <div style="display: flex; gap: 10px; align-items: center;">
-                                    <input type="file" accept="image/*" id="simListingFileInput" class="form-input" style="padding: 5px;" onchange="handleListingImageUpload(this)" />
-                                    <div id="simImgPreviewBox" style="display: none; width: 38px; height: 38px; border-radius: 6px; overflow: hidden; border: 1px solid #CBD5E1; flex: none;">
-                                        <img id="simImgPreview" src="" alt="Önizleme" style="width: 100%; height: 100%; object-fit: cover;" />
+                            <div class="form-field-grid" style="grid-template-columns: 2fr 1fr;">
+                                <div class="form-field">
+                                    <label class="form-label" for="simListingDesc">Ürün Açıklaması & Şartlar</label>
+                                    <textarea id="simListingDesc" name="ItemDescryption" class="form-textarea" rows="2" placeholder="Ürün özellikleri, malzeme kalitesi, toptan gönderim detayları..."></textarea>
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label">Ürün Görseli (İsteğe Bağlı)</label>
+                                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 4px;">
+                                        <input type="file" accept="image/*" id="simListingFileInput" class="form-input" style="padding: 5px;" onchange="handleListingImageUpload(this)" />
+                                        <div id="simImgPreviewBox" style="display: none; width: 44px; height: 44px; border-radius: 6px; overflow: hidden; border: 1px solid #CBD5E1; flex: none;">
+                                            <img id="simImgPreview" src="" alt="Önizleme" style="width: 100%; height: 100%; object-fit: cover;" />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div style="margin-top: 6px;">
-                                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 10px;">
+                            <div style="margin-top: 4px;">
+                                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 11px; font-size: 0.95rem;">
                                     ✓ Seçilen Firma Adına Vitrine İlanı Ekle
                                 </button>
                             </div>
@@ -1259,42 +1258,39 @@
                     </form>
                 </div>
 
-                <!-- KART 2: FİRMA ADINA TALEP OLUŞTUR -->
+                <!-- KART 2: FİRMA ADINA TALEP OLUŞTUR (LİSTE TABANLI) -->
                 <div class="content-card" style="padding: 24px; border-top: 4px solid #0284C7;">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
-                        <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-heading);">
-                            📝 Firma Adına Talep Oluştur
+                        <h3 style="font-size: 1.10rem; font-weight: 700; color: var(--text-heading); display: flex; align-items: center; gap: 8px;">
+                            📝 <span>Firma Adına Talep Oluştur</span>
                         </h3>
-                        <span class="badge badge-buyer">Talep Simülatörü</span>
+                        <span class="badge badge-buyer" style="background: #E0F2FE; color: #0284C7; border: 1px solid #BAE6FD;">Çok Kalemli Talep Simülatörü</span>
                     </div>
 
                     <form asp-action="SimulateCreateRequest" method="post" id="simRequestForm" onsubmit="handleSimRequestSubmit(event); return false;">
                         @Html.AntiForgeryToken()
-                        <div style="display: flex; flex-direction: column; gap: 14px;">
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
                             
-                            <div class="form-field">
-                                <label class="form-label" for="simSenderComp">Talep Sahibi Firma *</label>
-                                <select id="simSenderComp" name="SenderCompanyID" class="form-select" required>
-                                    <option value="">— Talep Açacak Firmayı Seçin —</option>
-                                    @foreach (var comp in Model.Companies)
-                                    {
-                                        <option value="@comp.CompanyID">
-                                            #@comp.CompanyID - @comp.CompanyName [Yetkili: @comp.CompanyOfficial]
-                                        </option>
-                                    }
-                                </select>
-                            </div>
-
-                            <div class="form-field">
-                                <label class="form-label" for="simProdName">Ürün / Hizmet Adı *</label>
-                                <input type="text" id="simProdName" name="ProductName" class="form-input" placeholder="Örn: CNC Torna Parçaları" required />
-                            </div>
-
-                            <div class="form-field-grid">
+                            <div class="form-field-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
                                 <div class="form-field">
-                                    <label class="form-label" for="simQuantity">Miktar (Adet) *</label>
-                                    <input type="number" id="simQuantity" name="Quantity" class="form-input" min="1" value="100" required />
+                                    <label class="form-label" for="simSenderComp">Talep Sahibi Firma *</label>
+                                    <select id="simSenderComp" name="SenderCompanyID" class="form-select" required>
+                                        <option value="">— Talep Açacak Firmayı Seçin —</option>
+                                        @foreach (var comp in Model.Companies)
+                                        {
+                                            <option value="@comp.CompanyID">
+                                                #@comp.CompanyID - @comp.CompanyName [Yetkili: @comp.CompanyOfficial]
+                                            </option>
+                                        }
+                                    </select>
                                 </div>
+                                <div class="form-field">
+                                    <label class="form-label" for="simProdName">Talep Genel Başlığı / Proje Adı</label>
+                                    <input type="text" id="simProdName" name="ProductName" class="form-input" placeholder="Örn: 2026 Q3 Fabrika Bakım Malzemeleri Alımı (Boş bırakılırsa kalemlerden türetilir)" />
+                                </div>
+                            </div>
+
+                            <div class="form-field-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
                                 <div class="form-field">
                                     <label class="form-label" for="simReqType">Talep Türü</label>
                                     <select id="simReqType" name="RequestType" class="form-select">
@@ -1304,9 +1300,6 @@
                                         <option value="Hizmet / Proje">Hizmet / Proje</option>
                                     </select>
                                 </div>
-                            </div>
-
-                            <div class="form-field-grid">
                                 <div class="form-field">
                                     <label class="form-label" for="simCategory">Kategori</label>
                                     <select id="simCategory" name="CategoryID" class="form-select">
@@ -1318,93 +1311,201 @@
                                     </select>
                                 </div>
                                 <div class="form-field">
-                                    <label class="form-label" for="simBudget">Tahmini Bütçe (₺)</label>
-                                    <input type="number" step="0.01" id="simBudget" name="EstimatedBudget" class="form-input" placeholder="Örn: 25000" />
+                                    <label class="form-label" for="simDeliveryDate">İstenen Teslim Tarihi</label>
+                                    <input type="date" id="simDeliveryDate" name="TargetDeliveryDate" class="form-input" />
                                 </div>
                             </div>
 
-                            <div class="form-field">
-                                <label class="form-label" for="simDeliveryDate">İstenen Teslim Tarihi</label>
-                                <input type="date" id="simDeliveryDate" name="TargetDeliveryDate" class="form-input" />
+                            <!-- 📋 İSTENİLENLER LİSTESİ (ÇOKLU KALEM DİNAMİK TABLO) -->
+                            <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-top: 4px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                                    <div>
+                                        <strong style="color: #0F172A; font-size: 0.92rem;">📋 İstenilen Malzeme ve Hizmet Kalemleri</strong>
+                                        <span id="simReqItemsBadge" style="font-size: 0.75rem; color: #0284C7; font-weight: 700; background: #E0F2FE; padding: 2px 8px; border-radius: 6px; margin-left: 6px;">1 Kalem</span>
+                                    </div>
+                                    <button type="button" class="btn-quick-tpl" onclick="addSimRequestItemRow('', 10, 'Adet', null, '')" style="background: #FFFFFF; border: 1px solid #CBD5E1; color: #0284C7; font-weight: 700; padding: 5px 12px; font-size: 0.80rem; border-radius: 6px; cursor: pointer;">
+                                        ➕ Kalem Ekle
+                                    </button>
+                                </div>
+
+                                <div style="overflow-x: auto;">
+                                    <table style="width: 100%; border-collapse: collapse; font-size: 0.83rem;" id="simReqItemsTable">
+                                        <thead>
+                                            <tr style="background: #EDF2F7; color: #475569; border-bottom: 1.5px solid #CBD5E1;">
+                                                <th style="padding: 8px 10px; text-align: center; width: 35px;">#</th>
+                                                <th style="padding: 8px 10px; text-align: left;">Malzeme / Hizmet Adı *</th>
+                                                <th style="padding: 8px 10px; text-align: center; width: 95px;">Miktar *</th>
+                                                <th style="padding: 8px 10px; text-align: center; width: 110px;">Birim</th>
+                                                <th style="padding: 8px 10px; text-align: right; width: 130px;">Hedef B. Fiyat (₺)</th>
+                                                <th style="padding: 8px 10px; text-align: left; width: 220px;">Açıklama / Teknik Şart</th>
+                                                <th style="padding: 8px 10px; text-align: center; width: 45px;">Sil</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="simReqItemsTbody">
+                                            <!-- JS ile veya başlangıç satırı -->
+                                            <tr class="sim-req-item-row">
+                                                <td style="text-align: center; font-weight: 700; color: #64748B;">1</td>
+                                                <td><input type="text" class="sim-it-name form-input" style="padding: 6px 9px; font-size: 0.82rem;" placeholder="Örn: CNC Torna Parçası" value="CNC Torna Parçası" required oninput="recalculateSimRequestTotals()" /></td>
+                                                <td><input type="number" class="sim-it-qty form-input" style="padding: 6px 9px; font-size: 0.82rem; text-align: center;" min="1" value="50" required oninput="recalculateSimRequestTotals()" /></td>
+                                                <td>
+                                                    <select class="sim-it-unit form-select" style="padding: 5px 7px; font-size: 0.80rem;">
+                                                        <option value="Adet" selected>Adet</option>
+                                                        <option value="Kg">Kg</option>
+                                                        <option value="Metre">Metre</option>
+                                                        <option value="Litre">Litre</option>
+                                                        <option value="Paket">Paket</option>
+                                                        <option value="Koli">Koli</option>
+                                                        <option value="Ton">Ton</option>
+                                                        <option value="Takım">Takım</option>
+                                                        <option value="Saat">Saat</option>
+                                                    </select>
+                                                </td>
+                                                <td><input type="number" step="0.01" class="sim-it-price form-input" style="padding: 6px 9px; font-size: 0.82rem; text-align: right;" placeholder="0,00" value="150" oninput="recalculateSimRequestTotals()" /></td>
+                                                <td><input type="text" class="sim-it-desc form-input" style="padding: 6px 9px; font-size: 0.82rem;" placeholder="Teknik tolerans / şart" value="DIN 2768-m" /></td>
+                                                <td style="text-align: center;"><button type="button" onclick="removeSimRequestItemRow(this)" style="background: none; border: none; color: #EF4444; font-size: 1.1rem; cursor: pointer;" title="Kalemi Sil">×</button></td>
+                                            </tr>
+                                        </tbody>
+                                        <tfoot>
+                                            <tr style="background: #F1F5F9; border-top: 1.5px solid #CBD5E1; font-weight: 700; color: #334155;">
+                                                <td colspan="2" style="padding: 8px 10px; text-align: right;">TOPLAM ÖZET:</td>
+                                                <td style="padding: 8px 10px; text-align: center; color: #0284C7;" id="simReqTotalQtyDisplay">50 Birim</td>
+                                                <td></td>
+                                                <td style="padding: 8px 10px; text-align: right; color: #16A34A;" id="simReqTotalBudgetDisplay">7.500,00 ₺</td>
+                                                <td colspan="2" style="font-size: 0.75rem; color: #64748B; padding: 8px 10px;">(Miktar ve bütçe kalemlerden otomatik hesaplanır)</td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
                             </div>
 
-                            <div class="form-field">
-                                <label class="form-label" for="simNotes">Teknik Açıklama & Notlar</label>
-                                <textarea id="simNotes" name="Notes" class="form-textarea" rows="2" placeholder="Teknik şartname veya ek istekler..."></textarea>
+                            <div class="form-field-grid" style="grid-template-columns: 1fr 1fr 2fr;">
+                                <div class="form-field">
+                                    <label class="form-label" for="simQuantity">Toplam Miktar (Otomatik)</label>
+                                    <input type="number" id="simQuantity" name="Quantity" class="form-input" min="1" value="50" required />
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label" for="simBudget">Tahmini Toplam Bütçe (₺)</label>
+                                    <input type="number" step="0.01" id="simBudget" name="EstimatedBudget" class="form-input" placeholder="Örn: 7500.00" value="7500" />
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label" for="simNotes">Genel Şartname & Notlar</label>
+                                    <input type="text" id="simNotes" name="Notes" class="form-input" placeholder="Teslimat adresi, ödeme vadesi ve genel koşullar..." />
+                                </div>
                             </div>
 
-                            <div style="margin-top: 6px;">
-                                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 10px; background: #0284C7; border-color: #0284C7;">
-                                    Seçilen Firma Adına Talebi Yayınla
+                            <div style="margin-top: 4px;">
+                                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 11px; background: #0284C7; border-color: #0284C7; font-size: 0.95rem;">
+                                    📝 Seçilen Firma Adına Talebi Yayınla
                                 </button>
                             </div>
                         </div>
                     </form>
                 </div>
 
-                <!-- KART 3: FİRMA ADINA TEKLİF GÖNDER -->
+                <!-- KART 3: FİRMA ADINA TEKLİF GÖNDER (KALEM BAZLI) -->
                 <div class="content-card" style="padding: 24px; border-top: 4px solid #16A34A;">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
-                        <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-heading);">
-                            💼 Firma Adına Teklif Gönder
+                        <h3 style="font-size: 1.10rem; font-weight: 700; color: var(--text-heading); display: flex; align-items: center; gap: 8px;">
+                            💼 <span>Firma Adına Teklif Gönder</span>
                         </h3>
-                        <span class="badge badge-supplier" style="background: #ECFDF5; color: #16A34A; border: 1px solid #A7F3D0;">Teklif Simülatörü</span>
+                        <span class="badge badge-supplier" style="background: #ECFDF5; color: #16A34A; border: 1px solid #A7F3D0;">Kalem Bazlı Teklif Simülatörü</span>
                     </div>
 
                     <form asp-action="SimulateCreateOffer" method="post" id="simOfferForm" onsubmit="handleSimOfferSubmit(event); return false;">
                         @Html.AntiForgeryToken()
-                        <div style="display: flex; flex-direction: column; gap: 14px;">
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
                             
-                            <div class="form-field">
-                                <label class="form-label" for="simOfferReq">Teklif Verilecek Talep *</label>
-                                <select id="simOfferReq" name="RequestID" class="form-select" required>
-                                    <option value="">— Açık Taleplerden Birini Seçin —</option>
-                                    @foreach (var req in Model.OpenRequests)
-                                    {
-                                        <option value="@req.RequestID" data-sender="@(req.SenderID ?? 0)">
-                                            #REQ-@req.RequestID: @req.ProductName (@req.Quantity Adet) — [@req.BuyerInfo]
-                                        </option>
-                                    }
-                                </select>
-                            </div>
-
-                            <div class="form-field">
-                                <label class="form-label" for="simOfferSupplier">Teklif Veren Firma *</label>
-                                <select id="simOfferSupplier" name="SupplierCompanyID" class="form-select" required>
-                                    <option value="">— Teklif Verecek Firmayı Seçin —</option>
-                                    @foreach (var comp in Model.Companies)
-                                    {
-                                        <option value="@comp.CompanyID">
-                                            #@comp.CompanyID - @comp.CompanyName [Yetkili: @comp.CompanyOfficial]
-                                        </option>
-                                    }
-                                </select>
-                            </div>
-
-                            <div class="form-field-grid">
+                            <div class="form-field-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
                                 <div class="form-field">
-                                    <label class="form-label" for="simOfferPrice">Teklif Tutarı (Toplam ₺) *</label>
+                                    <label class="form-label" for="simOfferReq">Teklif Verilecek Talep *</label>
+                                    <select id="simOfferReq" name="RequestID" class="form-select" required onchange="loadSimOfferRequestItems(this.value)">
+                                        <option value="">— Açık Taleplerden Birini Seçin —</option>
+                                        @foreach (var req in Model.OpenRequests)
+                                        {
+                                            <option value="@req.RequestID" data-sender="@(req.SenderID ?? 0)">
+                                                #REQ-@req.RequestID: @req.ProductName (@req.Quantity Adet) — [@req.BuyerInfo]
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label" for="simOfferSupplier">Teklif Veren Tedarikçi Firma *</label>
+                                    <select id="simOfferSupplier" name="SupplierCompanyID" class="form-select" required>
+                                        <option value="">— Teklif Verecek Firmayı Seçin —</option>
+                                        @foreach (var comp in Model.Companies)
+                                        {
+                                            <option value="@comp.CompanyID">
+                                                #@comp.CompanyID - @comp.CompanyName [Yetkili: @comp.CompanyOfficial]
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- 📋 KALEM BAZLI TEKLİF DÖKÜM TABLOSU (DİNAMİK YÜKLENEN ALAN) -->
+                            <div id="simOfferItemsContainer" style="display: none; background: #F8FAFC; border: 1.5px solid #86EFAC; border-radius: 12px; padding: 16px; margin-top: 4px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                                    <div>
+                                        <strong style="color: #166534; font-size: 0.92rem;">📋 Talep Kalemleri & Teklif Birim Fiyatları</strong>
+                                        <span id="simOfferItemsCountBadge" style="font-size: 0.75rem; color: #15803D; font-weight: 700; background: #DCFCE7; padding: 2px 8px; border-radius: 6px; margin-left: 6px;">0 Kalem</span>
+                                    </div>
+                                    <div style="display: flex; gap: 6px;">
+                                        <button type="button" class="btn-quick-tpl" onclick="fillSimOfferPrices(0)" style="background: #FFFFFF; border: 1px solid #86EFAC; color: #166534; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-weight: 600;" title="Hedef Bütçe Birim Fiyatını Uygula">⚡ Hedef Fiyat</button>
+                                        <button type="button" class="btn-quick-tpl" onclick="fillSimOfferPrices(5)" style="background: #FFFFFF; border: 1px solid #86EFAC; color: #166534; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-weight: 600;" title="Hedef Bütçeden %5 İndirimli">%5 İndirimli</button>
+                                        <button type="button" class="btn-quick-tpl" onclick="fillSimOfferPrices(10)" style="background: #FFFFFF; border: 1px solid #86EFAC; color: #166534; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-weight: 600;" title="Hedef Bütçeden %10 İndirimli">%10 İndirimli</button>
+                                    </div>
+                                </div>
+
+                                <div style="overflow-x: auto;">
+                                    <table style="width: 100%; border-collapse: collapse; font-size: 0.83rem;" id="simOfferItemsTable">
+                                        <thead>
+                                            <tr style="background: #DCFCE7; color: #166534; border-bottom: 1.5px solid #86EFAC;">
+                                                <th style="padding: 8px 10px; text-align: center; width: 35px;">#</th>
+                                                <th style="padding: 8px 10px; text-align: left;">Talep Kalemi</th>
+                                                <th style="padding: 8px 10px; text-align: center; width: 100px;">Miktar</th>
+                                                <th style="padding: 8px 10px; text-align: right; width: 110px;">Hedef B. Fiyat</th>
+                                                <th style="padding: 8px 10px; text-align: right; width: 140px;">Teklif B. Fiyat (₺) *</th>
+                                                <th style="padding: 8px 10px; text-align: right; width: 130px;">Kalem Tutarı</th>
+                                                <th style="padding: 8px 10px; text-align: left; width: 180px;">Tedarikçi Kalem Notu</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="simOfferItemsTbody">
+                                            <!-- AJAX ile doldurulur -->
+                                        </tbody>
+                                        <tfoot>
+                                            <tr style="background: #F0FDF4; border-top: 1.5px solid #86EFAC; font-weight: 700; color: #166534;">
+                                                <td colspan="5" style="padding: 8px 10px; text-align: right;">HESAPLANAN GENEL TEKLİF TOPLAMI:</td>
+                                                <td style="padding: 8px 10px; text-align: right; font-size: 0.95rem; color: #15803D;" id="simOfferCalculatedTotal">0,00 ₺</td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="form-field-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+                                <div class="form-field">
+                                    <label class="form-label" for="simOfferPrice">Toplam Teklif Tutarı (₺) *</label>
                                     <input type="number" step="0.01" id="simOfferPrice" name="OfferedPrice" class="form-input" placeholder="Örn: 18500.00" required />
                                 </div>
                                 <div class="form-field">
-                                    <label class="form-label" for="simDeliveryDays">Teslim Süresi (Gün)</label>
+                                    <label class="form-label" for="simDeliveryDays">Teslim Süresi (İş Günü)</label>
                                     <input type="number" id="simDeliveryDays" name="DeliveryDays" class="form-input" min="1" value="7" />
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label" for="simValidityDays">Teklif Geçerlilik Süresi (Gün)</label>
+                                    <input type="number" id="simValidityDays" name="ValidityDays" class="form-input" min="1" value="30" />
                                 </div>
                             </div>
 
                             <div class="form-field">
-                                <label class="form-label" for="simValidityDays">Teklif Geçerlilik (Gün)</label>
-                                <input type="number" id="simValidityDays" name="ValidityDays" class="form-input" min="1" value="30" />
+                                <label class="form-label" for="simSupplierNotes">Açıklama / Tedarikçi Teklif Notları</label>
+                                <textarea id="simSupplierNotes" name="SupplierNotes" class="form-textarea" rows="2" placeholder="Nakliye dahil / Stoktan hemen teslim ve ödeme koşulları..."></textarea>
                             </div>
 
-                            <div class="form-field">
-                                <label class="form-label" for="simSupplierNotes">Açıklama / Teklif Notları</label>
-                                <textarea id="simSupplierNotes" name="SupplierNotes" class="form-textarea" rows="2" placeholder="Kargo dahil / Standart teslimat ve garanti koşulları..."></textarea>
-                            </div>
-
-                            <div style="margin-top: 6px;">
-                                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 10px; background: #16A34A; border-color: #16A34A;">
-                                    Seçilen Firma Adına Teklif Gönder
+                            <div style="margin-top: 4px;">
+                                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 11px; background: #16A34A; border-color: #16A34A; font-size: 0.95rem;">
+                                    💼 Seçilen Firma Adına Teklif Gönder
                                 </button>
                             </div>
                         </div>
@@ -2498,6 +2599,205 @@
             }
         }
 
+        // --- TALEP SİMÜLASYONU KALEM YÖNETİMİ ---
+        function addSimRequestItemRow(name = '', qty = 10, unit = 'Adet', price = null, desc = '') {
+            const tbody = document.getElementById('simReqItemsTbody');
+            if (!tbody) return;
+            const rowCount = tbody.querySelectorAll('.sim-req-item-row').length + 1;
+            const tr = document.createElement('tr');
+            tr.className = 'sim-req-item-row';
+            tr.innerHTML = `
+                <td style="text-align: center; font-weight: 700; color: #64748B;">${rowCount}</td>
+                <td><input type="text" class="sim-it-name form-input" style="padding: 5px 8px; font-size: 0.80rem;" placeholder="Örn: CNC Torna Parçası" value="${name}" required oninput="recalculateSimRequestTotals()" /></td>
+                <td><input type="number" class="sim-it-qty form-input" style="padding: 5px 8px; font-size: 0.80rem; text-align: center;" min="1" value="${qty}" required oninput="recalculateSimRequestTotals()" /></td>
+                <td>
+                    <select class="sim-it-unit form-select" style="padding: 4px 6px; font-size: 0.78rem;">
+                        <option value="Adet" ${unit === 'Adet' ? 'selected' : ''}>Adet</option>
+                        <option value="Kg" ${unit === 'Kg' ? 'selected' : ''}>Kg</option>
+                        <option value="Metre" ${unit === 'Metre' ? 'selected' : ''}>Metre</option>
+                        <option value="Litre" ${unit === 'Litre' ? 'selected' : ''}>Litre</option>
+                        <option value="Paket" ${unit === 'Paket' ? 'selected' : ''}>Paket</option>
+                        <option value="Koli" ${unit === 'Koli' ? 'selected' : ''}>Koli</option>
+                        <option value="Ton" ${unit === 'Ton' ? 'selected' : ''}>Ton</option>
+                        <option value="Takım" ${unit === 'Takım' ? 'selected' : ''}>Takım</option>
+                        <option value="Saat" ${unit === 'Saat' ? 'selected' : ''}>Saat</option>
+                    </select>
+                </td>
+                <td><input type="number" step="0.01" class="sim-it-price form-input" style="padding: 5px 8px; font-size: 0.80rem; text-align: right;" placeholder="0,00" value="${price !== null ? price : ''}" oninput="recalculateSimRequestTotals()" /></td>
+                <td><input type="text" class="sim-it-desc form-input" style="padding: 5px 8px; font-size: 0.80rem;" placeholder="Teknik şart / tolerans" value="${desc}" /></td>
+                <td style="text-align: center;"><button type="button" onclick="removeSimRequestItemRow(this)" style="background: none; border: none; color: #EF4444; font-size: 1rem; cursor: pointer;" title="Kalemi Sil">×</button></td>
+            `;
+            tbody.appendChild(tr);
+            reindexSimRequestRows();
+            recalculateSimRequestTotals();
+        }
+
+        function removeSimRequestItemRow(btn) {
+            const tbody = document.getElementById('simReqItemsTbody');
+            if (!tbody) return;
+            const rows = tbody.querySelectorAll('.sim-req-item-row');
+            if (rows.length <= 1) {
+                showAdminToast('Talebin en az 1 kalemi olmalıdır.', 'error');
+                return;
+            }
+            const row = btn.closest('tr');
+            if (row) row.remove();
+            reindexSimRequestRows();
+            recalculateSimRequestTotals();
+        }
+
+        function reindexSimRequestRows() {
+            const tbody = document.getElementById('simReqItemsTbody');
+            if (!tbody) return;
+            const rows = tbody.querySelectorAll('.sim-req-item-row');
+            rows.forEach((r, idx) => {
+                const tdIndex = r.querySelector('td:first-child');
+                if (tdIndex) tdIndex.textContent = (idx + 1);
+            });
+            const badge = document.getElementById('simReqItemsBadge');
+            if (badge) badge.textContent = `${rows.length} Kalem`;
+        }
+
+        function recalculateSimRequestTotals() {
+            const tbody = document.getElementById('simReqItemsTbody');
+            if (!tbody) return;
+            const rows = tbody.querySelectorAll('.sim-req-item-row');
+            let totalQty = 0;
+            let totalBudget = 0;
+            rows.forEach(r => {
+                const q = parseFloat(r.querySelector('.sim-it-qty')?.value) || 0;
+                const p = parseFloat(r.querySelector('.sim-it-price')?.value) || 0;
+                totalQty += q;
+                totalBudget += (q * p);
+            });
+
+            const qtyInput = document.getElementById('simQuantity');
+            if (qtyInput) qtyInput.value = totalQty;
+            const qtyDisp = document.getElementById('simReqTotalQtyDisplay');
+            if (qtyDisp) qtyDisp.textContent = `${totalQty} Birim`;
+
+            const budgetInput = document.getElementById('simBudget');
+            if (budgetInput && totalBudget > 0) budgetInput.value = totalBudget.toFixed(2);
+            const budgetDisp = document.getElementById('simReqTotalBudgetDisplay');
+            if (budgetDisp) {
+                budgetDisp.textContent = totalBudget > 0 ? (totalBudget.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺') : 'Belirtilmedi';
+            }
+        }
+
+        // --- TEKLİF SİMÜLASYONU KALEM YÖNETİMİ ---
+        let currentSimOfferRequestItems = [];
+
+        async function loadSimOfferRequestItems(reqId) {
+            const container = document.getElementById('simOfferItemsContainer');
+            const tbody = document.getElementById('simOfferItemsTbody');
+            const badge = document.getElementById('simOfferItemsCountBadge');
+            
+            if (!reqId || reqId <= 0) {
+                if (container) container.style.display = 'none';
+                currentSimOfferRequestItems = [];
+                return;
+            }
+
+            try {
+                if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 12px; color: #64748B;">⏳ Talep kalemleri yükleniyor...</td></tr>';
+                if (container) container.style.display = 'block';
+
+                const response = await fetch(`/SuperAdmin/GetRequestDetailsForSim?id=${reqId}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                });
+                const data = await response.json();
+
+                if (!data.success || !data.items || data.items.length === 0) {
+                    if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 12px; color: #64748B;">Kalem bulunamadı. Genel tutar girebilirsiniz.</td></tr>';
+                    currentSimOfferRequestItems = [];
+                    return;
+                }
+
+                currentSimOfferRequestItems = data.items;
+                if (badge) badge.textContent = `${data.items.length} Kalem`;
+
+                let html = '';
+                data.items.forEach((it, idx) => {
+                    const estUPrice = it.estimatedUnitPrice || 0;
+                    const estUPriceFormatted = it.estimatedUnitPriceFormatted || '-';
+                    const defaultOfferUnitPrice = estUPrice > 0 ? (estUPrice * 0.95).toFixed(2) : '';
+                    const defaultLineTotal = estUPrice > 0 ? (estUPrice * 0.95 * it.quantity).toFixed(2) : '0.00';
+
+                    html += `
+                        <tr class="sim-offer-item-row" data-item-id="${it.requestItemId}" data-qty="${it.quantity}" data-est-price="${estUPrice}">
+                            <td style="text-align: center; font-weight: 700; color: #64748B;">${idx + 1}</td>
+                            <td>
+                                <div style="font-weight: 600; color: #0F172A;">${it.itemName}</div>
+                                ${it.itemDescription ? `<div style="font-size: 0.72rem; color: #64748B;">${it.itemDescription}</div>` : ''}
+                            </td>
+                            <td style="text-align: center; font-weight: 600; color: #0284C7;">${it.quantity} ${it.unit}</td>
+                            <td style="text-align: right; color: #64748B; font-size: 0.76rem;">${estUPriceFormatted}</td>
+                            <td style="text-align: right;">
+                                <input type="number" step="0.01" class="sim-off-unitprice form-input" style="padding: 4px 6px; font-size: 0.80rem; text-align: right; width: 100px; font-weight: 600; color: #15803D;" placeholder="0,00" value="${defaultOfferUnitPrice}" required oninput="recalculateSimOfferTotals()" />
+                            </td>
+                            <td style="text-align: right; font-weight: 700; color: #166534;" class="sim-off-linetotal">
+                                ${parseFloat(defaultLineTotal).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
+                            </td>
+                            <td>
+                                <input type="text" class="sim-off-itemnote form-input" style="padding: 4px 6px; font-size: 0.75rem;" placeholder="Marka/stok notu..." />
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                if (tbody) tbody.innerHTML = html;
+                recalculateSimOfferTotals();
+
+            } catch (err) {
+                if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #EF4444; padding: 8px;">Yükleme hatası: ${err.message}</td></tr>`;
+            }
+        }
+
+        function fillSimOfferPrices(discountPercent = 0) {
+            const tbody = document.getElementById('simOfferItemsTbody');
+            if (!tbody) return;
+            const rows = tbody.querySelectorAll('.sim-offer-item-row');
+            rows.forEach(r => {
+                const est = parseFloat(r.getAttribute('data-est-price')) || 0;
+                const input = r.querySelector('.sim-off-unitprice');
+                if (input && est > 0) {
+                    const price = est * (1 - (discountPercent / 100));
+                    input.value = price.toFixed(2);
+                }
+            });
+            recalculateSimOfferTotals();
+        }
+
+        function recalculateSimOfferTotals() {
+            const tbody = document.getElementById('simOfferItemsTbody');
+            let grandTotal = 0;
+            if (tbody) {
+                const rows = tbody.querySelectorAll('.sim-offer-item-row');
+                rows.forEach(r => {
+                    const qty = parseFloat(r.getAttribute('data-qty')) || 1;
+                    const uPriceInput = r.querySelector('.sim-off-unitprice');
+                    const uPrice = uPriceInput ? (parseFloat(uPriceInput.value) || 0) : 0;
+                    const lineTot = qty * uPrice;
+                    grandTotal += lineTot;
+
+                    const lineTotCell = r.querySelector('.sim-off-linetotal');
+                    if (lineTotCell) {
+                        lineTotCell.textContent = lineTot.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
+                    }
+                });
+            }
+
+            const totalDisplay = document.getElementById('simOfferCalculatedTotal');
+            if (totalDisplay) {
+                totalDisplay.textContent = grandTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
+            }
+
+            const offerPriceInput = document.getElementById('simOfferPrice');
+            if (offerPriceInput && grandTotal > 0) {
+                offerPriceInput.value = grandTotal.toFixed(2);
+            }
+        }
+
         // 8. Simülasyon: Talep Oluştur AJAX
         async function handleSimRequestSubmit(event) {
             if (event) { event.preventDefault(); event.stopPropagation(); }
@@ -2507,15 +2807,62 @@
             if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Yayınlanıyor...'; }
 
             try {
-                const formData = new FormData(form);
+                // Kalemleri topla
+                const items = [];
+                const rows = form.querySelectorAll('#simReqItemsTbody .sim-req-item-row');
+                rows.forEach(r => {
+                    const name = r.querySelector('.sim-it-name')?.value?.trim();
+                    const qty = parseFloat(r.querySelector('.sim-it-qty')?.value) || 1;
+                    const unit = r.querySelector('.sim-it-unit')?.value || 'Adet';
+                    const price = parseFloat(r.querySelector('.sim-it-price')?.value) || null;
+                    const desc = r.querySelector('.sim-it-desc')?.value?.trim() || null;
+                    if (name) {
+                        items.push({
+                            itemName: name,
+                            quantity: qty,
+                            unit: unit,
+                            estimatedUnitPrice: price,
+                            itemDescription: desc
+                        });
+                    }
+                });
+
+                const payload = {
+                    senderCompanyID: parseInt(form.querySelector('#simSenderComp')?.value) || 0,
+                    productName: form.querySelector('#simProdName')?.value?.trim() || '',
+                    requestType: form.querySelector('#simReqType')?.value || 'Satın Alma',
+                    categoryID: parseInt(form.querySelector('#simCategory')?.value) || null,
+                    quantity: parseInt(form.querySelector('#simQuantity')?.value) || 1,
+                    estimatedBudget: parseFloat(form.querySelector('#simBudget')?.value) || null,
+                    targetDeliveryDate: form.querySelector('#simDeliveryDate')?.value || null,
+                    notes: form.querySelector('#simNotes')?.value?.trim() || null,
+                    items: items
+                };
+
                 const response = await fetch('/SuperAdmin/SimulateCreateRequest', {
                     method: 'POST',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
-                    body: formData
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest', 
+                        'Accept': 'application/json' 
+                    },
+                    body: JSON.stringify(payload)
                 });
                 const result = await response.json();
                 if (result.success) {
                     form.reset();
+                    // Teklif dropdown'ına yeni talebi dinamik ekle
+                    if (result.requestId) {
+                        const offerReqSelect = document.getElementById('simOfferReq');
+                        if (offerReqSelect) {
+                            const newOpt = document.createElement('option');
+                            newOpt.value = result.requestId;
+                            newOpt.textContent = `#REQ-${result.requestId}: ${result.productName} (${payload.quantity} Birim, ${result.itemCount || 1} Kalem)`;
+                            offerReqSelect.appendChild(newOpt);
+                            offerReqSelect.value = result.requestId;
+                            loadSimOfferRequestItems(result.requestId);
+                        }
+                    }
                     showAdminToast('✓ ' + (result.message || 'Talep yayınlandı!'), 'success');
                 } else {
                     showAdminToast('Hata: ' + (result.message || 'Talep oluşturulamadı.'), 'error');
@@ -2536,15 +2883,46 @@
             if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Gönderiliyor...'; }
 
             try {
-                const formData = new FormData(form);
+                // Kalem bazlı teklifleri topla
+                const items = [];
+                const rows = form.querySelectorAll('#simOfferItemsTbody .sim-offer-item-row');
+                rows.forEach(r => {
+                    const reqItemId = parseInt(r.getAttribute('data-item-id')) || 0;
+                    const uPrice = parseFloat(r.querySelector('.sim-off-unitprice')?.value);
+                    const note = r.querySelector('.sim-off-itemnote')?.value?.trim() || null;
+                    if (!isNaN(uPrice)) {
+                        items.push({
+                            requestItemID: reqItemId,
+                            unitPrice: uPrice,
+                            notes: note
+                        });
+                    }
+                });
+
+                const payload = {
+                    requestID: parseInt(form.querySelector('#simOfferReq')?.value) || 0,
+                    supplierCompanyID: parseInt(form.querySelector('#simOfferSupplier')?.value) || 0,
+                    offeredPrice: parseFloat(form.querySelector('#simOfferPrice')?.value) || 0,
+                    deliveryDays: parseInt(form.querySelector('#simDeliveryDays')?.value) || 7,
+                    validityDays: parseInt(form.querySelector('#simValidityDays')?.value) || 30,
+                    supplierNotes: form.querySelector('#simSupplierNotes')?.value?.trim() || null,
+                    items: items
+                };
+
                 const response = await fetch('/SuperAdmin/SimulateCreateOffer', {
                     method: 'POST',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
-                    body: formData
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest', 
+                        'Accept': 'application/json' 
+                    },
+                    body: JSON.stringify(payload)
                 });
                 const result = await response.json();
                 if (result.success) {
                     form.reset();
+                    const container = document.getElementById('simOfferItemsContainer');
+                    if (container) container.style.display = 'none';
                     showAdminToast('✓ ' + (result.message || 'Teklif başarıyla iletildi!'), 'success');
                 } else {
                     showAdminToast('Hata: ' + (result.message || 'Teklif iletilemedi.'), 'error');

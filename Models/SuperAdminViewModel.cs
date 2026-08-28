@@ -133,10 +133,8 @@ namespace satinalmaportali2.Models
         [Required(ErrorMessage = "Lütfen talebi oluşturan firmayı seçin.")]
         public int SenderCompanyID { get; set; }
 
-        [Required(ErrorMessage = "Ürün veya hizmet adı zorunludur.")]
-        public string ProductName { get; set; } = string.Empty;
+        public string? ProductName { get; set; }
 
-        [Range(1, 1000000, ErrorMessage = "Adet en az 1 olmalıdır.")]
         public int Quantity { get; set; } = 1;
 
         public string? RequestType { get; set; } = "Satın Alma";
@@ -148,6 +146,17 @@ namespace satinalmaportali2.Models
         public DateTime? TargetDeliveryDate { get; set; }
 
         public string? Notes { get; set; }
+
+        public List<SimulateRequestItemDto>? Items { get; set; } = new();
+    }
+
+    public class SimulateRequestItemDto
+    {
+        public string ItemName { get; set; } = string.Empty;
+        public decimal Quantity { get; set; } = 1;
+        public string Unit { get; set; } = "Adet";
+        public decimal? EstimatedUnitPrice { get; set; }
+        public string? ItemDescription { get; set; }
     }
 
     public class SimulateOfferInputModel
@@ -158,8 +167,6 @@ namespace satinalmaportali2.Models
         [Required(ErrorMessage = "Lütfen teklif veren tedarikçi firmayı seçin.")]
         public int SupplierCompanyID { get; set; }
 
-        [Required(ErrorMessage = "Teklif tutarı zorunludur.")]
-        [Range(0.01, 100000000, ErrorMessage = "Lütfen geçerli bir teklif tutarı giriniz.")]
         public decimal OfferedPrice { get; set; }
 
         public int? DeliveryDays { get; set; } = 7;
@@ -167,6 +174,15 @@ namespace satinalmaportali2.Models
         public int? ValidityDays { get; set; } = 30;
 
         public string? SupplierNotes { get; set; }
+
+        public List<SimulateOfferItemDto>? Items { get; set; } = new();
+    }
+
+    public class SimulateOfferItemDto
+    {
+        public int RequestItemID { get; set; }
+        public decimal UnitPrice { get; set; }
+        public string? Notes { get; set; }
     }
 
     public class CategoryDropdownDto

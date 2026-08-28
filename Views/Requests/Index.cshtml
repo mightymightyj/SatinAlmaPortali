@@ -2751,6 +2751,28 @@
             if (deadlineSub) deadlineSub.textContent = 'Termin: ' + data.targetDeliveryDate + ' · Hedef Bütçe: ' + data.estimatedBudgetFormatted;
             if (countBadge) countBadge.textContent = (data.items ? data.items.length : 0) + ' Kalem';
 
+            // Tedarikçinin önceki teklif verileri varsa alanları doldur
+            if (data.myOffer) {
+                if (daysInput && (!currentDays || currentDays === '')) {
+                    daysInput.value = data.myOffer.deliveryDays || 7;
+                }
+                var valInput = document.getElementById('bidValidityDays');
+                if (valInput) {
+                    valInput.value = data.myOffer.validityDays || 30;
+                }
+                if (notesInput && (!currentNotes || currentNotes === '')) {
+                    notesInput.value = data.myOffer.supplierNotes || '';
+                }
+
+                if (data.myOffer.status === 'Reddedildi') {
+                    if (titleText) titleText.textContent = '🔄 Reddedilen Teklifi Revize Et & Yeni Fiyat Ver';
+                    if (submitBtn) submitBtn.textContent = 'Teklifi Revize Et & Gönder';
+                } else if (data.myOffer.offeredPrice > 0) {
+                    if (titleText) titleText.textContent = 'Teklifi Kalem Kalem Revize Et / Düzenle';
+                    if (submitBtn) submitBtn.textContent = 'Teklifi Güncelle & Gönder';
+                }
+            }
+
             // Kalem tablosunu oluştur
             var myOfferItems = (data.myOffer && data.myOffer.offerItems) ? data.myOffer.offerItems : [];
             var html = '';

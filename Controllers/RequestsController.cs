@@ -1321,7 +1321,8 @@ namespace satinalmaportali2.Controllers
                 string rfqCode = $"REQ-{request.RequestID:D4}";
                 string prodName = request.ProductName ?? "Satın Alma Talebi";
                 int qty = request.Quantity ?? 1;
-                string requestsUrl = $"{Request.Scheme}://{Request.Host}/Requests?tab=my-bids";
+                string requestsUrl = $"{Request.Scheme}://{Request.Host}/Requests?tab=my-bids&requestId={request.RequestID}";
+                string ordersUrl = $"{Request.Scheme}://{Request.Host}/Dashboard/SupplierOrders";
 
                 // Kalemleri hazırla
                 var reqItems = request.Items ?? _context.RequestItems
@@ -1335,25 +1336,51 @@ namespace satinalmaportali2.Controllers
 
                 var winEmailItems = new List<OfferItemEmailDto>();
                 int wOrder = 1;
-                foreach (var oi in winOfferItems)
+                if (winOfferItems.Any())
                 {
-                    var reqItem = reqItems.FirstOrDefault(ri => ri.RequestItemID == oi.RequestItemID);
-                    decimal itemQty = reqItem?.Quantity ?? 1;
-                    string itemUnit = reqItem?.Unit ?? "Adet";
-                    string itemName = reqItem?.ItemName ?? $"Kalem #{wOrder}";
-                    string? itemDesc = reqItem?.ItemDescription;
-
-                    winEmailItems.Add(new OfferItemEmailDto
+                    foreach (var oi in winOfferItems)
                     {
-                        ItemOrder = wOrder++,
-                        ItemName = itemName,
-                        Quantity = itemQty,
-                        Unit = itemUnit,
-                        UnitPrice = oi.UnitPrice,
-                        LineTotal = oi.LineTotal > 0 ? oi.LineTotal : (oi.UnitPrice * itemQty),
-                        ItemDescription = itemDesc,
-                        Notes = oi.Notes
-                    });
+                        var reqItem = reqItems.FirstOrDefault(ri => ri.RequestItemID == oi.RequestItemID);
+                        decimal itemQty = reqItem?.Quantity ?? 1;
+                        string itemUnit = reqItem?.Unit ?? "Adet";
+                        string itemName = reqItem?.ItemName ?? $"Kalem #{wOrder}";
+                        string? itemDesc = reqItem?.ItemDescription;
+
+                        winEmailItems.Add(new OfferItemEmailDto
+                        {
+                            ItemOrder = wOrder++,
+                            ItemName = itemName,
+                            Quantity = itemQty,
+                            Unit = itemUnit,
+                            UnitPrice = oi.UnitPrice,
+                            LineTotal = oi.LineTotal > 0 ? oi.LineTotal : (oi.UnitPrice * itemQty),
+                            ItemDescription = itemDesc,
+                            Notes = oi.Notes
+                        });
+                    }
+                }
+                else if (reqItems.Any())
+                {
+                    decimal totalInputPrice = winningOffer.OfferedPrice;
+                    decimal totalQty = reqItems.Sum(ri => ri.Quantity);
+                    foreach (var ri in reqItems)
+                    {
+                        decimal proportion = totalQty > 0 ? (ri.Quantity / totalQty) : (1m / reqItems.Count);
+                        decimal lineTot = Math.Round(totalInputPrice * proportion, 2);
+                        decimal uPrice = ri.Quantity > 0 ? Math.Round(lineTot / ri.Quantity, 2) : lineTot;
+
+                        winEmailItems.Add(new OfferItemEmailDto
+                        {
+                            ItemOrder = wOrder++,
+                            ItemName = ri.ItemName,
+                            Quantity = ri.Quantity,
+                            Unit = ri.Unit ?? "Adet",
+                            UnitPrice = uPrice,
+                            LineTotal = lineTot,
+                            ItemDescription = ri.ItemDescription,
+                            Notes = null
+                        });
+                    }
                 }
 
                 // 1. Kazanan tedarikçiye kabul e-postası
@@ -1363,6 +1390,8 @@ namespace satinalmaportali2.Controllers
                     var winName = winningOffer.Supplier.CompanyName ?? winningOffer.Supplier.CompanyOfficial ?? "Tedarikçi Firma";
                     var winPrice = winningOffer.OfferedPrice;
                     var winDelivery = winningOffer.DeliveryDays;
+                    var winValidity = winningOffer.ValidityDays;
+                    var (cleanWinNotes, _, _, _, _) = ParseSupplierNotes(winningOffer.SupplierNotes);
 
                     _ = Task.Run(async () =>
                     {
@@ -1379,7 +1408,10 @@ namespace satinalmaportali2.Controllers
                                 offeredPrice: winPrice,
                                 deliveryDays: winDelivery,
                                 requestsUrl: requestsUrl,
-                                items: winEmailItems.Any() ? winEmailItems : null);
+                                items: winEmailItems.Any() ? winEmailItems : null,
+                                validityDays: winValidity,
+                                supplierNotes: cleanWinNotes,
+                                ordersUrl: ordersUrl);
                         }
                         catch (Exception ex)
                         {
@@ -1388,7 +1420,7 @@ namespace satinalmaportali2.Controllers
                     });
                 }
 
-                // 2. Elenen tedarikçilere red gerekçesi e-postası
+                // 2. Elenen tedarikçilere red gerekçesi ve revizyon imkanı içeren e-posta
                 foreach (var rej in rejectedOffers)
                 {
                     if (rej.Supplier != null && !string.IsNullOrWhiteSpace(rej.Supplier.CompanyMail))
@@ -1396,8 +1428,12 @@ namespace satinalmaportali2.Controllers
                         var rejEmail = rej.Supplier.CompanyMail.Trim();
                         var rejName = rej.Supplier.CompanyName ?? rej.Supplier.CompanyOfficial ?? "Tedarikçi Firma";
                         var rejPrice = rej.OfferedPrice;
-                        var (_, reason, _, _, _) = ParseSupplierNotes(rej.SupplierNotes);
+                        var rejDelivery = rej.DeliveryDays;
+                        var rejValidity = rej.ValidityDays;
+                        var (cleanRejNotes, reason, _, _, _) = ParseSupplierNotes(rej.SupplierNotes);
                         var finalReason = reason ?? "Talep için başka bir tedarikçinin teklifi kabul edildi.";
+                        string rejRequestsUrl = $"{Request.Scheme}://{Request.Host}/Requests?tab=my-bids&requestId={request.RequestID}";
+                        string rejReviseUrl = $"{Request.Scheme}://{Request.Host}/Requests?tab=my-bids&requestId={request.RequestID}&open=bid";
 
                         var rejOfferItems = rej.OfferItems ?? _context.RequestOfferItems
                             .Where(oi => oi.OfferID == rej.OfferID)
@@ -1405,6 +1441,123 @@ namespace satinalmaportali2.Controllers
 
                         var rejEmailItems = new List<OfferItemEmailDto>();
                         int rOrder = 1;
+                        if (rejOfferItems.Any())
+                        {
+                            foreach (var oi in rejOfferItems)
+                            {
+                                var reqItem = reqItems.FirstOrDefault(ri => ri.RequestItemID == oi.RequestItemID);
+                                decimal itemQty = reqItem?.Quantity ?? 1;
+                                string itemUnit = reqItem?.Unit ?? "Adet";
+                                string itemName = reqItem?.ItemName ?? $"Kalem #{rOrder}";
+
+                                rejEmailItems.Add(new OfferItemEmailDto
+                                {
+                                    ItemOrder = rOrder++,
+                                    ItemName = itemName,
+                                    Quantity = itemQty,
+                                    Unit = itemUnit,
+                                    UnitPrice = oi.UnitPrice,
+                                    LineTotal = oi.LineTotal > 0 ? oi.LineTotal : (oi.UnitPrice * itemQty),
+                                    Notes = oi.Notes
+                                });
+                            }
+                        }
+                        else if (reqItems.Any())
+                        {
+                            decimal totalRejPrice = rej.OfferedPrice;
+                            decimal totalQty = reqItems.Sum(ri => ri.Quantity);
+                            foreach (var ri in reqItems)
+                            {
+                                decimal proportion = totalQty > 0 ? (ri.Quantity / totalQty) : (1m / reqItems.Count);
+                                decimal lineTot = Math.Round(totalRejPrice * proportion, 2);
+                                decimal uPrice = ri.Quantity > 0 ? Math.Round(lineTot / ri.Quantity, 2) : lineTot;
+
+                                rejEmailItems.Add(new OfferItemEmailDto
+                                {
+                                    ItemOrder = rOrder++,
+                                    ItemName = ri.ItemName,
+                                    Quantity = ri.Quantity,
+                                    Unit = ri.Unit ?? "Adet",
+                                    UnitPrice = uPrice,
+                                    LineTotal = lineTot,
+                                    ItemDescription = ri.ItemDescription,
+                                    Notes = null
+                                });
+                            }
+                        }
+
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await _emailService.SendOfferRejectedEmailAsync(
+                                    toEmail: rejEmail,
+                                    supplierName: rejName,
+                                    buyerName: buyerName,
+                                    rfqCode: rfqCode,
+                                    productName: prodName,
+                                    quantity: qty,
+                                    unit: "Adet",
+                                    offeredPrice: rejPrice,
+                                    rejectionReason: finalReason,
+                                    requestsUrl: rejRequestsUrl,
+                                    items: rejEmailItems.Any() ? rejEmailItems : null,
+                                    deliveryDays: rejDelivery,
+                                    validityDays: rejValidity,
+                                    supplierNotes: cleanRejNotes,
+                                    reviseUrl: rejReviseUrl);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Red e-posta arka plan gönderim hatası: {ex.Message}");
+                            }
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Karar e-postaları tetikleme hatası: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Tekil bir teklif reddedildiğinde ilgili tedarikçiye arka planda teklif dökümünü ve revize etme bağlantısını içeren red e-postası gönderir.
+        /// </summary>
+        private void TriggerSingleOfferRejectedEmail(
+            Requests request,
+            RequestOffers rejectedOffer,
+            string reason,
+            Company? buyerCompany)
+        {
+            try
+            {
+                if (rejectedOffer.Supplier != null && !string.IsNullOrWhiteSpace(rejectedOffer.Supplier.CompanyMail))
+                {
+                    string buyerName = buyerCompany?.CompanyName ?? buyerCompany?.CompanyOfficial ?? request.BuyerInfo ?? "Kurumsal Alıcı";
+                    string rfqCode = $"REQ-{request.RequestID:D4}";
+                    string prodName = request.ProductName ?? "Satın Alma Talebi";
+                    int qty = request.Quantity ?? 1;
+                    string requestsUrl = $"{Request.Scheme}://{Request.Host}/Requests?tab=my-bids&requestId={request.RequestID}";
+                    string reviseUrl = $"{Request.Scheme}://{Request.Host}/Requests?tab=my-bids&requestId={request.RequestID}&open=bid";
+                    var rejEmail = rejectedOffer.Supplier.CompanyMail.Trim();
+                    var rejName = rejectedOffer.Supplier.CompanyName ?? rejectedOffer.Supplier.CompanyOfficial ?? "Tedarikçi Firma";
+                    var finalReason = !string.IsNullOrWhiteSpace(reason) ? reason.Trim() : "Alıcı firma tarafından doğrudan reddedildi.";
+                    var (cleanNotes, _, _, _, _) = ParseSupplierNotes(rejectedOffer.SupplierNotes);
+
+                    var reqItems = request.Items ?? _context.RequestItems
+                        .Where(ri => ri.RequestID == request.RequestID)
+                        .OrderBy(ri => ri.ItemOrder)
+                        .ToList();
+
+                    var rejOfferItems = rejectedOffer.OfferItems ?? _context.RequestOfferItems
+                        .Where(oi => oi.OfferID == rejectedOffer.OfferID)
+                        .ToList();
+
+                    var rejEmailItems = new List<OfferItemEmailDto>();
+                    int rOrder = 1;
+                    if (rejOfferItems.Any())
+                    {
                         foreach (var oi in rejOfferItems)
                         {
                             var reqItem = reqItems.FirstOrDefault(ri => ri.RequestItemID == oi.RequestItemID);
@@ -1423,88 +1576,29 @@ namespace satinalmaportali2.Controllers
                                 Notes = oi.Notes
                             });
                         }
-
-                        _ = Task.Run(async () =>
-                        {
-                            try
-                            {
-                                await _emailService.SendOfferRejectedEmailAsync(
-                                    toEmail: rejEmail,
-                                    supplierName: rejName,
-                                    buyerName: buyerName,
-                                    rfqCode: rfqCode,
-                                    productName: prodName,
-                                    quantity: qty,
-                                    unit: "Adet",
-                                    offeredPrice: rejPrice,
-                                    rejectionReason: finalReason,
-                                    requestsUrl: requestsUrl,
-                                    items: rejEmailItems.Any() ? rejEmailItems : null);
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Red e-posta arka plan gönderim hatası: {ex.Message}");
-                            }
-                        });
                     }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Karar e-postaları tetikleme hatası: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Tekil bir teklif reddedildiğinde ilgili tedarikçiye arka planda red gerekçesi e-postası gönderir.
-        /// </summary>
-        private void TriggerSingleOfferRejectedEmail(
-            Requests request,
-            RequestOffers rejectedOffer,
-            string reason,
-            Company? buyerCompany)
-        {
-            try
-            {
-                if (rejectedOffer.Supplier != null && !string.IsNullOrWhiteSpace(rejectedOffer.Supplier.CompanyMail))
-                {
-                    string buyerName = buyerCompany?.CompanyName ?? buyerCompany?.CompanyOfficial ?? request.BuyerInfo ?? "Kurumsal Alıcı";
-                    string rfqCode = $"REQ-{request.RequestID:D4}";
-                    string prodName = request.ProductName ?? "Satın Alma Talebi";
-                    int qty = request.Quantity ?? 1;
-                    string requestsUrl = $"{Request.Scheme}://{Request.Host}/Requests?tab=my-bids";
-                    var rejEmail = rejectedOffer.Supplier.CompanyMail.Trim();
-                    var rejName = rejectedOffer.Supplier.CompanyName ?? rejectedOffer.Supplier.CompanyOfficial ?? "Tedarikçi Firma";
-                    var finalReason = !string.IsNullOrWhiteSpace(reason) ? reason.Trim() : "Alıcı firma tarafından doğrudan reddedildi.";
-
-                    var reqItems = request.Items ?? _context.RequestItems
-                        .Where(ri => ri.RequestID == request.RequestID)
-                        .OrderBy(ri => ri.ItemOrder)
-                        .ToList();
-
-                    var rejOfferItems = rejectedOffer.OfferItems ?? _context.RequestOfferItems
-                        .Where(oi => oi.OfferID == rejectedOffer.OfferID)
-                        .ToList();
-
-                    var rejEmailItems = new List<OfferItemEmailDto>();
-                    int rOrder = 1;
-                    foreach (var oi in rejOfferItems)
+                    else if (reqItems.Any())
                     {
-                        var reqItem = reqItems.FirstOrDefault(ri => ri.RequestItemID == oi.RequestItemID);
-                        decimal itemQty = reqItem?.Quantity ?? 1;
-                        string itemUnit = reqItem?.Unit ?? "Adet";
-                        string itemName = reqItem?.ItemName ?? $"Kalem #{rOrder}";
-
-                        rejEmailItems.Add(new OfferItemEmailDto
+                        decimal totalRejPrice = rejectedOffer.OfferedPrice;
+                        decimal totalQty = reqItems.Sum(ri => ri.Quantity);
+                        foreach (var ri in reqItems)
                         {
-                            ItemOrder = rOrder++,
-                            ItemName = itemName,
-                            Quantity = itemQty,
-                            Unit = itemUnit,
-                            UnitPrice = oi.UnitPrice,
-                            LineTotal = oi.LineTotal > 0 ? oi.LineTotal : (oi.UnitPrice * itemQty),
-                            Notes = oi.Notes
-                        });
+                            decimal proportion = totalQty > 0 ? (ri.Quantity / totalQty) : (1m / reqItems.Count);
+                            decimal lineTot = Math.Round(totalRejPrice * proportion, 2);
+                            decimal uPrice = ri.Quantity > 0 ? Math.Round(lineTot / ri.Quantity, 2) : lineTot;
+
+                            rejEmailItems.Add(new OfferItemEmailDto
+                            {
+                                ItemOrder = rOrder++,
+                                ItemName = ri.ItemName,
+                                Quantity = ri.Quantity,
+                                Unit = ri.Unit ?? "Adet",
+                                UnitPrice = uPrice,
+                                LineTotal = lineTot,
+                                ItemDescription = ri.ItemDescription,
+                                Notes = null
+                            });
+                        }
                     }
 
                     _ = Task.Run(async () =>
@@ -1522,7 +1616,11 @@ namespace satinalmaportali2.Controllers
                                 offeredPrice: rejectedOffer.OfferedPrice,
                                 rejectionReason: finalReason,
                                 requestsUrl: requestsUrl,
-                                items: rejEmailItems.Any() ? rejEmailItems : null);
+                                items: rejEmailItems.Any() ? rejEmailItems : null,
+                                deliveryDays: rejectedOffer.DeliveryDays,
+                                validityDays: rejectedOffer.ValidityDays,
+                                supplierNotes: cleanNotes,
+                                reviseUrl: reviseUrl);
                         }
                         catch (Exception ex)
                         {
