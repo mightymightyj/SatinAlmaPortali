@@ -86,10 +86,47 @@ namespace satinalmaportali2.Controllers
         }
 
         [HttpGet]
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             ViewData["Title"] = "Kurumsal Satınalma Sepetim";
-            return View();
+            var profile = new CheckoutProfileDto { IsAuthenticated = false };
+
+            int companyId = GetCurrentCompanyId();
+            if (companyId > 0)
+            {
+                var comp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == companyId);
+                if (comp != null)
+                {
+                    profile.IsAuthenticated = true;
+                    profile.CompanyID = comp.CompanyID;
+                    profile.CompanyName = comp.CompanyName ?? comp.CompanyOfficial ?? "";
+                    profile.CompanyOfficial = comp.CompanyOfficial ?? "";
+                    profile.TaxNumber = comp.TCNO ?? "";
+                    profile.TaxOffice = comp.TaxOffice ?? "";
+                    profile.Phone = comp.CompanyPhone ?? "";
+                    profile.Email = comp.CompanyMail ?? "";
+
+                    if (comp.AddressID.HasValue && comp.AddressID.Value > 0)
+                    {
+                        var addr = await _context.Addresses.AsNoTracking().FirstOrDefaultAsync(a => a.AddressID == comp.AddressID.Value);
+                        if (addr != null)
+                        {
+                            profile.DeliveryAddress = addr.AddressText ?? "";
+                            if (addr.DistrictID.HasValue)
+                            {
+                                var district = await _context.Districts.AsNoTracking().FirstOrDefaultAsync(d => d.DistrictID == addr.DistrictID.Value);
+                                if (district != null)
+                                {
+                                    var town = district.TownID.HasValue ? await _context.Towns.AsNoTracking().FirstOrDefaultAsync(t => t.TownID == district.TownID.Value) : null;
+                                    profile.DeliveryCity = town != null ? $"{town.TownName} / {district.DistrictName}" : district.DistrictName ?? "";
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return View(profile);
         }
 
         /// <summary>

@@ -114,12 +114,12 @@
 
 <!-- ==================== FİLTRELEME & ARAMA ALANI ==================== -->
 <div class="card" style="margin-bottom: 20px; padding: 16px 20px;">
-    <form method="get" asp-action="Listings" id="listingsFilterForm" style="display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between;">
+    <form method="get" asp-action="Listings" id="listingsFilterForm" onsubmit="event.preventDefault(); window.ListingsManager.apply(); return false;" style="display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between;">
         
         <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; flex: 1; min-width: 300px;">
             <!-- Arama Kutusu -->
             <div style="position: relative; flex: 1; min-width: 220px; max-width: 400px;">
-                <input type="text" name="search" value="@Model.SearchQuery" class="form-control" placeholder="Ürün adı, SKU veya kategori ara..." style="padding-left: 36px; height: 40px; font-size: 0.88rem;" />
+                <input type="text" name="search" id="listingsSearchInput" class="form-control" placeholder="Ürün adı, SKU veya kategori ara..." oninput="window.ListingsManager.onSearch(this.value)" style="padding-left: 36px; height: 40px; font-size: 0.88rem;" />
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" style="position: absolute; left: 12px; top: 12px; pointer-events: none;">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -128,44 +128,39 @@
 
             <!-- Kategori Dropdown -->
             <div style="min-width: 180px;">
-                <select name="category" class="form-control" onchange="document.getElementById('listingsFilterForm').submit()" style="height: 40px; font-size: 0.88rem;">
-                    <option value="Tümü" selected="@(string.IsNullOrEmpty(Model.SelectedCategory) || Model.SelectedCategory == "Tümü")">Tüm Kategoriler</option>
+                <select name="category" id="listingsCategorySelect" class="form-control" onchange="window.ListingsManager.setCategory(this.value)" style="height: 40px; font-size: 0.88rem;">
+                    <option value="Tümü" selected>Tüm Kategoriler</option>
                     @foreach (var cat in Model.AvailableCategories)
                     {
-                        <option value="@cat" selected="@(Model.SelectedCategory == cat)">@cat</option>
+                        <option value="@cat">@cat</option>
                     }
                 </select>
             </div>
         </div>
 
         <!-- Durum Filtresi (Sekmeler) -->
-        <nav class="year-filter" aria-label="Stok durumu filtresi">
-            <input type="hidden" name="status" id="selectedStatusInput" value="@(Model.SelectedStatus ?? "Tümü")" />
-            
-            <button type="button" class="year-pill @(string.IsNullOrEmpty(Model.SelectedStatus) || Model.SelectedStatus == "Tümü" ? "is-active" : "")" 
-                    onclick="setStatusFilter('Tümü')">
+        <nav class="year-filter" aria-label="Stok durumu filtresi" id="listingsStatusFilterNav">
+            <button type="button" class="year-pill is-active" data-status="Tümü"
+                    onclick="window.ListingsManager.setStatus('Tümü', this)">
                 <span>Tümü</span>
-                <span class="status-count-badge">@Model.TotalCount</span>
+                <span class="status-count-badge" id="listingsCountAll">@Model.TotalCount</span>
             </button>
-            <button type="button" class="year-pill status-pill-in-stock @(Model.SelectedStatus == "Stokta" ? "is-active" : "")" 
-                    onclick="setStatusFilter('Stokta')">
+            <button type="button" class="year-pill status-pill-in-stock" data-status="Stokta"
+                    onclick="window.ListingsManager.setStatus('Stokta', this)">
                 <span class="status-indicator-dot dot-green"></span>
                 <span>Stokta</span>
                 <span class="status-count-badge">@Model.ActiveCount</span>
             </button>
-            <button type="button" class="year-pill status-pill-critical @(Model.SelectedStatus == "Kritik" ? "is-active" : "")" 
-                    onclick="setStatusFilter('Kritik')">
+            <button type="button" class="year-pill status-pill-critical" data-status="Kritik"
+                    onclick="window.ListingsManager.setStatus('Kritik', this)">
                 <span style="font-size: 0.72rem; line-height: 1;">▲</span>
                 <span>Kritik</span>
                 <span class="status-count-badge">@Model.LowStockCount</span>
             </button>
             
-            @if (!string.IsNullOrWhiteSpace(Model.SearchQuery) || (!string.IsNullOrWhiteSpace(Model.SelectedCategory) && Model.SelectedCategory != "Tümü") || (!string.IsNullOrWhiteSpace(Model.SelectedStatus) && Model.SelectedStatus != "Tümü"))
-            {
-                <a asp-action="Listings" class="btn-cancel" style="padding: 7px 12px; font-size: 0.82rem; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Filtreleri Temizle">
-                    <span>✕</span> Temizle
-                </a>
-            }
+            <button type="button" id="listingsClearBtn" onclick="window.ListingsManager.reset()" class="btn-cancel" style="display: none; padding: 7px 12px; font-size: 0.82rem; border-radius: 8px; align-items: center; gap: 4px; cursor: pointer;" title="Filtreleri Temizle">
+                Temizle
+            </button>
         </nav>
     </form>
 </div>
@@ -174,7 +169,14 @@
 <article class="card" id="listingsTableCard">
     <header class="card-head">
         <div class="head-with-icon">
-            <span class="blue-accent-x">📦</span>
+            <span class="blue-accent-x">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+            </span>
             <h2 id="listingsHeaderTitle">Kayıtlı Ürün İlanları & Vitrin Listesi (@Model.Listings.Count)</h2>
         </div>
         <div style="font-size: 0.82rem; color: var(--muted);">
@@ -198,9 +200,16 @@
             <tbody id="listingsTableBody">
                 @if (!Model.Listings.Any())
                 {
-                    <tr>
+                    <tr id="listingsNoDataRow">
                         <td colspan="7" style="text-align: center; padding: 48px 16px; color: var(--muted);">
-                            <div style="font-size: 2.5rem; margin-bottom: 12px;">📦</div>
+                            <div style="margin-bottom: 12px;">
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
+                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                </svg>
+                            </div>
                             <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; color: var(--text);">Henüz listelenmiş bir ürün ilanı bulunamadı</h3>
                             <p style="font-size: 0.85rem; margin-bottom: 16px;">Kriterlere uygun ürün bulunamadı veya henüz bir ilan oluşturmadınız.</p>
                             <button type="button" class="btn-primary" onclick="openCreateListingModal()" style="display: inline-flex; align-items: center; gap: 6px; margin: 0 auto;">
@@ -215,14 +224,14 @@
                     {
                         var isCrit = item.Status == "Kritik";
                         var isOut = item.Status == "Tükendi";
-                        <tr id="listing-row-@item.ItemId">
+                        <tr id="listing-row-@item.ItemId" data-status="@item.Status" data-category="@item.CategoryName">
                             <td>
                                 <div class="req-title-cell">
                                     <strong style="font-size: 0.92rem;">@item.ItemName</strong>
                                     <div style="display: flex; gap: 6px; align-items: center; margin-top: 3px;">
                                         <small class="req-code">@item.Sku</small>
                                         <small style="background: rgba(100,116,139,0.12); padding: 1px 6px; border-radius: 4px; font-size: 0.72rem; color: var(--muted);">
-                                            🏢 @item.Brand
+                                            @item.Brand
                                         </small>
                                     </div>
                                 </div>
@@ -259,10 +268,10 @@
                             </td>
                             <td class="text-right">
                                 <div style="display: flex; gap: 6px; justify-content: flex-end;">
-                                    <button type="button" class="btn-table-action" onclick="openPriceModal(@item.ItemId, '@item.ItemName.Replace("'", "\\'") ', @item.UnitPrice, @item.Stock)" title="Fiyat ve Stok Düzenle">
+                                    <button type="button" class="btn-table-action" onclick="openPriceModal(@item.ItemId, '@Html.Raw(item.ItemName.Replace("'", "\\'"))', @item.UnitPrice, @item.Stock)" title="Fiyat ve Stok Düzenle">
                                         Düzenle
                                     </button>
-                                    <button type="button" class="btn-cancel" onclick="deleteListing(@item.ItemId, '@item.ItemName.Replace("'", "\\'") ')" style="padding: 5px 9px; font-size: 0.78rem; color: #ef4444; border-color: rgba(239,68,68,0.3);" title="İlanı Sil">
+                                    <button type="button" class="btn-cancel" onclick="deleteListing(@item.ItemId, '@Html.Raw(item.ItemName.Replace("'", "\\'"))')" style="padding: 5px 9px; font-size: 0.78rem; color: #ef4444; border-color: rgba(239,68,68,0.3);" title="İlanı Sil">
                                         Sil
                                     </button>
                                 </div>
@@ -306,7 +315,7 @@
                 <div class="b2b-cat-picker-container" style="border: 1px solid var(--border-color, #e2e8f0); border-radius: 8px; padding: 8px; background: rgba(0,0,0,0.02);">
                     <div class="b2b-cat-picker-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                         <div id="dashCatSelectedDisplay" style="font-size: 0.82rem; color: var(--muted); display: flex; align-items: center; gap: 6px;">
-                            <span>📁</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
                             <span id="dashCatSelectedText">Aşağıdaki ağaçtan bir kategori seçiniz...</span>
                         </div>
                         <button type="button" class="btn-tree-tool" onclick="clearDashCatTreeSelection()" style="padding: 2px 8px; font-size: 0.72rem;">Temizle</button>
@@ -350,7 +359,7 @@
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button type="button" class="btn-cancel" onclick="closeCreateListingModal()">Vazgeç</button>
                 <button type="submit" class="btn-primary" style="padding: 10px 20px; font-size: 0.88rem; font-weight: 700;">
-                    ✓ İlanı Yayına Al
+                    İlanı Yayına Al
                 </button>
             </div>
         </form>
@@ -366,7 +375,6 @@
         
         sb.Append($"<div class=\"cat-tree-node\" style=\"margin-left: {indent}px; margin-bottom: 3px; display: flex; align-items: center; gap: 4px;\">");
         sb.Append($"<span style=\"font-size: 0.78rem; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: background 0.15s;\" class=\"dash-cat-opt\" onclick=\"selectDashCategory({node.CategoryID}, '{Html.Raw(node.CategoryName.Replace("'", "\\'"))}')\" onmouseover=\"this.style.background='rgba(59,130,246,0.1)'\" onmouseout=\"this.style.background='transparent'\">");
-        sb.Append(hasChildren ? "📁 " : "📄 ");
         sb.Append($"<strong>{Html.Raw(node.CategoryName)}</strong>");
         sb.Append("</span>");
         sb.Append("</div>");
@@ -385,11 +393,144 @@
 
 @section Scripts {
     <script>
-        function setStatusFilter(statusVal) {
-            document.getElementById('selectedStatusInput').value = statusVal;
-            document.getElementById('listingsFilterForm').submit();
-        }
+        // =========================================================================
+        // LISTINGS MANAGER (TEMİZ, GÜVENİLİR VE ANLIK FİLTRELEME YÖNETİCİSİ)
+        // =========================================================================
+        window.ListingsManager = {
+            status: 'Tümü',
+            category: 'Tümü',
+            search: '',
+            timer: null,
 
+            setStatus: function(statusVal, btn) {
+                this.status = statusVal || 'Tümü';
+                const nav = document.getElementById('listingsStatusFilterNav');
+                if (nav) {
+                    nav.querySelectorAll('.year-pill').forEach(p => p.classList.remove('is-active'));
+                    if (btn) {
+                        btn.classList.add('is-active');
+                    } else {
+                        const target = nav.querySelector(`.year-pill[data-status="${this.status}"]`);
+                        if (target) target.classList.add('is-active');
+                    }
+                }
+                this.apply();
+            },
+
+            setCategory: function(catVal) {
+                this.category = catVal || 'Tümü';
+                this.apply();
+            },
+
+            onSearch: function(val) {
+                clearTimeout(this.timer);
+                this.timer = setTimeout(() => {
+                    this.search = (val || '').trim().toLowerCase();
+                    this.apply();
+                }, 50);
+            },
+
+            reset: function() {
+                this.status = 'Tümü';
+                this.category = 'Tümü';
+                this.search = '';
+
+                const sInput = document.getElementById('listingsSearchInput');
+                if (sInput) sInput.value = '';
+
+                const cSelect = document.getElementById('listingsCategorySelect');
+                if (cSelect) cSelect.value = 'Tümü';
+
+                const nav = document.getElementById('listingsStatusFilterNav');
+                if (nav) {
+                    nav.querySelectorAll('.year-pill').forEach(p => p.classList.remove('is-active'));
+                    const allBtn = nav.querySelector('.year-pill[data-status="Tümü"]');
+                    if (allBtn) allBtn.classList.add('is-active');
+                }
+
+                this.apply();
+            },
+
+            apply: function() {
+                const rows = document.querySelectorAll('#listingsTableBody tr[id^="listing-row-"]');
+                let visibleCount = 0;
+
+                const isAllDefault = (this.status === 'Tümü' || !this.status) &&
+                                     (this.category === 'Tümü' || this.category === 'Tüm Kategoriler' || !this.category) &&
+                                     !this.search;
+
+                rows.forEach(row => {
+                    if (isAllDefault) {
+                        row.style.display = '';
+                        visibleCount++;
+                        return;
+                    }
+
+                    const rowStatus = (row.getAttribute('data-status') || '').trim().toLowerCase();
+                    const rowCategory = (row.getAttribute('data-category') || '').trim().toLowerCase();
+
+                    // 1. Status Filter
+                    let matchStatus = false;
+                    if (this.status === 'Tümü' || !this.status) {
+                        matchStatus = true;
+                    } else if (this.status.toLowerCase() === 'stokta') {
+                        matchStatus = (rowStatus === 'stokta');
+                    } else if (this.status.toLowerCase() === 'kritik') {
+                        matchStatus = (rowStatus === 'kritik' || rowStatus === 'tükendi');
+                    } else {
+                        matchStatus = (rowStatus === this.status.toLowerCase());
+                    }
+
+                    // 2. Category Filter
+                    let matchCategory = false;
+                    if (this.category === 'Tümü' || this.category === 'Tüm Kategoriler' || !this.category) {
+                        matchCategory = true;
+                    } else {
+                        matchCategory = (rowCategory === this.category.toLowerCase());
+                    }
+
+                    // 3. Search Filter
+                    let matchSearch = true;
+                    if (this.search) {
+                        const rowText = (row.innerText || row.textContent || '').toLowerCase();
+                        matchSearch = rowText.includes(this.search);
+                    }
+
+                    if (matchStatus && matchCategory && matchSearch) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                const headTitle = document.getElementById('listingsHeaderTitle');
+                if (headTitle) {
+                    headTitle.textContent = `Kayıtlı Ürün İlanları & Vitrin Listesi (${visibleCount})`;
+                }
+
+                const clearBtn = document.getElementById('listingsClearBtn');
+                if (clearBtn) {
+                    clearBtn.style.display = isAllDefault ? 'none' : 'inline-flex';
+                }
+
+                let emptyFilterRow = document.getElementById('listingsEmptyFilterRow');
+                if (rows.length > 0 && visibleCount === 0) {
+                    if (!emptyFilterRow) {
+                        emptyFilterRow = document.createElement('tr');
+                        emptyFilterRow.id = 'listingsEmptyFilterRow';
+                        emptyFilterRow.innerHTML = '<td colspan="7" style="text-align: center; padding: 40px 16px; color: var(--muted);"><strong style="color: var(--text);">Arama veya filtre kriterinize uygun ürün ilanı bulunamadı.</strong><div style="font-size: 0.8rem; margin-top: 4px;">Farklı bir kategori veya arama kelimesi seçebilir, filtreleri temizleyebilirsiniz.</div></td>';
+                        const tbody = document.getElementById('listingsTableBody');
+                        if (tbody) tbody.appendChild(emptyFilterRow);
+                    }
+                    emptyFilterRow.style.display = '';
+                } else if (emptyFilterRow) {
+                    emptyFilterRow.style.display = 'none';
+                }
+            }
+        };
+
+        // Modal Fonksiyonları
         function openCreateListingModal() {
             var modal = document.getElementById('dashCreateListingModal');
             if (modal) {
@@ -408,7 +549,7 @@
             document.getElementById('dashListingCategory').value = name;
             var textEl = document.getElementById('dashCatSelectedText');
             if (textEl) {
-                textEl.innerHTML = '<span style="color: #10b981; font-weight: 700;">✓ ' + name + '</span>';
+                textEl.innerHTML = '<span style="color: #10b981; font-weight: 700;">' + name + '</span>';
             }
         }
 
@@ -420,10 +561,7 @@
         }
 
         async function handleDashCreateListing(e) {
-            if (e) {
-                if (typeof e.preventDefault === 'function') e.preventDefault();
-                if (typeof e.stopPropagation === 'function') e.stopPropagation();
-            }
+            if (e && typeof e.preventDefault === 'function') e.preventDefault();
 
             const productName = document.getElementById('dashListingProductName')?.value || '';
             const category = document.getElementById('dashListingCategory')?.value || '';
@@ -456,7 +594,7 @@
             const origHtml = submitBtn ? submitBtn.innerHTML : '';
             if (submitBtn) {
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span>⏳ Kaydediliyor...</span>';
+                submitBtn.innerHTML = '<span>Kaydediliyor...</span>';
             }
 
             try {
@@ -477,7 +615,6 @@
                 if (result.success) {
                     closeCreateListingModal();
 
-                    // ==================== ASENKRON TABLO GÜNCELLEMESİ ====================
                     const item = result.item;
                     const itemId = item ? item.id : Date.now();
                     const brand = (item && item.brand) ? item.brand : '@Html.Raw(Model.CompanyName.Replace("'", "\\'"))';
@@ -489,11 +626,8 @@
 
                     const tbody = document.getElementById('listingsTableBody');
                     if (tbody) {
-                        // Boş durum satırı varsa temizle
-                        const emptyRow = tbody.querySelector('td[colspan="7"]');
-                        if (emptyRow) {
-                            tbody.innerHTML = '';
-                        }
+                        const noDataRow = document.getElementById('listingsNoDataRow');
+                        if (noDataRow) noDataRow.remove();
 
                         const isCrit = itemStock > 0 && itemStock <= 10;
                         const isOut = itemStock <= 0;
@@ -502,14 +636,14 @@
                         const safeName = productName.trim().replace(/'/g, "\\'");
 
                         const newRowHtml = `
-                            <tr id="listing-row-${itemId}" class="realtime-updated">
+                            <tr id="listing-row-${itemId}" data-status="${statusText}" data-category="${catName}" class="realtime-updated">
                                 <td>
                                     <div class="req-title-cell">
                                         <strong style="font-size: 0.92rem;">${typeof escapeHtml === 'function' ? escapeHtml(productName.trim()) : productName.trim()}</strong>
                                         <div style="display: flex; gap: 6px; align-items: center; margin-top: 3px;">
                                             <small class="req-code">${typeof escapeHtml === 'function' ? escapeHtml(sku) : sku}</small>
                                             <small style="background: rgba(100,116,139,0.12); padding: 1px 6px; border-radius: 4px; font-size: 0.72rem; color: var(--muted);">
-                                                🏢 ${typeof escapeHtml === 'function' ? escapeHtml(brand) : brand}
+                                                ${typeof escapeHtml === 'function' ? escapeHtml(brand) : brand}
                                             </small>
                                         </div>
                                     </div>
@@ -580,18 +714,12 @@
                         kpiActive.textContent = (curActive + 1).toString();
                     }
 
-                    const headTitle = document.getElementById('listingsHeaderTitle');
-                    if (headTitle && tbody) {
-                        const rowCount = tbody.querySelectorAll('tr[id^="listing-row-"]').length;
-                        headTitle.textContent = `Kayıtlı Ürün İlanları & Vitrin Listesi (${rowCount})`;
-                    }
-
-                    // Form alanlarını sıfırla
                     formEl.reset();
                     clearDashCatTreeSelection();
+                    window.ListingsManager.apply();
 
                     if (typeof showRealtimeToast === 'function') {
-                        showRealtimeToast('✓ ' + (result.message || 'Ürün ilanı başarıyla yayınlandı!'), 'success');
+                        showRealtimeToast(result.message || 'Ürün ilanı başarıyla yayınlandı!', 'success');
                     }
                 } else {
                     if (typeof showRealtimeToast === 'function') {
@@ -634,30 +762,10 @@
                         row.style.transform = 'translateX(20px)';
                         setTimeout(function() {
                             row.remove();
-                            const tbody = document.getElementById('listingsTableBody');
-                            if (tbody && tbody.querySelectorAll('tr[id^="listing-row-"]').length === 0) {
-                                tbody.innerHTML = `
-                                    <tr>
-                                        <td colspan="7" style="text-align: center; padding: 48px 16px; color: var(--muted);">
-                                            <div style="font-size: 2.5rem; margin-bottom: 12px;">📦</div>
-                                            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; color: var(--text);">Henüz listelenmiş bir ürün ilanı bulunamadı</h3>
-                                            <p style="font-size: 0.85rem; margin-bottom: 16px;">Kriterlere uygun ürün bulunamadı veya henüz bir ilan oluşturmadınız.</p>
-                                            <button type="button" class="btn-primary" onclick="openCreateListingModal()" style="display: inline-flex; align-items: center; gap: 6px; margin: 0 auto;">
-                                                + İlk Ürün İlanınızı Verin
-                                            </button>
-                                        </td>
-                                    </tr>
-                                `;
-                            }
-                            const headTitle = document.getElementById('listingsHeaderTitle');
-                            if (headTitle && tbody) {
-                                const rowCount = tbody.querySelectorAll('tr[id^="listing-row-"]').length;
-                                headTitle.textContent = `Kayıtlı Ürün İlanları & Vitrin Listesi (${rowCount})`;
-                            }
+                            window.ListingsManager.apply();
                         }, 300);
                     }
 
-                    // KPI sayaç -1
                     const kpiCount = document.getElementById('kpiTotalListings');
                     if (kpiCount) {
                         const curCount = parseInt(kpiCount.textContent.replace(/\D/g, '') || '0', 10);
@@ -665,7 +773,7 @@
                     }
 
                     if (typeof showRealtimeToast === 'function') {
-                        showRealtimeToast('✓ ' + (result.message || 'Ürün ilanı silindi.'), 'info');
+                        showRealtimeToast(result.message || 'Ürün ilanı silindi.', 'info');
                     }
                 } else {
                     if (typeof showRealtimeToast === 'function') {

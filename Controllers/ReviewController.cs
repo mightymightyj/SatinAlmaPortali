@@ -119,7 +119,25 @@ namespace satinalmaportali2.Controllers
                 }
 
                 // 3. Hedef Satıcı Firmayı Belirle
-                int? targetSupplierId = order.SupplierCompanyID;
+                int? targetSupplierId = input.TargetSupplierCompanyID > 0 ? input.TargetSupplierCompanyID : null;
+                string? targetSupplierName = input.TargetSupplierCompanyName?.Trim();
+
+                if (!targetSupplierId.HasValue && !string.IsNullOrWhiteSpace(targetSupplierName))
+                {
+                    var matchedSupplier = await _context.Companies
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(c => c.CompanyName != null && c.CompanyName.ToLower() == targetSupplierName.ToLower());
+                    if (matchedSupplier != null)
+                    {
+                        targetSupplierId = matchedSupplier.CompanyID;
+                    }
+                }
+
+                if (!targetSupplierId.HasValue)
+                {
+                    targetSupplierId = order.SupplierCompanyID;
+                }
+
                 if (!targetSupplierId.HasValue && !string.IsNullOrWhiteSpace(order.SupplierCompanyName))
                 {
                     var matchedSupplier = await _context.Companies
@@ -137,17 +155,23 @@ namespace satinalmaportali2.Controllers
                     targetSupplierId = order.OrderItems.First(oi => oi.SupplierCompanyID.HasValue).SupplierCompanyID;
                 }
 
-                // 4. Daha önce bu siparişe değerlendirme yapılmış mı kontrol et
+                // 4. Daha önce bu siparişe ve BU HEDEF SATICIYA değerlendirme yapılmış mı kontrol et
                 var existingReview = await _context.Reviews.FirstOrDefaultAsync(r =>
                     r.OrderID == input.OrderID &&
                     r.ReviewType == "BuyerToSeller" &&
-                    (r.ReviewerCompanyID == currentCompanyId || (currentCompanyId == 0 && r.ReviewerName == currentCompanyName)));
+                    ((targetSupplierId.HasValue && r.CompanyID == targetSupplierId.Value) ||
+                     (r.ReviewerCompanyID == currentCompanyId && (!r.CompanyID.HasValue || r.CompanyID == targetSupplierId))));
 
-                string productName = order.OrderItems.FirstOrDefault()?.ProductName ?? "Kurumsal B2B Ürünü";
+                int? matchedOrderItemId = order.OrderItems.FirstOrDefault(oi => 
+                    (targetSupplierId.HasValue && oi.SupplierCompanyID == targetSupplierId.Value) ||
+                    (!string.IsNullOrWhiteSpace(targetSupplierName) && oi.SupplierCompanyName != null && oi.SupplierCompanyName.ToLower() == targetSupplierName.ToLower())
+                )?.OrderItemID ?? order.OrderItems.FirstOrDefault()?.OrderItemID;
 
                 if (existingReview != null)
                 {
                     // Güncelle
+                    existingReview.CompanyID = targetSupplierId ?? existingReview.CompanyID;
+                    existingReview.OrderItemID = matchedOrderItemId ?? existingReview.OrderItemID;
                     existingReview.ReviewScore = Math.Round(input.ReviewScore, 1);
                     existingReview.DeliveryScore = input.DeliveryScore.HasValue ? Math.Round(input.DeliveryScore.Value, 1) : input.ReviewScore;
                     existingReview.QualityScore = input.QualityScore.HasValue ? Math.Round(input.QualityScore.Value, 1) : input.ReviewScore;
@@ -162,7 +186,7 @@ namespace satinalmaportali2.Controllers
                     var newReview = new Reviews
                     {
                         OrderID = order.OrderID,
-                        OrderItemID = order.OrderItems.FirstOrDefault()?.OrderItemID,
+                        OrderItemID = matchedOrderItemId,
                         CompanyID = targetSupplierId, // Değerlendirilen Satıcı
                         ReviewerCompanyID = currentCompanyId > 0 ? currentCompanyId : null,
                         ReviewerName = !string.IsNullOrWhiteSpace(currentCompanyName) ? currentCompanyName : (order.BuyerCompanyName ?? "Doğrulanmış Alıcı"),

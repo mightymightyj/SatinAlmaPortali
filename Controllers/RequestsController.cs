@@ -123,9 +123,13 @@ namespace satinalmaportali2.Controllers
             string userType = GetCurrentUserType();
             var currentCompany = currentCompanyId > 0 ? await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId) : null;
 
-            if (string.IsNullOrEmpty(tab))
+            if (string.IsNullOrWhiteSpace(tab))
             {
                 tab = "all";
+            }
+            if (string.IsNullOrWhiteSpace(status))
+            {
+                status = "Tümü";
             }
 
             var requestList = new List<RequestListItemViewModel>();
@@ -232,43 +236,6 @@ namespace satinalmaportali2.Controllers
             if (currentCompanyId <= 0 && (tab == "my-requests" || tab == "incoming-offers" || tab == "my-bids"))
             {
                 tab = "all";
-            }
-
-            // Sekme Filtrelemesi (Tab)
-            if (tab == "my-requests" && currentCompanyId > 0)
-            {
-                requestList = requestList.Where(r => r.IsOwner).ToList();
-            }
-            else if (tab == "incoming-offers" && currentCompanyId > 0)
-            {
-                requestList = requestList.Where(r => r.IsOwner && r.OfferCount > 0).ToList();
-            }
-            else if (tab == "my-bids" && currentCompanyId > 0)
-            {
-                requestList = requestList.Where(r => r.HasMyOffer).ToList();
-            }
-
-            // Arama ve filtreleme
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                var query = search.Trim().ToLower();
-                requestList = requestList.Where(r =>
-                    r.BuyerInfo.ToLower().Contains(query) ||
-                    r.ProductName.ToLower().Contains(query) ||
-                    r.RequestType.ToLower().Contains(query) ||
-                    (r.Notes != null && r.Notes.ToLower().Contains(query)) ||
-                    r.Items.Any(i => i.ItemName.ToLower().Contains(query) || (i.ItemDescription != null && i.ItemDescription.ToLower().Contains(query)))
-                ).ToList();
-            }
-
-            if (!string.IsNullOrWhiteSpace(type) && type != "Tümü")
-            {
-                requestList = requestList.Where(r => r.RequestType.Equals(type, StringComparison.OrdinalIgnoreCase)).ToList();
-            }
-
-            if (!string.IsNullOrWhiteSpace(status) && status != "Tümü")
-            {
-                requestList = requestList.Where(r => r.Status.Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
             }
 
             var viewModel = new RequestListViewModel

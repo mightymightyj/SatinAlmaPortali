@@ -1447,6 +1447,409 @@ namespace satinalmaportali2.Services
 </body>
 </html>";
         }
+
+        /// <summary>
+        /// Bir firmanın ürünü satın alındığında satıcı/tedarikçi firmaya zengin HTML satış ve sipariş bildirim e-postası gönderir.
+        /// </summary>
+        public async Task<bool> SendProductSoldSupplierNotificationEmailAsync(
+            string toEmail,
+            string supplierName,
+            string buyerCompanyName,
+            string? receiverName,
+            string? receiverPhone,
+            string? deliveryCity,
+            string? deliveryAddress,
+            string orderNumber,
+            DateTime orderDate,
+            string paymentMethod,
+            string paymentStatus,
+            string? notes,
+            List<SoldProductItemEmailDto> items,
+            decimal totalAmount,
+            decimal taxAmount,
+            decimal grandTotal,
+            string? supplierOrdersUrl = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(toEmail))
+                {
+                    _logger?.LogWarning("Satıcı ürün satış e-postası için alıcı adresi boş olamaz.");
+                    return false;
+                }
+
+                var htmlBody = GetProductSoldSupplierEmailHtml(
+                    toEmail: toEmail,
+                    supplierName: supplierName,
+                    buyerCompanyName: buyerCompanyName,
+                    receiverName: receiverName,
+                    receiverPhone: receiverPhone,
+                    deliveryCity: deliveryCity,
+                    deliveryAddress: deliveryAddress,
+                    orderNumber: orderNumber,
+                    orderDate: orderDate,
+                    paymentMethod: paymentMethod,
+                    paymentStatus: paymentStatus,
+                    notes: notes,
+                    items: items,
+                    totalAmount: totalAmount,
+                    taxAmount: taxAmount,
+                    grandTotal: grandTotal,
+                    supplierOrdersUrl: supplierOrdersUrl);
+
+                var formattedTotal = grandTotal.ToString("N2", new System.Globalization.CultureInfo("tr-TR"));
+                var displayBuyer = string.IsNullOrWhiteSpace(buyerCompanyName) ? "Kurumsal Alıcı" : buyerCompanyName;
+                var firstItemName = items.FirstOrDefault()?.ProductName ?? "Ürün";
+                var subject = $"🛍️ Yeni Sipariş Bildirimi: {displayBuyer} firmanızdan ürün satın aldı ({orderNumber}) — {formattedTotal} ₺";
+
+                return await SendEmailAsync(toEmail, subject, htmlBody);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Satıcı ürün satış e-postası gönderim hatası ({ToEmail}): {Message}", toEmail, ex.Message);
+                Console.WriteLine($"Satıcı ürün satış e-postası gönderim hatası: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Satıcı/Tedarikçi firma için zengin HTML ürün satış ve sipariş bildirim içeriği üretir.
+        /// </summary>
+        public string GetProductSoldSupplierEmailHtml(
+            string toEmail,
+            string supplierName,
+            string buyerCompanyName,
+            string? receiverName,
+            string? receiverPhone,
+            string? deliveryCity,
+            string? deliveryAddress,
+            string orderNumber,
+            DateTime orderDate,
+            string paymentMethod,
+            string paymentStatus,
+            string? notes,
+            List<SoldProductItemEmailDto> items,
+            decimal totalAmount,
+            decimal taxAmount,
+            decimal grandTotal,
+            string? supplierOrdersUrl = null)
+        {
+            var sendTime = (orderDate.Kind == DateTimeKind.Utc ? orderDate.AddHours(3) : orderDate).ToString("dd.MM.yyyy HH:mm");
+            var formattedSubTotal = totalAmount.ToString("N2", new System.Globalization.CultureInfo("tr-TR"));
+            var formattedTax = taxAmount.ToString("N2", new System.Globalization.CultureInfo("tr-TR"));
+            var formattedGrandTotal = grandTotal.ToString("N2", new System.Globalization.CultureInfo("tr-TR"));
+            var displaySupplier = string.IsNullOrWhiteSpace(supplierName) ? "Değerli Tedarikçimiz" : supplierName;
+            var displayBuyer = string.IsNullOrWhiteSpace(buyerCompanyName) ? "Kurumsal Alıcı" : buyerCompanyName;
+            var displayReceiver = string.IsNullOrWhiteSpace(receiverName) ? displayBuyer : receiverName;
+            var displayPhone = string.IsNullOrWhiteSpace(receiverPhone) ? "Belirtilmedi" : receiverPhone;
+            var displayCity = string.IsNullOrWhiteSpace(deliveryCity) ? "Belirtilmedi" : deliveryCity;
+            var displayAddress = string.IsNullOrWhiteSpace(deliveryAddress) ? "Belirtilmedi" : deliveryAddress;
+            var displayPaymentMethod = string.IsNullOrWhiteSpace(paymentMethod) ? "Kredi Kartı" : paymentMethod;
+            var displayPaymentStatus = string.IsNullOrWhiteSpace(paymentStatus) ? "Ödendi" : paymentStatus;
+            var targetOrdersUrl = string.IsNullOrWhiteSpace(supplierOrdersUrl) ? "https://localhost:7019/Dashboard/SupplierOrders" : supplierOrdersUrl;
+
+            int totalQuantity = items?.Sum(i => (int)Math.Round(i.Quantity)) ?? 0;
+
+            // 1. Satılan Kalemler Tablosu
+            var rowsSb = new System.Text.StringBuilder();
+            int idx = 1;
+            if (items != null && items.Any())
+            {
+                foreach (var it in items)
+                {
+                    var itName = string.IsNullOrWhiteSpace(it.ProductName) ? $"Ürün #{idx}" : it.ProductName;
+                    var itQty = it.Quantity.ToString("0.##", new System.Globalization.CultureInfo("tr-TR"));
+                    var itUnit = string.IsNullOrWhiteSpace(it.Unit) ? "Adet" : it.Unit;
+                    var itUnitPrice = it.UnitPrice.ToString("N2", new System.Globalization.CultureInfo("tr-TR"));
+                    var itLineTotal = (it.LineTotal > 0 ? it.LineTotal : (it.UnitPrice * it.Quantity)).ToString("N2", new System.Globalization.CultureInfo("tr-TR"));
+
+                    string itSkuPart = !string.IsNullOrWhiteSpace(it.Sku)
+                        ? $"<div style='color:#64748b;font-size:11.5px;margin-top:2px;'>SKU: <code style='background:#f1f5f9;padding:1px 5px;border-radius:4px;'>{it.Sku}</code></div>"
+                        : "";
+                    string itCatPart = !string.IsNullOrWhiteSpace(it.CategoryName)
+                        ? $"<span style='display:inline-block;background:#f8fafc;color:#475569;font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px;border:1px solid #e2e8f0;margin-top:3px;'>🏷️ {it.CategoryName}</span>"
+                        : "";
+
+                    rowsSb.Append($@"
+                        <tr style='border-bottom:1px solid #e2e8f0;'>
+                            <td style='padding:11px 12px;font-size:13px;font-weight:700;color:#64748b;text-align:center;vertical-align:top;'>{idx}</td>
+                            <td style='padding:11px 12px;font-size:13.5px;color:#0f172a;vertical-align:top;'>
+                                <strong style='color:#0f172a;'>{itName}</strong>
+                                {itSkuPart}
+                                {itCatPart}
+                            </td>
+                            <td style='padding:11px 12px;font-size:13px;color:#1e293b;text-align:center;white-space:nowrap;vertical-align:top;'>
+                                <span style='background:#ecfdf5;color:#065f46;padding:4px 10px;border-radius:6px;font-weight:700;border:1px solid #a7f3d0;'>
+                                    {itQty} {itUnit}
+                                </span>
+                            </td>
+                            <td style='padding:11px 12px;font-size:13.5px;color:#0f172a;text-align:right;font-weight:600;white-space:nowrap;vertical-align:top;'>
+                                {itUnitPrice} ₺
+                            </td>
+                            <td style='padding:11px 12px;font-size:13.5px;color:#059669;text-align:right;font-weight:800;white-space:nowrap;vertical-align:top;'>
+                                {itLineTotal} ₺
+                            </td>
+                        </tr>");
+                    idx++;
+                }
+            }
+
+            // 2. Alıcı Notu (Varsa)
+            string buyerNotesHtml = "";
+            if (!string.IsNullOrWhiteSpace(notes))
+            {
+                buyerNotesHtml = $@"
+                    <div style='margin-bottom:24px;padding:14px 18px;background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #2563eb;border-radius:10px;'>
+                        <div style='color:#475569;font-size:12px;font-weight:800;text-transform:uppercase;margin-bottom:4px;letter-spacing:0.5px;'>
+                            📝 Alıcı Sipariş Notu:
+                        </div>
+                        <p style='margin:0;color:#1e293b;font-size:13.5px;line-height:1.6;white-space:pre-wrap;'>{notes.Trim()}</p>
+                    </div>";
+            }
+
+            return $@"
+<!DOCTYPE html>
+<html lang='tr' xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <meta name='color-scheme' content='light'>
+    <meta name='supported-color-schemes' content='light'>
+    <title>Tebrikler! Ürününüz Satın Alındı</title>
+</head>
+<body style='margin:0;padding:0;background-color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,&quot;Segoe UI&quot;,Roboto,&quot;Helvetica Neue&quot;,Arial,sans-serif;-webkit-font-smoothing:antialiased;'>
+    
+    <!-- Preheader Gizli Önizleme Metni -->
+    <div style='display:none;font-size:1px;color:#f1f5f9;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;'>
+        Tebrikler! {displayBuyer} firmanızdan {formattedGrandTotal} ₺ tutarında ürün satın aldı. Sipariş No: {orderNumber}
+    </div>
+
+    <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='background-color:#f1f5f9;'>
+        <tr>
+            <td align='center' style='padding:40px 16px;'>
+                <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='max-width:640px;background-color:#ffffff;border-radius:24px;box-shadow:0 10px 40px rgba(0,0,0,0.07);border:1px solid #e2e8f0;overflow:hidden;'>
+                    
+                    <!-- Header Banner (Yeşil Başarı Teması) -->
+                    <tr>
+                        <td style='background:linear-gradient(135deg,#065f46 0%,#059669 50%,#10b981 100%);padding:36px 44px;text-align:center;'>
+                            
+                            <!-- Logo Rozeti -->
+                            <table role='presentation' cellpadding='0' cellspacing='0' border='0' style='margin:0 auto 14px;'>
+                                <tr>
+                                    <td style='background:rgba(255,255,255,0.2);border-radius:14px;padding:8px 18px;'>
+                                        <table role='presentation' cellpadding='0' cellspacing='0' border='0'>
+                                            <tr>
+                                                <td style='vertical-align:middle;padding-right:8px;'>
+                                                    <div style='width:28px;height:28px;background:#ffffff;border-radius:8px;text-align:center;line-height:28px;font-size:16px;'>
+                                                        🛍️
+                                                    </div>
+                                                </td>
+                                                <td style='vertical-align:middle;'>
+                                                    <span style='color:#ffffff;font-size:16px;font-weight:800;letter-spacing:-0.3px;'>
+                                                        tedarik.portal
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <h1 style='margin:0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;line-height:1.3;'>
+                                🎉 Tebrikler! Ürününüz Satın Alındı
+                            </h1>
+                            <p style='margin:10px 0 0;color:rgba(255,255,255,0.92);font-size:14px;font-weight:400;'>
+                                {displayBuyer} firmanızın sunduğu ürün(ler) için sipariş oluşturdu!
+                            </p>
+                            
+                            <!-- Sipariş Numarası Rozeti -->
+                            <div style='margin-top:14px;'>
+                                <span style='display:inline-block;background:rgba(255,255,255,0.22);color:#ffffff;font-size:12.5px;font-weight:700;padding:5px 16px;border-radius:20px;letter-spacing:0.5px;'>
+                                    SİPARİŞ NO: {orderNumber}
+                                </span>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Body Content -->
+                    <tr>
+                        <td style='padding:36px 44px 32px;'>
+                            
+                            <p style='margin:0 0 12px;color:#1e293b;font-size:16px;font-weight:700;'>
+                                Sayın {displaySupplier},
+                            </p>
+                            <p style='margin:0 0 24px;color:#475569;font-size:14.5px;line-height:1.7;'>
+                                Tedarik Portalı üzerinden satışa sunduğunuz ürün(ler) <strong>{displayBuyer}</strong> tarafından satın alınmış ve sipariş kaydı sisteme iletilmiştir.
+                            </p>
+
+                            <!-- Satış Vurgulama Kartı (Büyük Yeşil) -->
+                            <div style='background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);border:1.5px solid #86efac;border-radius:16px;padding:22px 24px;margin-bottom:24px;text-align:center;box-shadow:0 4px 16px rgba(22,163,74,0.1);'>
+                                <div style='color:#166534;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;'>
+                                    💰 Toplam Satış Tutarı (KDV Dahil)
+                                </div>
+                                <div style='color:#15803d;font-size:34px;font-weight:900;letter-spacing:-0.5px;line-height:1.1;'>
+                                    {formattedGrandTotal} ₺
+                                </div>
+                                <div style='color:#166534;font-size:13px;font-weight:600;margin-top:8px;'>
+                                    📦 {items?.Count ?? 0} Kalem Ürün · Ödeme: <strong>{displayPaymentMethod} ({displayPaymentStatus})</strong>
+                                </div>
+                            </div>
+
+                            <!-- Kalemler Tablosu -->
+                            <div style='margin-bottom:24px;'>
+                                <div style='color:#0f172a;font-size:14.5px;font-weight:800;margin-bottom:8px;letter-spacing:-0.2px;'>
+                                    📋 Sipariş Edilen Ürün Kalemleri ({items?.Count ?? 0} Kalem / Toplam {totalQuantity} Adet)
+                                </div>
+                                <div style='border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden;background:#ffffff;'>
+                                    <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='border-collapse:collapse;width:100%;'>
+                                        <thead>
+                                            <tr style='background:#f8fafc;border-bottom:2px solid #e2e8f0;'>
+                                                <th style='padding:9px 12px;text-align:center;color:#475569;font-size:11px;font-weight:800;text-transform:uppercase;width:35px;'>#</th>
+                                                <th style='padding:9px 12px;text-align:left;color:#475569;font-size:11px;font-weight:800;text-transform:uppercase;'>Ürün / Malzeme</th>
+                                                <th style='padding:9px 12px;text-align:center;color:#475569;font-size:11px;font-weight:800;text-transform:uppercase;width:95px;'>Miktar</th>
+                                                <th style='padding:9px 12px;text-align:right;color:#475569;font-size:11px;font-weight:800;text-transform:uppercase;width:110px;'>Birim Fiyat</th>
+                                                <th style='padding:9px 12px;text-align:right;color:#475569;font-size:11px;font-weight:800;text-transform:uppercase;width:120px;'>Tutar</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {rowsSb}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr style='background:#f8fafc;border-top:1px solid #e2e8f0;'>
+                                                <td colspan='4' style='padding:9px 12px;text-align:right;font-size:12px;font-weight:600;color:#64748b;'>
+                                                    Ara Toplam:
+                                                </td>
+                                                <td style='padding:9px 12px;text-align:right;font-size:13px;font-weight:700;color:#1e293b;white-space:nowrap;'>
+                                                    {formattedSubTotal} ₺
+                                                </td>
+                                            </tr>
+                                            <tr style='background:#f8fafc;border-top:1px solid #f1f5f9;'>
+                                                <td colspan='4' style='padding:9px 12px;text-align:right;font-size:12px;font-weight:600;color:#64748b;'>
+                                                    KDV (%20):
+                                                </td>
+                                                <td style='padding:9px 12px;text-align:right;font-size:13px;font-weight:700;color:#1e293b;white-space:nowrap;'>
+                                                    {formattedTax} ₺
+                                                </td>
+                                            </tr>
+                                            <tr style='background:#ecfdf5;border-top:2px solid #6ee7b7;'>
+                                                <td colspan='4' style='padding:11px 12px;text-align:right;font-size:12.5px;font-weight:800;color:#065f46;'>
+                                                    GENEL SATIŞ TOPLAMI:
+                                                </td>
+                                                <td style='padding:11px 12px;text-align:right;font-size:15.5px;font-weight:900;color:#059669;white-space:nowrap;'>
+                                                    {formattedGrandTotal} ₺
+                                                </td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Alıcı ve Teslimat Bilgileri Tablosu -->
+                            <div style='margin-bottom:24px;'>
+                                <div style='color:#0f172a;font-size:14.5px;font-weight:800;margin-bottom:8px;letter-spacing:-0.2px;'>
+                                    📍 Alıcı & Teslimat Bilgileri
+                                </div>
+                                <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='border-collapse:separate;border-spacing:0 8px;'>
+                                    <tr>
+                                        <td style='width:160px;color:#64748b;font-size:13px;font-weight:700;padding:8px 0;'>🏢 Alıcı Firma:</td>
+                                        <td style='color:#0f172a;font-size:14px;font-weight:700;padding:8px 14px;background:#f8fafc;border-radius:8px;'>{displayBuyer}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style='width:160px;color:#64748b;font-size:13px;font-weight:700;padding:8px 0;'>👤 Teslim Alacak:</td>
+                                        <td style='color:#0f172a;font-size:14px;font-weight:700;padding:8px 14px;background:#f8fafc;border-radius:8px;'>{displayReceiver}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style='width:160px;color:#64748b;font-size:13px;font-weight:700;padding:8px 0;'>📞 İletişim Tel:</td>
+                                        <td style='color:#0f172a;font-size:14px;font-weight:700;padding:8px 14px;background:#f8fafc;border-radius:8px;'>{displayPhone}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style='width:160px;color:#64748b;font-size:13px;font-weight:700;padding:8px 0;'>🚚 Teslimat İli:</td>
+                                        <td style='color:#0f172a;font-size:14px;font-weight:700;padding:8px 14px;background:#f8fafc;border-radius:8px;'>{displayCity}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style='width:160px;color:#64748b;font-size:13px;font-weight:700;padding:8px 0;'>📫 Teslimat Adresi:</td>
+                                        <td style='color:#0f172a;font-size:14px;font-weight:600;padding:8px 14px;background:#f8fafc;border-radius:8px;'>{displayAddress}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style='width:160px;color:#64748b;font-size:13px;font-weight:700;padding:8px 0;'>🕒 Sipariş Zamanı:</td>
+                                        <td style='color:#64748b;font-size:13px;font-weight:600;padding:8px 14px;background:#f8fafc;border-radius:8px;'>{sendTime}</td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <!-- Alıcı Notu (Varsa) -->
+                            {buyerNotesHtml}
+
+                            <!-- Sevkiyat & Süreç Rehberi Kutusu -->
+                            <div style='background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #10b981;border-radius:12px;padding:18px 20px;margin-bottom:28px;'>
+                                <div style='color:#065f46;font-size:13px;font-weight:800;text-transform:uppercase;margin-bottom:8px;letter-spacing:0.5px;'>
+                                    🚀 Sonraki Adımlar & Sevkiyat Rehberi:
+                                </div>
+                                <ul style='margin:0;padding-left:18px;color:#334155;font-size:13px;line-height:1.7;'>
+                                    <li><strong>1. Hazırlık:</strong> Yukarıda belirtilen ürünlerin paketleme ve fatura hazırlıklarını başlatınız.</li>
+                                    <li><strong>2. Sevkiyat:</strong> Siparişi belirtilen teslimat adresine sevk edilmek üzere anlaşmalı kargo/lojistik firmanıza teslim ediniz.</li>
+                                    <li><strong>3. Takip Numarası:</strong> Satıcı panelinizdeki <em>Gelen Siparişler & Sevkiyat</em> sekmesinden siparişe kargo firması ve takip numarası ekleyerek durumu <strong>&quot;Kargoya Verildi&quot;</strong> yapınız.</li>
+                                </ul>
+                            </div>
+
+                            <!-- CTA Butonları -->
+                            <div style='margin:28px 0;text-align:center;'>
+                                <table role='presentation' cellpadding='0' cellspacing='0' border='0' style='margin:0 auto;'>
+                                    <tr>
+                                        <td align='center' bgcolor='#059669' style='border-radius:12px;background-color:#059669;box-shadow:0 4px 16px rgba(16,185,129,0.35);'>
+                                            <a href='{targetOrdersUrl}' target='_blank' style='display:inline-block;padding:15px 36px;background-color:#059669;color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;border-radius:12px;letter-spacing:0.3px;'>
+                                                📦 Gelen Siparişi Görüntüle ve Yönet &rarr;
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <div style='margin-top:14px;text-align:center;'>
+                                <p style='margin:0 0 4px;color:#94a3b8;font-size:11.5px;'>Buton çalışmıyorsa aşağıdaki bağlantıyı tarayıcınıza yapıştırın:</p>
+                                <p style='margin:0;word-break:break-all;'><a href='{targetOrdersUrl}' target='_blank' style='color:#059669;font-size:11.5px;text-decoration:underline;'>{targetOrdersUrl}</a></p>
+                            </div>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style='background-color:#f8fafc;padding:24px 44px;text-align:center;border-top:1px solid #e2e8f0;'>
+                            <p style='margin:0 0 6px;color:#64748b;font-size:12px;font-weight:700;'>
+                                Tedarik Portal — Satın Alma ve Tedarik Zinciri Platformu
+                            </p>
+                            <p style='margin:0 0 8px;color:#94a3b8;font-size:11px;'>
+                                &copy; 2026 Tedarik Portalı. Tüm hakları saklıdır.
+                            </p>
+                            <p style='margin:0;color:#94a3b8;font-size:11px;'>
+                                Bu bildirim <strong>{toEmail}</strong> satıcı adresine gönderilmiştir.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
+        }
+    }
+
+    /// <summary>
+    /// E-postalarda satılan ürün kalemleri dökümü için kullanılan veri modeli.
+    /// </summary>
+    public class SoldProductItemEmailDto
+    {
+        public int ItemOrder { get; set; } = 1;
+        public string ProductName { get; set; } = string.Empty;
+        public string? Sku { get; set; }
+        public string? CategoryName { get; set; }
+        public decimal Quantity { get; set; } = 1;
+        public string Unit { get; set; } = "Adet";
+        public decimal UnitPrice { get; set; }
+        public decimal LineTotal { get; set; }
     }
 
     /// <summary>
@@ -1464,3 +1867,4 @@ namespace satinalmaportali2.Services
         public string? Notes { get; set; }
     }
 }
+

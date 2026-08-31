@@ -906,19 +906,25 @@
 
             <a href="@Url.Action("Index", "SuperAdmin", new { tab = "companies" })" 
                class="tab-btn @(Model.ActiveTab == "companies" ? "is-active" : "")">
-                Firmalar & Hesaplar
+                Firmalar &amp; Hesaplar
                 <span class="tab-count">@Model.Stats.TotalCompanies</span>
+            </a>
+
+            <a href="@Url.Action("Index", "SuperAdmin", new { tab = "orders" })" 
+               class="tab-btn @(Model.ActiveTab == "orders" ? "is-active" : "")">
+                Siparişler &amp; Sevkiyatlar
+                <span class="tab-count" style="background: #EFF6FF; color: #1E40AF; font-weight: 700;">@Model.Stats.TotalOrders</span>
             </a>
 
             <a href="@Url.Action("Index", "SuperAdmin", new { tab = "reviews" })" 
                class="tab-btn @(Model.ActiveTab == "reviews" ? "is-active" : "")">
-                ★ Değerlendirmeler &amp; İtibar Testi
+                Değerlendirmeler &amp; İtibar Testi
                 <span class="tab-count" style="background: #FEF3C7; color: #B45309; font-weight: 700;">@Model.Stats.TotalReviews</span>
             </a>
 
             <a href="@Url.Action("Index", "SuperAdmin", new { tab = "simulation" })" 
                class="tab-btn @(Model.ActiveTab == "simulation" ? "is-active" : "")">
-                Test & Simülasyon
+                Test &amp; Simülasyon
             </a>
 
             <a href="@Url.Action("Index", "SuperAdmin", new { tab = "settings" })" 
@@ -948,8 +954,24 @@
                 </div>
 
                 <div class="kpi-card">
-                    <div class="kpi-label">10★ Firma Değerlendirmeleri</div>
-                    <div class="kpi-value" style="color: #D97706;">★ @Model.Stats.AveragePlatformScore.ToString("0.0") <small style="font-size: 0.9rem; color: var(--text-muted);">/ 10</small></div>
+                    <div class="kpi-label">Toplam Siparişler &amp; Hacim</div>
+                    <div class="kpi-value" style="color: #2563EB;">@Model.Stats.TotalOrders <small style="font-size: 0.82rem; color: var(--text-muted); font-weight: 500;">adet</small></div>
+                    <div class="kpi-desc">
+                        Sipariş Cirosu: @Model.Stats.TotalOrderVolume.ToString("N0") ₺
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-label">Çoklu Tedarikçi &amp; Kalem Sevkiyatı</div>
+                    <div class="kpi-value" style="color: #0D9488;">@Model.Stats.TotalOrderItemsCount <small style="font-size: 0.82rem; color: var(--text-muted); font-weight: 500;">kalem</small></div>
+                    <div class="kpi-desc">
+                        @Model.Stats.MultiSupplierOrdersCount Çoklu Tedarikçili Sipariş
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-label">10 Puanlık İtibar Skoru</div>
+                    <div class="kpi-value" style="color: #D97706;">@Model.Stats.AveragePlatformScore.ToString("0.0") <small style="font-size: 0.9rem; color: var(--text-muted);">/ 10</small></div>
                     <div class="kpi-desc">
                         Toplam @Model.Stats.TotalReviews Doğrulanmış Değerlendirme
                     </div>
@@ -980,7 +1002,7 @@
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
                 <div class="content-card" style="padding: 20px;">
                     <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-heading); margin-bottom: 8px;">
                         Kategori Yönetimi
@@ -996,7 +1018,19 @@
 
                 <div class="content-card" style="padding: 20px;">
                     <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-heading); margin-bottom: 8px;">
-                        Firma & Hesap Yönetimi
+                        Sipariş &amp; Sevkiyat Yönetimi
+                    </h3>
+                    <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+                        Tüm alıcı siparişlerini, çoklu tedarikçi kalemlerini, kargo takip numaralarını ve sipariş durumlarını denetleyin.
+                    </p>
+                    <div>
+                        <a href="@Url.Action("Index", "SuperAdmin", new { tab = "orders" })" class="btn-primary">Siparişleri İncele</a>
+                    </div>
+                </div>
+
+                <div class="content-card" style="padding: 20px;">
+                    <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-heading); margin-bottom: 8px;">
+                        Firma &amp; Hesap Yönetimi
                     </h3>
                     <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
                         Kayıtlı firmaların unvan, yetkili, e-posta, telefon, vergi ve üyelik bilgilerini yönetin veya şifrelerini sıfırlayın.
@@ -1164,6 +1198,178 @@
             </div>
         }
 
+        <!-- ==================== SEKME: SİPARİŞLER & SEVKİYATLAR ==================== -->
+        @if (Model.ActiveTab == "orders")
+        {
+            <!-- KPI CARDS -->
+            <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 24px;">
+                <div class="kpi-card">
+                    <div class="kpi-label">Toplam Sipariş</div>
+                    <div class="kpi-value" style="color: #2563EB;">@Model.Stats.TotalOrders <small style="font-size: 0.8rem; color: var(--text-muted);">adet</small></div>
+                    <div class="kpi-desc">Platform genelinde tamamlanan ve süren işlemler</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-label">Toplam İşlem Hacmi</div>
+                    <div class="kpi-value" style="color: #16A34A;">@Model.Stats.TotalOrderVolume.ToString("N2") ₺</div>
+                    <div class="kpi-desc">B2B sipariş ciro toplamı</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-label">Çoklu Tedarikçi Siparişleri</div>
+                    <div class="kpi-value" style="color: #0D9488;">@Model.Stats.MultiSupplierOrdersCount <small style="font-size: 0.8rem; color: var(--text-muted);">sipariş</small></div>
+                    <div class="kpi-desc">Birden fazla satıcı içeren siparişler</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-label">Toplam Sevkiyat Kalemi</div>
+                    <div class="kpi-value" style="color: #7C3AED;">@Model.Stats.TotalOrderItemsCount <small style="font-size: 0.8rem; color: var(--text-muted);">kalem</small></div>
+                    <div class="kpi-desc">Kargo ve teslimat takip kalemleri</div>
+                </div>
+            </div>
+
+            <!-- SİPARİŞ LİSTESİ TABLOSU -->
+            <div class="content-card">
+                <div class="card-toolbar">
+                    <div class="toolbar-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);">
+                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <path d="M16 10a4 4 0 0 1-8 0"></path>
+                        </svg>
+                        Sipariş Listesi &amp; Sevkiyat Takibi
+                        <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">(@Model.Orders.Count sipariş listeleniyor)</span>
+                    </div>
+
+                    <div class="toolbar-actions">
+                        <div class="search-input-wrap">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="text" id="orderSearchInput" class="input-search" placeholder="Sipariş no, alıcı, tedarikçi, kargo takip..." oninput="filterOrdersTable()" />
+                        </div>
+
+                        <select id="orderStatusFilter" class="select-filter" onchange="filterOrdersTable()">
+                            <option value="">Tüm Durumlar</option>
+                            <option value="Onaylandı">Onaylandı</option>
+                            <option value="Hazırlanıyor">Hazırlanıyor</option>
+                            <option value="Kargoda">Kargoda / Kargoya Verildi</option>
+                            <option value="Teslim Edildi">Teslim Edildi / Tamamlandı</option>
+                            <option value="İptal Edildi">İptal Edildi</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="data-table-wrap">
+                    <table class="data-table" id="ordersTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 110px;">Sipariş No</th>
+                                <th>Alıcı Firma</th>
+                                <th>Tedarikçi Firma(lar)</th>
+                                <th style="text-align: center; width: 90px;">Kalem</th>
+                                <th style="text-align: right; width: 120px;">Tutar</th>
+                                <th>Kargo &amp; Takip</th>
+                                <th style="text-align: center; width: 120px;">Durum</th>
+                                <th>Tarih</th>
+                                <th style="text-align: right; width: 140px;">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Orders.Any())
+                            {
+                                @foreach (var ord in Model.Orders)
+                                {
+                                    var isMulti = ord.SupplierCount > 1;
+                                    var statusClass = ord.OrderStatus == "Teslim Edildi" || ord.OrderStatus == "Tamamlandı" ? "badge-root" :
+                                                      ord.OrderStatus == "Kargoda" || ord.OrderStatus == "Kargoya Verildi" ? "badge-supplier" :
+                                                      ord.OrderStatus == "İptal Edildi" ? "badge-super" : "badge-both";
+
+                                    <tr class="order-row" id="order-row-@ord.OrderID" 
+                                        data-search="@ord.OrderNumber.ToLowerInvariant() @ord.BuyerCompanyName.ToLowerInvariant() @(ord.SupplierCompanyName?.ToLowerInvariant() ?? "") @(ord.TrackingNumber?.ToLowerInvariant() ?? "")"
+                                        data-status="@ord.OrderStatus">
+                                        <td>
+                                            <strong style="color: var(--primary);">#@ord.OrderNumber</strong>
+                                        </td>
+                                        <td>
+                                            <div style="font-weight: 600; color: var(--text-heading);">@ord.BuyerCompanyName</div>
+                                            @if (!string.IsNullOrWhiteSpace(ord.BuyerOfficial))
+                                            {
+                                                <div style="font-size: 0.72rem; color: var(--text-muted);">@ord.BuyerOfficial</div>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (isMulti)
+                                            {
+                                                <div style="display: flex; align-items: center; gap: 6px;">
+                                                    <span class="badge" style="background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; font-weight: 700;">
+                                                        @ord.SupplierCount Tedarikçi
+                                                    </span>
+                                                </div>
+                                                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
+                                                    @string.Join(", ", ord.Items.Select(i => i.SupplierCompanyName).Where(s => !string.IsNullOrEmpty(s)).Distinct().Take(2))
+                                                    @(ord.SupplierCount > 2 ? "..." : "")
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div style="font-weight: 500; color: var(--text-body);">
+                                                    @(string.IsNullOrWhiteSpace(ord.SupplierCompanyName) ? "Tedarikçi" : ord.SupplierCompanyName)
+                                                </div>
+                                            }
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <span class="badge badge-sub">@ord.TotalItemCount Kalem</span>
+                                        </td>
+                                        <td style="text-align: right; font-weight: 700; color: var(--text-heading);">
+                                            @ord.GrandTotal.ToString("N2") ₺
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrWhiteSpace(ord.TrackingNumber))
+                                            {
+                                                <div style="font-size: 0.78rem; font-weight: 600; color: #1E40AF;">
+                                                    @(string.IsNullOrWhiteSpace(ord.ShippingCarrier) ? "Kargo" : ord.ShippingCarrier): @ord.TrackingNumber
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span style="font-size: 0.75rem; color: var(--text-muted);">Takip No Girilmedi</span>
+                                            }
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <span class="badge @statusClass">
+                                                @ord.OrderStatus
+                                            </span>
+                                        </td>
+                                        <td style="font-size: 0.76rem; color: var(--text-muted);">
+                                            @ord.OrderDate.ToString("dd.MM.yyyy HH:mm")
+                                        </td>
+                                        <td style="text-align: right;">
+                                            <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                                                <button type="button" class="btn-table-action" onclick="openAdminOrderModal(@ord.OrderID)" title="Sipariş Detayı ve Kalem Sevkiyatlarını Yönet">
+                                                    Detay
+                                                </button>
+                                                @if (ord.OrderStatus != "İptal Edildi")
+                                                {
+                                                    <button type="button" class="btn-table-action danger" style="color: #DC2626; border-color: #FCA5A5;" onclick="handleCancelOrder(@ord.OrderID, event)" title="Siparişi İptal Et">
+                                                        İptal
+                                                    </button>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="9" class="empty-state">Kayıtlı bir sipariş bulunamadı.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+
         <!-- ==================== SEKME: TEST & SİMÜLASYON MERKEZİ ==================== -->
         @if (Model.ActiveTab == "simulation")
         {
@@ -1179,7 +1385,8 @@
                 <div class="content-card" style="padding: 24px; border-top: 4px solid #2563EB;">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
                         <h3 style="font-size: 1.10rem; font-weight: 700; color: var(--text-heading); display: flex; align-items: center; gap: 8px;">
-                            🛒 <span>Firma Adına Satış İlanı Ver</span>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #2563EB;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                            <span>Firma Adına Satış İlanı Ver</span>
                         </h3>
                         <span class="badge badge-supplier" style="background: #EFF6FF; color: #2563EB; border: 1px solid #BFDBFE;">Vitrin Simülatörü</span>
                     </div>
@@ -1235,7 +1442,7 @@
 
                             <div class="form-field-grid" style="grid-template-columns: 2fr 1fr;">
                                 <div class="form-field">
-                                    <label class="form-label" for="simListingDesc">Ürün Açıklaması & Şartlar</label>
+                                    <label class="form-label" for="simListingDesc">Ürün Açıklaması &amp; Şartlar</label>
                                     <textarea id="simListingDesc" name="ItemDescryption" class="form-textarea" rows="2" placeholder="Ürün özellikleri, malzeme kalitesi, toptan gönderim detayları..."></textarea>
                                 </div>
                                 <div class="form-field">
@@ -1251,7 +1458,7 @@
 
                             <div style="margin-top: 4px;">
                                 <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 11px; font-size: 0.95rem;">
-                                    ✓ Seçilen Firma Adına Vitrine İlanı Ekle
+                                    Seçilen Firma Adına Vitrine İlanı Ekle
                                 </button>
                             </div>
                         </div>
@@ -1262,7 +1469,8 @@
                 <div class="content-card" style="padding: 24px; border-top: 4px solid #0284C7;">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
                         <h3 style="font-size: 1.10rem; font-weight: 700; color: var(--text-heading); display: flex; align-items: center; gap: 8px;">
-                            📝 <span>Firma Adına Talep Oluştur</span>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #0284C7;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            <span>Firma Adına Talep Oluştur</span>
                         </h3>
                         <span class="badge badge-buyer" style="background: #E0F2FE; color: #0284C7; border: 1px solid #BAE6FD;">Çok Kalemli Talep Simülatörü</span>
                     </div>
@@ -1316,15 +1524,15 @@
                                 </div>
                             </div>
 
-                            <!-- 📋 İSTENİLENLER LİSTESİ (ÇOKLU KALEM DİNAMİK TABLO) -->
+                            <!-- İSTENİLENLER LİSTESİ (ÇOKLU KALEM DİNAMİK TABLO) -->
                             <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-top: 4px;">
                                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
                                     <div>
-                                        <strong style="color: #0F172A; font-size: 0.92rem;">📋 İstenilen Malzeme ve Hizmet Kalemleri</strong>
+                                        <strong style="color: #0F172A; font-size: 0.92rem;">İstenilen Malzeme ve Hizmet Kalemleri</strong>
                                         <span id="simReqItemsBadge" style="font-size: 0.75rem; color: #0284C7; font-weight: 700; background: #E0F2FE; padding: 2px 8px; border-radius: 6px; margin-left: 6px;">1 Kalem</span>
                                     </div>
                                     <button type="button" class="btn-quick-tpl" onclick="addSimRequestItemRow('', 10, 'Adet', null, '')" style="background: #FFFFFF; border: 1px solid #CBD5E1; color: #0284C7; font-weight: 700; padding: 5px 12px; font-size: 0.80rem; border-radius: 6px; cursor: pointer;">
-                                        ➕ Kalem Ekle
+                                        + Kalem Ekle
                                     </button>
                                 </div>
 
@@ -1342,7 +1550,6 @@
                                             </tr>
                                         </thead>
                                         <tbody id="simReqItemsTbody">
-                                            <!-- JS ile veya başlangıç satırı -->
                                             <tr class="sim-req-item-row">
                                                 <td style="text-align: center; font-weight: 700; color: #64748B;">1</td>
                                                 <td><input type="text" class="sim-it-name form-input" style="padding: 6px 9px; font-size: 0.82rem;" placeholder="Örn: CNC Torna Parçası" value="CNC Torna Parçası" required oninput="recalculateSimRequestTotals()" /></td>
@@ -1388,14 +1595,14 @@
                                     <input type="number" step="0.01" id="simBudget" name="EstimatedBudget" class="form-input" placeholder="Örn: 7500.00" value="7500" />
                                 </div>
                                 <div class="form-field">
-                                    <label class="form-label" for="simNotes">Genel Şartname & Notlar</label>
+                                    <label class="form-label" for="simNotes">Genel Şartname &amp; Notlar</label>
                                     <input type="text" id="simNotes" name="Notes" class="form-input" placeholder="Teslimat adresi, ödeme vadesi ve genel koşullar..." />
                                 </div>
                             </div>
 
                             <div style="margin-top: 4px;">
                                 <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 11px; background: #0284C7; border-color: #0284C7; font-size: 0.95rem;">
-                                    📝 Seçilen Firma Adına Talebi Yayınla
+                                    Seçilen Firma Adına Talebi Yayınla
                                 </button>
                             </div>
                         </div>
@@ -1406,7 +1613,8 @@
                 <div class="content-card" style="padding: 24px; border-top: 4px solid #16A34A;">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
                         <h3 style="font-size: 1.10rem; font-weight: 700; color: var(--text-heading); display: flex; align-items: center; gap: 8px;">
-                            💼 <span>Firma Adına Teklif Gönder</span>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #16A34A;"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                            <span>Firma Adına Teklif Gönder</span>
                         </h3>
                         <span class="badge badge-supplier" style="background: #ECFDF5; color: #16A34A; border: 1px solid #A7F3D0;">Kalem Bazlı Teklif Simülatörü</span>
                     </div>
@@ -1442,15 +1650,15 @@
                                 </div>
                             </div>
 
-                            <!-- 📋 KALEM BAZLI TEKLİF DÖKÜM TABLOSU (DİNAMİK YÜKLENEN ALAN) -->
+                            <!-- KALEM BAZLI TEKLİF DÖKÜM TABLOSU (DİNAMİK YÜKLENEN ALAN) -->
                             <div id="simOfferItemsContainer" style="display: none; background: #F8FAFC; border: 1.5px solid #86EFAC; border-radius: 12px; padding: 16px; margin-top: 4px;">
                                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
                                     <div>
-                                        <strong style="color: #166534; font-size: 0.92rem;">📋 Talep Kalemleri & Teklif Birim Fiyatları</strong>
+                                        <strong style="color: #166534; font-size: 0.92rem;">Talep Kalemleri &amp; Teklif Birim Fiyatları</strong>
                                         <span id="simOfferItemsCountBadge" style="font-size: 0.75rem; color: #15803D; font-weight: 700; background: #DCFCE7; padding: 2px 8px; border-radius: 6px; margin-left: 6px;">0 Kalem</span>
                                     </div>
                                     <div style="display: flex; gap: 6px;">
-                                        <button type="button" class="btn-quick-tpl" onclick="fillSimOfferPrices(0)" style="background: #FFFFFF; border: 1px solid #86EFAC; color: #166534; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-weight: 600;" title="Hedef Bütçe Birim Fiyatını Uygula">⚡ Hedef Fiyat</button>
+                                        <button type="button" class="btn-quick-tpl" onclick="fillSimOfferPrices(0)" style="background: #FFFFFF; border: 1px solid #86EFAC; color: #166534; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-weight: 600;" title="Hedef Bütçe Birim Fiyatını Uygula">Hedef Fiyat</button>
                                         <button type="button" class="btn-quick-tpl" onclick="fillSimOfferPrices(5)" style="background: #FFFFFF; border: 1px solid #86EFAC; color: #166534; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-weight: 600;" title="Hedef Bütçeden %5 İndirimli">%5 İndirimli</button>
                                         <button type="button" class="btn-quick-tpl" onclick="fillSimOfferPrices(10)" style="background: #FFFFFF; border: 1px solid #86EFAC; color: #166534; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-weight: 600;" title="Hedef Bütçeden %10 İndirimli">%10 İndirimli</button>
                                     </div>
@@ -1505,7 +1713,7 @@
 
                             <div style="margin-top: 4px;">
                                 <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 11px; background: #16A34A; border-color: #16A34A; font-size: 0.95rem;">
-                                    💼 Seçilen Firma Adına Teklif Gönder
+                                    Seçilen Firma Adına Teklif Gönder
                                 </button>
                             </div>
                         </div>
@@ -1518,12 +1726,13 @@
             <div class="content-card" style="margin-bottom: 24px;">
                 <div class="card-toolbar">
                     <div class="toolbar-title">
-                        🛒 Canlı Vitrin & Satış İlanları Listesi
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                        Canlı Vitrin &amp; Satış İlanları Listesi
                         <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">(@Model.RecentListings.Count ürün ilanı)</span>
                     </div>
                     <div class="toolbar-actions">
                         <a href="/#ihtiyaciniz-olan-urunler" target="_blank" class="btn-secondary" style="font-size: 0.8rem; text-decoration: none;">
-                            ↗ Vitrini Yeni Sekmede Aç
+                            Vitrine Git ↗
                         </a>
                     </div>
                 </div>
@@ -1557,7 +1766,9 @@
                                                 }
                                                 else
                                                 {
-                                                    <div style="width: 32px; height: 32px; border-radius: 6px; background: #F1F5F9; display: flex; align-items: center; justify-content: center; font-size: 0.85rem;">📦</div>
+                                                    <div style="width: 32px; height: 32px; border-radius: 6px; background: #F1F5F9; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                                                    </div>
                                                 }
                                                 <strong style="color: var(--text-heading);">@item.ItemName</strong>
                                             </div>
@@ -1597,7 +1808,8 @@
             <div class="content-card">
                 <div class="card-toolbar">
                     <div class="toolbar-title">
-                        📋 Mevcut Satın Alma Talepleri ve Teklif Durumu
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                        Mevcut Satın Alma Talepleri ve Teklif Durumu
                         <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">(@Model.OpenRequests.Count talep)</span>
                     </div>
                 </div>
@@ -1666,7 +1878,7 @@
             </div>
         }
 
-        <!-- ==================== SEKME: 10★ DEĞERLENDİRMELER & İTİBAR TESTİ ==================== -->
+        <!-- ==================== SEKME: DEĞERLENDİRMELER & İTİBAR TESTİ ==================== -->
         @if (Model.ActiveTab == "reviews")
         {
             <!-- 4 KPI KARTI -->
@@ -1679,8 +1891,8 @@
 
                 <div class="kpi-card">
                     <div class="kpi-label">Ortalama Platform Skoru</div>
-                    <div class="kpi-value" style="color: #16A34A;">★ @Model.Stats.AveragePlatformScore.ToString("0.0") <small style="font-size: 0.9rem; color: var(--text-muted);">/ 10</small></div>
-                    <div class="kpi-desc">10 Yıldız İtibar Ortalaması</div>
+                    <div class="kpi-value" style="color: #16A34A;">@Model.Stats.AveragePlatformScore.ToString("0.0") <small style="font-size: 0.9rem; color: var(--text-muted);">/ 10</small></div>
+                    <div class="kpi-desc">10 Puanlık İtibar Ortalaması</div>
                 </div>
 
                 <div class="kpi-card">
@@ -1701,7 +1913,8 @@
                 <div class="content-card" style="margin-bottom: 0;">
                     <div class="card-toolbar">
                         <div class="toolbar-title">
-                            ★ 10 Yıldızlı Test Değerlendirmesi Ekle
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #D97706;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                            10 Puanlık Test Değerlendirmesi Ekle
                         </div>
                     </div>
                     <form asp-action="SimulateReview" method="post" id="simulateReviewForm" style="padding: 20px;" onsubmit="handleSimulateReviewSubmit(event); return false;">
@@ -1724,8 +1937,8 @@
                                 <div class="form-field">
                                     <label class="form-label" for="simRevType">Değerlendirme Türü *</label>
                                     <select id="simRevType" name="ReviewType" class="form-select" required onchange="handleReviewTypeChange(this)">
-                                        <option value="BuyerToSeller">🛒 Alıcı -> Satıcı (Ürün, Sevkiyat &amp; Malzeme Kalitesi)</option>
-                                        <option value="SellerToBuyer">📦 Satıcı -> Alıcı (Ödeme Dakikliği &amp; Mal Kabul)</option>
+                                        <option value="BuyerToSeller">Alıcı -> Satıcı (Ürün, Sevkiyat &amp; Malzeme Kalitesi)</option>
+                                        <option value="SellerToBuyer">Satıcı -> Alıcı (Ödeme Dakikliği &amp; Mal Kabul)</option>
                                     </select>
                                 </div>
                             </div>
@@ -1763,23 +1976,27 @@
                                     </select>
                                 </div>
                                 <div class="form-field">
-                                    <label class="form-label" for="simRevScore">Genel Puan: <strong id="simRevScoreDisplay" style="color: #D97706; font-size: 1rem;">★ 10.0 / 10</strong></label>
-                                    <input type="range" id="simRevScore" name="ReviewScore" min="1.0" max="10.0" step="0.5" value="10.0" class="form-input" style="padding: 4px;" oninput="document.getElementById('simRevScoreDisplay').textContent = '★ ' + parseFloat(this.value).toFixed(1) + ' / 10'" />
+                                    <label class="form-label" for="simRevScore">Genel Puan: <strong id="simRevScoreDisplay" style="color: #D97706; font-size: 1rem;">10.0 / 10</strong></label>
+                                    <input type="range" id="simRevScore" name="ReviewScore" min="1.0" max="10.0" step="0.5" value="10.0" class="form-input" style="padding: 4px;" oninput="document.getElementById('simRevScoreDisplay').textContent = parseFloat(this.value).toFixed(1) + ' / 10'" />
                                 </div>
                             </div>
 
-                            <div class="form-field-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+                            <div class="form-field-grid" style="grid-template-columns: 1fr 1fr 1fr 1fr;" id="simRevSubScoresGrid">
                                 <div class="form-field">
-                                    <label class="form-label" for="simRevDelivery">Teslimat / Dakiklik (1-10)</label>
+                                    <label class="form-label" for="simRevDelivery" id="lblDelivery">Teslimat / Dakiklik (1-10)</label>
                                     <input type="number" id="simRevDelivery" name="DeliveryScore" min="1" max="10" step="0.5" value="10.0" class="form-input" />
                                 </div>
                                 <div class="form-field">
-                                    <label class="form-label" for="simRevQuality">Kalite / Güvenilirlik (1-10)</label>
+                                    <label class="form-label" for="simRevQuality" id="lblQuality">Kalite / Şartname (1-10)</label>
                                     <input type="number" id="simRevQuality" name="QualityScore" min="1" max="10" step="0.5" value="10.0" class="form-input" />
                                 </div>
                                 <div class="form-field">
                                     <label class="form-label" for="simRevComm">İletişim Skoru (1-10)</label>
                                     <input type="number" id="simRevComm" name="CommunicationScore" min="1" max="10" step="0.5" value="10.0" class="form-input" />
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label" for="simRevPayment" id="lblPayment">Ödeme Dakikliği (1-10)</label>
+                                    <input type="number" id="simRevPayment" name="PaymentPunctualityScore" min="1" max="10" step="0.5" value="10.0" class="form-input" />
                                 </div>
                             </div>
 
@@ -1790,7 +2007,7 @@
 
                             <div style="display: flex; gap: 10px; align-items: center; justify-content: flex-end;">
                                 <button type="submit" class="btn-primary" style="background: #16A34A; border-color: #16A34A;">
-                                    ★ Test Değerlendirmesini Kaydet
+                                    Test Değerlendirmesini Kaydet
                                 </button>
                             </div>
                         </div>
@@ -1801,25 +2018,25 @@
                 <div style="display: flex; flex-direction: column; gap: 16px;">
                     <div class="content-card" style="padding: 20px; margin-bottom: 0;">
                         <h4 style="font-size: 0.92rem; font-weight: 700; color: var(--text-heading); margin-bottom: 8px;">
-                            ⚡ Tek Tıkla Demo Test Verisi
+                            Tek Tıkla Demo Test Verisi
                         </h4>
                         <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 14px;">
-                            Sistemdeki kurumsal firmalara otomatik olarak gerçekçi 10★ puanlar, teslimat metrikleri ve alıcı/satıcı yorumları ekler.
+                            Sistemdeki kurumsal firmalara otomatik olarak gerçekçi 10 puan üzerinden teslimat metrikleri ve alıcı/satıcı yorumları ekler.
                         </p>
                         <form asp-action="GenerateDemoReviews" method="post" id="generateDemoReviewsForm" onsubmit="handleGenerateDemoReviewsSubmit(event); return false;">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; background: #D97706; border-color: #D97706;">
-                                ⚡ Otomatik Demo Değerlendirmeler Üret
+                                Otomatik Demo Değerlendirmeler Üret
                             </button>
                         </form>
                     </div>
 
                     <div class="content-card" style="padding: 20px; margin-bottom: 0; background: #F8FAFC;">
                         <h4 style="font-size: 0.88rem; font-weight: 700; color: var(--text-heading); margin-bottom: 8px;">
-                            ℹ️ Değerlendirme Sistemi Nasıl Çalışır?
+                            Değerlendirme Sistemi Nasıl Çalışır?
                         </h4>
                         <ul style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.6; padding-left: 16px;">
-                            <li><strong>Alıcı -> Satıcı:</strong> Tedarikçinin 10★ karnesini ve <code>/Seller/{id}</code> profilindeki rozetleri besler.</li>
+                            <li><strong>Alıcı -> Satıcı:</strong> Tedarikçinin 10 puanlık karnesini ve <code>/Seller/{id}</code> profilindeki rozetleri besler.</li>
                             <li><strong>Satıcı -> Alıcı:</strong> Alıcının güvenilirlik skorunu ve <code>/Account/Profile</code> panelindeki karnesini oluşturur.</li>
                         </ul>
                     </div>
@@ -1830,7 +2047,8 @@
             <div class="content-card">
                 <div class="card-toolbar">
                     <div class="toolbar-title">
-                        ★ Canlı Sistem Değerlendirmeleri Listesi
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #D97706;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        Canlı Sistem Değerlendirmeleri Listesi
                         <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">(@Model.Reviews.Count değerlendirme)</span>
                     </div>
                 </div>
@@ -1843,7 +2061,8 @@
                                 <th>Hedef Firma (Puan Alan)</th>
                                 <th>Değerlendiren</th>
                                 <th>Tür</th>
-                                <th style="text-align: center;">10★ Puan</th>
+                                <th style="text-align: center;">Puan (10)</th>
+                                <th>Kriter Dökümü</th>
                                 <th>Yorum Özeti</th>
                                 <th>Tarih</th>
                                 <th style="text-align: right; width: 140px;">İşlem</th>
@@ -1858,7 +2077,7 @@
                                     <tr id="review-row-@rev.ReviewID">
                                         <td><strong style="color: var(--primary);">#REV-@rev.ReviewID</strong></td>
                                         <td>
-                                            <strong style="color: var(--text-heading);">🏢 @rev.TargetCompanyName</strong>
+                                            <strong style="color: var(--text-heading);">@rev.TargetCompanyName</strong>
                                             @if (rev.CompanyID.HasValue)
                                             {
                                                 <a href="/Seller/@rev.CompanyID.Value" target="_blank" style="font-size: 0.72rem; color: #2563EB; margin-left: 6px; text-decoration: none;">
@@ -1875,16 +2094,32 @@
                                         </td>
                                         <td>
                                             <span class="badge @(isBuyerToSeller ? "badge-both" : "badge-supplier")">
-                                                @(isBuyerToSeller ? "🛒 Alıcı -> Satıcı" : "📦 Satıcı -> Alıcı")
+                                                @(isBuyerToSeller ? "Alıcı -> Satıcı" : "Satıcı -> Alıcı")
                                             </span>
                                         </td>
                                         <td style="text-align: center;">
                                             <span style="font-weight: 800; color: #D97706; background: #FEF3C7; padding: 2px 8px; border-radius: 6px; font-size: 0.84rem;">
-                                                ★ @rev.ReviewScore.ToString("0.0")
+                                                @rev.ReviewScore.ToString("0.0")
                                             </span>
                                         </td>
                                         <td>
-                                            <span style="font-size: 0.8rem; color: var(--text-body); max-width: 260px; display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="@rev.ReviewText">
+                                            <div style="font-size: 0.74rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 2px;">
+                                                @if (isBuyerToSeller)
+                                                {
+                                                    <span>Teslimat: <strong>@(rev.DeliveryScore?.ToString("0.0") ?? "-")</strong></span>
+                                                    <span>Kalite: <strong>@(rev.QualityScore?.ToString("0.0") ?? "-")</strong></span>
+                                                    <span>İletişim: <strong>@(rev.CommunicationScore?.ToString("0.0") ?? "-")</strong></span>
+                                                }
+                                                else
+                                                {
+                                                    <span>Ödeme: <strong>@(rev.PaymentPunctualityScore?.ToString("0.0") ?? rev.DeliveryScore?.ToString("0.0") ?? "-")</strong></span>
+                                                    <span>Mal Kabul: <strong>@(rev.QualityScore?.ToString("0.0") ?? "-")</strong></span>
+                                                    <span>İletişim: <strong>@(rev.CommunicationScore?.ToString("0.0") ?? "-")</strong></span>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span style="font-size: 0.8rem; color: var(--text-body); max-width: 220px; display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="@rev.ReviewText">
                                                 @(string.IsNullOrWhiteSpace(rev.ReviewText) ? "—" : rev.ReviewText)
                                             </span>
                                         </td>
@@ -1910,7 +2145,7 @@
                             else
                             {
                                 <tr>
-                                    <td colspan="8" class="empty-state">
+                                    <td colspan="9" class="empty-state">
                                         Henüz kayıtlı bir değerlendirme bulunmuyor. Yukarıdaki formdan test değerlendirmesi ekleyebilir veya otomatik demo üret butonunu kullanabilirsiniz.
                                     </td>
                                 </tr>
@@ -2129,6 +2364,105 @@
         </div>
     </div>
 
+    <!-- ==================== MODAL: SİPARİŞ & ÇOKLU SEVKİYAT YÖNETİMİ ==================== -->
+    <div id="adminOrderModal" class="modal-backdrop-wrap" aria-hidden="true">
+        <div class="modal-panel" style="max-width: 860px;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);">
+                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                    </svg>
+                    <h3 class="modal-title" id="adminOrderModalTitle">Sipariş &amp; Sevkiyat Yönetimi</h3>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('adminOrderModal')">&times;</button>
+            </div>
+            
+            <div class="modal-body" style="padding: 20px;">
+                <!-- Üst Bilgi Kartı -->
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 0.84rem;">
+                        <div>
+                            <span style="color: var(--text-muted); display: block; font-size: 0.75rem;">Alıcı Firma</span>
+                            <strong id="admOrdBuyerName" style="color: var(--text-heading);">-</strong>
+                            <div id="admOrdBuyerContact" style="font-size: 0.74rem; color: var(--text-muted);">-</div>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-muted); display: block; font-size: 0.75rem;">Sipariş Tarihi &amp; Tutar</span>
+                            <strong id="admOrdGrandTotal" style="color: #16A34A;">-</strong>
+                            <div id="admOrdDate" style="font-size: 0.74rem; color: var(--text-muted);">-</div>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-muted); display: block; font-size: 0.75rem;">Ödeme Durumu</span>
+                            <span id="admOrdPaymentStatus" class="badge badge-root">-</span>
+                            <div id="admOrdPaymentMethod" style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">-</div>
+                        </div>
+                    </div>
+                    <div id="admOrdAddressRow" style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #E2E8F0; font-size: 0.78rem; color: var(--text-body);">
+                        <strong>Teslimat Adresi:</strong> <span id="admOrdAddress">-</span>
+                    </div>
+                </div>
+
+                <!-- Sipariş Genel Durum Güncelleme Formu -->
+                <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px;">
+                    <h4 style="font-size: 0.88rem; font-weight: 700; color: #1E40AF; margin-bottom: 10px;">Genel Sipariş Durumunu Güncelle</h4>
+                    <form id="adminUpdateOrderForm" onsubmit="handleUpdateOrderStatusSubmit(event); return false;">
+                        <input type="hidden" id="admOrdId" name="orderId" />
+                        <div class="form-field-grid" style="grid-template-columns: 1fr 1fr 1fr auto; align-items: flex-end; gap: 10px;">
+                            <div class="form-field" style="margin-bottom: 0;">
+                                <label class="form-label" style="font-size: 0.75rem;">Sipariş Durumu</label>
+                                <select id="admOrdStatusSelect" name="orderStatus" class="form-select" style="padding: 6px 8px; font-size: 0.82rem;">
+                                    <option value="Onaylandı">Onaylandı</option>
+                                    <option value="Hazırlanıyor">Hazırlanıyor</option>
+                                    <option value="Kargoda">Kargoda</option>
+                                    <option value="Teslim Edildi">Teslim Edildi</option>
+                                    <option value="İptal Edildi">İptal Edildi</option>
+                                </select>
+                            </div>
+                            <div class="form-field" style="margin-bottom: 0;">
+                                <label class="form-label" style="font-size: 0.75rem;">Kargo Firması</label>
+                                <input type="text" id="admOrdCarrierInput" name="shippingCarrier" class="form-input" style="padding: 6px 8px; font-size: 0.82rem;" placeholder="Örn: Yurtiçi Kargo" />
+                            </div>
+                            <div class="form-field" style="margin-bottom: 0;">
+                                <label class="form-label" style="font-size: 0.75rem;">Kargo Takip No</label>
+                                <input type="text" id="admOrdTrackingInput" name="trackingNumber" class="form-input" style="padding: 6px 8px; font-size: 0.82rem;" placeholder="Örn: YURT-123456" />
+                            </div>
+                            <button type="submit" class="btn-primary" style="padding: 7px 14px; font-size: 0.82rem; white-space: nowrap;">Kaydet</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Kalem Kalem Sevkiyat Tablosu -->
+                <div>
+                    <h4 style="font-size: 0.88rem; font-weight: 700; color: var(--text-heading); margin-bottom: 8px;">Sipariş Kalemleri &amp; Çoklu Tedarikçi Durumları</h4>
+                    <div style="overflow-x: auto; border: 1px solid #E2E8F0; border-radius: 8px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.80rem;" id="admOrdItemsTable">
+                            <thead>
+                                <tr style="background: #F1F5F9; color: #475569; border-bottom: 1px solid #E2E8F0;">
+                                    <th style="padding: 8px 10px; text-align: left;">Ürün &amp; SKU</th>
+                                    <th style="padding: 8px 10px; text-align: left;">Tedarikçi Firma</th>
+                                    <th style="padding: 8px 10px; text-align: center; width: 70px;">Miktar</th>
+                                    <th style="padding: 8px 10px; text-align: right; width: 85px;">Tutar</th>
+                                    <th style="padding: 8px 10px; text-align: left; width: 110px;">Kalem Durumu</th>
+                                    <th style="padding: 8px 10px; text-align: left; width: 140px;">Kargo / Takip No</th>
+                                    <th style="padding: 8px 10px; text-align: right; width: 70px;">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admOrdItemsTbody">
+                                <tr><td colspan="7" style="padding: 12px; text-align: center; color: var(--text-muted);">Yükleniyor...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeModal('adminOrderModal')">Kapat</button>
+            </div>
+        </div>
+    </div>
+
     <!-- CLIENT JAVASCRIPT -->
     <script>
         function openModal(id) {
@@ -2300,6 +2634,221 @@
             });
         }
 
+        // Anlık Sipariş Arama & Durum Filtresi
+        function filterOrdersTable() {
+            var searchInput = document.getElementById('orderSearchInput');
+            var statusFilter = document.getElementById('orderStatusFilter');
+            var query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+            var statusVal = statusFilter ? statusFilter.value : '';
+
+            var rows = document.querySelectorAll('#ordersTable .order-row');
+            rows.forEach(function(row) {
+                var rowSearch = row.getAttribute('data-search') || '';
+                var rowStatus = row.getAttribute('data-status') || '';
+
+                var matchQuery = !query || rowSearch.indexOf(query) > -1;
+                var matchStatus = !statusVal || rowStatus.indexOf(statusVal) > -1;
+
+                if (matchQuery && matchStatus) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // Sipariş Detayı ve Kalem Sevkiyat Modalını Aç
+        async function openAdminOrderModal(orderId) {
+            try {
+                const modal = document.getElementById('adminOrderModal');
+                const tbody = document.getElementById('admOrdItemsTbody');
+                if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="padding: 14px; text-align: center; color: var(--text-muted);">Sipariş detayları yükleniyor...</td></tr>';
+                openModal('adminOrderModal');
+
+                const response = await fetch('/SuperAdmin/GetOrderDetails/' + orderId);
+                const data = await response.json();
+
+                if (!data.success) {
+                    showAdminToast('Sipariş detayları alınamadı.', 'error');
+                    closeModal('adminOrderModal');
+                    return;
+                }
+
+                document.getElementById('adminOrderModalTitle').textContent = `Sipariş #${data.orderNumber} Yönetimi`;
+                document.getElementById('admOrdId').value = data.orderId;
+                document.getElementById('admOrdBuyerName').textContent = data.buyerCompanyName;
+                document.getElementById('admOrdBuyerContact').textContent = `Yetkili: ${data.buyerOfficial} | Tel: ${data.buyerPhone} | E-posta: ${data.buyerEmail}`;
+                document.getElementById('admOrdGrandTotal').textContent = parseFloat(data.grandTotal).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
+                document.getElementById('admOrdDate').textContent = data.orderDate;
+                document.getElementById('admOrdPaymentStatus').textContent = data.paymentStatus;
+                document.getElementById('admOrdPaymentMethod').textContent = data.paymentMethod;
+                document.getElementById('admOrdAddress').textContent = data.deliveryAddress;
+                document.getElementById('admOrdStatusSelect').value = data.orderStatus;
+                document.getElementById('admOrdCarrierInput').value = data.shippingCarrier !== '-' ? data.shippingCarrier : '';
+                document.getElementById('admOrdTrackingInput').value = data.trackingNumber !== '-' ? data.trackingNumber : '';
+
+                if (data.items && data.items.length > 0) {
+                    let html = '';
+                    data.items.forEach(it => {
+                        const lineTotalFormatted = parseFloat(it.lineTotal).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
+                        const uPriceFormatted = parseFloat(it.unitPrice).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
+
+                        html += `
+                            <tr id="adm-item-row-${it.orderItemId}" style="border-bottom: 1px solid #E2E8F0;">
+                                <td style="padding: 8px 10px;">
+                                    <div style="font-weight: 600; color: var(--text-heading);">${it.productName}</div>
+                                    <div style="font-size: 0.72rem; color: var(--text-muted);">${it.sku} · ${it.categoryName}</div>
+                                </td>
+                                <td style="padding: 8px 10px;">
+                                    <span class="badge badge-both" style="font-size: 0.72rem;">${it.supplierCompanyName}</span>
+                                </td>
+                                <td style="padding: 8px 10px; text-align: center; font-weight: 600;">
+                                    ${it.quantity} ${it.unit}
+                                </td>
+                                <td style="padding: 8px 10px; text-align: right; font-weight: 700; color: var(--text-heading);">
+                                    ${lineTotalFormatted}
+                                </td>
+                                <td style="padding: 6px 10px;">
+                                    <select class="form-select" id="item-status-${it.orderItemId}" style="padding: 4px 6px; font-size: 0.76rem; width: 110px;">
+                                        <option value="Hazırlanıyor" ${it.itemStatus === 'Hazırlanıyor' ? 'selected' : ''}>Hazırlanıyor</option>
+                                        <option value="Kargoda" ${it.itemStatus === 'Kargoda' || it.itemStatus === 'Kargoya Verildi' ? 'selected' : ''}>Kargoda</option>
+                                        <option value="Teslim Edildi" ${it.itemStatus === 'Teslim Edildi' || it.itemStatus === 'Tamamlandı' ? 'selected' : ''}>Teslim Edildi</option>
+                                        <option value="İptal Edildi" ${it.itemStatus === 'İptal Edildi' ? 'selected' : ''}>İptal Edildi</option>
+                                    </select>
+                                </td>
+                                <td style="padding: 6px 10px;">
+                                    <input type="text" class="form-input" id="item-carrier-${it.orderItemId}" placeholder="Kargo Firması" value="${it.shippingCarrier !== '-' ? it.shippingCarrier : ''}" style="padding: 3px 6px; font-size: 0.74rem; margin-bottom: 3px;" />
+                                    <input type="text" class="form-input" id="item-tracking-${it.orderItemId}" placeholder="Takip No" value="${it.trackingNumber !== '-' ? it.trackingNumber : ''}" style="padding: 3px 6px; font-size: 0.74rem;" />
+                                </td>
+                                <td style="padding: 8px 10px; text-align: right;">
+                                    <button type="button" class="btn-compact-add" onclick="handleUpdateOrderItemStatusSubmit(${it.orderItemId}, event)" style="font-size: 0.72rem; padding: 4px 8px;" title="Bu kalemin durumunu kaydet">
+                                        Kaydet
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="7" style="padding: 12px; text-align: center; color: var(--text-muted);">Sipariş kalemi bulunamadı.</td></tr>';
+                }
+
+            } catch (err) {
+                showAdminToast('Bağlantı hatası: ' + err.message, 'error');
+            }
+        }
+
+        // Genel Sipariş Durumu Güncelle AJAX
+        async function handleUpdateOrderStatusSubmit(event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            const form = event.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const origText = submitBtn ? submitBtn.innerHTML : 'Kaydet';
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = 'Kaydediliyor...'; }
+
+            try {
+                const orderId = document.getElementById('admOrdId').value;
+                const orderStatus = document.getElementById('admOrdStatusSelect').value;
+                const shippingCarrier = document.getElementById('admOrdCarrierInput').value;
+                const trackingNumber = document.getElementById('admOrdTrackingInput').value;
+
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                const formData = new FormData();
+                formData.append('orderId', orderId);
+                formData.append('orderStatus', orderStatus);
+                formData.append('shippingCarrier', shippingCarrier);
+                formData.append('trackingNumber', trackingNumber);
+                formData.append('__RequestVerificationToken', token);
+
+                const response = await fetch('/SuperAdmin/UpdateOrderStatus', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showAdminToast(result.message || 'Sipariş durumu güncellendi.', 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    showAdminToast('Hata: ' + (result.message || 'Güncellenemedi.'), 'error');
+                }
+            } catch (err) {
+                showAdminToast('Bağlantı hatası: ' + err.message, 'error');
+            } finally {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = origText; }
+            }
+        }
+
+        // Tekil Sipariş Kalemi Güncelle AJAX
+        async function handleUpdateOrderItemStatusSubmit(orderItemId, event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            const btn = event.target;
+            const origText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '...';
+
+            try {
+                const itemStatus = document.getElementById('item-status-' + orderItemId)?.value || 'Hazırlanıyor';
+                const carrier = document.getElementById('item-carrier-' + orderItemId)?.value || '';
+                const tracking = document.getElementById('item-tracking-' + orderItemId)?.value || '';
+
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                const formData = new FormData();
+                formData.append('orderItemId', orderItemId);
+                formData.append('itemStatus', itemStatus);
+                formData.append('shippingCarrier', carrier);
+                formData.append('trackingNumber', tracking);
+                formData.append('__RequestVerificationToken', token);
+
+                const response = await fetch('/SuperAdmin/UpdateOrderItemStatus', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showAdminToast(result.message || 'Kalem durumu güncellendi.', 'success');
+                } else {
+                    showAdminToast('Hata: ' + (result.message || 'Kalem güncellenemedi.'), 'error');
+                }
+            } catch (err) {
+                showAdminToast('Bağlantı hatası: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            }
+        }
+
+        // Sipariş İptal Et AJAX
+        async function handleCancelOrder(orderId, event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            const reason = prompt('Siparişi iptal etme gerekçesini giriniz: (Opsiyonel)');
+            if (reason === null) return;
+
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                const formData = new FormData();
+                formData.append('orderId', orderId);
+                formData.append('reason', reason);
+                formData.append('__RequestVerificationToken', token);
+
+                const response = await fetch('/SuperAdmin/CancelOrder', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showAdminToast(result.message || 'Sipariş iptal edildi.', 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    showAdminToast('Hata: ' + (result.message || 'Sipariş iptal edilemedi.'), 'error');
+                }
+            } catch (err) {
+                showAdminToast('Bağlantı hatası: ' + err.message, 'error');
+            }
+        }
+
         // Simülasyonda firma seçildiğinde marka alanını otomatik doldur
         function handleSimListingSupplierChange(select) {
             var selectedOpt = select.options[select.selectedIndex];
@@ -2380,7 +2929,7 @@
             const form = event.target;
             const submitBtn = form.querySelector('button[type="submit"]');
             const origText = submitBtn ? submitBtn.innerHTML : 'Kaydet';
-            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Kaydediliyor...'; }
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = 'Kaydediliyor...'; }
 
             try {
                 const formData = new FormData(form);
@@ -2393,7 +2942,7 @@
                 if (result.success) {
                     closeModal('addCategoryModal');
                     form.reset();
-                    showAdminToast('✓ ' + (result.message || 'Kategori eklendi!'), 'success');
+                    showAdminToast(result.message || 'Kategori eklendi.', 'success');
                 } else {
                     showAdminToast('Hata: ' + (result.message || 'Kategori eklenemedi.'), 'error');
                 }
@@ -2410,7 +2959,7 @@
             const form = event.target;
             const submitBtn = form.querySelector('button[type="submit"]');
             const origText = submitBtn ? submitBtn.innerHTML : 'Değişiklikleri Kaydet';
-            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Kaydediliyor...'; }
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = 'Kaydediliyor...'; }
 
             try {
                 const formData = new FormData(form);
@@ -2422,7 +2971,7 @@
                 const result = await response.json();
                 if (result.success) {
                     closeModal('editCategoryModal');
-                    showAdminToast('✓ ' + (result.message || 'Kategori güncellendi!'), 'success');
+                    showAdminToast(result.message || 'Kategori güncellendi.', 'success');
                     const catNode = document.querySelector(`div.cat-tree-node[data-cat-id="${result.categoryId}"]`);
                     if (catNode) {
                         const titleEl = catNode.querySelector('.cat-node-title');
@@ -2456,7 +3005,7 @@
                 });
                 const result = await response.json();
                 if (result.success) {
-                    showAdminToast('✓ ' + (result.message || 'Kategori silindi.'), 'success');
+                    showAdminToast(result.message || 'Kategori silindi.', 'success');
                     const node = document.querySelector(`div.cat-tree-node[data-cat-id="${catId}"]`);
                     if (node) {
                         node.style.transition = 'all 0.3s ease';
@@ -2478,7 +3027,7 @@
             const form = event.target;
             const submitBtn = form.querySelector('button[type="submit"]');
             const origText = submitBtn ? submitBtn.innerHTML : 'Güncelle';
-            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Kaydediliyor...'; }
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = 'Kaydediliyor...'; }
 
             try {
                 const formData = new FormData(form);
@@ -2490,7 +3039,7 @@
                 const result = await response.json();
                 if (result.success) {
                     closeModal('editCompanyModal');
-                    showAdminToast('✓ ' + (result.message || 'Firma güncellendi!'), 'success');
+                    showAdminToast(result.message || 'Firma güncellendi.', 'success');
                     const compId = result.companyId;
                     const nameEl = document.getElementById('comp-name-' + compId);
                     if (nameEl && result.companyName) nameEl.textContent = result.companyName;
@@ -2522,7 +3071,7 @@
                 });
                 const result = await response.json();
                 if (result.success) {
-                    showAdminToast('✓ ' + (result.message || 'Firma silindi.'), 'success');
+                    showAdminToast(result.message || 'Firma silindi.', 'success');
                     const row = document.getElementById('comp-row-' + compId);
                     if (row) {
                         row.style.transition = 'all 0.3s ease';
@@ -2544,7 +3093,7 @@
             const form = event.target;
             const submitBtn = form.querySelector('button[type="submit"]');
             const origText = submitBtn ? submitBtn.innerHTML : 'Şifreyi Kaydet';
-            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Kaydediliyor...'; }
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = 'Kaydediliyor...'; }
 
             try {
                 const formData = new FormData(form);
@@ -2557,7 +3106,7 @@
                 if (result.success) {
                     closeModal('resetPasswordModal');
                     form.reset();
-                    showAdminToast('✓ ' + (result.message || 'Şifre sıfırlandı!'), 'success');
+                    showAdminToast(result.message || 'Şifre sıfırlandı.', 'success');
                 } else {
                     showAdminToast('Hata: ' + (result.message || 'Şifre sıfırlanamadı.'), 'error');
                 }
@@ -2573,8 +3122,8 @@
             if (event) { event.preventDefault(); event.stopPropagation(); }
             const form = event.target;
             const submitBtn = form.querySelector('button[type="submit"]');
-            const origText = submitBtn ? submitBtn.innerHTML : '✓ Seçilen Firma Adına Vitrine İlanı Ekle';
-            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Yayınlanıyor...'; }
+            const origText = submitBtn ? submitBtn.innerHTML : 'Seçilen Firma Adına Vitrine İlanı Ekle';
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = 'Yayınlanıyor...'; }
 
             try {
                 const formData = new FormData(form);
@@ -2588,7 +3137,7 @@
                     form.reset();
                     const previewBox = document.getElementById('simImgPreviewBox');
                     if (previewBox) previewBox.style.display = 'none';
-                    showAdminToast('✓ ' + (result.message || 'Ürün ilanı vitrine eklendi!'), 'success');
+                    showAdminToast(result.message || 'Ürün ilanı vitrine eklendi.', 'success');
                 } else {
                     showAdminToast('Hata: ' + (result.message || 'İlan eklenemedi.'), 'error');
                 }
@@ -2699,7 +3248,7 @@
             }
 
             try {
-                if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 12px; color: #64748B;">⏳ Talep kalemleri yükleniyor...</td></tr>';
+                if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 12px; color: #64748B;">Talep kalemleri yükleniyor...</td></tr>';
                 if (container) container.style.display = 'block';
 
                 const response = await fetch(`/SuperAdmin/GetRequestDetailsForSim?id=${reqId}`, {
@@ -2804,10 +3353,9 @@
             const form = event.target;
             const submitBtn = form.querySelector('button[type="submit"]');
             const origText = submitBtn ? submitBtn.innerHTML : 'Seçilen Firma Adına Talebi Yayınla';
-            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Yayınlanıyor...'; }
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = 'Yayınlanıyor...'; }
 
             try {
-                // Kalemleri topla
                 const items = [];
                 const rows = form.querySelectorAll('#simReqItemsTbody .sim-req-item-row');
                 rows.forEach(r => {
@@ -2851,7 +3399,6 @@
                 const result = await response.json();
                 if (result.success) {
                     form.reset();
-                    // Teklif dropdown'ına yeni talebi dinamik ekle
                     if (result.requestId) {
                         const offerReqSelect = document.getElementById('simOfferReq');
                         if (offerReqSelect) {
@@ -2863,7 +3410,7 @@
                             loadSimOfferRequestItems(result.requestId);
                         }
                     }
-                    showAdminToast('✓ ' + (result.message || 'Talep yayınlandı!'), 'success');
+                    showAdminToast(result.message || 'Talep yayınlandı.', 'success');
                 } else {
                     showAdminToast('Hata: ' + (result.message || 'Talep oluşturulamadı.'), 'error');
                 }
@@ -2880,10 +3427,9 @@
             const form = event.target;
             const submitBtn = form.querySelector('button[type="submit"]');
             const origText = submitBtn ? submitBtn.innerHTML : 'Seçilen Firma Adına Teklif Gönder';
-            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Gönderiliyor...'; }
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = 'Gönderiliyor...'; }
 
             try {
-                // Kalem bazlı teklifleri topla
                 const items = [];
                 const rows = form.querySelectorAll('#simOfferItemsTbody .sim-offer-item-row');
                 rows.forEach(r => {
@@ -2923,7 +3469,7 @@
                     form.reset();
                     const container = document.getElementById('simOfferItemsContainer');
                     if (container) container.style.display = 'none';
-                    showAdminToast('✓ ' + (result.message || 'Teklif başarıyla iletildi!'), 'success');
+                    showAdminToast(result.message || 'Teklif başarıyla iletildi.', 'success');
                 } else {
                     showAdminToast('Hata: ' + (result.message || 'Teklif iletilemedi.'), 'error');
                 }
@@ -2952,7 +3498,7 @@
                 });
                 const result = await response.json();
                 if (result.success) {
-                    showAdminToast('✓ ' + (result.message || 'İlan kaldırıldı.'), 'success');
+                    showAdminToast(result.message || 'İlan kaldırıldı.', 'success');
                     const row = document.getElementById('listing-row-' + itemId);
                     if (row) {
                         row.style.transition = 'all 0.3s ease';
@@ -2975,7 +3521,7 @@
             const form = event.target;
             const submitBtn = form.querySelector('button[type="submit"]');
             const origText = submitBtn ? submitBtn.innerHTML : 'Tabloları Senkronize Et';
-            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Senkronize Ediliyor...'; }
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = 'Senkronize Ediliyor...'; }
 
             try {
                 const token = form.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
@@ -2989,7 +3535,7 @@
                 });
                 const result = await response.json();
                 if (result.success) {
-                    showAdminToast('✓ ' + (result.message || 'Sistem verileri eşitlendi!'), 'success');
+                    showAdminToast(result.message || 'Sistem verileri eşitlendi.', 'success');
                 } else {
                     showAdminToast('Hata: ' + (result.message || 'Senkronizasyon hatası.'), 'error');
                 }
@@ -3004,12 +3550,22 @@
         function handleReviewTypeChange(select) {
             const reviewerNameInput = document.getElementById('simRevReviewerName');
             const commentInput = document.getElementById('simRevText');
+            const lblDelivery = document.getElementById('lblDelivery');
+            const lblQuality = document.getElementById('lblQuality');
+            const lblPayment = document.getElementById('lblPayment');
+
             if (select.value === 'BuyerToSeller') {
                 if (reviewerNameInput) reviewerNameInput.placeholder = 'Örn: Atlas Endüstri A.Ş. (Doğrulanmış Alıcı)';
                 if (commentInput) commentInput.placeholder = 'Örn: Siparişimiz tam zamanında teslim edildi. Ürün malzeme kalitesi ve teknik desteği kusursuz...';
+                if (lblDelivery) lblDelivery.textContent = 'Teslimat / Dakiklik (1-10)';
+                if (lblQuality) lblQuality.textContent = 'Kalite / Şartname (1-10)';
+                if (lblPayment) lblPayment.textContent = 'Ödeme / Destek (1-10)';
             } else {
                 if (reviewerNameInput) reviewerNameInput.placeholder = 'Örn: Mega Lojistik ve Ticaret A.Ş. (Onaylı Tedarikçi)';
                 if (commentInput) commentInput.placeholder = 'Örn: Ödeme vadesinde eksiksiz yapıldı, mal kabul süreci son derece hızlı ve profesyoneldi...';
+                if (lblDelivery) lblDelivery.textContent = 'Süreç Hızı (1-10)';
+                if (lblQuality) lblQuality.textContent = 'Mal Kabul / İletişim (1-10)';
+                if (lblPayment) lblPayment.textContent = 'Ödeme Dakikliği (1-10)';
             }
         }
 
@@ -3029,7 +3585,7 @@
             const form = event.target;
             const submitBtn = form.querySelector('button[type="submit"]');
             const origText = submitBtn ? submitBtn.innerHTML : 'Kaydet';
-            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Kaydediliyor...'; }
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = 'Kaydediliyor...'; }
 
             try {
                 const formData = new FormData(form);
@@ -3040,7 +3596,7 @@
                 });
                 const result = await response.json();
                 if (result.success) {
-                    showAdminToast('✓ ' + (result.message || 'Değerlendirme kaydedildi!'), 'success');
+                    showAdminToast(result.message || 'Değerlendirme kaydedildi.', 'success');
                     setTimeout(() => window.location.reload(), 1000);
                 } else {
                     showAdminToast('Hata: ' + (result.message || 'Değerlendirme kaydedilemedi.'), 'error');
@@ -3071,7 +3627,7 @@
                 });
                 const result = await response.json();
                 if (result.success) {
-                    showAdminToast('✓ ' + (result.message || 'Değerlendirme silindi.'), 'success');
+                    showAdminToast(result.message || 'Değerlendirme silindi.', 'success');
                     const row = document.getElementById('review-row-' + reviewId);
                     if (row) {
                         row.style.transition = 'all 0.3s ease';
@@ -3090,11 +3646,11 @@
         // 15. Demo Değerlendirmeler Üret AJAX
         async function handleGenerateDemoReviewsSubmit(event) {
             if (event) { event.preventDefault(); event.stopPropagation(); }
-            if (!confirm('Sistemdeki tüm kurumsal firmalar için otomatik gerçekçi 10★ demo değerlendirmeler üretilsin mi?')) return;
+            if (!confirm('Sistemdeki tüm kurumsal firmalar için otomatik demo değerlendirmeler üretilsin mi?')) return;
             const form = event.target;
             const submitBtn = form.querySelector('button[type="submit"]');
             const origText = submitBtn ? submitBtn.innerHTML : 'Demo Üret';
-            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Üretiliyor...'; }
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = 'Üretiliyor...'; }
 
             try {
                 const token = form.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
@@ -3108,7 +3664,7 @@
                 });
                 const result = await response.json();
                 if (result.success) {
-                    showAdminToast('✓ ' + (result.message || 'Demo değerlendirmeler üretildi!'), 'success');
+                    showAdminToast(result.message || 'Demo değerlendirmeler üretildi.', 'success');
                     setTimeout(() => window.location.reload(), 1000);
                 } else {
                     showAdminToast('Hata: ' + (result.message || 'Üretim hatası.'), 'error');

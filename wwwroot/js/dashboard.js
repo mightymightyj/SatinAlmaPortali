@@ -935,6 +935,46 @@ function filterRequestTable(status, btn) {
     });
 }
 
+function filterPurchasedTable(status, btn) {
+    if (btn) {
+        var parent = btn.parentElement;
+        if (parent) {
+            parent.querySelectorAll('.tab-pill, .year-pill').forEach(function (p) { p.classList.remove('is-active'); });
+            btn.classList.add('is-active');
+        }
+    }
+
+    var table = document.getElementById('buyerPurchasedProductsTable');
+    if (!table) return;
+
+    var rows = table.querySelectorAll('tbody tr[data-status]');
+    var visibleCount = 0;
+    rows.forEach(function (row) {
+        var rowStatus = row.getAttribute('data-status') || '';
+        if (status === 'all' || status === 'Tümü' || rowStatus === status || 
+            (status === 'Kargoda' && (rowStatus === 'Kargoya Verildi' || rowStatus === 'Kargoda')) ||
+            (status === 'Teslim Edildi' && (rowStatus === 'Teslim Edildi' || rowStatus === 'Tamamlandı'))) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    var emptyRow = document.getElementById('buyerPurchasedEmptySearchRow');
+    if (rows.length > 0 && visibleCount === 0) {
+        if (!emptyRow) {
+            emptyRow = document.createElement('tr');
+            emptyRow.id = 'buyerPurchasedEmptySearchRow';
+            emptyRow.innerHTML = '<td colspan="8" style="text-align: center; padding: 32px 16px; color: #64748b;">Seçilen duruma uygun satın alınan ürün bulunamadı.</td>';
+            table.querySelector('tbody').appendChild(emptyRow);
+        }
+        emptyRow.style.display = '';
+    } else if (emptyRow) {
+        emptyRow.style.display = 'none';
+    }
+}
+
 function filterRfqTable(status, btn) {
     if (btn) {
         var parent = btn.parentElement;
@@ -963,6 +1003,105 @@ function filterRequestsByStatus(status) {
     if (tab) {
         tab.click();
     }
+}
+
+// --- DÖNEM / YIL ASENKRON DEĞİŞTİRME (AJAX) ---
+async function switchDashboardYear(year, event) {
+    if (event) {
+        event.preventDefault();
+    }
+
+    var currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('yil', year);
+
+    // Aktif buton görselini hemen güncelle
+    var nav = (event && event.target) ? event.target.closest('.year-filter') : document.querySelector('.year-filter');
+    if (nav) {
+        nav.querySelectorAll('.year-pill').forEach(function (p) { p.classList.remove('is-active'); });
+        if (event && event.target) {
+            var targetBtn = event.target.classList.contains('year-pill') ? event.target : event.target.closest('.year-pill');
+            if (targetBtn) targetBtn.classList.add('is-active');
+        }
+    }
+
+    var mainContent = document.querySelector('.dash-content') || document.querySelector('main') || document.querySelector('#dashboardMainWrap');
+    if (!mainContent) {
+        window.location.href = currentUrl.toString();
+        return;
+    }
+
+    mainContent.style.opacity = '0.5';
+    mainContent.style.transition = 'opacity 0.2s ease';
+
+    try {
+        var response = await fetch(currentUrl.toString(), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+
+        var htmlText = await response.text();
+        var parser = new DOMParser();
+        var newDoc = parser.parseFromString(htmlText, 'text/html');
+
+        var newContent = newDoc.querySelector('.dash-content') || newDoc.querySelector('main') || newDoc.querySelector('#dashboardMainWrap');
+        if (newContent) {
+            mainContent.innerHTML = newContent.innerHTML;
+            window.history.pushState({ year: year }, '', currentUrl.toString());
+
+            // Tooltipleri ve grafikleri yeniden bağla
+            initDashboardTooltips();
+        } else {
+            window.location.href = currentUrl.toString();
+        }
+    } catch (err) {
+        console.error('Asenkron yıl yükleme hatası:', err);
+        window.location.href = currentUrl.toString();
+    } finally {
+        mainContent.style.opacity = '1';
+    }
+}
+
+function initDashboardTooltips() {
+    var targets = document.querySelectorAll('[data-tip-title]');
+    var tooltip = document.querySelector('.viz-tooltip');
+    if (!tooltip) return;
+
+    targets.forEach(function (element) {
+        element.addEventListener('mouseenter', function (event) {
+            tooltip.textContent = '';
+            var title = document.createElement('div');
+            title.className = 'tip-title';
+            title.textContent = element.getAttribute('data-tip-title') || '';
+            tooltip.appendChild(title);
+
+            var raw = element.getAttribute('data-tip-rows') || '';
+            raw.split('|').forEach(function (entry) {
+                if (!entry) return;
+                var parts = entry.split(';');
+                if (parts.length < 3) return;
+                var row = document.createElement('div');
+                row.className = 'tip-row';
+                var key = document.createElement('span');
+                key.className = 'tip-key';
+                var swatch = document.createElement('span');
+                swatch.className = 'tip-swatch';
+                swatch.style.backgroundColor = parts[0];
+                key.appendChild(swatch);
+                key.appendChild(document.createTextNode(parts[1]));
+                var value = document.createElement('span');
+                value.className = 'tip-value';
+                value.textContent = parts[2];
+                row.appendChild(key);
+                row.appendChild(value);
+                tooltip.appendChild(row);
+            });
+            tooltip.classList.add('is-visible');
+        });
+        element.addEventListener('mouseleave', function () {
+            tooltip.classList.remove('is-visible');
+        });
+    });
 }
 
 // --- BİLDİRİM AÇILIR MENÜSÜ ---

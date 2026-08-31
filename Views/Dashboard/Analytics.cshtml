@@ -29,6 +29,7 @@
             @foreach (var year in Model.AvailableYears) {
                 <a class="year-pill @(year == Model.SelectedYear ? "is-active" : "")"
                    asp-action="Analytics" asp-route-yil="@year"
+                   onclick="switchDashboardYear('@year', event)"
                    aria-current="@(year == Model.SelectedYear ? "page" : null)">@year</a>
             }
         </nav>

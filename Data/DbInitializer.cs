@@ -60,8 +60,15 @@ namespace satinalmaportali2.Data
                             quantity INT NOT NULL,
                             linetotal DECIMAL(18,2) NOT NULL,
                             suppliercompanyname VARCHAR(255),
-                            suppliercompanyid INT
+                            suppliercompanyid INT,
+                            itemstatus VARCHAR(50),
+                            trackingnumber VARCHAR(100),
+                            shippingcarrier VARCHAR(100)
                         );
+
+                        ALTER TABLE orderitems ADD COLUMN IF NOT EXISTS itemstatus VARCHAR(50);
+                        ALTER TABLE orderitems ADD COLUMN IF NOT EXISTS trackingnumber VARCHAR(100);
+                        ALTER TABLE orderitems ADD COLUMN IF NOT EXISTS shippingcarrier VARCHAR(100);
 
                         CREATE TABLE IF NOT EXISTS cartitems (
                             cartitemid SERIAL PRIMARY KEY,

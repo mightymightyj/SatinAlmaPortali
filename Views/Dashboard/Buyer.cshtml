@@ -24,6 +24,7 @@
             @foreach (var year in Model.AvailableYears) {
                 <a class="year-pill @(year == Model.SelectedYear ? "is-active" : "")"
                    asp-action="Buyer" asp-route-yil="@year"
+                   onclick="switchDashboardYear('@year', event)"
                    aria-current="@(year == Model.SelectedYear ? "page" : null)">@year</a>
             }
         </nav>
@@ -325,6 +326,183 @@
         </div>
     </article>
 
+</section>
+
+<!-- ==================== SATIN ALINAN ÜRÜNLER & SİPARİŞ TAKİBİ ==================== -->
+<section class="mt-4" aria-label="Satın Alınan Ürünler">
+    <div class="card">
+        <header class="card-head">
+            <div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <h2 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                        Satın Alınan Ürünler &amp; Siparişlerim
+                    </h2>
+                    @if (Model.PurchasedProducts.Any())
+                    {
+                        <span class="status-badge badge-emerald" style="font-size: 0.76rem; padding: 2px 8px;">
+                            @Model.PurchasedProducts.Count Kalem Ürün
+                        </span>
+                        <span class="status-badge badge-blue" style="font-size: 0.76rem; padding: 2px 8px;">
+                            @Model.TotalPurchasedProductsSpend.ToString("N0", ChartHelper.Tr) ₺ Harcama
+                        </span>
+                    }
+                </div>
+                <p class="card-subhead">B2B Vitrin üzerinden satın aldığınız endüstriyel ürünler ve anlık kargo/sevkiyat durumları</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <a href="/#ihtiyaciniz-olan-urunler" class="btn-table-action" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                    Vitrinden Ürün Al
+                </a>
+                <a asp-controller="Dashboard" asp-action="Orders" class="link-all">
+                    Tüm Siparişleri ve Sevkiyatı Görüntüle →
+                </a>
+            </div>
+        </header>
+
+        @if (Model.PurchasedProducts.Any())
+        {
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                <nav class="year-filter" style="margin: 0;" aria-label="Satın alınan ürün durum filtresi">
+                    <button type="button" class="year-pill is-active" onclick="filterPurchasedTable('Tümü', this)">Tümü (@Model.PurchasedProducts.Count)</button>
+                    <button type="button" class="year-pill" onclick="filterPurchasedTable('Onaylandı', this)">
+                        <span class="status-indicator-dot dot-blue"></span> Onaylandı
+                    </button>
+                    <button type="button" class="year-pill" onclick="filterPurchasedTable('Hazırlanıyor', this)">
+                        <span class="status-indicator-dot dot-amber"></span> Hazırlanıyor
+                    </button>
+                    <button type="button" class="year-pill" onclick="filterPurchasedTable('Kargoda', this)">
+                        <span class="status-indicator-dot dot-amber"></span> Kargoda
+                    </button>
+                    <button type="button" class="year-pill status-pill-in-stock" onclick="filterPurchasedTable('Teslim Edildi', this)">
+                        <span class="status-indicator-dot dot-green"></span> Teslim Edildi
+                    </button>
+                </nav>
+            </div>
+        }
+
+        <div class="table-scroll-wrap">
+            <table class="dash-table" id="buyerPurchasedProductsTable">
+                <thead>
+                    <tr>
+                        <th>Ürün / Malzeme</th>
+                        <th>Tedarikçi Firma</th>
+                        <th>Miktar</th>
+                        <th>Birim Fiyat</th>
+                        <th>Toplam Tutar</th>
+                        <th>Sipariş No &amp; Tarih</th>
+                        <th>Durum &amp; Sevkiyat</th>
+                        <th class="text-right">Aksiyon</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.PurchasedProducts.Any())
+                    {
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 48px 16px; color: var(--muted);">
+                                <div style="margin-bottom: 8px;">
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
+                                        <circle cx="9" cy="21" r="1"></circle>
+                                        <circle cx="20" cy="21" r="1"></circle>
+                                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                                    </svg>
+                                </div>
+                                <h4 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Henüz Satın Alınan Ürün Bulunmuyor</h4>
+                                <p style="font-size: 0.84rem; color: #64748b; max-width: 440px; margin: 0 auto 16px;">
+                                    B2B pazar yerimizdeki onaylı üretici ve distribütör ürünlerini sepetinize ekleyerek doğrudan kurumsal sipariş oluşturabilirsiniz.
+                                </p>
+                                <a href="/#ihtiyaciniz-olan-urunler" class="btn-dark-pill" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
+                                    B2B Ürün Vitrinine Git →
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.PurchasedProducts)
+                        {
+                            var statusBadge = item.OrderStatus switch {
+                                "Onaylandı" => "badge-emerald",
+                                "Hazırlanıyor" => "badge-amber",
+                                "Kargoya Verildi" => "badge-blue",
+                                "Teslim Edildi" => "badge-emerald",
+                                "Tamamlandı" => "badge-emerald",
+                                "İptal Edildi" => "badge-gray",
+                                _ => "badge-blue"
+                            };
+
+                            <tr data-status="@item.OrderStatus">
+                                <td>
+                                    <div class="req-title-cell">
+                                        <strong class="req-name" style="font-size: 0.92rem; color: #0f172a;" title="@item.ProductName">
+                                            @item.ProductName
+                                        </strong>
+                                        <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+                                            <span style="font-size: 0.72rem; color: #64748b; font-family: monospace; background: #f1f5f9; padding: 1px 5px; border-radius: 4px;">
+                                                @(item.Sku ?? $"SKU-{item.ItemID}")
+                                            </span>
+                                            <span class="category-tag" style="font-size: 0.7rem; padding: 1px 6px;">
+                                                @item.CategoryName
+                                            </span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #059669;"></span>
+                                        <strong style="font-size: 0.85rem; color: #334155;">
+                                            @(item.SupplierCompanyName ?? "Onaylı Tedarikçi")
+                                        </strong>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 3px 8px; font-weight: 700; font-size: 0.84rem; color: #0f172a;">
+                                        @item.Quantity.ToString("0.##") @item.Unit
+                                    </span>
+                                </td>
+                                <td>
+                                    <span style="font-size: 0.86rem; color: #64748b;">
+                                        @item.UnitPrice.ToString("N2", ChartHelper.Tr) ₺
+                                    </span>
+                                </td>
+                                <td>
+                                    <strong style="font-size: 0.95rem; font-weight: 850; color: #059669;">
+                                        @item.LineTotal.ToString("N2", ChartHelper.Tr) ₺
+                                    </strong>
+                                </td>
+                                <td>
+                                    <div>
+                                        <a asp-controller="Dashboard" asp-action="Orders" asp-route-search="@item.OrderNumber" style="font-family: monospace; font-size: 0.82rem; font-weight: 700; color: #2563eb; text-decoration: none;">
+                                            @item.OrderNumber
+                                        </a>
+                                        <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 1px;">
+                                            @item.OrderDate.ToString("dd.MM.yyyy HH:mm")
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="status-badge @statusBadge">
+                                        <span class="status-dot"></span>
+                                        @item.OrderStatus
+                                    </span>
+                                    @if (!string.IsNullOrWhiteSpace(item.TrackingNumber))
+                                    {
+                                        <div style="font-size: 0.72rem; color: #64748b; margin-top: 3px;" title="Kargo Takip No">
+                                            <strong>@item.ShippingCarrier:</strong> <code>@item.TrackingNumber</code>
+                                        </div>
+                                    }
+                                </td>
+                                <td class="text-right">
+                                    <a asp-controller="Dashboard" asp-action="Orders" asp-route-search="@item.OrderNumber" class="btn-table-action" style="text-decoration: none;">
+                                        Takip Et →
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 </section>
 
 <!-- ==================== BOŞ DURUM (EMPTY STATE) MODÜLÜ (image_16dfd3 İLE BİREBİR) ==================== -->

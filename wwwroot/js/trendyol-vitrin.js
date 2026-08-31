@@ -776,6 +776,172 @@ async function loadDbVitrinProducts() {
     }
 }
 
+// ==================== B2B KURUMSAL KATEGORİ AĞACI FİLTRELEME MOTORU ====================
+let selectedVitrinCategoryId = 0; // 0 = Tüm Kategoriler
+let selectedVitrinCategoryName = 'Tüm Kategoriler';
+let selectedVitrinCategoryPath = '';
+
+/**
+ * Vitrin Kategori Ağacı Panelini Açar/Kapatır (Açılır/Kapanır Kompakt Tasarım)
+ */
+function toggleVitrinCatTreePanel() {
+    const collapseEl = document.getElementById('vitrinCatTreeCollapse');
+    const barEl = document.getElementById('vitrinCategoryTreeBar');
+    const toggleText = document.getElementById('vitrinToggleText');
+    if (!collapseEl) return;
+
+    if (collapseEl.style.display === 'none' || !collapseEl.style.display) {
+        collapseEl.style.display = 'block';
+        if (barEl) barEl.classList.add('is-expanded');
+        if (toggleText) toggleText.textContent = 'Kategori Ağacını Kapat';
+    } else {
+        collapseEl.style.display = 'none';
+        if (barEl) barEl.classList.remove('is-expanded');
+        if (toggleText) toggleText.textContent = 'Kategori Ağacını Aç';
+    }
+}
+
+/**
+ * Kategori Ağacındaki Bir Dalı Açar/Kapatır
+ */
+function toggleVitrinCatTreeBranch(btn, branchId) {
+    const target = document.getElementById(branchId);
+    if (!target) return;
+    if (target.classList.contains('is-hidden')) {
+        target.classList.remove('is-hidden');
+        btn.classList.remove('is-collapsed');
+    } else {
+        target.classList.add('is-hidden');
+        btn.classList.add('is-collapsed');
+    }
+}
+
+/**
+ * Tüm Kategori Dallarını Genişletir
+ */
+function expandAllVitrinTree() {
+    document.querySelectorAll('#vitrinCategoryTreeList .cat-children-wrap').forEach(el => {
+        el.classList.remove('is-hidden');
+    });
+    document.querySelectorAll('#vitrinCategoryTreeList .cat-toggle-btn').forEach(btn => {
+        btn.classList.remove('is-collapsed');
+    });
+}
+
+/**
+ * Tüm Kategori Dallarını Daraltır
+ */
+function collapseAllVitrinTree() {
+    document.querySelectorAll('#vitrinCategoryTreeList .cat-children-wrap').forEach(el => {
+        el.classList.add('is-hidden');
+    });
+    document.querySelectorAll('#vitrinCategoryTreeList .cat-toggle-btn').forEach(btn => {
+        btn.classList.add('is-collapsed');
+    });
+}
+
+/**
+ * Kategori Ağacında Canlı Arama Yapar
+ */
+function filterVitrinTreeNodes(query) {
+    const q = (query || '').trim().toLowerCase();
+    const nodes = document.querySelectorAll('#vitrinCategoryTreeList .cat-tree-node:not(.is-all-node)');
+
+    if (!q) {
+        nodes.forEach(n => n.style.display = '');
+        return;
+    }
+
+    expandAllVitrinTree();
+
+    nodes.forEach(node => {
+        const catName = node.getAttribute('data-cat-name') || '';
+        const catPath = (node.getAttribute('data-cat-path') || '').toLowerCase();
+        const matchesSelf = catName.includes(q) || catPath.includes(q);
+
+        let hasMatchingChild = false;
+        node.querySelectorAll('.cat-tree-node').forEach(child => {
+            const childName = child.getAttribute('data-cat-name') || '';
+            const childPath = (child.getAttribute('data-cat-path') || '').toLowerCase();
+            if (childName.includes(q) || childPath.includes(q)) {
+                hasMatchingChild = true;
+            }
+        });
+
+        if (matchesSelf || hasMatchingChild) {
+            node.style.display = '';
+        } else {
+            node.style.display = 'none';
+        }
+    });
+}
+
+/**
+ * Belirli bir kategorinin tüm alt kategorilerinin ID listesini döndürür (Recursive Matching)
+ */
+function getDescendantCategoryIds(catId) {
+    const ids = new Set([catId]);
+    if (catId <= 0) return ids;
+
+    const node = document.querySelector(`#vitrinCategoryTreeList .cat-tree-node[data-cat-id="${catId}"]`);
+    if (node) {
+        node.querySelectorAll('.cat-tree-node').forEach(child => {
+            const cid = parseInt(child.getAttribute('data-cat-id'), 10);
+            if (!isNaN(cid) && cid > 0) ids.add(cid);
+        });
+    }
+    return ids;
+}
+
+/**
+ * Kategori Ağacından Bir Kategori Seçildiğinde Çalışır
+ */
+function selectVitrinCategory(catId, catName, catPath) {
+    selectedVitrinCategoryId = parseInt(catId, 10) || 0;
+    selectedVitrinCategoryName = catName || 'Tüm Kategoriler';
+    selectedVitrinCategoryPath = catPath || '';
+
+    // Active Pill & Rozet Güncellemesi
+    const badge = document.getElementById('vitrinActiveCatBadge');
+    const badgeName = document.getElementById('vitrinActiveCatName');
+    const clearBtn = document.getElementById('btnClearVitrinCatFilter');
+    const summaryText = document.getElementById('vitrinCatSummaryText');
+
+    if (badge && badgeName) {
+        if (selectedVitrinCategoryId === 0) {
+            badge.className = 'b2b-active-cat-pill is-all';
+            badgeName.textContent = 'Tüm Kategoriler';
+            if (clearBtn) clearBtn.style.display = 'none';
+            if (summaryText) summaryText.textContent = 'Hiyerarşik kurumsal kategori sistemimizden seçim yaparak ürünleri anlık filtreleyin.';
+        } else {
+            badge.className = 'b2b-active-cat-pill is-selected';
+            badgeName.textContent = catName;
+            if (clearBtn) clearBtn.style.display = 'inline-flex';
+            if (summaryText) summaryText.innerHTML = `Seçili Kategori: <strong>${catName}</strong> ${catPath && catPath !== catName ? `(${catPath})` : ''} ve bağlı alt dallar`;
+        }
+    }
+
+    // Ağaç Satır Vurguları
+    document.querySelectorAll('#vitrinCategoryTreeList .cat-node-row').forEach(row => {
+        row.classList.remove('is-selected');
+    });
+
+    const targetRow = document.getElementById(`vitrinNodeRow-${selectedVitrinCategoryId}`);
+    if (targetRow) {
+        targetRow.classList.add('is-selected');
+    }
+
+    // Vitrini Yeniden Çiz
+    renderCorporateVitrin();
+}
+
+/**
+ * Kategori Filtresini Sıfırlar (Tüm Kategorilere Döner)
+ */
+function clearVitrinCategoryFilter() {
+    selectVitrinCategory(0, 'Tüm Kategoriler', '');
+}
+
 /**
  * 6x8 B2B Ürün Izgarasını Render Et
  */
@@ -784,14 +950,34 @@ function renderCorporateVitrin() {
     const badge = document.getElementById('vitrinProductCount');
     if (!grid) return;
 
+    // Seçili kategoriye ait tüm alt kategorilerin ID seti
+    let validCatIds = null;
+    if (selectedVitrinCategoryId > 0) {
+        validCatIds = getDescendantCategoryIds(selectedVitrinCategoryId);
+    }
+
     // Filtreleme
     let filtered = activeProducts.filter(item => {
-        const matchesCategory = (currentFilter === 'all') || (item.category === currentFilter) || (currentFilter === 'flash' && item.discount >= 18);
+        let matchesCategory = true;
+        if (selectedVitrinCategoryId > 0) {
+            const itemCatId = parseInt(item.categoryId || item.categoryID || 0, 10);
+            const itemCatName = (item.categoryName || '').toLowerCase();
+            const itemCatPath = (item.categoryPath || '').toLowerCase();
+            const targetName = selectedVitrinCategoryName.toLowerCase();
+
+            const idMatch = (itemCatId > 0 && validCatIds && validCatIds.has(itemCatId));
+            const nameMatch = itemCatName.includes(targetName) || itemCatPath.includes(targetName);
+            matchesCategory = idMatch || nameMatch;
+        }
+
         const matchesSearch = !currentSearchQuery || 
             item.title.toLowerCase().includes(currentSearchQuery.toLowerCase()) ||
             item.sku.toLowerCase().includes(currentSearchQuery.toLowerCase()) ||
             item.brand.toLowerCase().includes(currentSearchQuery.toLowerCase()) ||
+            (item.categoryName && item.categoryName.toLowerCase().includes(currentSearchQuery.toLowerCase())) ||
+            (item.categoryPath && item.categoryPath.toLowerCase().includes(currentSearchQuery.toLowerCase())) ||
             item.seller.toLowerCase().includes(currentSearchQuery.toLowerCase());
+
         return matchesCategory && matchesSearch;
     });
 
@@ -807,16 +993,18 @@ function renderCorporateVitrin() {
     }
 
     if (badge) {
-        badge.textContent = `${filtered.length} Kurumsal Ürün Listeleniyor (6x8 Matris)`;
+        badge.textContent = `${filtered.length} Ürün Listeleniyor`;
     }
 
     if (filtered.length === 0) {
         grid.innerHTML = `
-            <div class="b2b-empty-state">
-                <div class="empty-icon">🏢</div>
-                <h3>Aradığınız kriterlere uygun kurumsal ürün bulunamadı</h3>
-                <p>Farklı bir anahtar kelime, SKU kodu veya kategori seçebilirsiniz.</p>
-                <button type="button" class="btn-b2b-refresh" onclick="resetB2BFilters()">
+            <div class="b2b-empty-state" style="grid-column: 1 / -1; text-align: center; padding: 48px 20px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 16px;">
+                <div class="empty-icon" style="font-size: 2.8rem; margin-bottom: 12px;">📁</div>
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin-bottom: 6px;">Seçili kategori veya aramaya uygun kurumsal ürün bulunamadı</h3>
+                <p style="color: #64748b; font-size: 0.85rem; max-width: 420px; margin: 0 auto 16px auto;">
+                    Farklı bir kategori seçebilir veya tüm kurumsal kataloğu görüntülemek için filtreyi temizleyebilirsiniz.
+                </p>
+                <button type="button" class="btn-primary" onclick="resetB2BFilters()" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px;">
                     Tüm Ürünleri Listele
                 </button>
             </div>
@@ -829,7 +1017,7 @@ function renderCorporateVitrin() {
         const isFav = favoriteIds.includes(item.id);
 
         html += `
-            <article class="b2b-product-card" data-id="${item.id}" data-category="${item.category}">
+            <article class="b2b-product-card" data-id="${item.id}" data-category-id="${item.categoryId || 0}" data-category="${item.categoryName || ''}">
                 <!-- Kart Üst Barı: Tedarikçi & Lokasyon -->
                 <div class="b2b-card-supplier-bar" title="Tedarikçi: ${item.seller} (${item.sellerLocation})">
                     <a href="/Seller/${getSellerCompanyId(item)}" target="_blank" class="b2b-verified-badge" title="${item.seller} - 10 Yıldızlı Satıcı Sayfasını İncele" style="text-decoration: none; color: inherit; display: inline-flex; align-items: center;">
@@ -848,7 +1036,7 @@ function renderCorporateVitrin() {
                     <img src="${item.image}" alt="${item.title}" loading="lazy" class="b2b-img" onerror="this.src='https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500&auto=format&fit=crop&q=80'" />
                     
                     <div class="b2b-badges-stack">
-                        ${item.badge ? `<span class="b2b-badge badge-corp">${item.badge}</span>` : ''}
+                        ${item.categoryName ? `<span class="b2b-badge badge-corp" style="background: rgba(15,23,42,0.85); color: #ffffff;">📁 ${item.categoryName}</span>` : ''}
                         ${item.discount >= 18 ? `<span class="b2b-badge badge-disc">%${item.discount} Kurumsal İndirim</span>` : ''}
                     </div>
 
@@ -938,17 +1126,6 @@ function renderCorporateVitrin() {
  * Olay Dinleyicileri (Event Listeners)
  */
 function setupCorporateEvents() {
-    // Filtre Sekmeleri
-    const tabs = document.querySelectorAll('.b2b-tab-chip');
-    tabs.forEach(tab => {
-        tab.addEventListener('click', function () {
-            tabs.forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-            currentFilter = this.getAttribute('data-filter') || 'all';
-            renderCorporateVitrin();
-        });
-    });
-
     // Canlı Arama
     const searchInput = document.getElementById('vitrinSearchInput');
     if (searchInput) {
@@ -985,7 +1162,9 @@ function setupCorporateEvents() {
  * Filtreleri Sıfırla
  */
 function resetB2BFilters() {
-    currentFilter = 'all';
+    selectedVitrinCategoryId = 0;
+    selectedVitrinCategoryName = 'Tüm Kategoriler';
+    selectedVitrinCategoryPath = '';
     currentSearchQuery = '';
     currentSort = 'recommended';
 
@@ -995,13 +1174,7 @@ function resetB2BFilters() {
     const sortSelect = document.getElementById('vitrinSortSelect');
     if (sortSelect) sortSelect.value = 'recommended';
 
-    const tabs = document.querySelectorAll('.b2b-tab-chip');
-    tabs.forEach(t => {
-        if (t.getAttribute('data-filter') === 'all') t.classList.add('active');
-        else t.classList.remove('active');
-    });
-
-    renderCorporateVitrin();
+    selectVitrinCategory(0, 'Tüm Kategoriler', '');
 }
 
 /**
@@ -1041,7 +1214,7 @@ function toggleB2BFavorite(e, id) {
  * Hızlı Ürün & Şartname İnceleme Modalı
  */
 function openProductQuickView(productId) {
-    const product = activeProducts.find(p => p.id === productId);
+    const product = activeProducts.find(p => p.id === productId) || (typeof B2B_PRODUCT_CATALOG !== 'undefined' ? B2B_PRODUCT_CATALOG.find(p => p.id === productId) : null);
     if (!product) return;
 
     const modal = document.getElementById('tyQuickViewModal');
@@ -1097,14 +1270,19 @@ function openProductQuickView(productId) {
         };
     }
 
-    modal.classList.add('show');
+    modal.style.display = 'flex';
+    modal.style.pointerEvents = 'auto';
+    requestAnimationFrame(() => {
+        modal.classList.add('show');
+        modal.classList.add('is-open');
+    });
 }
 
 /**
  * Kurumsal Teklif (RFQ) İsteme Modalı
  */
 function openQuoteModal(productId) {
-    const product = activeProducts.find(p => p.id === productId);
+    const product = activeProducts.find(p => p.id === productId) || (typeof B2B_PRODUCT_CATALOG !== 'undefined' ? B2B_PRODUCT_CATALOG.find(p => p.id === productId) : null);
     if (!product) return;
 
     const modal = document.getElementById('tyQuoteModal');
@@ -1116,14 +1294,19 @@ function openQuoteModal(productId) {
     document.getElementById('quoteModalUnitPrice').textContent = `${formatB2BMoney(product.price)} ${product.taxText || '+ KDV'}`;
     document.getElementById('quoteModalHiddenProductId').value = product.id;
 
-    modal.classList.add('show');
+    modal.style.display = 'flex';
+    modal.style.pointerEvents = 'auto';
+    requestAnimationFrame(() => {
+        modal.classList.add('show');
+        modal.classList.add('is-open');
+    });
 }
 
 /**
  * Tedarikçi Olarak Ürün Satışı Başlatma Modalı
  */
 function openSellerOfferModal(productId) {
-    const product = productId ? activeProducts.find(p => p.id === productId) : null;
+    const product = productId ? (activeProducts.find(p => p.id === productId) || (typeof B2B_PRODUCT_CATALOG !== 'undefined' ? B2B_PRODUCT_CATALOG.find(p => p.id === productId) : null)) : null;
     const modal = document.getElementById('tySellerOfferModal');
     if (!modal) return;
 
@@ -1149,11 +1332,16 @@ function openSellerOfferModal(productId) {
         `;
         if (nameInput) nameInput.value = '';
         if (priceInput) priceInput.value = '';
-        if (stockInput) stockInput.value = '';
+        if (stockInput) stockInput.value = '50';
         clearCatTreeSelection();
     }
 
-    modal.classList.add('show');
+    modal.style.display = 'flex';
+    modal.style.pointerEvents = 'auto';
+    requestAnimationFrame(() => {
+        modal.classList.add('show');
+        modal.classList.add('is-open');
+    });
 }
 
 /**
@@ -1308,7 +1496,9 @@ function closeTyModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
         modal.classList.remove('show');
+        modal.classList.remove('is-open');
         modal.style.display = 'none';
+        modal.style.pointerEvents = 'none';
     }
 }
 
@@ -1848,10 +2038,158 @@ function renderCartDrawer() {
     listContainer.innerHTML = html;
 }
 
+// ==================== B2B KURUMSAL CHECKOUT & GİRDİ DOĞRULAMA MOTORU ====================
+
 /**
- * Kurumsal Checkout modalını açar
+ * TC Kimlik / VKN Giriş Kısıtlaması (Sadece rakam, en fazla 11 hane)
  */
-function openCheckoutModal() {
+function formatTaxNumberInput(input) {
+    if (!input) return;
+    input.value = input.value.replace(/\D/g, '').slice(0, 11);
+    const counter = document.getElementById('checkoutTaxCounter');
+    if (counter) {
+        const len = input.value.length;
+        counter.textContent = `${len}/11 Hane`;
+        if (len === 10 || len === 11) {
+            counter.style.color = '#059669';
+            counter.style.fontWeight = '700';
+        } else {
+            counter.style.color = '#64748b';
+            counter.style.fontWeight = '600';
+        }
+    }
+}
+
+/**
+ * Telefon Numarası Giriş Kısıtlaması (Sadece rakam, en fazla 10 hane, başında 0 varsa temizlenir)
+ */
+function formatPhoneInput(input) {
+    if (!input) return;
+    let val = input.value.replace(/\D/g, '');
+    if (val.startsWith('0')) {
+        val = val.substring(1);
+    }
+    input.value = val.slice(0, 10);
+    const counter = document.getElementById('checkoutPhoneCounter');
+    if (counter) {
+        const len = input.value.length;
+        counter.textContent = `${len}/10 Hane`;
+        if (len === 10) {
+            counter.style.color = '#059669';
+            counter.style.fontWeight = '700';
+        } else {
+            counter.style.color = '#64748b';
+            counter.style.fontWeight = '600';
+        }
+    }
+}
+
+/**
+ * Kart Numarası Formatlama (Sadece rakam, 16 hane, 4x4 boşluklu gruplama)
+ */
+function formatCardNumberInput(input) {
+    if (!input) return;
+    let val = input.value.replace(/\D/g, '').slice(0, 16);
+    let parts = [];
+    for (let i = 0; i < val.length; i += 4) {
+        parts.push(val.substring(i, i + 4));
+    }
+    input.value = parts.join(' ');
+    
+    // Dinamik Kart Rozeti
+    const badge = document.getElementById('cardTypeBadge');
+    if (badge) {
+        if (val.startsWith('4')) {
+            badge.textContent = '💳 VISA';
+            badge.style.background = '#1e40af';
+        } else if (val.startsWith('51') || val.startsWith('52') || val.startsWith('53') || val.startsWith('54') || val.startsWith('55')) {
+            badge.textContent = '💳 MASTERCARD';
+            badge.style.background = '#dc2626';
+        } else if (val.startsWith('9792')) {
+            badge.textContent = '💳 TROY';
+            badge.style.background = '#0284c7';
+        } else {
+            badge.textContent = '💳 KURUMSAL KART';
+            badge.style.background = '#0f172a';
+        }
+    }
+}
+
+/**
+ * Son Kullanma Tarihi Formatlama (AA/YY)
+ */
+function formatExpiryInput(input) {
+    if (!input) return;
+    let val = input.value.replace(/\D/g, '').slice(0, 4);
+    if (val.length >= 2) {
+        let month = parseInt(val.substring(0, 2), 10);
+        if (month > 12) month = 12;
+        if (month === 0) month = 1;
+        let monthStr = month < 10 ? '0' + month : '' + month;
+        input.value = monthStr + '/' + val.substring(2);
+    } else {
+        input.value = val;
+    }
+}
+
+/**
+ * CVV Formatlama (Sadece rakam, 3 hane)
+ */
+function formatCvvInput(input) {
+    if (!input) return;
+    input.value = input.value.replace(/\D/g, '').slice(0, 3);
+}
+
+/**
+ * Kart Sahibi Adı (Sadece harfler ve boşluk)
+ */
+function formatCardHolderInput(input) {
+    if (!input) return;
+    input.value = input.value.replace(/[^a-zA-ZğüşıöçĞÜŞİÖÇ\s]/g, '').toUpperCase();
+}
+
+/**
+ * Ödeme Yöntemi Kartı Seçimi
+ */
+function selectPaymentMethod(method, cardEl) {
+    document.querySelectorAll('.b2b-paymethod-card').forEach(c => c.classList.remove('is-selected'));
+    if (cardEl) {
+        cardEl.classList.add('is-selected');
+        const radio = cardEl.querySelector('input[type="radio"]');
+        if (radio) radio.checked = true;
+    }
+    togglePaymentFields(method);
+}
+
+/**
+ * Sipariş Numarasını Panoya Kopyalar
+ */
+function copyOrderNumber(btn, code) {
+    if (!code) {
+        const el = document.getElementById('successModalOrderNo');
+        code = el ? el.textContent.trim() : '';
+    }
+    if (!code) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(() => {
+            if (btn) {
+                const orig = btn.innerHTML;
+                btn.innerHTML = '✓ Kopyalandı';
+                setTimeout(() => { btn.innerHTML = orig; }, 2000);
+            }
+            showB2BToast('✓ Sipariş numarası panoya kopyalandı.', 'success');
+        }).catch(() => {
+            showB2BToast('Sipariş No: ' + code, 'info');
+        });
+    } else {
+        showB2BToast('Sipariş No: ' + code, 'info');
+    }
+}
+
+/**
+ * Kurumsal Checkout modalını açar ve veritabanındaki profil bilgilerini otomatik doldurur
+ */
+async function openCheckoutModal() {
     const cart = getB2BCart();
     if (cart.length === 0) {
         showB2BToast("⚠️ Sepetinizde satın alınacak ürün bulunmamaktadır.", "danger");
@@ -1868,10 +2206,47 @@ function openCheckoutModal() {
     if (grandTotalEl) grandTotalEl.textContent = formatB2BMoney(totals.grandTotal);
     if (countEl) countEl.textContent = `${totals.uniqueItemCount} Kalem (${totals.totalCount} Adet)`;
 
+    // Veritabanındaki kayıtlı kurumsal profil bilgilerini getirip dolduralım
+    const compInput = document.getElementById('checkoutBuyerCompany');
+    const taxNoInput = document.getElementById('checkoutBuyerTaxNo');
+    const taxOfficeInput = document.getElementById('checkoutBuyerTaxOffice');
+    const cityInput = document.getElementById('checkoutDeliveryCity');
+    const phoneInput = document.getElementById('checkoutReceiverPhone');
+    const addrInput = document.getElementById('checkoutDeliveryAddress');
+
+    if (compInput && (!compInput.value || !cityInput?.value || !addrInput?.value)) {
+        try {
+            const res = await fetch('/Order/GetCheckoutProfile');
+            const data = await res.json();
+            if (data && data.isAuthenticated) {
+                if (compInput && !compInput.value) compInput.value = data.companyName || data.companyOfficial || '';
+                if (taxNoInput && !taxNoInput.value) {
+                    taxNoInput.value = (data.taxNumber || '').replace(/\D/g, '').slice(0, 11);
+                    formatTaxNumberInput(taxNoInput);
+                }
+                if (taxOfficeInput && !taxOfficeInput.value) taxOfficeInput.value = data.taxOffice || '';
+                if (cityInput && !cityInput.value) cityInput.value = data.deliveryCity || '';
+                if (phoneInput && !phoneInput.value) {
+                    let p = (data.phone || '').replace(/\D/g, '');
+                    if (p.startsWith('0')) p = p.substring(1);
+                    phoneInput.value = p.slice(0, 10);
+                    formatPhoneInput(phoneInput);
+                }
+                if (addrInput && !addrInput.value) addrInput.value = data.deliveryAddress || '';
+            }
+        } catch (e) {
+            console.log('Checkout profil getirme hatası:', e);
+        }
+    }
+
+    if (taxNoInput) formatTaxNumberInput(taxNoInput);
+    if (phoneInput) formatPhoneInput(phoneInput);
+
     const modal = document.getElementById('b2bCheckoutModal');
     if (modal) {
         modal.style.display = 'flex';
         modal.classList.add('show');
+        modal.classList.add('is-open');
     }
 }
 
@@ -1882,6 +2257,7 @@ function closeCheckoutModal() {
     const modal = document.getElementById('b2bCheckoutModal');
     if (modal) {
         modal.classList.remove('show');
+        modal.classList.remove('is-open');
         modal.style.display = 'none';
     }
 }
@@ -1892,14 +2268,11 @@ function closeCheckoutModal() {
 function togglePaymentFields(method) {
     const ccFields = document.getElementById('paymentCreditCardFields');
     const bankFields = document.getElementById('paymentBankFields');
+    const checkFields = document.getElementById('paymentCheckFields');
 
-    if (method === 'Kredi Kartı') {
-        if (ccFields) ccFields.style.display = 'block';
-        if (bankFields) bankFields.style.display = 'none';
-    } else {
-        if (ccFields) ccFields.style.display = 'none';
-        if (bankFields) bankFields.style.display = 'block';
-    }
+    if (ccFields) ccFields.style.display = (method === 'Kredi Kartı') ? 'block' : 'none';
+    if (bankFields) bankFields.style.display = (method === 'Havale / EFT') ? 'block' : 'none';
+    if (checkFields) checkFields.style.display = (method === 'Cari Hesap / Vadeli' || method === 'DBS') ? 'block' : 'none';
 }
 
 /**
@@ -1917,17 +2290,78 @@ async function submitCorporateOrder(e) {
         return false;
     }
 
-    const company = document.getElementById('checkoutBuyerCompany')?.value || '';
-    const taxNo = document.getElementById('checkoutBuyerTaxNo')?.value || '';
-    const taxOffice = document.getElementById('checkoutBuyerTaxOffice')?.value || '';
-    const city = document.getElementById('checkoutDeliveryCity')?.value || '';
-    const phone = document.getElementById('checkoutReceiverPhone')?.value || '';
-    const address = document.getElementById('checkoutDeliveryAddress')?.value || '';
+    const company = (document.getElementById('checkoutBuyerCompany')?.value || '').trim();
+    const taxNo = (document.getElementById('checkoutBuyerTaxNo')?.value || '').replace(/\D/g, '');
+    const taxOffice = (document.getElementById('checkoutBuyerTaxOffice')?.value || '').trim();
+    const city = (document.getElementById('checkoutDeliveryCity')?.value || '').trim();
+    const phone = (document.getElementById('checkoutReceiverPhone')?.value || '').replace(/\D/g, '');
+    const address = (document.getElementById('checkoutDeliveryAddress')?.value || '').trim();
     const payMethod = document.querySelector('input[name="checkoutPaymentMethod"]:checked')?.value || 'Kredi Kartı';
 
-    if (!company.trim() || !city.trim() || !address.trim()) {
-        showB2BToast("⚠️ Lütfen zorunlu alanları (Firma Ünvanı, Şehir ve Açık Adres) doldurunuz.", "danger");
+    // 1. Temel Zorunlu Alan Kontrolleri
+    if (!company) {
+        showB2BToast("⚠️ Lütfen 'Satınalma Yapan Firma Ünvanı' alanını doldurunuz.", "danger");
+        document.getElementById('checkoutBuyerCompany')?.focus();
         return false;
+    }
+
+    // 2. TC Kimlik / VKN Kontrolü (10 hane VKN veya 11 hane TC)
+    if (taxNo && taxNo.length !== 10 && taxNo.length !== 11) {
+        showB2BToast("⚠️ Vergi Kimlik Numarası 10 hane veya TC Kimlik Numarası 11 hane olmalıdır.", "danger");
+        document.getElementById('checkoutBuyerTaxNo')?.focus();
+        return false;
+    }
+
+    // 3. Telefon Kontrolü (Başında 0 olmadan 10 hane)
+    if (phone && phone.length !== 10) {
+        showB2BToast("⚠️ Telefon numarası başında 0 olmadan 10 haneli olmalıdır (Örn: 5321234567).", "danger");
+        document.getElementById('checkoutReceiverPhone')?.focus();
+        return false;
+    }
+
+    // 4. Teslimat Şehri ve Adresi
+    if (!city) {
+        showB2BToast("⚠️ Lütfen 'Teslimat İli / İlçe' alanını doldurunuz.", "danger");
+        document.getElementById('checkoutDeliveryCity')?.focus();
+        return false;
+    }
+
+    if (!address) {
+        showB2BToast("⚠️ Lütfen 'Fabrika / Depo Açık Adresi' alanını doldurunuz.", "danger");
+        document.getElementById('checkoutDeliveryAddress')?.focus();
+        return false;
+    }
+
+    // 5. Kredi Kartı Seçilmişse Kart Bilgileri Kontrolü
+    if (payMethod === 'Kredi Kartı') {
+        const cardHolder = (document.getElementById('checkoutCardHolder')?.value || '').trim();
+        const cardNumber = (document.getElementById('checkoutCardNumber')?.value || '').replace(/\D/g, '');
+        const cardExpiry = (document.getElementById('checkoutCardExpiry')?.value || '').trim();
+        const cardCvv = (document.getElementById('checkoutCardCvv')?.value || '').replace(/\D/g, '');
+
+        if (!cardHolder) {
+            showB2BToast("⚠️ Lütfen Kart Üzerindeki İsim alanını doldurunuz.", "danger");
+            document.getElementById('checkoutCardHolder')?.focus();
+            return false;
+        }
+
+        if (cardNumber.length !== 16) {
+            showB2BToast("⚠️ Lütfen 16 haneli kredi kartı numaranızı eksiksiz giriniz.", "danger");
+            document.getElementById('checkoutCardNumber')?.focus();
+            return false;
+        }
+
+        if (cardExpiry.length < 5 || !cardExpiry.includes('/')) {
+            showB2BToast("⚠️ Lütfen Son Kullanma Tarihini (AA/YY) formatında giriniz.", "danger");
+            document.getElementById('checkoutCardExpiry')?.focus();
+            return false;
+        }
+
+        if (cardCvv.length < 3) {
+            showB2BToast("⚠️ Lütfen 3 haneli CVV güvenlik kodunu giriniz.", "danger");
+            document.getElementById('checkoutCardCvv')?.focus();
+            return false;
+        }
     }
 
     const submitBtn = document.getElementById('btnSubmitOrder');
@@ -1939,12 +2373,12 @@ async function submitCorporateOrder(e) {
 
     try {
         const orderPayload = {
-            buyerCompany: company.trim(),
-            buyerTaxNumber: taxNo.trim(),
-            buyerTaxOffice: taxOffice.trim(),
-            deliveryCity: city.trim(),
-            deliveryAddress: address.trim(),
-            receiverPhone: phone.trim(),
+            buyerCompany: company,
+            buyerTaxNumber: taxNo,
+            buyerTaxOffice: taxOffice,
+            deliveryCity: city,
+            deliveryAddress: address,
+            receiverPhone: phone ? ('0' + phone) : '',
             paymentMethod: payMethod,
             items: cart.map(i => ({
                 productID: i.productId,
@@ -1975,16 +2409,49 @@ async function submitCorporateOrder(e) {
             // Başarılı modalını aç
             const successOrderNo = document.getElementById('successModalOrderNo');
             const successTotal = document.getElementById('successModalTotal');
+            const successPayMethod = document.getElementById('successModalPayMethod');
+            const successDate = document.getElementById('successModalDate');
+
             if (successOrderNo) successOrderNo.textContent = result.orderNumber;
             if (successTotal) successTotal.textContent = formatB2BMoney(result.grandTotal);
+            if (successPayMethod) successPayMethod.textContent = payMethod;
+            if (successDate) successDate.textContent = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+            // Satıcı Değerlendirme Butonunu Yapılandır
+            const btnSingle = document.getElementById('btnSuccessReviewSingle');
+            const btnMultiple = document.getElementById('btnSuccessReviewMultiple');
+
+            window.lastSuccessOrderData = {
+                orderId: result.orderId,
+                orderNumber: result.orderNumber,
+                sellerCount: result.sellerCount || 1,
+                singleSellerName: result.singleSellerName || 'Onaylı Tedarikçi',
+                singleSellerCompanyId: result.singleSellerCompanyId || 0,
+                sellers: result.sellers || []
+            };
+
+            if (result.sellerCount === 1) {
+                if (btnSingle) {
+                    btnSingle.style.display = 'flex';
+                    btnSingle.textContent = `★ ${result.singleSellerName || 'Satıcıyı'} Değerlendir`;
+                }
+                if (btnMultiple) btnMultiple.style.display = 'none';
+            } else {
+                if (btnSingle) btnSingle.style.display = 'none';
+                if (btnMultiple) {
+                    btnMultiple.style.display = 'flex';
+                    btnMultiple.textContent = `★ ${result.sellerCount || 'Çoklu'} Satıcıyı Değerlendir (Siparişlerim) →`;
+                }
+            }
 
             const successModal = document.getElementById('b2bOrderSuccessModal');
             if (successModal) {
                 successModal.style.display = 'flex';
                 successModal.classList.add('show');
+                successModal.classList.add('is-open');
             }
 
-            showB2BToast(result.message, "success");
+            showB2BToast(result.message || "✓ Kurumsal siparişiniz başarıyla oluşturuldu.", "success");
         } else {
             showB2BToast("⚠️ " + (result.message || "Sipariş oluşturulamadı."), "danger");
         }
@@ -1999,6 +2466,144 @@ async function submitCorporateOrder(e) {
 
     return false;
 }
+
+/**
+ * Sipariş Başarılı Ekranından 10 Yıldızlı Satıcı Değerlendirme Modalı Yönetimi
+ */
+let currentSuccessScore = 10;
+
+window.openSuccessSellerReviewModal = function() {
+    const data = window.lastSuccessOrderData;
+    if (!data || !data.orderId) return;
+
+    const modal = document.getElementById('orderSuccessRatingModal');
+    if (!modal) return;
+
+    document.getElementById('successRateModalOrderID').value = data.orderId;
+    document.getElementById('successRateModalSupplierCompanyID').value = data.singleSellerCompanyId || '';
+    document.getElementById('successRateModalSupplierName').value = data.singleSellerName || '';
+
+    const title = document.getElementById('successRateModalSellerTitle');
+    if (title) {
+        title.textContent = `★ ${data.singleSellerName || 'Satıcıyı'} Değerlendir`;
+    }
+
+    window.pickSuccessScore(10);
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('opacity', '1', 'important');
+    modal.style.setProperty('pointer-events', 'auto', 'important');
+    modal.classList.add('show');
+};
+
+window.closeSuccessSellerReviewModal = function() {
+    const modal = document.getElementById('orderSuccessRatingModal');
+    if (modal) {
+        modal.style.setProperty('display', 'none', 'important');
+        modal.style.setProperty('opacity', '0', 'important');
+        modal.style.setProperty('pointer-events', 'none', 'important');
+        modal.classList.remove('show');
+    }
+};
+
+window.pickSuccessScore = function(val) {
+    currentSuccessScore = val;
+    const inp = document.getElementById('successRateModalScore');
+    if (inp) inp.value = val;
+    window.updateSuccessStarsDisplay(val);
+};
+
+window.previewSuccessScore = function(val) {
+    window.updateSuccessStarsDisplay(val);
+};
+
+window.restoreSuccessScore = function() {
+    window.updateSuccessStarsDisplay(currentSuccessScore);
+};
+
+window.updateSuccessStarsDisplay = function(val) {
+    const stars = document.querySelectorAll('#successStarPickerWrap .btn-star-pick-success');
+    stars.forEach(btn => {
+        const bVal = parseInt(btn.getAttribute('data-val'));
+        if (bVal <= val) {
+            btn.style.color = '#f59e0b';
+            btn.style.opacity = '1';
+        } else {
+            btn.style.color = '#cbd5e1';
+            btn.style.opacity = '0.7';
+        }
+    });
+
+    const labels = {
+        1: "★ 1.0 / 10 - Çok Zayıf",
+        2: "★ 2.0 / 10 - Yetersiz",
+        3: "★ 3.0 / 10 - Zayıf",
+        4: "★ 4.0 / 10 - Geliştirilmeli",
+        5: "★ 5.0 / 10 - Orta Seviye",
+        6: "★ 6.0 / 10 - Ortalama",
+        7: "★ 7.0 / 10 - Başarılı",
+        8: "★ 8.0 / 10 - İyi",
+        9: "★ 9.0 / 10 - Çok İyi",
+        10: "★ 10.0 / 10 - Mükemmel"
+    };
+    const txt = document.getElementById('successScoreText');
+    if (txt) txt.textContent = labels[val] || `★ ${val} / 10`;
+};
+
+window.submitSuccessSellerReview = async function(e) {
+    e.preventDefault();
+    const orderId = parseInt(document.getElementById('successRateModalOrderID').value);
+    const sellerCompId = parseInt(document.getElementById('successRateModalSupplierCompanyID').value) || null;
+    const sellerName = document.getElementById('successRateModalSupplierName').value || '';
+    const score = parseFloat(document.getElementById('successRateModalScore').value);
+    const delivery = parseFloat(document.getElementById('successRateDelivery').value);
+    const quality = parseFloat(document.getElementById('successRateQuality').value);
+    const comm = parseFloat(document.getElementById('successRateComm').value);
+    const comment = document.getElementById('successRateComment').value;
+
+    const btn = document.getElementById('btnSubmitSuccessReview');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Gönderiliyor...';
+    }
+
+    try {
+        const res = await fetch('/Review/SubmitBuyerReview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                orderID: orderId,
+                targetSupplierCompanyID: sellerCompId,
+                targetSupplierCompanyName: sellerName,
+                reviewScore: score,
+                deliveryScore: delivery,
+                qualityScore: quality,
+                communicationScore: comm,
+                reviewText: comment
+            })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            window.closeSuccessSellerReviewModal();
+            showB2BToast("✓ " + (data.message || "Değerlendirmeniz başarıyla kaydedildi."), "success");
+            const btnSingle = document.getElementById('btnSuccessReviewSingle');
+            if (btnSingle) {
+                btnSingle.textContent = '✓ Satıcı Değerlendirildi';
+                btnSingle.disabled = true;
+                btnSingle.style.opacity = '0.7';
+            }
+        } else {
+            showB2BToast("⚠️ " + (data.message || "Değerlendirme kaydedilemedi."), "danger");
+        }
+    } catch (err) {
+        showB2BToast("⚠️ Bağlantı hatası: " + err.message, "danger");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Değerlendir & Gönder';
+        }
+    }
+};
 
 /**
  * SignalR üzerinden anlık gelen yeni ürünü vitrine ekler
@@ -2020,5 +2625,16 @@ window.addRealtimeProductToVitrin = function(item) {
 window.syncCartFromSignalR = function() {
     initB2BCartSync();
 };
+
+// Global ESC tuşu ve overlay tıklama koruması
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' || e.key === 'Esc') {
+        closeTyModal('tyQuickViewModal');
+        closeTyModal('tyQuoteModal');
+        closeTyModal('tySellerOfferModal');
+        closeCartDrawer();
+        closeCheckoutModal();
+    }
+});
 
 

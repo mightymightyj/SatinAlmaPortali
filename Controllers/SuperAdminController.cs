@@ -126,7 +126,7 @@ namespace satinalmaportali2.Controllers
         [HttpGet]
         [Route("")]
         [Route("Index")]
-        public async Task<IActionResult> Index(string? tab = "overview", string? search = null, int? filterType = null)
+        public async Task<IActionResult> Index(string? tab = "overview", string? search = null, int? filterType = null, string? status = null)
         {
             if (!await CheckIsSuperAdminAsync())
             {
@@ -138,7 +138,8 @@ namespace satinalmaportali2.Controllers
             {
                 ActiveTab = string.IsNullOrWhiteSpace(tab) ? "overview" : tab.ToLowerInvariant(),
                 SearchQuery = search,
-                FilterCompanyType = filterType
+                FilterCompanyType = filterType,
+                FilterOrderStatus = status
             };
 
             try
@@ -291,7 +292,7 @@ namespace satinalmaportali2.Controllers
                     RequestDate = r.RequestDate
                 }).ToList();
 
-                // 7. Değerlendirmeler Listesi & Siparişler (10★ İtibar Karnesi Testi)
+                // 7. Değerlendirmeler Listesi & Siparişler (10★ İtibar Karnesi)
                 var dbReviews = await _context.Reviews
                     .Include(r => r.Order)
                     .Include(r => r.TargetCompany)
@@ -301,6 +302,7 @@ namespace satinalmaportali2.Controllers
                     .ToListAsync();
 
                 var dbOrders = await _context.Orders
+                    .Include(o => o.OrderItems)
                     .AsNoTracking()
                     .OrderByDescending(o => o.OrderID)
                     .ToListAsync();
@@ -317,11 +319,66 @@ namespace satinalmaportali2.Controllers
                     DeliveryScore = r.DeliveryScore,
                     QualityScore = r.QualityScore,
                     CommunicationScore = r.CommunicationScore,
+                    PaymentPunctualityScore = r.DeliveryScore,
                     ReviewText = r.ReviewText,
                     ReviewDate = r.ReviewDate,
                     OrderNumber = r.Order?.OrderNumber,
                     OrderID = r.OrderID,
                     IsVerifiedPurchase = r.IsVerifiedPurchase
+                }).ToList();
+
+                viewModel.Orders = dbOrders.Select(o =>
+                {
+                    var distinctSuppliers = o.OrderItems
+                        .Select(i => i.SupplierCompanyID)
+                        .Where(id => id.HasValue && id.Value > 0)
+                        .Distinct()
+                        .Count();
+
+                    if (distinctSuppliers == 0 && o.SupplierCompanyID.HasValue) distinctSuppliers = 1;
+
+                    return new OrderAdminDto
+                    {
+                        OrderID = o.OrderID,
+                        OrderNumber = o.OrderNumber,
+                        BuyerCompanyID = o.BuyerCompanyID,
+                        BuyerCompanyName = !string.IsNullOrWhiteSpace(o.BuyerCompanyName) ? o.BuyerCompanyName : $"Firma #{o.BuyerCompanyID}",
+                        BuyerOfficial = o.ReceiverName,
+                        BuyerEmail = o.BuyerEmail,
+                        BuyerPhone = o.BuyerPhone ?? o.ReceiverPhone,
+                        SupplierCompanyID = o.SupplierCompanyID,
+                        SupplierCompanyName = !string.IsNullOrWhiteSpace(o.SupplierCompanyName) ? o.SupplierCompanyName : "Çoklu Tedarikçi",
+                        SubTotal = o.TotalAmount,
+                        TaxAmount = o.TaxAmount,
+                        GrandTotal = o.GrandTotal,
+                        PaymentStatus = o.PaymentStatus ?? "Ödendi",
+                        PaymentMethod = o.PaymentMethod,
+                        OrderStatus = o.OrderStatus ?? "Onaylandı",
+                        OrderDate = o.OrderDate,
+                        DeliveryAddress = o.DeliveryAddress ?? (string.IsNullOrWhiteSpace(o.DeliveryCity) ? "-" : o.DeliveryCity),
+                        ShippingCarrier = o.ShippingCarrier,
+                        TrackingNumber = o.TrackingNumber,
+                        Notes = o.Notes,
+                        SupplierCount = distinctSuppliers,
+                        Items = o.OrderItems.Select(i => new OrderItemAdminDto
+                        {
+                            OrderItemID = i.OrderItemID,
+                            OrderID = i.OrderID,
+                            ItemID = i.ItemID,
+                            ProductName = i.ProductName ?? "Ürün",
+                            Sku = i.Sku,
+                            CategoryName = i.CategoryName ?? "Kategori Belirtilmemiş",
+                            UnitPrice = i.UnitPrice,
+                            Quantity = i.Quantity,
+                            Unit = "Adet",
+                            LineTotal = i.LineTotal,
+                            SupplierID = i.SupplierCompanyID,
+                            SupplierCompanyName = i.SupplierCompanyName ?? "Onaylı Tedarikçi",
+                            ItemStatus = i.ItemStatus ?? o.OrderStatus ?? "Hazırlanıyor",
+                            TrackingNumber = i.TrackingNumber ?? o.TrackingNumber,
+                            ShippingCarrier = i.ShippingCarrier ?? o.ShippingCarrier
+                        }).ToList()
+                    };
                 }).ToList();
 
                 viewModel.AvailableOrders = dbOrders.Select(o => new OrderSummaryDto
@@ -335,12 +392,17 @@ namespace satinalmaportali2.Controllers
                     OrderStatus = o.OrderStatus
                 }).ToList();
 
+                viewModel.Stats.TotalOrders = dbOrders.Count;
+                viewModel.Stats.TotalOrderVolume = dbOrders.Sum(o => o.GrandTotal);
+                viewModel.Stats.TotalOrderItemsCount = dbOrders.Sum(o => o.OrderItems.Count);
+                viewModel.Stats.MultiSupplierOrdersCount = viewModel.Orders.Count(o => o.SupplierCount > 1);
+
                 viewModel.Stats.TotalReviews = dbReviews.Count;
                 viewModel.Stats.AveragePlatformScore = dbReviews.Any() ? Math.Round(dbReviews.Average(r => r.ReviewScore ?? 10.0), 1) : 10.0;
                 viewModel.Stats.BuyerToSellerReviewsCount = dbReviews.Count(r => r.ReviewType == "BuyerToSeller");
                 viewModel.Stats.SellerToBuyerReviewsCount = dbReviews.Count(r => r.ReviewType == "SellerToBuyer");
 
-                // Filtreleme (Kategoriler & Firmalar)
+                // Filtreleme (Kategoriler & Firmalar & Siparişler)
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     var q = search.Trim().ToLowerInvariant();
@@ -356,11 +418,26 @@ namespace satinalmaportali2.Controllers
                     {
                         viewModel.Companies = viewModel.Companies.Where(c => c.CompanyName.ToLowerInvariant().Contains(q) || c.CompanyOfficial.ToLowerInvariant().Contains(q) || c.CompanyMail.ToLowerInvariant().Contains(q) || (c.TCNO != null && c.TCNO.Contains(q))).ToList();
                     }
+                    else if (viewModel.ActiveTab == "orders")
+                    {
+                        viewModel.Orders = viewModel.Orders.Where(o => 
+                            o.OrderNumber.ToLowerInvariant().Contains(q) || 
+                            o.BuyerCompanyName.ToLowerInvariant().Contains(q) || 
+                            (o.SupplierCompanyName != null && o.SupplierCompanyName.ToLowerInvariant().Contains(q)) ||
+                            (o.TrackingNumber != null && o.TrackingNumber.ToLowerInvariant().Contains(q)) ||
+                            o.Items.Any(it => it.ProductName.ToLowerInvariant().Contains(q) || (it.SupplierCompanyName != null && it.SupplierCompanyName.ToLowerInvariant().Contains(q)))
+                        ).ToList();
+                    }
                 }
 
                 if (filterType.HasValue && filterType.Value > 0)
                 {
                     viewModel.Companies = viewModel.Companies.Where(c => c.CompanyTypeID == filterType.Value).ToList();
+                }
+
+                if (!string.IsNullOrWhiteSpace(viewModel.FilterOrderStatus) && viewModel.FilterOrderStatus != "all")
+                {
+                    viewModel.Orders = viewModel.Orders.Where(o => o.OrderStatus == viewModel.FilterOrderStatus).ToList();
                 }
             }
             catch (Exception ex)
@@ -1675,7 +1752,7 @@ namespace satinalmaportali2.Controllers
                     ReviewType = input.ReviewType,
                     OrderID = input.OrderID,
                     ReviewScore = input.ReviewScore,
-                    DeliveryScore = input.DeliveryScore ?? input.ReviewScore,
+                    DeliveryScore = input.PaymentPunctualityScore ?? input.DeliveryScore ?? input.ReviewScore,
                     QualityScore = input.QualityScore ?? input.ReviewScore,
                     CommunicationScore = input.CommunicationScore ?? input.ReviewScore,
                     ReviewText = input.ReviewText?.Trim(),
@@ -1686,7 +1763,7 @@ namespace satinalmaportali2.Controllers
                 _context.Reviews.Add(newReview);
                 await _context.SaveChangesAsync();
 
-                var succMsg = $"'{targetComp.CompanyName}' firması için {input.ReviewScore:0.0}★ değerindeki test değerlendirmesi başarıyla kaydedildi! (ID: #{newReview.ReviewID})";
+                var succMsg = $"'{targetComp.CompanyName}' firması için {input.ReviewScore:0.0} puanındaki test değerlendirmesi başarıyla kaydedildi! (ID: #{newReview.ReviewID})";
                 if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, reviewId = newReview.ReviewID });
                 TempData["AdminSuccess"] = succMsg;
             }
@@ -1802,7 +1879,7 @@ namespace satinalmaportali2.Controllers
                         ReviewerCompanyID = reviewer?.CompanyID,
                         ReviewerName = reviewer?.CompanyName ?? "Atlas Endüstri A.Ş. (Onaylı Alıcı)",
                         ReviewType = "BuyerToSeller",
-                        ReviewScore = Math.Round(9.0 + rand.NextDouble(), 1), // 9.0 - 10.0
+                        ReviewScore = Math.Round(9.0 + rand.NextDouble(), 1),
                         DeliveryScore = 10.0,
                         QualityScore = 9.8,
                         CommunicationScore = 10.0,
@@ -1834,7 +1911,7 @@ namespace satinalmaportali2.Controllers
 
                 await _context.SaveChangesAsync();
 
-                var succMsg = $"Sistemdeki {corporateCompanies.Count} firma için toplam {createdCount} adet gerçekçi 10★ demo değerlendirme üretildi!";
+                var succMsg = $"Sistemdeki {corporateCompanies.Count} firma için toplam {createdCount} adet gerçekçi demo değerlendirme üretildi!";
                 if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, count = createdCount });
                 TempData["AdminSuccess"] = succMsg;
             }
@@ -1846,6 +1923,221 @@ namespace satinalmaportali2.Controllers
             }
 
             return RedirectToAction(nameof(Index), new { tab = "reviews" });
+        }
+
+        // =========================================================================
+        // SİPARİŞ & ÇOKLU TEDARİKÇİ SEVKİYAT YÖNETİMİ ACTIONS
+        // =========================================================================
+
+        [HttpGet]
+        [Route("GetOrderDetails/{id}")]
+        public async Task<IActionResult> GetOrderDetails(int id)
+        {
+            if (!await CheckIsSuperAdminAsync()) return Forbid();
+
+            var order = await _context.Orders
+                .Include(o => o.OrderItems)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(o => o.OrderID == id);
+
+            if (order == null) return NotFound(new { success = false, message = "Sipariş bulunamadı." });
+
+            var distinctSuppliers = order.OrderItems
+                .Select(i => i.SupplierCompanyID)
+                .Where(sid => sid.HasValue && sid.Value > 0)
+                .Distinct()
+                .Count();
+            if (distinctSuppliers == 0 && order.SupplierCompanyID.HasValue) distinctSuppliers = 1;
+
+            return Json(new
+            {
+                success = true,
+                orderId = order.OrderID,
+                orderNumber = order.OrderNumber,
+                buyerCompanyId = order.BuyerCompanyID,
+                buyerCompanyName = !string.IsNullOrWhiteSpace(order.BuyerCompanyName) ? order.BuyerCompanyName : $"Firma #{order.BuyerCompanyID}",
+                buyerOfficial = order.ReceiverName ?? "-",
+                buyerEmail = order.BuyerEmail ?? "-",
+                buyerPhone = order.BuyerPhone ?? order.ReceiverPhone ?? "-",
+                supplierCompanyId = order.SupplierCompanyID,
+                supplierCompanyName = !string.IsNullOrWhiteSpace(order.SupplierCompanyName) ? order.SupplierCompanyName : "Çoklu Tedarikçi",
+                subTotal = order.TotalAmount,
+                taxAmount = order.TaxAmount,
+                grandTotal = order.GrandTotal,
+                paymentStatus = order.PaymentStatus ?? "Ödendi",
+                paymentMethod = order.PaymentMethod ?? "B2B Kurumsal Kredi Kartı / Cari Hesap",
+                orderStatus = order.OrderStatus ?? "Onaylandı",
+                orderDate = order.OrderDate.ToString("dd.MM.yyyy HH:mm"),
+                deliveryAddress = order.DeliveryAddress ?? (string.IsNullOrWhiteSpace(order.DeliveryCity) ? "-" : order.DeliveryCity),
+                shippingCarrier = order.ShippingCarrier ?? "-",
+                trackingNumber = order.TrackingNumber ?? "-",
+                notes = order.Notes ?? "",
+                supplierCount = distinctSuppliers,
+                items = order.OrderItems.Select(i => new
+                {
+                    orderItemId = i.OrderItemID,
+                    itemId = i.ItemID,
+                    productName = i.ProductName ?? "Ürün",
+                    sku = i.Sku ?? $"SKU-{i.ItemID}",
+                    categoryName = i.CategoryName ?? "Kategori Belirtilmemiş",
+                    unitPrice = i.UnitPrice,
+                    quantity = i.Quantity,
+                    unit = "Adet",
+                    lineTotal = i.LineTotal,
+                    supplierId = i.SupplierCompanyID,
+                    supplierCompanyName = i.SupplierCompanyName ?? "Onaylı Tedarikçi",
+                    itemStatus = i.ItemStatus ?? order.OrderStatus ?? "Hazırlanıyor",
+                    trackingNumber = i.TrackingNumber ?? order.TrackingNumber ?? "-",
+                    shippingCarrier = i.ShippingCarrier ?? order.ShippingCarrier ?? "-"
+                }).ToList()
+            });
+        }
+
+        [HttpPost]
+        [Route("UpdateOrderStatus")]
+        public async Task<IActionResult> UpdateOrderStatus(int orderId, string orderStatus, string? shippingCarrier, string? trackingNumber)
+        {
+            if (!await CheckIsSuperAdminAsync())
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Yetkisiz işlem." });
+                return Forbid();
+            }
+
+            try
+            {
+                var order = await _context.Orders
+                    .Include(o => o.OrderItems)
+                    .FirstOrDefaultAsync(o => o.OrderID == orderId);
+
+                if (order == null)
+                {
+                    var notFoundMsg = "Sipariş bulunamadı.";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = notFoundMsg });
+                    TempData["AdminError"] = notFoundMsg;
+                    return RedirectToAction(nameof(Index), new { tab = "orders" });
+                }
+
+                order.OrderStatus = orderStatus.Trim();
+                if (!string.IsNullOrWhiteSpace(shippingCarrier)) order.ShippingCarrier = shippingCarrier.Trim();
+                if (!string.IsNullOrWhiteSpace(trackingNumber)) order.TrackingNumber = trackingNumber.Trim();
+
+                foreach (var item in order.OrderItems)
+                {
+                    item.ItemStatus = orderStatus.Trim();
+                    if (!string.IsNullOrWhiteSpace(shippingCarrier)) item.ShippingCarrier = shippingCarrier.Trim();
+                    if (!string.IsNullOrWhiteSpace(trackingNumber)) item.TrackingNumber = trackingNumber.Trim();
+                }
+
+                await _context.SaveChangesAsync();
+
+                var succMsg = $"#{order.OrderNumber} numaralı siparişin durumu '{orderStatus}' olarak güncellendi.";
+                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, orderId = orderId, orderStatus = orderStatus });
+                TempData["AdminSuccess"] = succMsg;
+            }
+            catch (Exception ex)
+            {
+                var errMsg = "Sipariş güncellenirken hata oluştu: " + ex.Message;
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["AdminError"] = errMsg;
+            }
+
+            return RedirectToAction(nameof(Index), new { tab = "orders" });
+        }
+
+        [HttpPost]
+        [Route("UpdateOrderItemStatus")]
+        public async Task<IActionResult> UpdateOrderItemStatus(int orderItemId, string itemStatus, string? shippingCarrier, string? trackingNumber)
+        {
+            if (!await CheckIsSuperAdminAsync())
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Yetkisiz işlem." });
+                return Forbid();
+            }
+
+            try
+            {
+                var item = await _context.OrderItems
+                    .Include(i => i.Order)
+                    .FirstOrDefaultAsync(i => i.OrderItemID == orderItemId);
+
+                if (item == null)
+                {
+                    var notFoundMsg = "Sipariş kalemi bulunamadı.";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = notFoundMsg });
+                    TempData["AdminError"] = notFoundMsg;
+                    return RedirectToAction(nameof(Index), new { tab = "orders" });
+                }
+
+                item.ItemStatus = itemStatus.Trim();
+                if (!string.IsNullOrWhiteSpace(shippingCarrier)) item.ShippingCarrier = shippingCarrier.Trim();
+                if (!string.IsNullOrWhiteSpace(trackingNumber)) item.TrackingNumber = trackingNumber.Trim();
+
+                await _context.SaveChangesAsync();
+
+                var succMsg = $"'{item.ProductName}' ürününün durumu '{itemStatus}' olarak güncellendi.";
+                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, orderItemId = orderItemId, itemStatus = itemStatus });
+                TempData["AdminSuccess"] = succMsg;
+            }
+            catch (Exception ex)
+            {
+                var errMsg = "Sipariş kalemi güncellenirken hata: " + ex.Message;
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["AdminError"] = errMsg;
+            }
+
+            return RedirectToAction(nameof(Index), new { tab = "orders" });
+        }
+
+        [HttpPost]
+        [Route("CancelOrder")]
+        public async Task<IActionResult> CancelOrder(int orderId, string? reason)
+        {
+            if (!await CheckIsSuperAdminAsync())
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Yetkisiz işlem." });
+                return Forbid();
+            }
+
+            try
+            {
+                var order = await _context.Orders
+                    .Include(o => o.OrderItems)
+                    .FirstOrDefaultAsync(o => o.OrderID == orderId);
+
+                if (order == null)
+                {
+                    var notFoundMsg = "İptal edilecek sipariş bulunamadı.";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = notFoundMsg });
+                    TempData["AdminError"] = notFoundMsg;
+                    return RedirectToAction(nameof(Index), new { tab = "orders" });
+                }
+
+                order.OrderStatus = "İptal Edildi";
+                order.PaymentStatus = "İade Edildi";
+                if (!string.IsNullOrWhiteSpace(reason))
+                {
+                    order.Notes = string.IsNullOrWhiteSpace(order.Notes) ? $"[İptal Gerekçesi: {reason.Trim()}]" : $"{order.Notes} [İptal Gerekçesi: {reason.Trim()}]";
+                }
+
+                foreach (var item in order.OrderItems)
+                {
+                    item.ItemStatus = "İptal Edildi";
+                }
+
+                await _context.SaveChangesAsync();
+
+                var succMsg = $"#{order.OrderNumber} numaralı sipariş başarıyla iptal edildi ve ödeme durumu 'İade Edildi' olarak güncellendi.";
+                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, orderId = orderId });
+                TempData["AdminSuccess"] = succMsg;
+            }
+            catch (Exception ex)
+            {
+                var errMsg = "Sipariş iptal edilirken hata oluştu: " + ex.Message;
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["AdminError"] = errMsg;
+            }
+
+            return RedirectToAction(nameof(Index), new { tab = "orders" });
         }
     }
 }

@@ -91,12 +91,12 @@
     </article>
 </section>
 
-<!-- ==================== FİLTRELEME & ARAMA ==================== -->
+<!-- ==================== FİLTRE & ARAMA ALANI ==================== -->
 <div class="card" style="margin-bottom: 20px; padding: 16px 20px;">
-    <form method="get" asp-action="SupplierOrders" id="suppOrdersFilterForm" style="display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between;">
+    <form method="get" asp-action="SupplierOrders" id="suppOrdersFilterForm" onsubmit="event.preventDefault(); applySuppOrdersFilter(); return false;" style="display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between;">
         <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; flex: 1; min-width: 300px;">
             <div style="position: relative; flex: 1; min-width: 240px; max-width: 420px;">
-                <input type="text" name="search" value="@Model.SearchQuery" class="form-control" placeholder="Sipariş No, alıcı firma veya kargo takip ara..." style="padding-left: 36px; height: 40px; font-size: 0.88rem;" />
+                <input type="text" name="search" id="suppSearchInput" value="@Model.SearchQuery" class="form-control" placeholder="Sipariş No, alıcı firma, ürün veya kargo takip no ara..." oninput="onSuppSearchInput(this.value)" style="padding-left: 36px; height: 40px; font-size: 0.88rem;" />
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" style="position: absolute; left: 12px; top: 12px; pointer-events: none;">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -107,30 +107,29 @@
         <nav class="year-filter" aria-label="Tedarikçi sipariş durumu filtresi">
             <input type="hidden" name="status" id="suppSelectedStatusInput" value="@(Model.SelectedStatus ?? "Tümü")" />
             <button type="button" class="year-pill @(string.IsNullOrEmpty(Model.SelectedStatus) || Model.SelectedStatus == "Tümü" ? "is-active" : "")" 
-                    onclick="setSuppStatusFilter('Tümü')">
+                    onclick="setSuppStatusFilter('Tümü', this)">
                 <span>Tümü</span>
-                <span class="status-count-badge">@Model.TotalOrderCount</span>
+                <span class="status-count-badge" id="suppCountAll">@Model.TotalOrderCount</span>
             </button>
             <button type="button" class="year-pill @(Model.SelectedStatus == "Onaylandı" ? "is-active" : "")" 
-                    onclick="setSuppStatusFilter('Onaylandı')">
+                    onclick="setSuppStatusFilter('Onaylandı', this)">
                 <span class="status-indicator-dot dot-blue"></span>
                 <span>Yeni Sipariş</span>
             </button>
             <button type="button" class="year-pill @(Model.SelectedStatus == "Kargoya Verildi" ? "is-active" : "")" 
-                    onclick="setSuppStatusFilter('Kargoya Verildi')">
+                    onclick="setSuppStatusFilter('Kargoya Verildi', this)">
                 <span class="status-indicator-dot dot-amber"></span>
-                <span>🚚 Kargoda</span>
+                <span>Kargoda</span>
             </button>
             <button type="button" class="year-pill status-pill-in-stock @(Model.SelectedStatus == "Teslim Edildi" ? "is-active" : "")" 
-                    onclick="setSuppStatusFilter('Teslim Edildi')">
+                    onclick="setSuppStatusFilter('Teslim Edildi', this)">
                 <span class="status-indicator-dot dot-green"></span>
-                <span>✓ Teslim Edildi</span>
+                <span>Teslim Edildi</span>
             </button>
 
-            @if (!string.IsNullOrWhiteSpace(Model.SearchQuery) || (!string.IsNullOrWhiteSpace(Model.SelectedStatus) && Model.SelectedStatus != "Tümü"))
-            {
-                <a asp-action="SupplierOrders" class="btn-cancel" style="padding: 7px 12px; font-size: 0.82rem; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><span>✕</span> Temizle</a>
-            }
+            <button type="button" id="suppClearFilterBtn" onclick="resetSuppFilters()" class="btn-cancel" style="display: @(!string.IsNullOrWhiteSpace(Model.SearchQuery) || (!string.IsNullOrWhiteSpace(Model.SelectedStatus) && Model.SelectedStatus != "Tümü") ? "inline-flex" : "none"); padding: 7px 12px; font-size: 0.82rem; border-radius: 8px; align-items: center; gap: 4px; cursor: pointer;">
+                Temizle
+            </button>
         </nav>
     </form>
 </div>
@@ -139,7 +138,12 @@
 <article class="card">
     <header class="card-head">
         <div class="head-with-icon">
-            <span class="blue-accent-x">📦</span>
+            <span class="blue-accent-x">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="1" y="3" width="15" height="13"></rect>
+                    <polygon points="16 8 20 8 23 11 23 16 16 16 8"></polygon>
+                </svg>
+            </span>
             <h2>Gelen Müşteri Siparişleri (@Model.Orders.Count)</h2>
         </div>
     </header>
@@ -162,7 +166,12 @@
                 {
                     <tr>
                         <td colspan="7" style="text-align: center; padding: 48px 16px; color: var(--muted);">
-                            <div style="font-size: 2.5rem; margin-bottom: 12px;">📦</div>
+                            <div style="margin-bottom: 12px;">
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
+                                    <rect x="1" y="3" width="15" height="13"></rect>
+                                    <polygon points="16 8 20 8 23 11 23 16 16 16 8"></polygon>
+                                </svg>
+                            </div>
                             <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; color: var(--text);">Henüz gelen bir müşteri siparişi bulunmamaktadır</h3>
                             <p style="font-size: 0.85rem;">Katalogdaki ürünlerinizi vitrinde yayınlayarak kurumsal alıcılardan doğrudan sipariş alabilirsiniz.</p>
                         </td>
@@ -174,16 +183,17 @@
                     {
                         var isShipped = o.OrderStatus == "Kargoya Verildi";
                         var isDelivered = o.OrderStatus == "Teslim Edildi" || o.OrderStatus == "Tamamlandı";
-                        <tr id="supp-order-row-@o.OrderID">
+                        var searchableText = $"{o.OrderNumber} {o.BuyerCompanyName} {o.DeliveryCity} {o.TrackingNumber} {string.Join(" ", o.OrderItems.Select(oi => oi.ProductName))}".ToLowerInvariant();
+                        <tr id="supp-order-row-@o.OrderID" data-status="@o.OrderStatus" data-search="@searchableText">
                             <td>
                                 <div class="req-title-cell">
                                     <strong style="font-size: 0.92rem; color: var(--text);">@o.OrderNumber</strong>
-                                    <small class="req-code">📅 @o.OrderDate.ToString("dd.MM.yyyy HH:mm")</small>
+                                    <small class="req-code">@o.OrderDate.ToString("dd.MM.yyyy HH:mm")</small>
                                 </div>
                             </td>
                             <td>
                                 <strong>@o.BuyerCompanyName</strong>
-                                <div style="font-size: 0.75rem; color: var(--muted);">📍 @o.DeliveryCity</div>
+                                <div style="font-size: 0.75rem; color: var(--muted);">@o.DeliveryCity</div>
                             </td>
                             <td>
                                 <div style="display: flex; flex-direction: column; gap: 2px;">
@@ -219,7 +229,7 @@
                                 @if (!string.IsNullOrWhiteSpace(o.TrackingNumber))
                                 {
                                     <div style="font-size: 0.75rem; margin-top: 4px; color: var(--muted);" id="tracking-order-@o.OrderID">
-                                        📦 <strong>@o.ShippingCarrier:</strong> @o.TrackingNumber
+                                        <strong>@o.ShippingCarrier:</strong> @o.TrackingNumber
                                     </div>
                                 }
                             </td>
@@ -323,11 +333,11 @@
             <!-- Alt Kriterler (10 Üzerinden) -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
                 <div>
-                    <label style="font-size: 0.74rem; font-weight: 700; display: block; margin-bottom: 4px;">💳 Ödeme / Vadeli Süreç (1-10)</label>
+                    <label style="font-size: 0.74rem; font-weight: 700; display: block; margin-bottom: 4px;">Ödeme / Vadeli Süreç (1-10)</label>
                     <input type="number" id="sellerRatePayment" class="form-control" value="10" min="1" max="10" step="0.5" style="font-size: 0.85rem; padding: 6px 10px;" />
                 </div>
                 <div>
-                    <label style="font-size: 0.74rem; font-weight: 700; display: block; margin-bottom: 4px;">🤝 Mal Kabul & İletişim (1-10)</label>
+                    <label style="font-size: 0.74rem; font-weight: 700; display: block; margin-bottom: 4px;">Mal Kabul &amp; İletişim (1-10)</label>
                     <input type="number" id="sellerRateComm" class="form-control" value="10" min="1" max="10" step="0.5" style="font-size: 0.85rem; padding: 6px 10px;" />
                 </div>
             </div>
@@ -432,7 +442,7 @@
                     alert(data.message);
                     const btn = document.getElementById('btn-rate-buyer-' + orderId);
                     if (btn) {
-                        btn.textContent = `✓ Alıcı Değerlendirildi (★ ${score}/10)`;
+                        btn.textContent = `Alıcı Değerlendirildi (★ ${score}/10)`;
                         btn.style.background = '#0f172a';
                         btn.style.boxShadow = 'none';
                     }
@@ -444,9 +454,103 @@
             }
         }
 
-        function setSuppStatusFilter(statusVal) {
-            document.getElementById('suppSelectedStatusInput').value = statusVal;
-            document.getElementById('suppOrdersFilterForm').submit();
+        let currentSuppStatus = '@(Model.SelectedStatus ?? "Tümü")';
+        let searchDebounceTimer = null;
+
+        function setSuppStatusFilter(statusVal, btn) {
+            currentSuppStatus = statusVal;
+            const inputEl = document.getElementById('suppSelectedStatusInput');
+            if (inputEl) inputEl.value = statusVal;
+
+            const nav = btn ? btn.closest('.year-filter') : document.querySelector('.year-filter');
+            if (nav) {
+                nav.querySelectorAll('.year-pill').forEach(p => p.classList.remove('is-active'));
+                if (btn) btn.classList.add('is-active');
+            }
+
+            applySuppOrdersFilter();
+        }
+
+        function onSuppSearchInput(val) {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => {
+                applySuppOrdersFilter();
+            }, 120);
+        }
+
+        function resetSuppFilters() {
+            const sInput = document.getElementById('suppSearchInput');
+            if (sInput) sInput.value = '';
+            const allBtn = document.querySelector('button[onclick*="\'Tümü\'"]');
+            setSuppStatusFilter('Tümü', allBtn);
+        }
+
+        function applySuppOrdersFilter() {
+            const search = (document.getElementById('suppSearchInput')?.value || '').trim().toLowerCase();
+            const status = currentSuppStatus || 'Tümü';
+            const rows = document.querySelectorAll('tr[id^="supp-order-row-"]');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const rowStatus = row.getAttribute('data-status') || '';
+                const rowSearch = row.getAttribute('data-search') || '';
+
+                let matchStatus = false;
+                if (status === 'Tümü' || status === 'all' || !status) {
+                    matchStatus = true;
+                } else if (status === 'Onaylandı') {
+                    matchStatus = (rowStatus === 'Onaylandı' || rowStatus === 'Yeni');
+                } else if (status === 'Kargoya Verildi') {
+                    matchStatus = (rowStatus === 'Kargoya Verildi' || rowStatus === 'Hazırlanıyor');
+                } else if (status === 'Teslim Edildi') {
+                    matchStatus = (rowStatus === 'Teslim Edildi' || rowStatus === 'Tamamlandı');
+                } else {
+                    matchStatus = (rowStatus.toLowerCase() === status.toLowerCase());
+                }
+
+                const matchSearch = (!search || rowSearch.includes(search));
+
+                if (matchStatus && matchSearch) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            const titleHeader = document.querySelector('article.card .head-with-icon h2');
+            if (titleHeader) {
+                titleHeader.textContent = `Gelen Müşteri Siparişleri (${visibleCount})`;
+            }
+
+            const clearBtn = document.getElementById('suppClearFilterBtn');
+            if (clearBtn) {
+                clearBtn.style.display = (search !== '' || (status !== 'Tümü' && status !== '')) ? 'inline-flex' : 'none';
+            }
+
+            let emptySearchRow = document.getElementById('suppOrdersEmptySearchRow');
+            if (rows.length > 0 && visibleCount === 0) {
+                if (!emptySearchRow) {
+                    emptySearchRow = document.createElement('tr');
+                    emptySearchRow.id = 'suppOrdersEmptySearchRow';
+                    emptySearchRow.innerHTML = '<td colspan="7" style="text-align: center; padding: 40px 16px; color: var(--muted);"><strong style="color: var(--text);">Arama veya filtre kriterinize uygun sipariş bulunamadı.</strong><div style="font-size: 0.8rem; margin-top: 4px;">Farklı bir arama kelimesi deneyebilir veya filtreyi temizleyebilirsiniz.</div></td>';
+                    const tbody = document.querySelector('.dash-table tbody');
+                    if (tbody) tbody.appendChild(emptySearchRow);
+                }
+                emptySearchRow.style.display = '';
+            } else if (emptySearchRow) {
+                emptySearchRow.style.display = 'none';
+            }
+
+            // URL state güncellemesi (sayfa yenilenmeden)
+            try {
+                const url = new URL(window.location.href);
+                if (status && status !== 'Tümü') url.searchParams.set('status', status);
+                else url.searchParams.delete('status');
+                if (search) url.searchParams.set('search', search);
+                else url.searchParams.delete('search');
+                window.history.replaceState({}, '', url.toString());
+            } catch (e) {}
         }
 
         function openShipmentModal(id, number, status, tracking, carrier) {
@@ -507,12 +611,12 @@
                             badge.parentElement.parentElement.appendChild(trackingEl);
                         }
                         if (trackingEl) {
-                            trackingEl.innerHTML = '📦 <strong>' + carrier + ':</strong> ' + tracking;
+                            trackingEl.innerHTML = '<strong>' + carrier + ':</strong> ' + tracking;
                         }
                     }
 
                     if (typeof showRealtimeToast === 'function') {
-                        showRealtimeToast('✓ ' + (result.message || 'Sipariş durumu güncellendi!'), 'success');
+                        showRealtimeToast(result.message || 'Sipariş durumu güncellendi!', 'success');
                     }
                 } else {
                     if (typeof showRealtimeToast === 'function') {

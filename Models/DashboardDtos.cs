@@ -140,9 +140,12 @@ namespace satinalmaportali2.Models {
         public BuyerSummaryDto Summary { get; set; } = new();
         public BuyerSpendTrendDto SpendTrend { get; set; } = new();
         public IReadOnlyList<BuyerRequestItemDto> RecentRequests { get; set; } = Array.Empty<BuyerRequestItemDto>();
+        public IReadOnlyList<BuyerPurchasedItemDto> PurchasedProducts { get; set; } = Array.Empty<BuyerPurchasedItemDto>();
+        public int TotalPurchasedProductsCount { get; set; }
+        public decimal TotalPurchasedProductsSpend { get; set; }
         public IReadOnlyList<BuyerBudgetItemDto> BudgetCategories { get; set; } = Array.Empty<BuyerBudgetItemDto>();
         public IReadOnlyList<BuyerSupplierScoreDto> TopSuppliers { get; set; } = Array.Empty<BuyerSupplierScoreDto>();
-        public bool IsEmpty => RecentRequests.Count == 0 && Summary.TotalActiveRequests == 0;
+        public bool IsEmpty => RecentRequests.Count == 0 && PurchasedProducts.Count == 0 && Summary.TotalActiveRequests == 0;
     }
 
     public class BuyerSummaryDto {
@@ -322,5 +325,46 @@ namespace satinalmaportali2.Models {
         public string? SearchQuery { get; set; }
         public string? SelectedStatus { get; set; }
         public string CompanyName { get; set; } = "";
+    }
+
+    /// <summary>
+    /// Alıcı firmanın Dashboard'da listelenen satın aldığı ürün dökümü DTO modeli.
+    /// </summary>
+    public class BuyerPurchasedItemDto
+    {
+        public int? ItemID { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public string? Sku { get; set; }
+        public string? CategoryName { get; set; }
+        public decimal Quantity { get; set; }
+        public string Unit { get; set; } = "Adet";
+        public decimal UnitPrice { get; set; }
+        public decimal LineTotal { get; set; }
+        public string? SupplierCompanyName { get; set; }
+        public int? SupplierCompanyID { get; set; }
+        public int OrderID { get; set; }
+        public string OrderNumber { get; set; } = string.Empty;
+        public DateTime OrderDate { get; set; }
+        public string OrderStatus { get; set; } = "Onaylandı";
+        public string PaymentStatus { get; set; } = "Ödendi";
+        public string? TrackingNumber { get; set; }
+        public string? ShippingCarrier { get; set; }
+    }
+
+    /// <summary>
+    /// Satın alma ve checkout işlemlerinde veritabanından çekilen kurumsal profil bilgileri.
+    /// </summary>
+    public class CheckoutProfileDto
+    {
+        public bool IsAuthenticated { get; set; }
+        public int CompanyID { get; set; }
+        public string CompanyName { get; set; } = string.Empty;
+        public string CompanyOfficial { get; set; } = string.Empty;
+        public string TaxNumber { get; set; } = string.Empty;
+        public string TaxOffice { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string DeliveryCity { get; set; } = string.Empty;
+        public string DeliveryAddress { get; set; } = string.Empty;
     }
 }

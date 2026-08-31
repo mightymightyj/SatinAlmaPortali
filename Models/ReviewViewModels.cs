@@ -11,6 +11,16 @@ namespace satinalmaportali2.Models
         public int OrderID { get; set; }
 
         /// <summary>
+        /// Değerlendirilen hedef satıcı firma ID'si (Çoklu satıcılı siparişlerde satıcı bazlı ayrım için)
+        /// </summary>
+        public int? TargetSupplierCompanyID { get; set; }
+
+        /// <summary>
+        /// Değerlendirilen hedef satıcı firma ünvanı
+        /// </summary>
+        public string? TargetSupplierCompanyName { get; set; }
+
+        /// <summary>
         /// 1.0 ile 10.0 arasında genel yıldız puanı
         /// </summary>
         public double ReviewScore { get; set; }

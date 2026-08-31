@@ -36,5 +36,11 @@ namespace satinalmaportali2.Models
 
         public string? SupplierCompanyName { get; set; }
         public int? SupplierCompanyID { get; set; }
+
+        [MaxLength(50)]
+        public string? ItemStatus { get; set; } // Onaylandı, Hazırlanıyor, Kargoya Verildi, Teslim Edildi, İptal
+
+        public string? TrackingNumber { get; set; }
+        public string? ShippingCarrier { get; set; }
     }
 }

@@ -13,11 +13,13 @@ namespace satinalmaportali2.Models
         public List<RequestSummaryDto> OpenRequests { get; set; } = new();
         public List<ItemSummaryDto> RecentListings { get; set; } = new();
         public List<ReviewAdminDto> Reviews { get; set; } = new();
+        public List<OrderAdminDto> Orders { get; set; } = new();
         public List<OrderSummaryDto> AvailableOrders { get; set; } = new();
 
-        public string ActiveTab { get; set; } = "overview"; // overview, categories, companies, reviews, simulation, settings
+        public string ActiveTab { get; set; } = "overview"; // overview, categories, companies, orders, reviews, simulation, settings
         public string? SearchQuery { get; set; }
         public int? FilterCompanyType { get; set; }
+        public string? FilterOrderStatus { get; set; }
     }
 
     public class SuperAdminStatsDto
@@ -40,6 +42,11 @@ namespace satinalmaportali2.Models
 
         public int TotalListings { get; set; }
         public decimal TotalListingValue { get; set; }
+
+        public int TotalOrders { get; set; }
+        public decimal TotalOrderVolume { get; set; }
+        public int TotalOrderItemsCount { get; set; }
+        public int MultiSupplierOrdersCount { get; set; }
 
         public int TotalReviews { get; set; }
         public double AveragePlatformScore { get; set; } = 10.0;
@@ -240,6 +247,7 @@ namespace satinalmaportali2.Models
         public double? DeliveryScore { get; set; }
         public double? QualityScore { get; set; }
         public double? CommunicationScore { get; set; }
+        public double? PaymentPunctualityScore { get; set; }
         public string? ReviewText { get; set; }
         public DateTime ReviewDate { get; set; }
         public string? OrderNumber { get; set; }
@@ -256,6 +264,54 @@ namespace satinalmaportali2.Models
         public decimal GrandTotal { get; set; }
         public DateTime OrderDate { get; set; }
         public string OrderStatus { get; set; } = string.Empty;
+    }
+
+    public class OrderAdminDto
+    {
+        public int OrderID { get; set; }
+        public string OrderNumber { get; set; } = string.Empty;
+        public int? BuyerCompanyID { get; set; }
+        public string BuyerCompanyName { get; set; } = string.Empty;
+        public string? BuyerOfficial { get; set; }
+        public string? BuyerEmail { get; set; }
+        public string? BuyerPhone { get; set; }
+        public int? SupplierCompanyID { get; set; }
+        public string? SupplierCompanyName { get; set; }
+        public decimal SubTotal { get; set; }
+        public decimal TaxAmount { get; set; }
+        public decimal GrandTotal { get; set; }
+        public string PaymentStatus { get; set; } = "Ödendi";
+        public string? PaymentMethod { get; set; }
+        public string OrderStatus { get; set; } = "Onaylandı";
+        public DateTime OrderDate { get; set; }
+        public string? DeliveryAddress { get; set; }
+        public string? ShippingCarrier { get; set; }
+        public string? TrackingNumber { get; set; }
+        public string? Notes { get; set; }
+        public List<OrderItemAdminDto> Items { get; set; } = new();
+        public int SupplierCount { get; set; }
+        public int TotalItemCount => Items.Count;
+    }
+
+    public class OrderItemAdminDto
+    {
+        public int OrderItemID { get; set; }
+        public int OrderID { get; set; }
+        public int? ItemID { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public string? Sku { get; set; }
+        public string? CategoryName { get; set; }
+        public decimal UnitPrice { get; set; }
+        public decimal Quantity { get; set; }
+        public string Unit { get; set; } = "Adet";
+        public decimal LineTotal { get; set; }
+        public int? SupplierID { get; set; }
+        public string? SupplierCompanyName { get; set; }
+        public string ItemStatus { get; set; } = "Hazırlanıyor";
+        public string? TrackingNumber { get; set; }
+        public string? ShippingCarrier { get; set; }
+        public DateTime? ShippedDate { get; set; }
+        public DateTime? DeliveredDate { get; set; }
     }
 
     public class SimulateReviewInputModel
@@ -277,6 +333,7 @@ namespace satinalmaportali2.Models
         public double? DeliveryScore { get; set; } = 10.0;
         public double? QualityScore { get; set; } = 10.0;
         public double? CommunicationScore { get; set; } = 10.0;
+        public double? PaymentPunctualityScore { get; set; } = 10.0;
 
         public string? ReviewText { get; set; }
         public bool IsVerifiedPurchase { get; set; } = true;

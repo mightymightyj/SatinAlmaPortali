@@ -66,6 +66,27 @@
                 <span>Genel Bakış</span>
             </a>
 
+            <a class="side-link @(currentController == "Dashboard" && currentAction == "Orders" ? "is-active" : "")" 
+               asp-controller="Dashboard" asp-action="Orders">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+                <span>Siparişlerim &amp; Satın Alınanlar</span>
+            </a>
+
+            <a class="side-link @(currentController == "Dashboard" && currentAction == "SupplierOrders" ? "is-active" : "")" 
+               asp-controller="Dashboard" asp-action="SupplierOrders">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <rect x="1" y="3" width="15" height="13"></rect>
+                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                    <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                    <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                </svg>
+                <span>Gelen Siparişler &amp; Sevkiyat</span>
+            </a>
+
             <a class="side-link @(currentController == "Requests" ? "is-active" : "")" 
                asp-controller="Requests" asp-action="Index">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -73,7 +94,7 @@
                     <polyline points="14 2 14 8 20 8"></polyline>
                     <line x1="9" y1="15" x2="15" y2="15"></line>
                 </svg>
-                <span>Talepler & İhaleler</span>
+                <span>Talepler &amp; İhaleler</span>
             </a>
 
             <a class="side-link @(currentController == "Dashboard" && currentAction == "Listings" ? "is-active" : "")" 
@@ -102,7 +123,7 @@
                     <circle cx="12" cy="12" r="3"></circle>
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                 </svg>
-                <span>Hesabım & Ayarlar</span>
+                <span>Hesabım &amp; Ayarlar</span>
             </a>
         </nav>
 
@@ -157,7 +178,7 @@
                     <span class="top-avatar" aria-hidden="true">@avatarInitials</span>
                     <span class="top-profile-text">
                         <strong>@activeCompany</strong>
-                        <small>@activeUser (@userType) ⚙️</small>
+                        <small>@activeUser (@userType)</small>
                     </span>
                 </a>
             </div>
@@ -219,14 +240,14 @@
                         <div class="items-builder-header">
                             <div>
                                 <div class="items-builder-title">
-                                    <span>📋 Talep Edilen Malzeme ve Hizmet Kalemleri (İstenilenler Listesi)</span>
+                                    <span>Talep Edilen Malzeme ve Hizmet Kalemleri (İstenilenler Listesi)</span>
                                 </div>
                                 <!-- Hızlı Şablonlar -->
                                 <div class="quick-templates-bar">
                                     <span style="font-size: 0.72rem; color: #64748B;">Örnek Yükle:</span>
-                                    <button type="button" class="btn-quick-tpl" onclick="loadDashSampleTemplate('elektrik')">⚡ Elektrik & Otomasyon</button>
-                                    <button type="button" class="btn-quick-tpl" onclick="loadDashSampleTemplate('ofis')">📦 Ofis & Sarf Malzeme</button>
-                                    <button type="button" class="btn-quick-tpl" onclick="loadDashSampleTemplate('hirdavat')">🔧 Hırdavat & Mekanik</button>
+                                    <button type="button" class="btn-quick-tpl" onclick="loadDashSampleTemplate('elektrik')">Elektrik & Otomasyon</button>
+                                    <button type="button" class="btn-quick-tpl" onclick="loadDashSampleTemplate('ofis')">Ofis & Sarf Malzeme</button>
+                                    <button type="button" class="btn-quick-tpl" onclick="loadDashSampleTemplate('hirdavat')">Hırdavat & Mekanik</button>
                                 </div>
                             </div>
                             <div style="display: flex; align-items: center; gap: 6px;">
@@ -264,15 +285,15 @@
                         <!-- Kalemler Özet Çubuğu -->
                         <div class="items-summary-strip">
                             <div class="items-summary-metric">
-                                <span>📦 Toplam Kalem:</span>
+                                <span>Toplam Kalem:</span>
                                 <strong id="dashSummaryTotalItems">0 Kalem</strong>
                             </div>
                             <div class="items-summary-metric">
-                                <span>📊 Toplam Miktar:</span>
+                                <span>Toplam Miktar:</span>
                                 <strong id="dashSummaryTotalQty">0 Adet</strong>
                             </div>
                             <div class="items-summary-metric">
-                                <span>💰 Otomatik Hesaplanmış Tahmini Bütçe:</span>
+                                <span>Otomatik Hesaplanmış Tahmini Bütçe:</span>
                                 <strong id="dashSummaryTotalBudget" style="color: #059669; font-size: 0.95rem;">0,00 ₺</strong>
                             </div>
                         </div>
@@ -376,7 +397,7 @@
                     <div class="bid-items-grid-container" style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px;">
                         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
                             <span style="font-size: 0.88rem; font-weight: 700; color: #0F172A; display: flex; align-items: center; gap: 6px;">
-                                📋 Talep Edilen Malzemeler & Kalem Birim Fiyat Teklifiniz (<span id="bidItemsCountBadge">0 Kalem</span>)
+                                Talep Edilen Malzemeler & Kalem Birim Fiyat Teklifiniz (<span id="bidItemsCountBadge">0 Kalem</span>)
                             </span>
                             <span style="font-size: 0.76rem; color: #64748B;">Her kalem için birim fiyat giriniz, toplam tutar otomatik hesaplanacaktır</span>
                         </div>

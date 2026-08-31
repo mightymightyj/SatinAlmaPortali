@@ -611,10 +611,29 @@ namespace satinalmaportali2.Controllers {
                     .Take(50)
                     .ToList();
 
-                var catIds = items.Where(i => i.CategoryID.HasValue).Select(i => i.CategoryID!.Value).Distinct().ToList();
-                var catMap = await _context.Category
-                    .Where(c => catIds.Contains(c.CategoryID))
-                    .ToDictionaryAsync(c => c.CategoryID, c => c.CategoryName ?? "Genel");
+                var allDbCategories = await _context.Category.AsNoTracking().ToListAsync();
+                var catDict = allDbCategories.ToDictionary(c => c.CategoryID, c => c);
+
+                string GetBreadcrumbPath(int? cId)
+                {
+                    if (!cId.HasValue || !catDict.TryGetValue(cId.Value, out var current)) return "Endüstriyel Ürünler";
+                    var parts = new List<string>();
+                    var visited = new HashSet<int>();
+                    var curr = current;
+                    while (curr != null && visited.Add(curr.CategoryID))
+                    {
+                        parts.Insert(0, curr.CategoryName ?? ("Kategori #" + curr.CategoryID));
+                        if (curr.ParentCategoryID.HasValue && curr.ParentCategoryID.Value > 0 && catDict.TryGetValue(curr.ParentCategoryID.Value, out var p))
+                        {
+                            curr = p;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    return string.Join(" > ", parts);
+                }
 
                 var allCompanies = await _context.Companies
                     .AsNoTracking()
@@ -623,7 +642,8 @@ namespace satinalmaportali2.Controllers {
 
                 var list = items.Select(it =>
                 {
-                    string catName = it.CategoryID.HasValue && catMap.TryGetValue(it.CategoryID.Value, out var cN) ? cN : "Endüstriyel Ürünler";
+                    string catName = it.CategoryID.HasValue && catDict.TryGetValue(it.CategoryID.Value, out var cN) ? (cN.CategoryName ?? "Endüstriyel Ürünler") : "Endüstriyel Ürünler";
+                    string catPath = it.CategoryID.HasValue ? GetBreadcrumbPath(it.CategoryID.Value) : catName;
                     decimal price = (decimal)(it.ItemPrice ?? 0);
 
                     int sellerCompId = 1;
@@ -662,10 +682,12 @@ namespace satinalmaportali2.Controllers {
                         sellerScore = 9.8,
                         sellerBadge = "Onaylı Tedarikçi",
                         sellerLocation = "Türkiye",
+                        categoryId = it.CategoryID ?? 0,
+                        categoryName = catName,
+                        categoryPath = catPath,
                         category = catName.ToLowerInvariant().Contains("metal") ? "metal" : 
                                    catName.ToLowerInvariant().Contains("it") || catName.ToLowerInvariant().Contains("bilişim") ? "it" :
                                    catName.ToLowerInvariant().Contains("kimya") ? "chemical" : "hardware",
-                        categoryName = catName,
                         price = price,
                         oldPrice = Math.Round(price * 1.15m, 0),
                         discount = 15,

@@ -183,6 +183,14 @@ namespace satinalmaportali2.Controllers
         public async Task<IActionResult> Listings(string? search, string? category, string? status, CancellationToken cancellationToken)
         {
             ViewData["Title"] = "Ürün İlanlarım & Vitrin Kataloğu";
+            if (string.IsNullOrWhiteSpace(status))
+            {
+                status = "Tümü";
+            }
+            if (string.IsNullOrWhiteSpace(category))
+            {
+                category = "Tümü";
+            }
             int companyId = GetCurrentCompanyId();
             string currentCompanyName = await GetCurrentCompanyNameAsync();
             string userType = GetCurrentUserType();
@@ -252,30 +260,9 @@ namespace satinalmaportali2.Controllers
                 };
             }).ToList();
 
-            // Filtrelemeler
-            var filtered = listingDtos.AsEnumerable();
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                var s = search.Trim().ToLowerInvariant();
-                filtered = filtered.Where(x => x.ItemName.ToLowerInvariant().Contains(s) || x.Sku.ToLowerInvariant().Contains(s) || x.CategoryName.ToLowerInvariant().Contains(s) || (x.Description != null && x.Description.ToLowerInvariant().Contains(s)));
-            }
-
-            if (!string.IsNullOrWhiteSpace(category) && category != "Tümü")
-            {
-                filtered = filtered.Where(x => x.CategoryName.Equals(category, StringComparison.OrdinalIgnoreCase));
-            }
-
-            if (!string.IsNullOrWhiteSpace(status) && status != "Tümü")
-            {
-                filtered = filtered.Where(x => x.Status.Equals(status, StringComparison.OrdinalIgnoreCase));
-            }
-
-            var resultList = filtered.ToList();
-
             var vm = new SupplierListingsViewModel
             {
-                Listings = resultList,
+                Listings = listingDtos,
                 TotalCount = listingDtos.Count,
                 TotalCatalogValue = listingDtos.Sum(x => x.UnitPrice * x.Stock),
                 ActiveCount = listingDtos.Count(x => x.Status == "Stokta"),
@@ -555,10 +542,32 @@ namespace satinalmaportali2.Controllers
 
             try
             {
-                var order = await _context.Orders.FirstOrDefaultAsync(o => o.OrderID == input.OrderID);
+                var order = await _context.Orders
+                    .Include(o => o.OrderItems)
+                    .FirstOrDefaultAsync(o => o.OrderID == input.OrderID);
+
                 if (order == null)
                 {
                     return Json(new { success = false, message = "Sipariş veritabanında bulunamadı." });
+                }
+
+                int currentCompanyId = GetCurrentCompanyId();
+                string currentCompanyName = await GetCurrentCompanyNameAsync();
+
+                if (order.OrderItems != null && order.OrderItems.Any())
+                {
+                    foreach (var oi in order.OrderItems)
+                    {
+                        bool isMyItem = (currentCompanyId > 0 && oi.SupplierCompanyID == currentCompanyId) ||
+                                        (!string.IsNullOrWhiteSpace(currentCompanyName) && oi.SupplierCompanyName != null && string.Equals(oi.SupplierCompanyName.Trim(), currentCompanyName.Trim(), StringComparison.OrdinalIgnoreCase));
+
+                        if (isMyItem || currentCompanyId <= 0 || order.SupplierCompanyID == currentCompanyId)
+                        {
+                            if (!string.IsNullOrWhiteSpace(input.OrderStatus)) oi.ItemStatus = input.OrderStatus.Trim();
+                            if (!string.IsNullOrWhiteSpace(input.TrackingNumber)) oi.TrackingNumber = input.TrackingNumber.Trim();
+                            if (!string.IsNullOrWhiteSpace(input.ShippingCarrier)) oi.ShippingCarrier = input.ShippingCarrier.Trim();
+                        }
+                    }
                 }
 
                 if (!string.IsNullOrWhiteSpace(input.OrderStatus))

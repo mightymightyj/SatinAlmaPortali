@@ -5763,7 +5763,9 @@ html, body {
 .b2b-corporate-showcase {
     padding: 10px 28px 60px 28px;
     max-width: 1560px;
+    width: 100%;
     margin: 0 auto;
+    box-sizing: border-box;
 }
 
 /* 1. Kurumsal Güven & Standartlar Barı */
@@ -6091,6 +6093,10 @@ html, body {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 14px;
+    width: 100%;
+    min-height: 280px;
+    align-content: start;
+    box-sizing: border-box;
 }
 
 /* Responsive Grid Kırılımları */
@@ -6583,17 +6589,20 @@ html, body {
     bottom: 0;
     background: rgba(15, 23, 42, 0.7);
     backdrop-filter: blur(5px);
-    display: flex;
+    -webkit-backdrop-filter: blur(5px);
+    display: none;
     align-items: center;
     justify-content: center;
-    z-index: 9999;
+    z-index: 99999;
     padding: 20px;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.25s ease;
+    transition: opacity 0.2s ease;
 }
 
-.ty-modal-overlay.show {
+.ty-modal-overlay.show,
+.ty-modal-overlay.is-open {
+    display: flex;
     opacity: 1;
     pointer-events: auto;
 }
@@ -7254,4 +7263,900 @@ html, body {
 .custom-modal-backdrop.is-open .custom-modal-dialog {
     transform: translateY(0);
 }
+
+/* ==================== B2B KURUMSAL CHECKOUT & SİPARİŞ MODALI PREMIUM STYLES ==================== */
+.b2b-checkout-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 99999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.b2b-checkout-overlay.show,
+.b2b-checkout-overlay.is-open {
+    display: flex;
+    opacity: 1;
+}
+
+.b2b-checkout-dialog {
+    background: #ffffff;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 660px;
+    max-height: 92vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.4), 0 0 0 1px rgba(226, 232, 240, 0.8);
+    display: flex;
+    flex-direction: column;
+    transform: scale(0.96) translateY(12px);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.b2b-checkout-overlay.show .b2b-checkout-dialog,
+.b2b-checkout-overlay.is-open .b2b-checkout-dialog {
+    transform: scale(1) translateY(0);
+}
+
+.b2b-checkout-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+}
+
+.b2b-checkout-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.70rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+    padding: 3px 9px;
+    border-radius: 6px;
+}
+
+.b2b-checkout-title {
+    font-size: 1.35rem;
+    font-weight: 850;
+    color: #0f172a;
+    margin: 6px 0 2px 0;
+    letter-spacing: -0.02em;
+}
+
+.b2b-checkout-subtitle {
+    font-size: 0.82rem;
+    color: #64748b;
+    margin: 0;
+}
+
+.b2b-checkout-close-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #64748b;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.b2b-checkout-close-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+
+.b2b-checkout-body {
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.b2b-checkout-step {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.b2b-checkout-step:focus-within {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);
+}
+
+.b2b-step-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.b2b-step-title {
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.b2b-step-num-badge {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: #0f172a;
+    color: #ffffff;
+    font-size: 0.74rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.b2b-input-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 5px;
+}
+
+.b2b-input-helper-badge {
+    font-size: 0.70rem;
+    font-weight: 600;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+.b2b-custom-input {
+    width: 100%;
+    height: 40px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.86rem;
+    color: #0f172a;
+    background: #ffffff;
+    transition: all 0.15s ease;
+}
+
+.b2b-custom-input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.b2b-phone-input-wrap {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #ffffff;
+    transition: all 0.15s ease;
+}
+
+.b2b-phone-input-wrap:focus-within {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.b2b-phone-flag-prefix {
+    background: #f8fafc;
+    border-right: 1px solid #cbd5e1;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #475569;
+    user-select: none;
+}
+
+.b2b-phone-input-field {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #0f172a;
+    letter-spacing: 0.04em;
+}
+
+/* Ödeme Yöntemi Kartları */
+.b2b-paymethods-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.b2b-paymethod-card {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 11px 13px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    background: #ffffff;
+    transition: all 0.18s ease;
+    user-select: none;
+    position: relative;
+}
+
+.b2b-paymethod-card:hover {
+    border-color: #93c5fd;
+    background: #f8fafc;
+}
+
+.b2b-paymethod-card.is-selected {
+    border-color: #2563eb;
+    background: #eff6ff;
+    box-shadow: 0 0 0 1px #2563eb;
+}
+
+.b2b-paymethod-card input[type="radio"] {
+    accent-color: #2563eb;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.b2b-paymethod-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.b2b-paymethod-title {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.b2b-paymethod-desc {
+    font-size: 0.70rem;
+    color: #64748b;
+}
+
+/* Kredi Kartı Kutusu */
+.b2b-card-box {
+    background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 14px;
+    margin-top: 10px;
+}
+
+.b2b-card-visual-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.b2b-card-type-badge {
+    font-size: 0.74rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #0f172a;
+    color: #ffffff;
+    letter-spacing: 0.05em;
+}
+
+/* Sipariş Tutar & Güvenlik Özeti */
+.b2b-checkout-summary-box {
+    background: #0f172a;
+    color: #ffffff;
+    border-radius: 14px;
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.25);
+}
+
+.b2b-checkout-summary-amount {
+    font-size: 1.45rem;
+    font-weight: 900;
+    color: #38bdf8;
+    letter-spacing: -0.02em;
+}
+
+/* Aksiyon Butonları */
+.b2b-checkout-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 4px;
+}
+
+.b2b-btn-cancel-checkout {
+    flex: 1;
+    height: 46px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    font-size: 0.90rem;
+    font-weight: 700;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.b2b-btn-cancel-checkout:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.b2b-btn-confirm-checkout {
+    flex: 2;
+    height: 46px;
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    border: none;
+    border-radius: 10px;
+    font-size: 0.94rem;
+    font-weight: 800;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    transition: all 0.18s ease;
+}
+
+.b2b-btn-confirm-checkout:hover:not(:disabled) {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+}
+
+.b2b-btn-confirm-checkout:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* ==================== SİPARİŞ BAŞARILI / ALINDI MODALI PREMIUM STYLES ==================== */
+.b2b-success-dialog {
+    background: #ffffff;
+    border-radius: 24px;
+    width: 100%;
+    max-width: 520px;
+    padding: 32px 28px;
+    text-align: center;
+    box-shadow: 0 25px 60px -10px rgba(15, 23, 42, 0.45);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform: scale(0.96) translateY(12px);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.b2b-checkout-overlay.show .b2b-success-dialog,
+.b2b-checkout-overlay.is-open .b2b-success-dialog {
+    transform: scale(1) translateY(0);
+}
+
+.b2b-success-icon-badge {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+    margin-bottom: 16px;
+    animation: successPulse 2s infinite ease-in-out;
+}
+
+@@keyframes successPulse {
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+    70% { box-shadow: 0 0 0 16px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.b2b-success-title {
+    font-size: 1.45rem;
+    font-weight: 850;
+    color: #0f172a;
+    margin: 4px 0 6px 0;
+    letter-spacing: -0.02em;
+}
+
+.b2b-success-desc {
+    font-size: 0.86rem;
+    color: #64748b;
+    max-width: 400px;
+    margin: 0 auto 20px auto;
+    line-height: 1.45;
+}
+
+.b2b-success-details-card {
+    width: 100%;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 24px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.b2b-success-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: #475569;
+}
+
+.b2b-order-code-badge {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-weight: 800;
+    color: #0284c7;
+    background: #e0f2fe;
+    border: 1px solid #bae6fd;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.84rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.b2b-success-actions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+}
+
+.b2b-btn-success-primary {
+    height: 44px;
+    background: #0f172a;
+    color: #ffffff !important;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 750;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+}
+
+.b2b-btn-success-primary:hover {
+    background: #1e293b;
+    transform: translateY(-1px);
+}
+
+.b2b-btn-success-secondary {
+    height: 44px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #334155 !important;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.b2b-btn-success-secondary:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+    color: #0f172a !important;
+}
+
+/* ==================== B2B VİTRİN AÇILIR/KAPANIR KATEGORİ AĞACI STYLES ==================== */
+.b2b-vitrin-cat-bar {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.b2b-vitrin-cat-bar:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.07);
+}
+
+.b2b-cat-toggle-header {
+    padding: 14px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    background: #ffffff;
+    user-select: none;
+    transition: background 0.15s ease;
+    width: 100%;
+    box-sizing: border-box;
+    gap: 12px;
+}
+
+.b2b-cat-toggle-header:hover {
+    background: #f8fafc;
+}
+
+.b2b-cat-toggle-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.b2b-cat-icon-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: #0f172a;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.b2b-cat-toggle-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.96rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.b2b-active-cat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.76rem;
+    font-weight: 750;
+    transition: all 0.15s ease;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.b2b-active-cat-pill.is-all {
+    background: #f0fdf4;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.b2b-active-cat-pill.is-selected {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #93c5fd;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.15);
+}
+
+.b2b-cat-toggle-subtitle {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.b2b-cat-toggle-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.b2b-btn-clear-cat-filter {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+}
+
+.b2b-btn-clear-cat-filter:hover {
+    background: #fecaca;
+    color: #991b1b;
+}
+
+.b2b-btn-toggle-tree {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 750;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.b2b-btn-toggle-tree:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.b2b-chevron-icon {
+    transition: transform 0.25s ease;
+}
+
+.b2b-vitrin-cat-bar.is-expanded .b2b-chevron-icon {
+    transform: rotate(180deg);
+}
+
+/* Kategori Ağacı Açılır Gövdesi */
+.b2b-vitrin-tree-collapse {
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+    padding: 16px 18px 20px;
+    animation: fadeInSlideDown 0.2s ease-out;
+}
+
+@@keyframes fadeInSlideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.b2b-vitrin-tree-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.b2b-tree-toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.b2b-tree-search-wrap {
+    position: relative;
+    flex: 1;
+    max-width: 480px;
+}
+
+.b2b-tree-search-wrap svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.b2b-tree-search-wrap input {
+    width: 100%;
+    height: 38px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 6px 36px 6px 36px;
+    font-size: 0.84rem;
+    color: #0f172a;
+    transition: all 0.15s ease;
+}
+
+.b2b-tree-search-wrap input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.b2b-tree-search-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 4px;
+}
+
+.b2b-tree-search-clear:hover {
+    color: #0f172a;
+}
+
+.b2b-tree-action-btns {
+    display: flex;
+    gap: 6px;
+}
+
+.b2b-tree-tool-btn {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    padding: 6px 11px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.b2b-tree-tool-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #94a3b8;
+}
+
+.b2b-tree-scrollbox {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px;
+    max-height: 380px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.b2b-tree-scrollbox .cat-tree-node {
+    margin: 2px 0;
+}
+
+.b2b-tree-scrollbox .cat-node-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 7px 12px;
+    border-radius: 8px;
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.b2b-tree-scrollbox .cat-node-row:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateX(2px);
+}
+
+.b2b-tree-scrollbox .cat-node-row.is-selected {
+    background: #eff6ff !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.b2b-tree-scrollbox .cat-node-row.is-selected .cat-node-title {
+    color: #1d4ed8;
+    font-weight: 800;
+}
+
+.b2b-tree-scrollbox .cat-node-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.b2b-tree-scrollbox .cat-node-title {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.b2b-tree-scrollbox .cat-tree-bullet {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    width: 20px;
+    text-align: center;
+    display: inline-block;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.b2b-tree-scrollbox .cat-toggle-btn {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.b2b-tree-scrollbox .cat-toggle-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.b2b-tree-scrollbox .cat-toggle-btn.is-collapsed .toggle-icon {
+    transform: rotate(-90deg);
+}
+
+.b2b-tree-scrollbox .cat-children-wrap.is-hidden {
+    display: none;
+}
+
+
 

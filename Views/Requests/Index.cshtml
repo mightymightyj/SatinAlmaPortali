@@ -1558,59 +1558,65 @@
 </section>
 
 <!-- ============ NAVİGASYON SEKME BUTONLARI ============ -->
-<nav class="req-nav-tabs" aria-label="Talep sekmeleri">
-    <a class="req-tab-btn @(Model.ActiveTab == "all" ? "is-active" : "")"
-       asp-action="Index" asp-route-tab="all" asp-route-search="@Model.SearchQuery" asp-route-status="@Model.SelectedStatus">
+<nav class="req-nav-tabs" aria-label="Talep sekmeleri" id="requestsNavTabs">
+    <button type="button" class="req-tab-btn is-active"
+       data-tab="all"
+       onclick="window.RequestsManager.setTab('all', this)">
         <span>🌐 Pazardaki Tüm Talepler (İhaleler)</span>
         <span class="req-tab-count" id="allRequestsTabCount">@Model.AllRequestsCount</span>
-    </a>
+    </button>
 
-    <a class="req-tab-btn @(Model.ActiveTab == "my-requests" ? "is-active" : "")"
-       asp-action="Index" asp-route-tab="my-requests" asp-route-search="@Model.SearchQuery" asp-route-status="@Model.SelectedStatus">
+    <button type="button" class="req-tab-btn"
+       data-tab="my-requests"
+       onclick="window.RequestsManager.setTab('my-requests', this)">
         <span>📋 Oluşturduğum Talepler</span>
         <span class="req-tab-count" id="myRequestsTabCount">@Model.MyRequestsCount</span>
-    </a>
+    </button>
 
-    <a class="req-tab-btn @(Model.ActiveTab == "incoming-offers" ? "is-active" : "")"
-       asp-action="Index" asp-route-tab="incoming-offers" asp-route-search="@Model.SearchQuery">
+    <button type="button" class="req-tab-btn"
+       data-tab="incoming-offers"
+       onclick="window.RequestsManager.setTab('incoming-offers', this)">
         <span>📬 Teklif Gelen Taleplerim</span>
         <span class="req-tab-count" id="incomingOffersTabCount">@Model.IncomingOffersCount</span>
-    </a>
+    </button>
 
-    <a class="req-tab-btn @(Model.ActiveTab == "my-bids" ? "is-active" : "")"
-       asp-action="Index" asp-route-tab="my-bids" asp-route-search="@Model.SearchQuery">
+    <button type="button" class="req-tab-btn"
+       data-tab="my-bids"
+       onclick="window.RequestsManager.setTab('my-bids', this)">
         <span>💼 Verdiğim Teklifler</span>
         <span class="req-tab-count" id="myBidsTabCount">@Model.MyBidsCount</span>
-    </a>
+    </button>
 </nav>
 
 <!-- ============ FİLTRE VE ARAMA KARTI ============ -->
 <div class="requests-filter-card">
-    <form asp-action="Index" method="get" class="req-search-form">
-        <input type="hidden" name="tab" value="@Model.ActiveTab" />
+    <form asp-action="Index" method="get" class="req-search-form" id="requestsFilterForm" onsubmit="event.preventDefault(); window.RequestsManager.apply(); return false;">
         <div class="req-search-wrap">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input type="text" name="search" value="@Model.SearchQuery" placeholder="Ürün adı, talep tipi, şartname veya alıcı ara..." class="req-search-input" />
+            <input type="text" name="search" id="reqSearchInput" placeholder="Ürün adı, talep tipi, şartname veya alıcı ara..." class="req-search-input" oninput="window.RequestsManager.onSearch(this.value)" />
         </div>
-        @if (!string.IsNullOrEmpty(Model.SelectedStatus))
-        {
-            <input type="hidden" name="status" value="@Model.SelectedStatus" />
-        }
         <button type="submit" class="req-btn-filter-submit">Filtrele</button>
+        <button type="button" id="reqClearFilterBtn" onclick="window.RequestsManager.reset()" class="btn-cancel" style="display: none; padding: 7px 12px; font-size: 0.82rem; border-radius: 8px; align-items: center; gap: 4px; cursor: pointer;" title="Filtreleri Temizle">
+            <span>✕</span> Temizle
+        </button>
     </form>
 
-    <nav class="year-filter" aria-label="Talep durum filtresi">
-        <a class="year-pill @(string.IsNullOrEmpty(Model.SelectedStatus) || Model.SelectedStatus == "Tümü" ? "is-active" : "")"
-           asp-action="Index" asp-route-tab="@Model.ActiveTab" asp-route-search="@Model.SearchQuery">Tümü</a>
-        <a class="year-pill @(Model.SelectedStatus == "Beklemede" ? "is-active" : "")"
-           asp-action="Index" asp-route-tab="@Model.ActiveTab" asp-route-status="Beklemede" asp-route-search="@Model.SearchQuery">Bekleyenler</a>
-        <a class="year-pill @(Model.SelectedStatus == "Teklif Alındı" ? "is-active" : "")"
-           asp-action="Index" asp-route-tab="@Model.ActiveTab" asp-route-status="Teklif Alındı" asp-route-search="@Model.SearchQuery">Teklif Alınanlar</a>
-        <a class="year-pill @(Model.SelectedStatus == "Onaylandı" ? "is-active" : "")"
-           asp-action="Index" asp-route-tab="@Model.ActiveTab" asp-route-status="Onaylandı" asp-route-search="@Model.SearchQuery">Onaylananlar</a>
+    <nav class="year-filter" aria-label="Talep durum filtresi" id="requestsStatusFilterNav">
+        <button type="button" class="year-pill is-active"
+           data-status="Tümü"
+           onclick="window.RequestsManager.setStatus('Tümü', this)">Tümü</button>
+        <button type="button" class="year-pill"
+           data-status="Beklemede"
+           onclick="window.RequestsManager.setStatus('Beklemede', this)">Bekleyenler</button>
+        <button type="button" class="year-pill"
+           data-status="Teklif Alındı"
+           onclick="window.RequestsManager.setStatus('Teklif Alındı', this)">Teklif Alınanlar</button>
+        <button type="button" class="year-pill"
+           data-status="Onaylandı"
+           onclick="window.RequestsManager.setStatus('Onaylandı', this)">Onaylananlar</button>
     </nav>
 </div>
 
@@ -1619,23 +1625,8 @@
     <div class="req-table-header">
         <div>
             <h2>Talep Listesi</h2>
-            <p>
-                @if (Model.ActiveTab == "my-requests")
-                {
-                    <span>Oluşturduğunuz aktif satın alma talepleri ve tedarikçi teklifleri</span>
-                }
-                else if (Model.ActiveTab == "incoming-offers")
-                {
-                    <span>Tedarikçilerden fiyat teklifi gelmiş olan talepleriniz</span>
-                }
-                else if (Model.ActiveTab == "my-bids")
-                {
-                    <span>Tedarikçi olarak fiyat teklifi sunduğunuz ihaleler</span>
-                }
-                else
-                {
-                    <span>Pazardaki açık satın alma talepleri ve ihaleler</span>
-                }
+            <p id="reqTableSubtitle">
+                <span>Pazardaki açık satın alma talepleri ve ihaleler</span>
             </p>
         </div>
     </div>
@@ -1645,10 +1636,7 @@
             <thead>
                 <tr>
                     <th style="width: 140px;">Talep No & Tarih</th>
-                    @if (Model.ActiveTab == "all" || Model.ActiveTab == "my-bids")
-                    {
-                        <th>Alıcı Firma</th>
-                    }
+                    <th>Alıcı Firma</th>
                     <th>Aranan Ürün / Hizmet</th>
                     <th style="width: 150px;">Miktar & Bütçe</th>
                     <th style="width: 130px;">Termin Tarihi</th>
@@ -1661,7 +1649,7 @@
                 @if (Model.Requests == null || !Model.Requests.Any())
                 {
                     <tr>
-                        <td colspan="@(Model.ActiveTab == "all" || Model.ActiveTab == "my-bids" ? 8 : 7)">
+                        <td colspan="8">
                             <div style="text-align: center; padding: 56px 20px; display: flex; flex-direction: column; align-items: center; gap: 14px;">
                                 <div style="width: 64px; height: 64px; border-radius: 18px; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center;">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1686,7 +1674,8 @@
                     foreach (var item in Model.Requests)
                     {
                         var initial = !string.IsNullOrEmpty(item.BuyerInfo) ? item.BuyerInfo[0].ToString().ToUpper() : "A";
-                        <tr data-request-id="@item.RequestID" data-status="@item.Status" data-product-name="@item.ProductName" data-is-owner="@(item.IsOwner ? "true" : "false")" data-has-my-offer="@(item.HasMyOffer ? "true" : "false")">
+                        var searchableText = $"{item.RequestID} {item.BuyerInfo} {item.ProductName} {item.RequestType} {item.Notes} {(item.Items != null ? string.Join(" ", item.Items.Select(i => i.ItemName)) : "")}".ToLowerInvariant();
+                        <tr data-request-id="@item.RequestID" data-status="@item.Status" data-product-name="@item.ProductName" data-is-owner="@(item.IsOwner ? "true" : "false")" data-has-my-offer="@(item.HasMyOffer ? "true" : "false")" data-offer-count="@item.OfferCount" data-search="@searchableText">
                             <!-- 1. TALEP NO & TARİH -->
                             <td>
                                 <div class="req-id-box">
@@ -1695,26 +1684,23 @@
                                 </div>
                             </td>
 
-                            <!-- 2. ALICI FİRMA (Tüm Talepler veya Verdiğim Teklifler sekmesinde gösterilir) -->
-                            @if (Model.ActiveTab == "all" || Model.ActiveTab == "my-bids")
-                            {
-                                <td>
-                                    <div class="buyer-info-box">
-                                        <div class="buyer-avatar-circle">@initial</div>
-                                        <div>
-                                            <span class="buyer-name-title">@item.BuyerInfo</span>
-                                            @if (item.IsOwner)
-                                            {
-                                                <span style="display: inline-block; font-size: 0.70rem; font-weight: 700; color: #2563EB; background: #EFF6FF; padding: 1px 6px; border-radius: 4px;">Benim Talebim</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="buyer-tag-sub">Kurumsal Alıcı</span>
-                                            }
-                                        </div>
+                            <!-- 2. ALICI FİRMA -->
+                            <td>
+                                <div class="buyer-info-box">
+                                    <div class="buyer-avatar-circle">@initial</div>
+                                    <div>
+                                        <span class="buyer-name-title">@item.BuyerInfo</span>
+                                        @if (item.IsOwner)
+                                        {
+                                            <span style="display: inline-block; font-size: 0.70rem; font-weight: 700; color: #2563EB; background: #EFF6FF; padding: 1px 6px; border-radius: 4px;">Benim Talebim</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="buyer-tag-sub">Kurumsal Alıcı</span>
+                                        }
                                     </div>
-                                </td>
-                            }
+                                </div>
+                            </td>
 
                             <!-- 3. ARANAN ÜRÜN / HİZMET & İSTENİLENLER LİSTESİ -->
                             <td>
@@ -2342,1381 +2328,1529 @@
     </div>
 </div>
 
-<!-- ============ JAVASCRIPT MODAL VE AJAX İŞLEMLERİ ============ -->
-<script>
-    // =========================================================================
-    // 1. DİNAMİK İSTENİLENLER LİSTESİ (KALEMLER) BUILDER İŞLEMLERİ
-    // =========================================================================
-    function initCreateRequestItems() {
-        var tbody = document.getElementById('createRequestItemsTableBody');
-        if (!tbody) return;
-        if (tbody.children.length === 0) {
-            addRequestItemRow('', 1, '', '');
-            addRequestItemRow('', 1, '', '');
-            addRequestItemRow('', 1, '', '');
-        }
-        recalculateRequestTotals();
-    }
+@section Scripts {
+    <!-- CDN Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    function loadSampleTemplate(type) {
-        var tbody = document.getElementById('createRequestItemsTableBody');
-        var mainTitle = document.getElementById('createReqProductName');
-        if (!tbody) return;
-        tbody.innerHTML = '';
+    <script>
+        // =========================================================================
+        // 0. CENTRAL REQUESTS MANAGER (ANLIK, TEMİZ VE GÜVENİLİR FİLTRELEME)
+        // =========================================================================
+        window.RequestsManager = {
+            tab: 'all',
+            status: 'Tümü',
+            search: '',
+            timer: null,
 
-        if (type === 'elektrik') {
-            if (mainTitle) mainTitle.value = 'Fabrika Elektrik & Otomasyon Revizyonu Malzemeleri';
-            addRequestItemRow('Schneider 24V 10A Ray Tipi Güç Kaynağı', 2, 2250, 'DIN Ray montaj, IP20');
-            addRequestItemRow('Siemens S7-1200 PLC CPU 1214C DC/DC/DC', 1, 18500, '6ES7214-1AG40-0XB0 veya muadili');
-            addRequestItemRow('Wago 2.5mm² Ray Klemens (Gri)', 150, 14, 'Yaylı bağlantı');
-            addRequestItemRow('Öznur 3x2.5mm² NYAF Çok Damarlı Kablo', 100, 38, 'Halogen Free (HFFR)');
-        } else if (type === 'ofis') {
-            if (mainTitle) mainTitle.value = 'Merkez Ofis 2026 Q2 Kırtasiye ve Sarf Malzeme Alımı';
-            addRequestItemRow('A4 80gr 1. Hamur Fotokopi Kağıdı (5x500)', 25, 920, 'Navigator veya Copier Bond');
-            addRequestItemRow('Mavi Tükenmez Kalem 0.7mm', 10, 110, '50\'li paket');
-            addRequestItemRow('Masaüstü Şeffaf Telli Dosya', 300, 4.5, 'PP malzeme');
-            addRequestItemRow('Zımba Teli No:24/6', 15, 35, '1000\'li kutu');
-        } else if (type === 'hirdavat') {
-            if (mainTitle) mainTitle.value = 'Mekanik Bakım & Atölye Hırdavat İhtiyaçları';
-            addRequestItemRow('M8x30mm İnbus 8.8 Çelik Cıvata', 500, 4.2, 'DIN 912 Galvanizli');
-            addRequestItemRow('Loctite 243 Orta Mukavemet Civata Sabitleyici 50ml', 4, 490, 'Orijinal ambalaj');
-            addRequestItemRow('Bosch 125x1.0mm Paslanmaz Kesme Taşı', 100, 38, 'Inox uyumlu');
-            addRequestItemRow('WD-40 Çok Amaçlı Pas Sökücü Sprey 400ml', 12, 210, 'Akıllı pipetli');
-        }
-        recalculateRequestTotals();
-        if (typeof showRealtimeToast === 'function') {
-            showRealtimeToast('✓ Hazır örnek kalem listesi yüklendi.', 'info');
-        }
-    }
+            setTab: function(tabVal, btn) {
+                this.tab = tabVal || 'all';
 
-    function addMultipleRequestItemRows(count) {
-        for (var i = 0; i < count; i++) {
-            addRequestItemRow('', 1, '', '');
-        }
-    }
+                const nav = document.getElementById('requestsNavTabs');
+                if (nav) {
+                    nav.querySelectorAll('.req-tab-btn').forEach(b => b.classList.remove('is-active'));
+                    if (btn) {
+                        btn.classList.add('is-active');
+                    } else {
+                        const target = nav.querySelector(`.req-tab-btn[data-tab="${this.tab}"]`);
+                        if (target) target.classList.add('is-active');
+                    }
+                }
 
-    function addRequestItemRow(name, qty, price, desc) {
-        var tbody = document.getElementById('createRequestItemsTableBody');
-        if (!tbody) return;
+                const subtitleEl = document.getElementById('reqTableSubtitle');
+                if (subtitleEl) {
+                    if (this.tab === 'my-requests') {
+                        subtitleEl.innerHTML = '<span>Oluşturduğunuz aktif satın alma talepleri ve tedarikçi teklifleri</span>';
+                    } else if (this.tab === 'incoming-offers') {
+                        subtitleEl.innerHTML = '<span>Tedarikçilerden fiyat teklifi gelmiş olan talepleriniz</span>';
+                    } else if (this.tab === 'my-bids') {
+                        subtitleEl.innerHTML = '<span>Tedarikçi olarak fiyat teklifi sunduğunuz ihaleler</span>';
+                    } else {
+                        subtitleEl.innerHTML = '<span>Pazardaki açık satın alma talepleri ve ihaleler</span>';
+                    }
+                }
 
-        var rowCount = tbody.children.length + 1;
-        var tr = document.createElement('tr');
-        tr.className = 'item-data-row';
+                this.apply();
+            },
 
-        var parsedQty = parseInt(qty, 10);
-        if (isNaN(parsedQty) || parsedQty < 1) parsedQty = 1;
+            setStatus: function(statusVal, btn) {
+                this.status = statusVal || 'Tümü';
 
-        tr.innerHTML = `
-            <td style="text-align: center; font-weight: 700; color: #64748B;" class="item-order-num">${rowCount}</td>
-            <td>
-                <input type="text" class="item-input item-name" value="${escapeHtml(name || '')}" placeholder="Örn: Schneider 24V 10A Güç Kaynağı" required oninput="recalculateRequestTotals()" />
-            </td>
-            <td>
-                <input type="number" class="item-input item-qty" min="1" step="1" value="${parsedQty}" placeholder="Adet" required oninput="this.value = this.value.replace(/[^0-9]/g, ''); recalculateRequestTotals()" />
-            </td>
-            <td>
-                <input type="number" class="item-input item-price" min="0" step="any" value="${price || ''}" placeholder="0,00" oninput="recalculateRequestTotals()" />
-            </td>
-            <td>
-                <span class="item-line-total-badge">—</span>
-            </td>
-            <td>
-                <input type="text" class="item-input item-desc" value="${escapeHtml(desc || '')}" placeholder="Marka, ölçü, şartname..." />
-            </td>
-            <td style="text-align: center; white-space: nowrap;">
-                <button type="button" class="btn-remove-row" style="color: #2563EB;" onclick="cloneRequestItemRow(this)" title="Bu Kalemi Çoğalt">📋</button>
-                <button type="button" class="btn-remove-row" onclick="removeRequestItemRow(this)" title="Kalemi Sil">&times;</button>
-            </td>
-        `;
+                const nav = document.getElementById('requestsStatusFilterNav');
+                if (nav) {
+                    nav.querySelectorAll('.year-pill').forEach(p => p.classList.remove('is-active'));
+                    if (btn) {
+                        btn.classList.add('is-active');
+                    } else {
+                        const target = nav.querySelector(`.year-pill[data-status="${this.status}"]`);
+                        if (target) target.classList.add('is-active');
+                    }
+                }
 
-        tbody.appendChild(tr);
-        recalculateRequestTotals();
-    }
+                this.apply();
+            },
 
-    function cloneRequestItemRow(btn) {
-        var tr = btn.closest('tr');
-        if (!tr) return;
-        var name = tr.querySelector('.item-name')?.value || '';
-        var qty = tr.querySelector('.item-qty')?.value || 1;
-        var price = tr.querySelector('.item-price')?.value || '';
-        var desc = tr.querySelector('.item-desc')?.value || '';
-        addRequestItemRow(name, qty, price, desc);
-    }
+            onSearch: function(val) {
+                clearTimeout(this.timer);
+                this.timer = setTimeout(() => {
+                    this.search = (val || '').trim().toLowerCase();
+                    this.apply();
+                }, 50);
+            },
 
-    function removeRequestItemRow(btn) {
-        var tbody = document.getElementById('createRequestItemsTableBody');
-        if (!tbody) return;
+            reset: function() {
+                this.tab = 'all';
+                this.status = 'Tümü';
+                this.search = '';
 
-        var rows = tbody.querySelectorAll('.item-data-row');
-        if (rows.length <= 1) {
-            if (typeof showRealtimeToast === 'function') {
-                showRealtimeToast('Talebinizde en az 1 kalem bulunmalıdır.', 'warning');
-            } else {
-                alert('Talebinizde en az 1 kalem bulunmalıdır.');
+                const searchInput = document.getElementById('reqSearchInput');
+                if (searchInput) searchInput.value = '';
+
+                const tabsNav = document.getElementById('requestsNavTabs');
+                if (tabsNav) {
+                    tabsNav.querySelectorAll('.req-tab-btn').forEach(b => b.classList.remove('is-active'));
+                    const allTab = tabsNav.querySelector('.req-tab-btn[data-tab="all"]');
+                    if (allTab) allTab.classList.add('is-active');
+                }
+
+                const statusNav = document.getElementById('requestsStatusFilterNav');
+                if (statusNav) {
+                    statusNav.querySelectorAll('.year-pill').forEach(p => p.classList.remove('is-active'));
+                    const allPill = statusNav.querySelector('.year-pill[data-status="Tümü"]');
+                    if (allPill) allPill.classList.add('is-active');
+                }
+
+                const subtitleEl = document.getElementById('reqTableSubtitle');
+                if (subtitleEl) {
+                    subtitleEl.innerHTML = '<span>Pazardaki açık satın alma talepleri ve ihaleler</span>';
+                }
+
+                this.apply();
+            },
+
+            apply: function() {
+                const rows = document.querySelectorAll('#requestsTableBody tr[data-request-id]');
+                let visibleCount = 0;
+
+                const isAllDefault = (this.tab === 'all') && (this.status === 'Tümü' || !this.status) && !this.search;
+
+                rows.forEach(row => {
+                    if (isAllDefault) {
+                        row.style.display = '';
+                        visibleCount++;
+                        return;
+                    }
+
+                    const isOwner = row.getAttribute('data-is-owner') === 'true';
+                    const hasMyOffer = row.getAttribute('data-has-my-offer') === 'true';
+                    const offerCount = parseInt(row.getAttribute('data-offer-count') || '0', 10);
+                    const rowStatus = (row.getAttribute('data-status') || '').trim();
+
+                    // 1. Tab Match
+                    let matchTab = false;
+                    if (this.tab === 'all') {
+                        matchTab = true;
+                    } else if (this.tab === 'my-requests') {
+                        matchTab = isOwner;
+                    } else if (this.tab === 'incoming-offers') {
+                        matchTab = (isOwner && offerCount > 0);
+                    } else if (this.tab === 'my-bids') {
+                        matchTab = hasMyOffer;
+                    }
+
+                    // 2. Status Match
+                    let matchStatus = false;
+                    if (this.status === 'Tümü' || !this.status) {
+                        matchStatus = true;
+                    } else if (this.status === 'Beklemede' || this.status === 'Bekleyenler') {
+                        matchStatus = (rowStatus === 'Beklemede' || rowStatus === 'Açık' || rowStatus === 'Yeni' || (offerCount === 0 && rowStatus !== 'İptal Edildi' && rowStatus !== 'Reddedildi' && rowStatus !== 'Onaylandı' && rowStatus !== 'Kabul Edildi'));
+                    } else if (this.status === 'Teklif Alındı' || this.status === 'Teklif Alınanlar') {
+                        matchStatus = (rowStatus === 'Teklif Alındı' || rowStatus === 'İncelemede' || rowStatus === 'Cevap Bekliyor' || offerCount > 0);
+                    } else if (this.status === 'Onaylandı' || this.status === 'Onaylananlar') {
+                        matchStatus = (rowStatus === 'Onaylandı' || rowStatus === 'Kabul Edildi' || rowStatus === 'Tamamlandı');
+                    } else {
+                        matchStatus = (rowStatus.toLowerCase() === this.status.toLowerCase());
+                    }
+
+                    // 3. Search Match
+                    let matchSearch = true;
+                    if (this.search) {
+                        const rowText = (row.innerText || row.textContent || '').toLowerCase();
+                        matchSearch = rowText.includes(this.search);
+                    }
+
+                    if (matchTab && matchStatus && matchSearch) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                const clearBtn = document.getElementById('reqClearFilterBtn');
+                if (clearBtn) {
+                    clearBtn.style.display = isAllDefault ? 'none' : 'inline-flex';
+                }
+
+                let emptyRow = document.getElementById('requestsEmptyStateRow');
+                if (rows.length > 0 && visibleCount === 0) {
+                    if (!emptyRow) {
+                        emptyRow = document.createElement('tr');
+                        emptyRow.id = 'requestsEmptyStateRow';
+                        emptyRow.innerHTML = '<td colspan="8" style="text-align: center; padding: 48px 16px; color: var(--muted);"><div style="font-size: 2.2rem; margin-bottom: 8px;">🔍</div><strong style="color: #0F172A; font-size: 1.05rem;">Bu sekme veya filtre kriterinize uygun talep bulunamadı.</strong><div style="font-size: 0.84rem; color: #64748B; margin-top: 4px;">Farklı bir sekme seçebilir veya filtreleri temizleyebilirsiniz.</div></td>';
+                        const tbody = document.getElementById('requestsTableBody');
+                        if (tbody) tbody.appendChild(emptyRow);
+                    }
+                    emptyRow.style.display = '';
+                } else if (emptyRow) {
+                    emptyRow.style.display = 'none';
+                }
             }
-            return;
-        }
+        };
 
-        var tr = btn.closest('tr');
-        if (tr) {
-            tr.remove();
-            reindexRequestItemRows();
+        // =========================================================================
+        // 1. DİNAMİK İSTENİLENLER LİSTESİ (KALEMLER) BUILDER İŞLEMLERİ
+        // =========================================================================
+        function initCreateRequestItems() {
+            var tbody = document.getElementById('createRequestItemsTableBody');
+            if (!tbody) return;
+            if (tbody.children.length === 0) {
+                addRequestItemRow('', 1, '', '');
+                addRequestItemRow('', 1, '', '');
+                addRequestItemRow('', 1, '', '');
+            }
             recalculateRequestTotals();
         }
-    }
 
-    function reindexRequestItemRows() {
-        var tbody = document.getElementById('createRequestItemsTableBody');
-        if (!tbody) return;
-        var rows = tbody.querySelectorAll('.item-data-row');
-        rows.forEach(function (row, idx) {
-            var numCell = row.querySelector('.item-order-num');
-            if (numCell) numCell.textContent = (idx + 1);
-        });
-    }
+        function loadSampleTemplate(type) {
+            var tbody = document.getElementById('createRequestItemsTableBody');
+            var mainTitle = document.getElementById('createReqProductName');
+            if (!tbody) return;
+            tbody.innerHTML = '';
 
-    function recalculateRequestTotals() {
-        var tbody = document.getElementById('createRequestItemsTableBody');
-        if (!tbody) return;
-
-        var rows = tbody.querySelectorAll('.item-data-row');
-        var totalItems = rows.length;
-        var totalQty = 0;
-        var totalBudget = 0;
-        var hasAnyBudget = false;
-
-        rows.forEach(function (row) {
-            var qtyVal = parseInt(row.querySelector('.item-qty')?.value || '0', 10);
-            var priceVal = parseFloat(row.querySelector('.item-price')?.value || '0');
-            var totalBadge = row.querySelector('.item-line-total-badge');
-
-            if (!isNaN(qtyVal) && qtyVal > 0) {
-                totalQty += qtyVal;
+            if (type === 'elektrik') {
+                if (mainTitle) mainTitle.value = 'Fabrika Elektrik & Otomasyon Revizyonu Malzemeleri';
+                addRequestItemRow('Schneider 24V 10A Ray Tipi Güç Kaynağı', 2, 2250, 'DIN Ray montaj, IP20');
+                addRequestItemRow('Siemens S7-1200 PLC CPU 1214C DC/DC/DC', 1, 18500, '6ES7214-1AG40-0XB0 veya muadili');
+                addRequestItemRow('Wago 2.5mm² Ray Klemens (Gri)', 150, 14, 'Yaylı bağlantı');
+                addRequestItemRow('Öznur 3x2.5mm² NYAF Çok Damarlı Kablo', 100, 38, 'Halogen Free (HFFR)');
+            } else if (type === 'ofis') {
+                if (mainTitle) mainTitle.value = 'Merkez Ofis 2026 Q2 Kırtasiye ve Sarf Malzeme Alımı';
+                addRequestItemRow('A4 80gr 1. Hamur Fotokopi Kağıdı (5x500)', 25, 920, 'Navigator veya Copier Bond');
+                addRequestItemRow('Mavi Tükenmez Kalem 0.7mm', 10, 110, '50\'li paket');
+                addRequestItemRow('Masaüstü Şeffaf Telli Dosya', 300, 4.5, 'PP malzeme');
+                addRequestItemRow('Zımba Teli No:24/6', 15, 35, '1000\'li kutu');
+            } else if (type === 'hirdavat') {
+                if (mainTitle) mainTitle.value = 'Mekanik Bakım & Atölye Hırdavat İhtiyaçları';
+                addRequestItemRow('M8x30mm İnbus 8.8 Çelik Cıvata', 500, 4.2, 'DIN 912 Galvanizli');
+                addRequestItemRow('Loctite 243 Orta Mukavemet Civata Sabitleyici 50ml', 4, 490, 'Orijinal ambalaj');
+                addRequestItemRow('Bosch 125x1.0mm Paslanmaz Kesme Taşı', 100, 38, 'Inox uyumlu');
+                addRequestItemRow('WD-40 Çok Amaçlı Pas Sökücü Sprey 400ml', 12, 210, 'Akıllı pipetli');
             }
-
-            if (!isNaN(priceVal) && priceVal > 0 && !isNaN(qtyVal) && qtyVal > 0) {
-                var lineTotal = qtyVal * priceVal;
-                totalBudget += lineTotal;
-                hasAnyBudget = true;
-                if (totalBadge) totalBadge.textContent = Number(lineTotal).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
-            } else {
-                if (totalBadge) totalBadge.textContent = '—';
-            }
-        });
-
-        var summaryItemsEl = document.getElementById('summaryTotalItems');
-        var summaryQtyEl = document.getElementById('summaryTotalQty');
-        var summaryBudgetEl = document.getElementById('summaryTotalBudget');
-
-        if (summaryItemsEl) summaryItemsEl.textContent = totalItems + ' Kalem';
-        if (summaryQtyEl) summaryQtyEl.textContent = Number(totalQty).toLocaleString('tr-TR') + ' Adet';
-        if (summaryBudgetEl) {
-            if (hasAnyBudget) {
-                summaryBudgetEl.textContent = Number(totalBudget).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
-            } else {
-                summaryBudgetEl.textContent = 'Bütçe Belirtilmedi';
-            }
-        }
-
-        // Talep başlığı boşsa ilk kalemin adını placeholder yap
-        var firstItemName = rows[0]?.querySelector('.item-name')?.value?.trim();
-        var mainTitleInput = document.getElementById('createReqProductName');
-        if (mainTitleInput && !mainTitleInput.value.trim() && firstItemName) {
-            mainTitleInput.placeholder = firstItemName + (totalItems > 1 ? ' ve ' + (totalItems - 1) + ' diğer kalem' : '');
-        }
-    }
-
-    // 1. Yeni Talep Modalı Açma / Kapama
-    function openCreateModal() {
-        var modal = document.getElementById('createRequestModal');
-        if (modal) {
-            modal.classList.add('is-open');
-            initCreateRequestItems();
-        }
-    }
-
-    function closeCreateModal() {
-        var modal = document.getElementById('createRequestModal');
-        if (modal) {
-            modal.classList.remove('is-open');
-        }
-    }
-
-    async function handleCreateRequestFormSubmit(event) {
-        event.preventDefault();
-        var form = event.target;
-        var submitBtn = form.querySelector('button[type="submit"]');
-        var originalText = submitBtn ? submitBtn.innerHTML : 'Talebi ve İstenilenler Listesini Yayınla';
-
-        var productName = form.querySelector('[name="ProductName"]')?.value?.trim() || '';
-        var requestType = form.querySelector('[name="RequestType"]')?.value || 'Satın Alma';
-        var targetDeliveryDate = form.querySelector('[name="TargetDeliveryDate"]')?.value || null;
-        var notes = form.querySelector('[name="Notes"]')?.value || '';
-
-        // Kalemleri Topla
-        var tbody = document.getElementById('createRequestItemsTableBody');
-        var rows = tbody ? tbody.querySelectorAll('.item-data-row') : [];
-        var items = [];
-        var totalQty = 0;
-        var totalBudget = 0;
-
-        rows.forEach(function (row, idx) {
-            var name = row.querySelector('.item-name')?.value?.trim() || '';
-            var qty = parseInt(row.querySelector('.item-qty')?.value || '0', 10);
-            var unit = 'Adet';
-            var priceStr = row.querySelector('.item-price')?.value;
-            var price = priceStr ? parseFloat(priceStr) : null;
-            var desc = row.querySelector('.item-desc')?.value?.trim() || null;
-
-            if (name && qty > 0) {
-                items.push({
-                    itemOrder: idx + 1,
-                    itemName: name,
-                    quantity: qty,
-                    unit: 'Adet',
-                    estimatedUnitPrice: price,
-                    itemDescription: desc
-                });
-                totalQty += qty;
-                if (price && price > 0) {
-                    totalBudget += (qty * price);
-                }
-            }
-        });
-
-        if (items.length === 0 && !productName) {
+            recalculateRequestTotals();
             if (typeof showRealtimeToast === 'function') {
-                showRealtimeToast('Lütfen en az 1 kalem malzeme/hizmet adı ve miktarı giriniz.', 'error');
-            } else {
-                alert('Lütfen en az 1 kalem malzeme/hizmet adı ve miktarı giriniz.');
+                showRealtimeToast('✓ Hazır örnek kalem listesi yüklendi.', 'info');
             }
-            return;
         }
 
-        if (!productName && items.length > 0) {
-            productName = items[0].itemName + (items.length > 1 ? ' ve ' + (items.length - 1) + ' diğer kalem' : '');
+        function addMultipleRequestItemRows(count) {
+            for (var i = 0; i < count; i++) {
+                addRequestItemRow('', 1, '', '');
+            }
         }
 
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '⏳ İstenilenler Listesi Kaydediliyor...';
+        function addRequestItemRow(name, qty, price, desc) {
+            var tbody = document.getElementById('createRequestItemsTableBody');
+            if (!tbody) return;
+
+            var rowCount = tbody.children.length + 1;
+            var tr = document.createElement('tr');
+            tr.className = 'item-data-row';
+
+            var parsedQty = parseInt(qty, 10);
+            if (isNaN(parsedQty) || parsedQty < 1) parsedQty = 1;
+
+            tr.innerHTML = `
+                <td style="text-align: center; font-weight: 700; color: #64748B;" class="item-order-num">${rowCount}</td>
+                <td>
+                    <input type="text" class="item-input item-name" value="${escapeHtml(name || '')}" placeholder="Örn: Schneider 24V 10A Güç Kaynağı" required oninput="recalculateRequestTotals()" />
+                </td>
+                <td>
+                    <input type="number" class="item-input item-qty" min="1" step="1" value="${parsedQty}" placeholder="Adet" required oninput="this.value = this.value.replace(/[^0-9]/g, ''); recalculateRequestTotals()" />
+                </td>
+                <td>
+                    <input type="number" class="item-input item-price" min="0" step="any" value="${price || ''}" placeholder="0,00" oninput="recalculateRequestTotals()" />
+                </td>
+                <td>
+                    <span class="item-line-total-badge">—</span>
+                </td>
+                <td>
+                    <input type="text" class="item-input item-desc" value="${escapeHtml(desc || '')}" placeholder="Marka, ölçü, şartname..." />
+                </td>
+                <td style="text-align: center; white-space: nowrap;">
+                    <button type="button" class="btn-remove-row" style="color: #2563EB;" onclick="cloneRequestItemRow(this)" title="Bu Kalemi Çoğalt">📋</button>
+                    <button type="button" class="btn-remove-row" onclick="removeRequestItemRow(this)" title="Kalemi Sil">&times;</button>
+                </td>
+            `;
+
+            tbody.appendChild(tr);
+            recalculateRequestTotals();
         }
 
-        try {
-            var response = await fetch('/Requests/CreateAjax', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    productName: productName,
-                    requestType: requestType,
-                    quantity: totalQty > 0 ? Math.round(totalQty) : 1,
-                    estimatedBudget: totalBudget > 0 ? totalBudget : null,
-                    targetDeliveryDate: targetDeliveryDate,
-                    notes: notes,
-                    items: items
-                })
+        function cloneRequestItemRow(btn) {
+            var tr = btn.closest('tr');
+            if (!tr) return;
+            var name = tr.querySelector('.item-name')?.value || '';
+            var qty = tr.querySelector('.item-qty')?.value || 1;
+            var price = tr.querySelector('.item-price')?.value || '';
+            var desc = tr.querySelector('.item-desc')?.value || '';
+            addRequestItemRow(name, qty, price, desc);
+        }
+
+        function removeRequestItemRow(btn) {
+            var tbody = document.getElementById('createRequestItemsTableBody');
+            if (!tbody) return;
+
+            var rows = tbody.querySelectorAll('.item-data-row');
+            if (rows.length <= 1) {
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Talebinizde en az 1 kalem bulunmalıdır.', 'warning');
+                } else {
+                    alert('Talebinizde en az 1 kalem bulunmalıdır.');
+                }
+                return;
+            }
+
+            var tr = btn.closest('tr');
+            if (tr) {
+                tr.remove();
+                reindexRequestItemRows();
+                recalculateRequestTotals();
+            }
+        }
+
+        function reindexRequestItemRows() {
+            var tbody = document.getElementById('createRequestItemsTableBody');
+            if (!tbody) return;
+            var rows = tbody.querySelectorAll('.item-data-row');
+            rows.forEach(function (row, idx) {
+                var numCell = row.querySelector('.item-order-num');
+                if (numCell) numCell.textContent = (idx + 1);
+            });
+        }
+
+        function recalculateRequestTotals() {
+            var tbody = document.getElementById('createRequestItemsTableBody');
+            if (!tbody) return;
+
+            var rows = tbody.querySelectorAll('.item-data-row');
+            var totalItems = rows.length;
+            var totalQty = 0;
+            var totalBudget = 0;
+            var hasAnyBudget = false;
+
+            rows.forEach(function (row) {
+                var qtyVal = parseInt(row.querySelector('.item-qty')?.value || '0', 10);
+                var priceVal = parseFloat(row.querySelector('.item-price')?.value || '0');
+                var totalBadge = row.querySelector('.item-line-total-badge');
+
+                if (!isNaN(qtyVal) && qtyVal > 0) {
+                    totalQty += qtyVal;
+                }
+
+                if (!isNaN(priceVal) && priceVal > 0 && !isNaN(qtyVal) && qtyVal > 0) {
+                    var lineTotal = qtyVal * priceVal;
+                    totalBudget += lineTotal;
+                    hasAnyBudget = true;
+                    if (totalBadge) totalBadge.textContent = Number(lineTotal).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
+                } else {
+                    if (totalBadge) totalBadge.textContent = '—';
+                }
             });
 
-            var result = await response.json();
-            if (result.success) {
-                closeCreateModal();
-                form.reset();
-                if (tbody) tbody.innerHTML = '';
-                if (typeof showRealtimeToast === 'function') {
-                    showRealtimeToast('✓ ' + (result.message || 'Talebiniz ve istenilenler listesi başarıyla yayınlandı!'), 'success');
-                }
-                setTimeout(function () { window.location.reload(); }, 1200);
-            } else {
-                if (typeof showRealtimeToast === 'function') {
-                    showRealtimeToast('Hata: ' + (result.message || 'Talep kaydedilemedi.'), 'error');
+            var summaryItemsEl = document.getElementById('summaryTotalItems');
+            var summaryQtyEl = document.getElementById('summaryTotalQty');
+            var summaryBudgetEl = document.getElementById('summaryTotalBudget');
+
+            if (summaryItemsEl) summaryItemsEl.textContent = totalItems + ' Kalem';
+            if (summaryQtyEl) summaryQtyEl.textContent = Number(totalQty).toLocaleString('tr-TR') + ' Adet';
+            if (summaryBudgetEl) {
+                if (hasAnyBudget) {
+                    summaryBudgetEl.textContent = Number(totalBudget).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
                 } else {
-                    alert('Hata: ' + result.message);
+                    summaryBudgetEl.textContent = 'Bütçe Belirtilmedi';
                 }
             }
-        } catch (err) {
-            if (typeof showRealtimeToast === 'function') {
-                showRealtimeToast('Sunucu bağlantı hatası: ' + err.message, 'error');
-            } else {
-                alert('Sunucu hatası: ' + err.message);
+
+            var firstItemName = rows[0]?.querySelector('.item-name')?.value?.trim();
+            var mainTitleInput = document.getElementById('createReqProductName');
+            if (mainTitleInput && !mainTitleInput.value.trim() && firstItemName) {
+                mainTitleInput.placeholder = firstItemName + (totalItems > 1 ? ' ve ' + (totalItems - 1) + ' diğer kalem' : '');
             }
-        } finally {
+        }
+
+        function openCreateModal() {
+            var modal = document.getElementById('createRequestModal');
+            if (modal) {
+                modal.classList.add('is-open');
+                initCreateRequestItems();
+            }
+        }
+
+        function closeCreateModal() {
+            var modal = document.getElementById('createRequestModal');
+            if (modal) {
+                modal.classList.remove('is-open');
+            }
+        }
+
+        async function handleCreateRequestFormSubmit(event) {
+            event.preventDefault();
+            var form = event.target;
+            var submitBtn = form.querySelector('button[type="submit"]');
+            var originalText = submitBtn ? submitBtn.innerHTML : 'Talebi ve İstenilenler Listesini Yayınla';
+
+            var productName = form.querySelector('[name="ProductName"]')?.value?.trim() || '';
+            var requestType = form.querySelector('[name="RequestType"]')?.value || 'Satın Alma';
+            var targetDeliveryDate = form.querySelector('[name="TargetDeliveryDate"]')?.value || null;
+            var notes = form.querySelector('[name="Notes"]')?.value || '';
+
+            var tbody = document.getElementById('createRequestItemsTableBody');
+            var rows = tbody ? tbody.querySelectorAll('.item-data-row') : [];
+            var items = [];
+            var totalQty = 0;
+            var totalBudget = 0;
+
+            rows.forEach(function (row, idx) {
+                var name = row.querySelector('.item-name')?.value?.trim() || '';
+                var qty = parseInt(row.querySelector('.item-qty')?.value || '0', 10);
+                var unit = 'Adet';
+                var priceStr = row.querySelector('.item-price')?.value;
+                var price = priceStr ? parseFloat(priceStr) : null;
+                var desc = row.querySelector('.item-desc')?.value?.trim() || null;
+
+                if (name && qty > 0) {
+                    items.push({
+                        itemOrder: idx + 1,
+                        itemName: name,
+                        quantity: qty,
+                        unit: 'Adet',
+                        estimatedUnitPrice: price,
+                        itemDescription: desc
+                    });
+                    totalQty += qty;
+                    if (price && price > 0) {
+                        totalBudget += (qty * price);
+                    }
+                }
+            });
+
+            if (items.length === 0 && !productName) {
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Lütfen en az 1 kalem malzeme/hizmet adı ve miktarı giriniz.', 'error');
+                } else {
+                    alert('Lütfen en az 1 kalem malzeme/hizmet adı ve miktarı giriniz.');
+                }
+                return;
+            }
+
+            if (!productName && items.length > 0) {
+                productName = items[0].itemName + (items.length > 1 ? ' ve ' + (items.length - 1) + ' diğer kalem' : '');
+            }
+
             if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ İstenilenler Listesi Kaydediliyor...';
             }
-        }
-    }
 
-    async function handleDeleteRequest(requestId, event) {
-        if (event) {
-            if (typeof event.preventDefault === 'function') event.preventDefault();
-            if (typeof event.stopPropagation === 'function') event.stopPropagation();
-        }
-        if (!confirm('#REQ-' + requestId + ' numaralı talebinizi silmek istediğinize emin misiniz?')) {
-            return;
-        }
+            try {
+                var response = await fetch('/Requests/CreateAjax', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        productName: productName,
+                        requestType: requestType,
+                        quantity: totalQty > 0 ? Math.round(totalQty) : 1,
+                        estimatedBudget: totalBudget > 0 ? totalBudget : null,
+                        targetDeliveryDate: targetDeliveryDate,
+                        notes: notes,
+                        items: items
+                    })
+                });
 
-        try {
-            var response = await fetch('/Requests/Delete?id=' + requestId, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
-            });
-
-            var result = await response.json();
-            if (result.success) {
-                if (typeof showRealtimeToast === 'function') {
-                    showRealtimeToast('✓ ' + (result.message || 'Talep başarıyla silindi.'), 'info');
-                }
-                var row = document.querySelector('tr[data-request-id="' + requestId + '"]');
-                if (row) {
-                    row.style.transition = 'all 0.35s ease';
-                    row.style.opacity = '0';
-                    row.style.transform = 'scale(0.96)';
-                    setTimeout(function () { row.remove(); }, 350);
-                }
-            } else {
-                if (typeof showRealtimeToast === 'function') {
-                    showRealtimeToast('Hata: ' + (result.message || 'Silme işlemi başarısız.'), 'error');
+                var result = await response.json();
+                if (result.success) {
+                    closeCreateModal();
+                    form.reset();
+                    if (tbody) tbody.innerHTML = '';
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('✓ ' + (result.message || 'Talebiniz ve istenilenler listesi başarıyla yayınlandı!'), 'success');
+                    }
+                    window.location.reload();
                 } else {
-                    alert('Hata: ' + result.message);
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('Hata: ' + (result.message || 'Talep kaydedilemedi.'), 'error');
+                    } else {
+                        alert('Hata: ' + result.message);
+                    }
+                }
+            } catch (err) {
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Sunucu bağlantı hatası: ' + err.message, 'error');
+                } else {
+                    alert('Sunucu hatası: ' + err.message);
+                }
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
                 }
             }
-        } catch (err) {
-            if (typeof showRealtimeToast === 'function') {
-                showRealtimeToast('Sunucu hatası: ' + err.message, 'error');
-            } else {
-                alert('Sunucu hatası: ' + err.message);
+        }
+
+        async function handleDeleteRequest(requestId, event) {
+            if (event) {
+                if (typeof event.preventDefault === 'function') event.preventDefault();
+                if (typeof event.stopPropagation === 'function') event.stopPropagation();
             }
-        }
-    }
-
-    // =========================================================================
-    // 2. TEDARİKÇİ KALEM BAZLI TEKLİF VERME / REVİZE ETME MODALI
-    // =========================================================================
-    var activeBidRequestData = null;
-
-    async function openOfferModal(requestId, productName, currentBid, currentDays, currentNotes) {
-        var modal = document.getElementById('supplierBidModal');
-        if (!modal) return;
-
-        var reqInput = document.getElementById('bidRequestID');
-        var prodTitle = document.getElementById('bidProductTitle');
-        var reqBadge = document.getElementById('bidReqCodeBadge');
-        var buyerSub = document.getElementById('bidBuyerInfoSub');
-        var deadlineSub = document.getElementById('bidDeadlineBudgetSub');
-        var daysInput = document.getElementById('bidDeliveryDays');
-        var notesInput = document.getElementById('bidSupplierNotes');
-        var titleText = document.getElementById('bidModalTitleText');
-        var submitBtn = document.getElementById('bidSubmitBtn');
-        var tableBody = document.getElementById('bidItemsTableBody');
-        var countBadge = document.getElementById('bidItemsCountBadge');
-
-        if (reqInput) reqInput.value = requestId;
-        if (prodTitle) prodTitle.textContent = productName || ('Talep #' + requestId);
-        if (daysInput) daysInput.value = currentDays ? parseInt(currentDays) : 7;
-        if (notesInput) notesInput.value = currentNotes || '';
-
-        if (currentBid && currentBid !== '') {
-            if (titleText) titleText.textContent = 'Teklifi Kalem Kalem Revize Et / Düzenle';
-            if (submitBtn) submitBtn.textContent = 'Teklifi Güncelle & Gönder';
-        } else {
-            if (titleText) titleText.textContent = 'Talebe Kalem Bazlı Fiyat Teklifi Ver';
-            if (submitBtn) submitBtn.textContent = 'Teklifi İlet';
-        }
-
-        if (tableBody) {
-            tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 25px; color: #64748B;">Kalem bilgileri yükleniyor...</td></tr>';
-        }
-
-        modal.classList.add('is-open');
-
-        try {
-            var res = await fetch('/Requests/GetRequestDetails/' + requestId);
-            var data = await res.json();
-
-            if (!data.success) {
-                alert('Talep detayları alınamadı: ' + data.message);
-                closeBidModal();
+            if (!confirm('#REQ-' + requestId + ' numaralı talebinizi silmek istediğinize emin misiniz?')) {
                 return;
             }
 
-            activeBidRequestData = data;
-
-            if (reqBadge) reqBadge.textContent = data.requestCode + ' · ' + data.requestDate;
-            if (prodTitle) prodTitle.textContent = data.productName;
-            if (buyerSub) buyerSub.textContent = 'Alıcı: ' + data.buyerInfo + ' (' + data.requestType + ')' + (data.notes ? ' · Şartname: ' + data.notes : '');
-            if (deadlineSub) deadlineSub.textContent = 'Termin: ' + data.targetDeliveryDate + ' · Hedef Bütçe: ' + data.estimatedBudgetFormatted;
-            if (countBadge) countBadge.textContent = (data.items ? data.items.length : 0) + ' Kalem';
-
-            // Tedarikçinin önceki teklif verileri varsa alanları doldur
-            if (data.myOffer) {
-                if (daysInput && (!currentDays || currentDays === '')) {
-                    daysInput.value = data.myOffer.deliveryDays || 7;
-                }
-                var valInput = document.getElementById('bidValidityDays');
-                if (valInput) {
-                    valInput.value = data.myOffer.validityDays || 30;
-                }
-                if (notesInput && (!currentNotes || currentNotes === '')) {
-                    notesInput.value = data.myOffer.supplierNotes || '';
-                }
-
-                if (data.myOffer.status === 'Reddedildi') {
-                    if (titleText) titleText.textContent = '🔄 Reddedilen Teklifi Revize Et & Yeni Fiyat Ver';
-                    if (submitBtn) submitBtn.textContent = 'Teklifi Revize Et & Gönder';
-                } else if (data.myOffer.offeredPrice > 0) {
-                    if (titleText) titleText.textContent = 'Teklifi Kalem Kalem Revize Et / Düzenle';
-                    if (submitBtn) submitBtn.textContent = 'Teklifi Güncelle & Gönder';
-                }
-            }
-
-            // Kalem tablosunu oluştur
-            var myOfferItems = (data.myOffer && data.myOffer.offerItems) ? data.myOffer.offerItems : [];
-            var html = '';
-
-            if (data.items && data.items.length > 0) {
-                data.items.forEach(function (it, idx) {
-                    var prevOi = myOfferItems.find(function (oi) { return oi.requestItemId === it.requestItemId; });
-                    var prevPrice = prevOi ? prevOi.unitPrice : '';
-                    var prevNote = prevOi ? (prevOi.notes || '') : '';
-                    var buyerRef = it.estimatedUnitPriceFormatted ? it.estimatedUnitPriceFormatted : '—';
-                    var itemDesc = it.itemDescription ? '<div style="font-size: 0.75rem; color: #64748B; margin-top: 2px;">' + escapeHtml(it.itemDescription) + '</div>' : '';
-
-                    html += '<tr class="bid-item-row" data-req-item-id="' + it.requestItemId + '" data-qty="' + it.quantity + '">';
-                    html += '  <td style="text-align: center; font-weight: 700; color: #64748B;">' + (it.itemOrder || (idx + 1)) + '</td>';
-                    html += '  <td>';
-                    html += '    <strong style="color: #0F172A; font-size: 0.86rem;">' + escapeHtml(it.itemName) + '</strong>';
-                    html +=      itemDesc;
-                    html += '  </td>';
-                    html += '  <td><span style="font-weight: 700; color: #2563EB;">' + Number(it.quantity).toLocaleString('tr-TR') + '</span> ' + escapeHtml(it.unit) + '</td>';
-                    html += '  <td style="font-size: 0.78rem; color: #64748B;">' + buyerRef + '</td>';
-                    html += '  <td>';
-                    html += '    <input type="number" class="bid-unit-price-input" min="0" step="any" placeholder="0,00" value="' + (prevPrice !== '' ? prevPrice : '') + '" required oninput="recalculateBidTotals()" />';
-                    html += '  </td>';
-                    html += '  <td>';
-                    html += '    <span class="bid-line-total-cell">0,00 ₺</span>';
-                    html += '  </td>';
-                    html += '  <td>';
-                    html += '    <input type="text" class="item-input bid-item-note" value="' + escapeHtml(prevNote) + '" placeholder="Marka / Stok notu" />';
-                    html += '  </td>';
-                    html += '</tr>';
+            try {
+                var response = await fetch('/Requests/Delete?id=' + requestId, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
                 });
+
+                var result = await response.json();
+                if (result.success) {
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('✓ ' + (result.message || 'Talep başarıyla silindi.'), 'info');
+                    }
+                    var row = document.querySelector('tr[data-request-id="' + requestId + '"]');
+                    if (row) {
+                        row.style.transition = 'all 0.35s ease';
+                        row.style.opacity = '0';
+                        row.style.transform = 'scale(0.96)';
+                        setTimeout(function () { 
+                            row.remove(); 
+                            window.RequestsManager.apply();
+                        }, 350);
+                    }
+                } else {
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('Hata: ' + (result.message || 'Silme işlemi başarısız.'), 'error');
+                    } else {
+                        alert('Hata: ' + result.message);
+                    }
+                }
+            } catch (err) {
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Sunucu hatası: ' + err.message, 'error');
+                } else {
+                    alert('Sunucu hatası: ' + err.message);
+                }
+            }
+        }
+
+        // =========================================================================
+        // 2. TEDARİKÇİ KALEM BAZLI TEKLİF VERME / REVİZE ETME MODALI
+        // =========================================================================
+        var activeBidRequestData = null;
+
+        async function openOfferModal(requestId, productName, currentBid, currentDays, currentNotes) {
+            var modal = document.getElementById('supplierBidModal');
+            if (!modal) return;
+
+            var reqInput = document.getElementById('bidRequestID');
+            var prodTitle = document.getElementById('bidProductTitle');
+            var reqBadge = document.getElementById('bidReqCodeBadge');
+            var buyerSub = document.getElementById('bidBuyerInfoSub');
+            var deadlineSub = document.getElementById('bidDeadlineBudgetSub');
+            var daysInput = document.getElementById('bidDeliveryDays');
+            var notesInput = document.getElementById('bidSupplierNotes');
+            var titleText = document.getElementById('bidModalTitleText');
+            var submitBtn = document.getElementById('bidSubmitBtn');
+            var tableBody = document.getElementById('bidItemsTableBody');
+            var countBadge = document.getElementById('bidItemsCountBadge');
+
+            if (reqInput) reqInput.value = requestId;
+            if (prodTitle) prodTitle.textContent = productName || ('Talep #' + requestId);
+            if (daysInput) daysInput.value = currentDays ? parseInt(currentDays) : 7;
+            if (notesInput) notesInput.value = currentNotes || '';
+
+            if (currentBid && currentBid !== '') {
+                if (titleText) titleText.textContent = 'Teklifi Kalem Kalem Revize Et / Düzenle';
+                if (submitBtn) submitBtn.textContent = 'Teklifi Güncelle & Gönder';
             } else {
-                html = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #64748B;">Bu talep için kalem bulunamadı.</td></tr>';
+                if (titleText) titleText.textContent = 'Talebe Kalem Bazlı Fiyat Teklifi Ver';
+                if (submitBtn) submitBtn.textContent = 'Teklifi İlet';
             }
 
-            if (tableBody) tableBody.innerHTML = html;
-            recalculateBidTotals();
-
-            // İlk inputa odaklan
-            var firstInput = tableBody.querySelector('.bid-unit-price-input');
-            if (firstInput) setTimeout(function () { firstInput.focus(); }, 80);
-
-        } catch (e) {
-            if (tableBody) tableBody.innerHTML = '<tr><td colspan="7" style="color: red; text-align: center; padding: 20px;">Hata: ' + e.message + '</td></tr>';
-        }
-    }
-
-    function recalculateBidTotals() {
-        var tableBody = document.getElementById('bidItemsTableBody');
-        if (!tableBody) return;
-
-        var rows = tableBody.querySelectorAll('.bid-item-row');
-        var totalBid = 0;
-        var pricedCount = 0;
-        var totalRowsCount = rows.length;
-
-        rows.forEach(function (row) {
-            var qty = parseFloat(row.getAttribute('data-qty') || '1');
-            var priceInput = row.querySelector('.bid-unit-price-input');
-            var totalCell = row.querySelector('.bid-line-total-cell');
-            var price = priceInput ? parseFloat(priceInput.value || '0') : 0;
-
-            if (!isNaN(price) && price > 0) {
-                var lineTotal = qty * price;
-                totalBid += lineTotal;
-                pricedCount++;
-                if (totalCell) totalCell.textContent = Number(lineTotal).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
-            } else {
-                if (totalCell) totalCell.textContent = '0,00 ₺';
+            if (tableBody) {
+                tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 25px; color: #64748B;">Kalem bilgileri yükleniyor...</td></tr>';
             }
-        });
 
-        var hiddenTotalInput = document.getElementById('bidOfferedPrice');
-        var bigTotalDisplay = document.getElementById('bidCalculatedTotal');
-        var pricedSummary = document.getElementById('bidPricedItemsSummary');
+            modal.classList.add('is-open');
 
-        if (hiddenTotalInput) hiddenTotalInput.value = totalBid;
-        if (bigTotalDisplay) bigTotalDisplay.textContent = Number(totalBid).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
-        if (pricedSummary) pricedSummary.textContent = pricedCount + ' / ' + totalRowsCount + ' Kalem Fiyatlandırıldı';
-    }
+            try {
+                var res = await fetch('/Requests/GetRequestDetails/' + requestId);
+                var data = await res.json();
 
-    function closeBidModal() {
-        var modal = document.getElementById('supplierBidModal');
-        if (modal) {
-            modal.classList.remove('is-open');
-        }
-    }
+                if (!data.success) {
+                    alert('Talep detayları alınamadı: ' + data.message);
+                    closeBidModal();
+                    return;
+                }
 
-    async function handleBidSubmit(event) {
-        event.preventDefault();
-        var form = event.target;
-        var submitBtn = document.getElementById('bidSubmitBtn') || form.querySelector('button[type="submit"]');
-        var originalText = submitBtn ? submitBtn.innerHTML : 'Teklifi İlet';
+                activeBidRequestData = data;
 
-        var reqId = parseInt(document.getElementById('bidRequestID')?.value || '0', 10);
-        var days = parseInt(document.getElementById('bidDeliveryDays')?.value || '7', 10);
-        var valDays = parseInt(document.getElementById('bidValidityDays')?.value || '30', 10);
-        var notes = document.getElementById('bidSupplierNotes')?.value || '';
+                if (reqBadge) reqBadge.textContent = data.requestCode + ' · ' + data.requestDate;
+                if (prodTitle) prodTitle.textContent = data.productName;
+                if (buyerSub) buyerSub.textContent = 'Alıcı: ' + data.buyerInfo + ' (' + data.requestType + ')' + (data.notes ? ' · Şartname: ' + data.notes : '');
+                if (deadlineSub) deadlineSub.textContent = 'Termin: ' + data.targetDeliveryDate + ' · Hedef Bütçe: ' + data.estimatedBudgetFormatted;
+                if (countBadge) countBadge.textContent = (data.items ? data.items.length : 0) + ' Kalem';
 
-        // Kalem bazlı teklifleri topla
-        var tableBody = document.getElementById('bidItemsTableBody');
-        var rows = tableBody ? tableBody.querySelectorAll('.bid-item-row') : [];
-        var offerItems = [];
-        var grandTotal = 0;
-        var unpricedCount = 0;
+                if (data.myOffer) {
+                    if (daysInput && (!currentDays || currentDays === '')) {
+                        daysInput.value = data.myOffer.deliveryDays || 7;
+                    }
+                    var valInput = document.getElementById('bidValidityDays');
+                    if (valInput) {
+                        valInput.value = data.myOffer.validityDays || 30;
+                    }
+                    if (notesInput && (!currentNotes || currentNotes === '')) {
+                        notesInput.value = data.myOffer.supplierNotes || '';
+                    }
 
-        rows.forEach(function (row) {
-            var reqItemId = parseInt(row.getAttribute('data-req-item-id') || '0', 10);
-            var qty = parseFloat(row.getAttribute('data-qty') || '1');
-            var price = parseFloat(row.querySelector('.bid-unit-price-input')?.value || '0');
-            var itemNote = row.querySelector('.bid-item-note')?.value?.trim() || null;
+                    if (data.myOffer.status === 'Reddedildi') {
+                        if (titleText) titleText.textContent = '🔄 Reddedilen Teklifi Revize Et & Yeni Fiyat Ver';
+                        if (submitBtn) submitBtn.textContent = 'Teklifi Revize Et & Gönder';
+                    } else if (data.myOffer.offeredPrice > 0) {
+                        if (titleText) titleText.textContent = 'Teklifi Kalem Kalem Revize Et / Düzenle';
+                        if (submitBtn) submitBtn.textContent = 'Teklifi Güncelle & Gönder';
+                    }
+                }
 
-            if (isNaN(price) || price <= 0) {
-                unpricedCount++;
-            } else {
-                offerItems.push({
-                    requestItemID: reqItemId,
-                    unitPrice: price,
-                    notes: itemNote
-                });
-                grandTotal += (price * qty);
-            }
-        });
+                var myOfferItems = (data.myOffer && data.myOffer.offerItems) ? data.myOffer.offerItems : [];
+                var html = '';
 
-        if (offerItems.length === 0) {
-            if (typeof showRealtimeToast === 'function') {
-                showRealtimeToast('Lütfen en az bir kalem için geçerli bir birim fiyat teklifi giriniz.', 'error');
-            } else {
-                alert('Lütfen en az bir kalem için geçerli bir birim fiyat teklifi giriniz.');
-            }
-            return;
-        }
+                if (data.items && data.items.length > 0) {
+                    data.items.forEach(function (it, idx) {
+                        var prevOi = myOfferItems.find(function (oi) { return oi.requestItemId === it.requestItemId; });
+                        var prevPrice = prevOi ? prevOi.unitPrice : '';
+                        var prevNote = prevOi ? (prevOi.notes || '') : '';
+                        var buyerRef = it.estimatedUnitPriceFormatted ? it.estimatedUnitPriceFormatted : '—';
+                        var itemDesc = it.itemDescription ? '<div style="font-size: 0.75rem; color: #64748B; margin-top: 2px;">' + escapeHtml(it.itemDescription) + '</div>' : '';
 
-        if (unpricedCount > 0) {
-            if (!confirm('Dikkat: ' + unpricedCount + ' adet kaleme fiyat girmediniz. Sadece fiyat girdiğiniz ' + offerItems.length + ' kalem üzerinden toplam ' + Number(grandTotal).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ₺ teklif vermek istiyor musunuz?')) {
-                return;
+                        html += '<tr class="bid-item-row" data-req-item-id="' + it.requestItemId + '" data-qty="' + it.quantity + '">';
+                        html += '  <td style="text-align: center; font-weight: 700; color: #64748B;">' + (it.itemOrder || (idx + 1)) + '</td>';
+                        html += '  <td>';
+                        html += '    <strong style="color: #0F172A; font-size: 0.86rem;">' + escapeHtml(it.itemName) + '</strong>';
+                        html +=      itemDesc;
+                        html += '  </td>';
+                        html += '  <td><span style="font-weight: 700; color: #2563EB;">' + Number(it.quantity).toLocaleString('tr-TR') + '</span> ' + escapeHtml(it.unit) + '</td>';
+                        html += '  <td style="font-size: 0.78rem; color: #64748B;">' + buyerRef + '</td>';
+                        html += '  <td>';
+                        html += '    <input type="number" class="bid-unit-price-input" min="0" step="any" placeholder="0,00" value="' + (prevPrice !== '' ? prevPrice : '') + '" required oninput="recalculateBidTotals()" />';
+                        html += '  </td>';
+                        html += '  <td>';
+                        html += '    <span class="bid-line-total-cell">0,00 ₺</span>';
+                        html += '  </td>';
+                        html += '  <td>';
+                        html += '    <input type="text" class="item-input bid-item-note" value="' + escapeHtml(prevNote) + '" placeholder="Marka / Stok notu" />';
+                        html += '  </td>';
+                        html += '</tr>';
+                    });
+                } else {
+                    html = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #64748B;">Bu talep için kalem bulunamadı.</td></tr>';
+                }
+
+                if (tableBody) tableBody.innerHTML = html;
+                recalculateBidTotals();
+
+                var firstInput = tableBody.querySelector('.bid-unit-price-input');
+                if (firstInput) setTimeout(function () { firstInput.focus(); }, 80);
+
+            } catch (e) {
+                if (tableBody) tableBody.innerHTML = '<tr><td colspan="7" style="color: red; text-align: center; padding: 20px;">Hata: ' + e.message + '</td></tr>';
             }
         }
 
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '⏳ Kalem Teklifleri İletiliyor...';
-        }
+        function recalculateBidTotals() {
+            var tableBody = document.getElementById('bidItemsTableBody');
+            if (!tableBody) return;
 
-        try {
-            var response = await fetch('/Requests/SubmitOfferAjax', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    requestId: reqId,
-                    offeredPrice: grandTotal,
-                    deliveryDays: days,
-                    validityDays: valDays,
-                    supplierNotes: notes,
-                    items: offerItems
-                })
+            var rows = tableBody.querySelectorAll('.bid-item-row');
+            var totalBid = 0;
+            var pricedCount = 0;
+            var totalRowsCount = rows.length;
+
+            rows.forEach(function (row) {
+                var qty = parseFloat(row.getAttribute('data-qty') || '1');
+                var priceInput = row.querySelector('.bid-unit-price-input');
+                var totalCell = row.querySelector('.bid-line-total-cell');
+                var price = priceInput ? parseFloat(priceInput.value || '0') : 0;
+
+                if (!isNaN(price) && price > 0) {
+                    var lineTotal = qty * price;
+                    totalBid += lineTotal;
+                    pricedCount++;
+                    if (totalCell) totalCell.textContent = Number(lineTotal).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
+                } else {
+                    if (totalCell) totalCell.textContent = '0,00 ₺';
+                }
             });
 
-            var result = await response.json();
-            if (result.success) {
-                closeBidModal();
+            var hiddenTotalInput = document.getElementById('bidOfferedPrice');
+            var bigTotalDisplay = document.getElementById('bidCalculatedTotal');
+            var pricedSummary = document.getElementById('bidPricedItemsSummary');
 
-                if (typeof updatePortalDomForOfferSubmitted === 'function') {
-                    updatePortalDomForOfferSubmitted({
+            if (hiddenTotalInput) hiddenTotalInput.value = totalBid;
+            if (bigTotalDisplay) bigTotalDisplay.textContent = Number(totalBid).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
+            if (pricedSummary) pricedSummary.textContent = pricedCount + ' / ' + totalRowsCount + ' Kalem Fiyatlandırıldı';
+        }
+
+        function closeBidModal() {
+            var modal = document.getElementById('supplierBidModal');
+            if (modal) {
+                modal.classList.remove('is-open');
+            }
+        }
+
+        async function handleBidSubmit(event) {
+            event.preventDefault();
+            var form = event.target;
+            var submitBtn = document.getElementById('bidSubmitBtn') || form.querySelector('button[type="submit"]');
+            var originalText = submitBtn ? submitBtn.innerHTML : 'Teklifi İlet';
+
+            var reqId = parseInt(document.getElementById('bidRequestID')?.value || '0', 10);
+            var days = parseInt(document.getElementById('bidDeliveryDays')?.value || '7', 10);
+            var valDays = parseInt(document.getElementById('bidValidityDays')?.value || '30', 10);
+            var notes = document.getElementById('bidSupplierNotes')?.value || '';
+
+            var tableBody = document.getElementById('bidItemsTableBody');
+            var rows = tableBody ? tableBody.querySelectorAll('.bid-item-row') : [];
+            var offerItems = [];
+            var grandTotal = 0;
+            var unpricedCount = 0;
+
+            rows.forEach(function (row) {
+                var reqItemId = parseInt(row.getAttribute('data-req-item-id') || '0', 10);
+                var qty = parseFloat(row.getAttribute('data-qty') || '1');
+                var price = parseFloat(row.querySelector('.bid-unit-price-input')?.value || '0');
+                var itemNote = row.querySelector('.bid-item-note')?.value?.trim() || null;
+
+                if (isNaN(price) || price <= 0) {
+                    unpricedCount++;
+                } else {
+                    offerItems.push({
+                        requestItemID: reqItemId,
+                        unitPrice: price,
+                        notes: itemNote
+                    });
+                    grandTotal += (price * qty);
+                }
+            });
+
+            if (offerItems.length === 0) {
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Lütfen en az bir kalem için geçerli bir birim fiyat teklifi giriniz.', 'error');
+                } else {
+                    alert('Lütfen en az bir kalem için geçerli bir birim fiyat teklifi giriniz.');
+                }
+                return;
+            }
+
+            if (unpricedCount > 0) {
+                if (!confirm('Dikkat: ' + unpricedCount + ' adet kaleme fiyat girmediniz. Sadece fiyat girdiğiniz ' + offerItems.length + ' kalem üzerinden toplam ' + Number(grandTotal).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ₺ teklif vermek istiyor musunuz?')) {
+                    return;
+                }
+            }
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ Kalem Teklifleri İletiliyor...';
+            }
+
+            try {
+                var response = await fetch('/Requests/SubmitOfferAjax', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
                         requestId: reqId,
                         offeredPrice: grandTotal,
-                        offeredPriceFormatted: Number(grandTotal).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ₺',
                         deliveryDays: days,
                         validityDays: valDays,
                         supplierNotes: notes,
-                        isMyBid: true
-                    });
-                }
-
-                if (typeof showRealtimeToast === 'function') {
-                    showRealtimeToast('✓ ' + (result.message || 'Kalem bazlı teklifiniz başarıyla iletildi!'), 'success');
-                }
-
-                // Eğer Talep Detay Modalı o an açıksa canlı güncelle
-                var detailModal = document.getElementById('detailRequestModal');
-                if (detailModal && detailModal.classList.contains('is-open')) {
-                    openDetailModal(reqId);
-                }
-
-                // Eğer Kıyaslama Modalı açıksa canlı güncelle
-                var cmpModal = document.getElementById('priceCompareModal');
-                if (cmpModal && cmpModal.classList.contains('is-open')) {
-                    openCompareModal(reqId);
-                }
-            } else {
-                if (typeof showRealtimeToast === 'function') {
-                    showRealtimeToast('Teklif iletilemedi: ' + (result.message || 'Bilinmeyen hata.'), 'error');
-                } else {
-                    alert('Teklif iletilemedi: ' + result.message);
-                }
-            }
-        } catch (err) {
-            if (typeof showRealtimeToast === 'function') {
-                showRealtimeToast('Sunucu bağlantı hatası: ' + err.message, 'error');
-            } else {
-                alert('Sunucu hatası: ' + err.message);
-            }
-        } finally {
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
-            }
-        }
-    }
-
-    // =========================================================================
-    // 3. TALEP DETAY VE İSTENİLENLER LİSTESİ İNCELEME MODALI
-    // =========================================================================
-    async function openDetailModal(requestId) {
-        var modal = document.getElementById('detailRequestModal');
-        var loading = document.getElementById('detailLoading');
-        var content = document.getElementById('detailContent');
-        var itemsBody = document.getElementById('detailItemsTableBody');
-        var itemCountBadge = document.getElementById('detailItemCountBadge');
-        var container = document.getElementById('offersListContainer');
-        var footer = document.getElementById('detailModalFooter');
-
-        if (!modal) return;
-
-        modal.setAttribute('data-active-request-id', requestId);
-        modal.classList.add('is-open');
-        loading.style.display = 'block';
-        content.style.display = 'none';
-        if (itemsBody) itemsBody.innerHTML = '';
-        container.innerHTML = '';
-
-        try {
-            if (window.portalHubConnection && window.portalHubConnection.state === 'Connected') {
-                window.portalHubConnection.invoke('JoinRequestGroup', parseInt(requestId)).catch(function(e) { console.warn(e); });
-            }
-        } catch (e) { }
-
-        try {
-            var response = await fetch('/Requests/GetRequestDetails/' + requestId);
-            var data = await response.json();
-
-            if (!data.success) {
-                alert('Talep detayları yüklenemedi: ' + data.message);
-                closeDetailModal();
-                return;
-            }
-
-            // Temel Bilgileri Doldur
-            document.getElementById('detailReqCode').textContent = data.requestCode + ' · ' + data.requestDate;
-            document.getElementById('detailProductName').textContent = data.productName;
-            document.getElementById('detailBuyerInfo').textContent = 'Alıcı: ' + data.buyerInfo + ' (' + data.requestType + ')';
-            document.getElementById('detailQtyBudget').textContent = 'Toplam ' + data.quantity.toLocaleString('tr-TR') + ' Birim · Bütçe: ' + data.estimatedBudgetFormatted;
-            document.getElementById('detailDeadline').textContent = 'Termin: ' + data.targetDeliveryDate;
-
-            // 📋 İstenilenler Listesi Tablosunu Doldur
-            if (itemsBody && data.items && data.items.length > 0) {
-                if (itemCountBadge) itemCountBadge.textContent = data.items.length + ' Kalem';
-                var itemsHtml = '';
-                data.items.forEach(function (it, idx) {
-                    var unitPriceFmt = it.estimatedUnitPriceFormatted ? it.estimatedUnitPriceFormatted : '—';
-                    var totalFmt = it.estimatedTotalPriceFormatted ? it.estimatedTotalPriceFormatted : '—';
-                    var desc = it.itemDescription ? escapeHtml(it.itemDescription) : '—';
-
-                    itemsHtml += '<tr>';
-                    itemsHtml += '  <td style="text-align: center; font-weight: 700; color: #64748B;">' + (it.itemOrder || (idx + 1)) + '</td>';
-                    itemsHtml += '  <td><strong style="color: #0F172A;">' + escapeHtml(it.itemName) + '</strong></td>';
-                    itemsHtml += '  <td><span style="font-weight: 700; color: #2563EB;">' + Number(it.quantity).toLocaleString('tr-TR') + '</span> ' + escapeHtml(it.unit) + '</td>';
-                    itemsHtml += '  <td style="color: #475569;">' + unitPriceFmt + '</td>';
-                    itemsHtml += '  <td><strong style="color: #059669;">' + totalFmt + '</strong></td>';
-                    itemsHtml += '  <td style="font-size: 0.78rem; color: #64748B;">' + desc + '</td>';
-                    itemsHtml += '</tr>';
+                        items: offerItems
+                    })
                 });
-                itemsBody.innerHTML = itemsHtml;
-            }
 
-            var notesContainer = document.getElementById('detailNotesContainer');
-            if (data.notes) {
-                notesContainer.style.display = 'block';
-                document.getElementById('detailNotesText').textContent = data.notes;
-            } else {
-                notesContainer.style.display = 'none';
-            }
+                var result = await response.json();
+                if (result.success) {
+                    closeBidModal();
 
-            document.getElementById('detailOfferCount').textContent = data.offerCount;
-
-            // Footer Butonları (Tedarikçi ise duruma göre Teklif Ver / Düzenle / Kilitli rozeti göster)
-            if (footer) {
-                if (!data.isOwner && data.status !== 'Onaylandı' && data.status !== 'Kabul Edildi' && data.status !== 'Tamamlandı' && data.status !== 'İptal Edildi') {
-                    var myOfferStatus = data.myOffer ? data.myOffer.status : null;
-                    if (myOfferStatus === 'Kabul Edildi' || myOfferStatus === 'Onaylandı') {
-                        footer.innerHTML = '<span class="badge-status is-approved" style="margin-right: auto; padding: 6px 12px; font-weight: 700; background: #ECFDF5; color: #065F46; border-radius: 6px; font-size: 0.85rem;">✓ Teklifiniz Onaylandı (Kilitli)</span><button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>';
-                    } else if (myOfferStatus === 'Reddedildi') {
-                        var myRej = data.myOffer && data.myOffer.rejectionReason ? data.myOffer.rejectionReason : 'Talep için başka bir teklif onaylandı.';
-                        var myBidVal = data.myOffer ? data.myOffer.offeredPrice : '';
-                        var myDaysVal = data.myOffer ? data.myOffer.deliveryDays : 7;
-                        var myNotesVal = data.myOffer ? (data.myOffer.supplierNotes || '') : '';
-                        footer.innerHTML = '<div style="margin-right: auto; text-align: left;"><span class="badge-status is-rejected" style="padding: 5px 10px; font-weight: 700; background: #FEF2F2; color: #991B1B; border-radius: 6px; font-size: 0.82rem; display: inline-block;">✕ Teklifiniz Reddedildi</span><span style="font-size: 0.76rem; color: #DC2626; margin-left: 8px; font-weight: 600;">🚫 Sebep: ' + escapeHtml(myRej) + '</span></div>' +
-                            '<button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>' +
-                            '<button type="button" class="btn-primary" style="background: #2563EB; border-color: #2563EB;" onclick="closeDetailModal(); openOfferModal(' + data.requestId + ', \'' + escapeHtml(data.productName) + '\', \'' + myBidVal + '\', \'' + myDaysVal + '\', \'' + escapeHtml(myNotesVal) + '\');">✏️ Kalem Tekliflerini Revize Et</button>';
-                    } else {
-                        var myBidVal = data.myOffer ? data.myOffer.offeredPrice : '';
-                        var myDaysVal = data.myOffer ? data.myOffer.deliveryDays : 7;
-                        var myNotesVal = data.myOffer ? (data.myOffer.supplierNotes || '') : '';
-                        var btnLabel = data.myOffer ? '✏️ Kalem Tekliflerini Düzenle' : '➕ Kalem Bazlı Teklif Ver';
-                        footer.innerHTML = '<button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>' +
-                            '<button type="button" class="btn-primary" style="background: #10B981; border-color: #10B981;" onclick="closeDetailModal(); openOfferModal(' + data.requestId + ', \'' + escapeHtml(data.productName) + '\', \'' + myBidVal + '\', \'' + myDaysVal + '\', \'' + escapeHtml(myNotesVal) + '\');">' + btnLabel + '</button>';
-                    }
-                } else if (data.isOwner) {
-                    footer.innerHTML = '<span style="color: #64748B; font-size: 0.82rem; margin-right: auto;">ℹ️ Bu talep firmanıza aittir.</span><button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>';
-                } else {
-                    var myOfferStatus = data.myOffer ? data.myOffer.status : null;
-                    var badge = '';
-                    if (myOfferStatus === 'Kabul Edildi' || myOfferStatus === 'Onaylandı') {
-                        badge = '<span class="badge-status is-approved" style="margin-right: auto; padding: 6px 12px; font-weight: 700; background: #ECFDF5; color: #065F46; border-radius: 6px; font-size: 0.85rem;">✓ Teklifiniz Onaylandı</span>';
-                    } else if (myOfferStatus === 'Reddedildi') {
-                        var myRej = data.myOffer && data.myOffer.rejectionReason ? data.myOffer.rejectionReason : 'Talep için başka bir teklif onaylandı.';
-                        badge = '<div style="margin-right: auto; text-align: left;"><span class="badge-status is-rejected" style="padding: 5px 10px; font-weight: 700; background: #FEF2F2; color: #991B1B; border-radius: 6px; font-size: 0.82rem; display: inline-block;">✕ Teklifiniz Reddedildi</span><span style="font-size: 0.76rem; color: #DC2626; margin-left: 8px; font-weight: 600;">🚫 Sebep: ' + escapeHtml(myRej) + '</span></div>';
-                    }
-                    footer.innerHTML = badge + '<button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>';
-                }
-            }
-
-            // Teklifleri Listele
-            if (data.offers && data.offers.length > 0) {
-                var html = '';
-                data.offers.forEach(function(o) {
-                    var isAcc = o.status === 'Kabul Edildi';
-                    var isRej = o.status === 'Reddedildi';
-                    var cardCls = isAcc ? 'offer-card-item is-accepted' : (isRej ? 'offer-card-item is-rejected' : 'offer-card-item');
-
-                    html += '<div class="' + cardCls + '" style="flex-direction: column; align-items: stretch; gap: 8px;">';
-                    html += '  <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">';
-                    html += '    <div class="offer-supplier-info">';
-                    html += '      <span class="offer-supplier-name">' + escapeHtml(o.supplierName) + '</span>';
-                    html += '      <span class="offer-meta">' + o.deliveryDays + ' Gün Teslimat · ' + o.validityDays + ' Gün Geçerli · ' + o.offerDate + '</span>';
-                    if (o.supplierNotes) {
-                        html += '      <span style="font-size: 0.78rem; color: #475569; margin-top: 3px;">💬 ' + escapeHtml(o.supplierNotes) + '</span>';
-                    }
-                    if (o.isRevised) {
-                        html += '      <div style="font-size: 0.76rem; color: #92400E; background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 6px; padding: 4px 8px; margin-top: 5px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 6px;">';
-                        html += '        <span>🔄 <strong>Revize Teklif:</strong> Reddedilen teklif tedarikçi tarafından güncellenerek tekrar iletildi.</span>';
-                        if (o.previousPriceFormatted) {
-                            html += '        <span style="color: #B45309; font-size: 0.72rem; white-space: nowrap;">(Önceki: <del>' + escapeHtml(o.previousPriceFormatted) + '</del>)</span>';
-                        }
-                        html += '      </div>';
-                    }
-                    if (isRej && o.rejectionReason) {
-                        html += '      <div style="font-size: 0.75rem; color: #991B1B; background: #FEF2F2; border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 4px; padding: 3px 8px; margin-top: 4px; font-weight: 600; display: inline-flex; align-items: gap: 4px; width: fit-content;">🚫 <strong>Red Sebebi:</strong> ' + escapeHtml(o.rejectionReason) + '</div>';
-                    }
-                    html += '    </div>';
-
-                    html += '    <div class="offer-price-box">';
-                    html += '      <span class="offer-price-val">' + o.offeredPriceFormatted + '</span>';
-
-                    // Alıcı onay butonları
-                    if (data.isOwner) {
-                        if (o.status === 'Beklemede' && data.status !== 'Onaylandı') {
-                            html += '      <div style="display: flex; gap: 6px; margin-top: 4px;">';
-                            html += '        <button type="button" class="btn-accept-offer" onclick="handleAcceptOffer(' + o.offerId + ', ' + data.requestId + ', \'' + escapeHtml(o.supplierName) + '\', \'' + escapeHtml(o.offeredPriceFormatted) + '\')">✓ Kabul Et</button>';
-                            html += '        <button type="button" class="btn-reject-offer" onclick="handleRejectOffer(' + o.offerId + ', ' + data.requestId + ', \'' + escapeHtml(o.supplierName) + '\')">✕ Reddet</button>';
-                            html += '      </div>';
-                        } else if (isAcc) {
-                            html += '      <span style="display: inline-block; background: #10B981; color: #FFFFFF; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; margin-top: 4px;">✓ KABUL EDİLDİ (ONAYLANDI)</span>';
-                        } else if (isRej) {
-                            html += '      <span style="display: inline-block; background: #FEF2F2; color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; margin-top: 4px;" title="' + escapeHtml(o.rejectionReason || 'Reddedildi') + '">✕ REDDEDİLDİ</span>';
-                        }
-                    } else {
-                        if (isAcc) {
-                            html += '      <span style="display: inline-block; background: #ECFDF5; color: #059669; border: 1px solid #10B981; font-weight: 700; font-size: 0.78rem; padding: 3px 8px; border-radius: 6px;">✓ Onaylanan Teklif</span>';
-                        } else if (isRej) {
-                            html += '      <span style="display: inline-block; background: #FEF2F2; color: #EF4444; font-size: 0.78rem; padding: 3px 8px; border-radius: 6px;" title="' + escapeHtml(o.rejectionReason || 'Reddedildi') + '">✕ Reddedildi</span>';
-                        } else {
-                            html += '      <span style="color: #64748B; font-size: 0.78rem; font-weight: 600;">⏳ ' + o.status + '</span>';
-                        }
-                    }
-                    html += '    </div>';
-                    html += '  </div>';
-
-                    // Kalem Fiyat Dağılımı Göster/Gizle Butonu ve Alt Tablosu
-                    if (o.offerItems && o.offerItems.length > 0) {
-                        html += '  <div style="border-top: 1px dashed #E2E8F0; padding-top: 6px; margin-top: 4px;">';
-                        html += '    <button type="button" class="btn-quick-tpl" onclick="toggleOfferBreakdown(this, \'subTable_' + o.offerId + '\')">📋 Kalem Fiyat Dağılımını Göster (' + o.offerItems.length + ' Kalem) ▼</button>';
-                        html += '    <div id="subTable_' + o.offerId + '" style="display: none; margin-top: 8px; overflow-x: auto; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px;">';
-                        html += '      <table style="width: 100%; border-collapse: collapse; font-size: 0.80rem;">';
-                        html += '        <thead><tr style="background: #F8FAFC; color: #475569; border-bottom: 1px solid #E2E8F0; text-align: left;"><th style="padding: 5px 8px;">Talep Kalemi</th><th style="padding: 5px 8px;">Miktar</th><th style="padding: 5px 8px;">Teklif B. Fiyat</th><th style="padding: 5px 8px;">Kalem Tutarı</th><th style="padding: 5px 8px;">Tedarikçi Kalem Notu</th></tr></thead>';
-                        html += '        <tbody>';
-                        o.offerItems.forEach(function(oi) {
-                            var matchedReqItem = (data.items || []).find(function(it) { return it.requestItemId === oi.requestItemId; });
-                            var iName = matchedReqItem ? matchedReqItem.itemName : ('Kalem #' + oi.requestItemId);
-                            var iQty = matchedReqItem ? (matchedReqItem.quantity + ' ' + matchedReqItem.unit) : '1 Birim';
-                            html += '        <tr style="border-bottom: 1px solid #F1F5F9;">';
-                            html += '          <td style="padding: 5px 8px;"><strong>' + escapeHtml(iName) + '</strong></td>';
-                            html += '          <td style="padding: 5px 8px; color: #2563EB;">' + iQty + '</td>';
-                            html += '          <td style="padding: 5px 8px; font-weight: 600;">' + oi.unitPriceFormatted + '</td>';
-                            html += '          <td style="padding: 5px 8px; font-weight: 700; color: #059669;">' + oi.lineTotalFormatted + '</td>';
-                            html += '          <td style="padding: 5px 8px; color: #64748B; font-size: 0.75rem;">' + escapeHtml(oi.notes || '—') + '</td>';
-                            html += '        </tr>';
+                    if (typeof updatePortalDomForOfferSubmitted === 'function') {
+                        updatePortalDomForOfferSubmitted({
+                            requestId: reqId,
+                            offeredPrice: grandTotal,
+                            offeredPriceFormatted: Number(grandTotal).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ₺',
+                            deliveryDays: days,
+                            validityDays: valDays,
+                            supplierNotes: notes,
+                            isMyBid: true
                         });
-                        html += '        </tbody>';
-                        html += '      </table>';
-                        html += '    </div>';
-                        html += '  </div>';
                     }
 
-                    html += '</div>';
-                });
-                container.innerHTML = html;
-            } else {
-                container.innerHTML = '<div style="text-align: center; padding: 24px; color: #64748B; background: #F8FAFC; border-radius: 8px; font-size: 0.85rem;">Bu talep için henüz bir tedarikçi teklifi verilmemiştir.</div>';
-            }
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('✓ ' + (result.message || 'Kalem bazlı teklifiniz başarıyla iletildi!'), 'success');
+                    }
 
-            loading.style.display = 'none';
-            content.style.display = 'flex';
-        } catch (err) {
-            loading.innerHTML = '<span style="color: red;">Detaylar alınırken hata oluştu: ' + err.message + '</span>';
-        }
-    }
+                    var detailModal = document.getElementById('detailRequestModal');
+                    if (detailModal && detailModal.classList.contains('is-open')) {
+                        openDetailModal(reqId);
+                    }
 
-    function toggleOfferBreakdown(btn, targetId) {
-        var target = document.getElementById(targetId);
-        if (!target) return;
-        if (target.style.display === 'none') {
-            target.style.display = 'block';
-            btn.textContent = btn.textContent.replace('▼', '▲').replace('Göster', 'Gizle');
-        } else {
-            target.style.display = 'none';
-            btn.textContent = btn.textContent.replace('▲', '▼').replace('Gizle', 'Göster');
-        }
-    }
-
-    function closeDetailModal() {
-        var modal = document.getElementById('detailRequestModal');
-        if (modal) {
-            var reqId = modal.getAttribute('data-active-request-id');
-            if (reqId && window.portalHubConnection && window.portalHubConnection.state === 'Connected') {
-                window.portalHubConnection.invoke('LeaveRequestGroup', parseInt(reqId)).catch(function(e) { console.warn(e); });
-            }
-            modal.removeAttribute('data-active-request-id');
-            modal.classList.remove('is-open');
-        }
-    }
-
-    async function handleAcceptOffer(offerId, requestId, supplierName, priceFormatted) {
-        if (!confirm(supplierName + ' firmasının ' + priceFormatted + ' tutarındaki teklifini KABUL ETMEK ve talebi ONAYLAMAK istiyor musunuz?')) {
-            return;
-        }
-
-        try {
-            var response = await fetch('/Requests/AcceptOfferAjax', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ offerId: offerId })
-            });
-            var res = await response.json();
-            if (res.success) {
-                if (typeof updatePortalDomForOfferApproved === 'function') {
-                    updatePortalDomForOfferApproved({ requestId: requestId });
-                }
-                if (typeof showRealtimeToast === 'function') {
-                    showRealtimeToast('✓ ' + (res.message || 'Teklif başarıyla onaylandı!'), 'success');
-                }
-                openDetailModal(requestId);
-            } else {
-                if (typeof showRealtimeToast === 'function') {
-                    showRealtimeToast('Hata: ' + res.message, 'error');
+                    var cmpModal = document.getElementById('priceCompareModal');
+                    if (cmpModal && cmpModal.classList.contains('is-open')) {
+                        openCompareModal(reqId);
+                    }
                 } else {
-                    alert('Hata: ' + res.message);
-                }
-            }
-        } catch (err) {
-            if (typeof showRealtimeToast === 'function') {
-                showRealtimeToast('Sunucu hatası: ' + err.message, 'error');
-            } else {
-                alert('Sunucu hatası: ' + err.message);
-            }
-        }
-    }
-
-    async function handleRejectOffer(offerId, requestId, supplierName) {
-        var reason = prompt(supplierName + ' firmasının teklifini reddetmek üzeresiniz.\nİsteğe bağlı bir red gerekçesi yazabilirsiniz:');
-        if (reason === null) return;
-
-        try {
-            var response = await fetch('/Requests/RejectOfferAjax', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ offerId: offerId, reason: reason })
-            });
-            var res = await response.json();
-            if (res.success) {
-                if (typeof updatePortalDomForOfferRejected === 'function') {
-                    updatePortalDomForOfferRejected({ requestId: requestId });
-                }
-                if (typeof showRealtimeToast === 'function') {
-                    showRealtimeToast('✓ ' + (res.message || 'Teklif reddedildi.'), 'info');
-                }
-                openDetailModal(requestId);
-            } else {
-                if (typeof showRealtimeToast === 'function') {
-                    showRealtimeToast('Hata: ' + res.message, 'error');
-                } else {
-                    alert('Hata: ' + res.message);
-                }
-            }
-        } catch (err) {
-            if (typeof showRealtimeToast === 'function') {
-                showRealtimeToast('Sunucu hatası: ' + err.message, 'error');
-            } else {
-                alert('Sunucu hatası: ' + err.message);
-            }
-        }
-    }
-
-    // =========================================================================
-    // 4. TEDARİKÇİ FİYAT KIYASLAMA MODALI İŞLEMLERİ (AJAX & CHART.JS)
-    // =========================================================================
-    var cmpChartInstance = null;
-
-    async function openCompareModal(requestId) {
-        var modal = document.getElementById('priceCompareModal');
-        var loading = document.getElementById('cmpLoading');
-        var content = document.getElementById('cmpContent');
-        var empty = document.getElementById('cmpEmpty');
-        var tableBody = document.getElementById('cmpTableBody');
-
-        if (!modal) return;
-
-        modal.classList.add('is-open');
-        loading.style.display = 'block';
-        content.style.display = 'none';
-        empty.style.display = 'none';
-        tableBody.innerHTML = '';
-
-        try {
-            var response = await fetch('/Requests/GetComparisonData/' + requestId);
-            var data = await response.json();
-
-            if (!data.success) {
-                alert('Kıyaslama verileri yüklenemedi: ' + data.message);
-                closeCompareModal();
-                return;
-            }
-
-            // 1. Talep Özet Şeridi Doldur
-            document.getElementById('cmpReqCode').textContent = data.requestCode;
-            document.getElementById('cmpProductName').textContent = data.productName;
-            document.getElementById('cmpReqCategory').textContent = 'Kategori: ' + data.requestType;
-            document.getElementById('cmpQuantity').textContent = data.quantity.toLocaleString('tr-TR') + ' Adet';
-            document.getElementById('cmpBudget').textContent = data.estimatedBudgetFormatted;
-
-            var statusBadge = document.getElementById('cmpStatusBadge');
-            if (data.isApproved) {
-                statusBadge.innerHTML = '<span class="badge-status is-approved" style="font-size: 0.82rem; padding: 4px 8px; font-weight: 700;">✓ Onaylandı (' + escapeHtml(data.winningSupplierName) + ')</span>';
-            } else {
-                statusBadge.innerHTML = '<span class="badge-status is-pending" style="font-size: 0.82rem; padding: 4px 8px; font-weight: 700;">⏳ ' + escapeHtml(data.status) + '</span>';
-            }
-
-            var notesWrap = document.getElementById('cmpNotesWrap');
-            if (data.notes) {
-                notesWrap.style.display = 'block';
-                document.getElementById('cmpNotesText').textContent = data.notes;
-            } else {
-                notesWrap.style.display = 'none';
-            }
-
-            // Teklifler Var mı?
-            if (!data.offers || data.offers.length === 0) {
-                loading.style.display = 'none';
-                empty.style.display = 'block';
-                return;
-            }
-
-            // 2. KPI Rozetleri Doldur
-            document.getElementById('cmpKpiLowestPrice').textContent = data.lowestPriceFormatted;
-            document.getElementById('cmpKpiLowestSupplier').textContent = data.lowestSupplierName;
-
-            document.getElementById('cmpKpiFastestDays').textContent = data.fastestDays + ' Gün';
-            document.getElementById('cmpKpiFastestSupplier').textContent = data.fastestSupplierName;
-
-            document.getElementById('cmpKpiSavings').textContent = data.budgetSavingsFormatted;
-            document.getElementById('cmpKpiSavingsSub').textContent = data.hasBudget ? 'Hedef bütçeye kıyasla fark' : 'En pahalı teklife kıyasla tasarruf';
-
-            document.getElementById('cmpKpiOfferCount').textContent = data.offerCount + ' Teklif';
-            document.getElementById('cmpKpiAvgPrice').textContent = data.avgPriceFormatted;
-            document.getElementById('cmpKpiUnitAvg').textContent = 'Kalem Başına: ~' + data.unitAvgPriceFormatted;
-
-            document.getElementById('cmpTableMeta').textContent = data.offerCount + ' Tedarikçi Teklifi';
-
-            // 3. Kıyaslama Tablosunu Doldur
-            var tableHtml = '';
-            data.offers.forEach(function(o) {
-                var rowCls = o.isLowestPrice ? 'is-best-row' : '';
-                tableHtml += '<tr class="' + rowCls + '">';
-
-                // Tedarikçi
-                var initial = o.supplierName && o.supplierName.length >= 2 ? o.supplierName.substring(0, 2).toUpperCase() : 'TF';
-                tableHtml += '  <td>';
-                tableHtml += '    <div style="display: flex; align-items: center; gap: 10px;">';
-                tableHtml += '      <div class="cmp-sup-avatar">' + initial + '</div>';
-                tableHtml += '      <div>';
-                tableHtml += '        <strong style="color: #0F172A; font-size: 0.88rem; display: block;">' + escapeHtml(o.supplierName) + '</strong>';
-                if (o.supplierOfficial) {
-                    tableHtml += '        <div style="font-size: 0.74rem; color: #64748B;">Yetkili: ' + escapeHtml(o.supplierOfficial) + '</div>';
-                }
-                if (o.supplierPhone || o.supplierMail) {
-                    tableHtml += '        <div style="font-size: 0.72rem; color: #94A3B8;">' + escapeHtml(o.supplierPhone || o.supplierMail) + '</div>';
-                }
-                if (o.isRevised) {
-                    tableHtml += '        <div style="display: inline-flex; align-items: center; gap: 4px; background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; font-size: 0.70rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-top: 3px;" title="Reddedilen teklif tedarikçi tarafından güncellendi. ' + (o.previousPriceFormatted ? 'Önceki: ' + escapeHtml(o.previousPriceFormatted) : '') + '">🔄 Revize Edildi' + (o.previousPriceFormatted ? ' (<del>' + escapeHtml(o.previousPriceFormatted) + '</del>)' : '') + '</div>';
-                }
-                tableHtml += '      </div>';
-                tableHtml += '    </div>';
-                tableHtml += '  </td>';
-
-                // Toplam Teklif
-                var priceCls = o.isLowestPrice ? 'price-main-modal is-green' : 'price-main-modal';
-                tableHtml += '  <td>';
-                tableHtml += '    <div class="' + priceCls + '">' + o.offeredPriceFormatted + '</div>';
-                tableHtml += '    <div style="display: flex; gap: 4px; margin-top: 4px;">';
-                if (o.isLowestPrice) {
-                    tableHtml += '      <span class="badge-lowest-modal">🟢 En Uygun</span>';
-                }
-                if (o.isFastestDelivery) {
-                    tableHtml += '      <span class="badge-fastest-modal">⚡ En Hızlı</span>';
-                }
-                tableHtml += '    </div>';
-                tableHtml += '  </td>';
-
-                // Birim Fiyat
-                tableHtml += '  <td>';
-                tableHtml += '    <strong style="color: #0F172A; font-size: 0.86rem;">' + o.unitPriceFormatted + '</strong>';
-                tableHtml += '    <div style="font-size: 0.72rem; color: #64748B;">/ Adet</div>';
-                tableHtml += '  </td>';
-
-                // Teslimat
-                tableHtml += '  <td>';
-                tableHtml += '    <div style="display: inline-flex; align-items: center; gap: 4px; background: #F1F5F9; padding: 3px 8px; border-radius: 6px; font-weight: 700; color: #334155; font-size: 0.80rem;">';
-                tableHtml += '      <span>⏱️ ' + o.deliveryDays + ' Gün</span>';
-                tableHtml += '    </div>';
-                tableHtml += '  </td>';
-
-                // Geçerlilik
-                tableHtml += '  <td><span style="font-weight: 600; color: #475569;">' + o.validityDays + ' Gün</span></td>';
-
-                // Bütçe Sapması
-                var varColor = (o.budgetVariance !== null && o.budgetVariance <= 0) ? '#059669' : '#DC2626';
-                var varBg = (o.budgetVariance !== null && o.budgetVariance <= 0) ? '#ECFDF5' : '#FEF2F2';
-                var varBorder = (o.budgetVariance !== null && o.budgetVariance <= 0) ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)';
-                tableHtml += '  <td>';
-                if (o.budgetVarianceFormatted !== '—') {
-                    tableHtml += '    <span style="display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; background: ' + varBg + '; color: ' + varColor + '; border: 1px solid ' + varBorder + ';">' + o.budgetVarianceFormatted + '</span>';
-                } else {
-                    tableHtml += '    <span style="color: #94A3B8;">—</span>';
-                }
-                tableHtml += '  </td>';
-
-                // Notlar & Red Gerekçesi
-                var notesHtml = '';
-                if (o.supplierNotes) {
-                    notesHtml += '<div>' + escapeHtml(o.supplierNotes) + '</div>';
-                }
-                if (o.isRejected && o.rejectionReason) {
-                    notesHtml += '<div style="font-size: 0.74rem; color: #DC2626; font-weight: 600; margin-top: 2px;">🚫 Red Sebebi: ' + escapeHtml(o.rejectionReason) + '</div>';
-                }
-                if (!notesHtml) {
-                    notesHtml = '<span style="color: #94A3B8;">Belirtilmedi</span>';
-                }
-                tableHtml += '  <td style="max-width: 200px; font-size: 0.78rem; color: #475569; line-height: 1.4;">' + notesHtml + '</td>';
-
-                // Durum
-                tableHtml += '  <td>';
-                if (o.isAccepted) {
-                    tableHtml += '    <span class="badge-status is-approved" style="font-size: 0.78rem; font-weight: 700;">✓ Onaylandı</span>';
-                } else if (o.isRejected) {
-                    tableHtml += '    <span class="badge-status is-rejected" style="font-size: 0.78rem; font-weight: 700;" title="' + escapeHtml(o.rejectionReason || 'Reddedildi') + '">✕ Reddedildi</span>';
-                } else {
-                    tableHtml += '    <span class="badge-status is-pending" style="font-size: 0.78rem; font-weight: 700;">⏳ ' + escapeHtml(o.status) + '</span>';
-                }
-                tableHtml += '  </td>';
-
-                // Karar & İşlem Butonları
-                tableHtml += '  <td style="text-align: right;">';
-                if (data.isOwner) {
-                    if (o.status === 'Beklemede' && !data.isApproved) {
-                        tableHtml += '    <div style="display: inline-flex; gap: 5px;">';
-                        tableHtml += '      <button type="button" class="btn-cmp-accept" onclick="handleAcceptOfferFromCompareModal(' + o.offerId + ', ' + data.requestId + ', \'' + escapeHtml(o.supplierName) + '\', \'' + escapeHtml(o.offeredPriceFormatted) + '\')" title="Teklifi Kabul Et ve Talebi Onayla">✓ Kabul Et</button>';
-                        tableHtml += '      <button type="button" class="btn-cmp-reject" onclick="handleRejectOfferFromCompareModal(' + o.offerId + ', ' + data.requestId + ', \'' + escapeHtml(o.supplierName) + '\')" title="Teklifi Reddet">✕</button>';
-                        tableHtml += '    </div>';
-                    } else if (o.isAccepted) {
-                        tableHtml += '    <span style="display: inline-flex; align-items: center; gap: 4px; background: #ECFDF5; color: #065F46; border: 1px solid #10B981; font-weight: 800; font-size: 0.78rem; padding: 4px 10px; border-radius: 6px;">✓ Kazanan Teklif</span>';
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('Teklif iletilemedi: ' + (result.message || 'Bilinmeyen hata.'), 'error');
                     } else {
-                        tableHtml += '    <span style="color: #94A3B8; font-size: 0.75rem;">Kapalı</span>';
+                        alert('Teklif iletilemedi: ' + result.message);
                     }
-                } else {
-                    tableHtml += '    <span style="color: #64748B; font-size: 0.75rem;">İnceleme</span>';
                 }
-                tableHtml += '  </td>';
-
-                tableHtml += '</tr>';
-            });
-
-            tableBody.innerHTML = tableHtml;
-
-            // 4. Chart.js Karşılaştırma Grafiği Çiz
-            renderCompareModalChart(data.offers, data.lowestPrice);
-
-            loading.style.display = 'none';
-            content.style.display = 'flex';
-        } catch (err) {
-            loading.innerHTML = '<span style="color: red;">Kıyaslama yüklenirken hata oluştu: ' + err.message + '</span>';
-        }
-    }
-
-    function closeCompareModal() {
-        var modal = document.getElementById('priceCompareModal');
-        if (modal) {
-            modal.classList.remove('is-open');
-        }
-    }
-
-    function renderCompareModalChart(offers, lowestPrice) {
-        var canvas = document.getElementById('cmpModalChartCanvas');
-        if (!canvas) return;
-
-        if (cmpChartInstance) {
-            cmpChartInstance.destroy();
-            cmpChartInstance = null;
+            } catch (err) {
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Sunucu bağlantı hatası: ' + err.message, 'error');
+                } else {
+                    alert('Sunucu hatası: ' + err.message);
+                }
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            }
         }
 
-        var labels = offers.map(function (o) { return o.supplierName.split(' ')[0] + ' ' + (o.supplierName.split(' ')[1] || ''); });
-        var dataPrices = offers.map(function (o) { return o.offeredPrice; });
+        // =========================================================================
+        // 3. TALEP DETAY VE İSTENİLENLER LİSTESİ İNCELEME MODALI
+        // =========================================================================
+        async function openDetailModal(requestId) {
+            var modal = document.getElementById('detailRequestModal');
+            var loading = document.getElementById('detailLoading');
+            var content = document.getElementById('detailContent');
+            var itemsBody = document.getElementById('detailItemsTableBody');
+            var itemCountBadge = document.getElementById('detailItemCountBadge');
+            var container = document.getElementById('offersListContainer');
+            var footer = document.getElementById('detailModalFooter');
 
-        var bgColors = dataPrices.map(function (p) {
-            return p === lowestPrice ? 'rgba(16, 185, 129, 0.88)' : 'rgba(59, 130, 246, 0.80)';
-        });
+            if (!modal) return;
 
-        var borderColors = dataPrices.map(function (p) {
-            return p === lowestPrice ? '#059669' : '#1D4ED8';
-        });
+            modal.setAttribute('data-active-request-id', requestId);
+            modal.classList.add('is-open');
+            loading.style.display = 'block';
+            content.style.display = 'none';
+            if (itemsBody) itemsBody.innerHTML = '';
+            container.innerHTML = '';
 
-        cmpChartInstance = new Chart(canvas, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Teklif Tutarı (₺)',
-                    data: dataPrices,
-                    backgroundColor: bgColors,
-                    borderColor: borderColors,
-                    borderWidth: 1.5,
-                    borderRadius: 8,
-                    maxBarThickness: 50
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#0F172A',
-                        padding: 10,
-                        titleFont: { size: 12, weight: '700' },
-                        bodyFont: { size: 12 },
-                        cornerRadius: 8,
-                        displayColors: false,
-                        callbacks: {
-                            label: function (ctx) {
-                                return '💰 Toplam Teklif: ' + Number(ctx.raw).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ₺';
+            try {
+                if (window.portalHubConnection && window.portalHubConnection.state === 'Connected') {
+                    window.portalHubConnection.invoke('JoinRequestGroup', parseInt(requestId)).catch(function(e) { console.warn(e); });
+                }
+            } catch (e) { }
+
+            try {
+                var response = await fetch('/Requests/GetRequestDetails/' + requestId);
+                var data = await response.json();
+
+                if (!data.success) {
+                    alert('Talep detayları yüklenemedi: ' + data.message);
+                    closeDetailModal();
+                    return;
+                }
+
+                document.getElementById('detailReqCode').textContent = data.requestCode + ' · ' + data.requestDate;
+                document.getElementById('detailProductName').textContent = data.productName;
+                document.getElementById('detailBuyerInfo').textContent = 'Alıcı: ' + data.buyerInfo + ' (' + data.requestType + ')';
+                document.getElementById('detailQtyBudget').textContent = 'Toplam ' + data.quantity.toLocaleString('tr-TR') + ' Birim · Bütçe: ' + data.estimatedBudgetFormatted;
+                document.getElementById('detailDeadline').textContent = 'Termin: ' + data.targetDeliveryDate;
+
+                if (itemsBody && data.items && data.items.length > 0) {
+                    if (itemCountBadge) itemCountBadge.textContent = data.items.length + ' Kalem';
+                    var itemsHtml = '';
+                    data.items.forEach(function (it, idx) {
+                        var unitPriceFmt = it.estimatedUnitPriceFormatted ? it.estimatedUnitPriceFormatted : '—';
+                        var totalFmt = it.estimatedTotalPriceFormatted ? it.estimatedTotalPriceFormatted : '—';
+                        var desc = it.itemDescription ? escapeHtml(it.itemDescription) : '—';
+
+                        itemsHtml += '<tr>';
+                        itemsHtml += '  <td style="text-align: center; font-weight: 700; color: #64748B;">' + (it.itemOrder || (idx + 1)) + '</td>';
+                        itemsHtml += '  <td><strong style="color: #0F172A;">' + escapeHtml(it.itemName) + '</strong></td>';
+                        itemsHtml += '  <td><span style="font-weight: 700; color: #2563EB;">' + Number(it.quantity).toLocaleString('tr-TR') + '</span> ' + escapeHtml(it.unit) + '</td>';
+                        itemsHtml += '  <td style="color: #475569;">' + unitPriceFmt + '</td>';
+                        itemsHtml += '  <td><strong style="color: #059669;">' + totalFmt + '</strong></td>';
+                        itemsHtml += '  <td style="font-size: 0.78rem; color: #64748B;">' + desc + '</td>';
+                        itemsHtml += '</tr>';
+                    });
+                    itemsBody.innerHTML = itemsHtml;
+                }
+
+                var notesContainer = document.getElementById('detailNotesContainer');
+                if (data.notes) {
+                    notesContainer.style.display = 'block';
+                    document.getElementById('detailNotesText').textContent = data.notes;
+                } else {
+                    notesContainer.style.display = 'none';
+                }
+
+                document.getElementById('detailOfferCount').textContent = data.offerCount;
+
+                if (footer) {
+                    if (!data.isOwner && data.status !== 'Onaylandı' && data.status !== 'Kabul Edildi' && data.status !== 'Tamamlandı' && data.status !== 'İptal Edildi') {
+                        var myOfferStatus = data.myOffer ? data.myOffer.status : null;
+                        if (myOfferStatus === 'Kabul Edildi' || myOfferStatus === 'Onaylandı') {
+                            footer.innerHTML = '<span class="badge-status is-approved" style="margin-right: auto; padding: 6px 12px; font-weight: 700; background: #ECFDF5; color: #065F46; border-radius: 6px; font-size: 0.85rem;">✓ Teklifiniz Onaylandı (Kilitli)</span><button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>';
+                        } else if (myOfferStatus === 'Reddedildi') {
+                            var myRej = data.myOffer && data.myOffer.rejectionReason ? data.myOffer.rejectionReason : 'Talep için başka bir teklif onaylandı.';
+                            var myBidVal = data.myOffer ? data.myOffer.offeredPrice : '';
+                            var myDaysVal = data.myOffer ? data.myOffer.deliveryDays : 7;
+                            var myNotesVal = data.myOffer ? (data.myOffer.supplierNotes || '') : '';
+                            footer.innerHTML = '<div style="margin-right: auto; text-align: left;"><span class="badge-status is-rejected" style="padding: 5px 10px; font-weight: 700; background: #FEF2F2; color: #991B1B; border-radius: 6px; font-size: 0.82rem; display: inline-block;">✕ Teklifiniz Reddedildi</span><span style="font-size: 0.76rem; color: #DC2626; margin-left: 8px; font-weight: 600;">🚫 Sebep: ' + escapeHtml(myRej) + '</span></div>' +
+                                '<button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>' +
+                                '<button type="button" class="btn-primary" style="background: #2563EB; border-color: #2563EB;" onclick="closeDetailModal(); openOfferModal(' + data.requestId + ', \'' + escapeHtml(data.productName) + '\', \'' + myBidVal + '\', \'' + myDaysVal + '\', \'' + escapeHtml(myNotesVal) + '\');">✏️ Kalem Tekliflerini Revize Et</button>';
+                        } else {
+                            var myBidVal = data.myOffer ? data.myOffer.offeredPrice : '';
+                            var myDaysVal = data.myOffer ? data.myOffer.deliveryDays : 7;
+                            var myNotesVal = data.myOffer ? (data.myOffer.supplierNotes || '') : '';
+                            var btnLabel = data.myOffer ? '✏️ Kalem Tekliflerini Düzenle' : '➕ Kalem Bazlı Teklif Ver';
+                            footer.innerHTML = '<button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>' +
+                                '<button type="button" class="btn-primary" style="background: #10B981; border-color: #10B981;" onclick="closeDetailModal(); openOfferModal(' + data.requestId + ', \'' + escapeHtml(data.productName) + '\', \'' + myBidVal + '\', \'' + myDaysVal + '\', \'' + escapeHtml(myNotesVal) + '\');">' + btnLabel + '</button>';
+                        }
+                    } else if (data.isOwner) {
+                        footer.innerHTML = '<span style="color: #64748B; font-size: 0.82rem; margin-right: auto;">ℹ️ Bu talep firmanıza aittir.</span><button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>';
+                    } else {
+                        var myOfferStatus = data.myOffer ? data.myOffer.status : null;
+                        var badge = '';
+                        if (myOfferStatus === 'Kabul Edildi' || myOfferStatus === 'Onaylandı') {
+                            badge = '<span class="badge-status is-approved" style="margin-right: auto; padding: 6px 12px; font-weight: 700; background: #ECFDF5; color: #065F46; border-radius: 6px; font-size: 0.85rem;">✓ Teklifiniz Onaylandı</span>';
+                        } else if (myOfferStatus === 'Reddedildi') {
+                            var myRej = data.myOffer && data.myOffer.rejectionReason ? data.myOffer.rejectionReason : 'Talep için başka bir teklif onaylandı.';
+                            badge = '<div style="margin-right: auto; text-align: left;"><span class="badge-status is-rejected" style="padding: 5px 10px; font-weight: 700; background: #FEF2F2; color: #991B1B; border-radius: 6px; font-size: 0.82rem; display: inline-block;">✕ Teklifiniz Reddedildi</span><span style="font-size: 0.76rem; color: #DC2626; margin-left: 8px; font-weight: 600;">🚫 Sebep: ' + escapeHtml(myRej) + '</span></div>';
+                        }
+                        footer.innerHTML = badge + '<button type="button" class="btn-modal-cancel" onclick="closeDetailModal()">Kapat</button>';
+                    }
+                }
+
+                if (data.offers && data.offers.length > 0) {
+                    var html = '';
+                    data.offers.forEach(function(o) {
+                        var isAcc = o.status === 'Kabul Edildi';
+                        var isRej = o.status === 'Reddedildi';
+                        var cardCls = isAcc ? 'offer-card-item is-accepted' : (isRej ? 'offer-card-item is-rejected' : 'offer-card-item');
+
+                        html += '<div class="' + cardCls + '" style="flex-direction: column; align-items: stretch; gap: 8px;">';
+                        html += '  <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">';
+                        html += '    <div class="offer-supplier-info">';
+                        html += '      <span class="offer-supplier-name">' + escapeHtml(o.supplierName) + '</span>';
+                        html += '      <span class="offer-meta">' + o.deliveryDays + ' Gün Teslimat · ' + o.validityDays + ' Gün Geçerli · ' + o.offerDate + '</span>';
+                        if (o.supplierNotes) {
+                            html += '      <span style="font-size: 0.78rem; color: #475569; margin-top: 3px;">💬 ' + escapeHtml(o.supplierNotes) + '</span>';
+                        }
+                        if (o.isRevised) {
+                            html += '      <div style="font-size: 0.76rem; color: #92400E; background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 6px; padding: 4px 8px; margin-top: 5px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 6px;">';
+                            html += '        <span>🔄 <strong>Revize Teklif:</strong> Reddedilen teklif tedarikçi tarafından güncellenerek tekrar iletildi.</span>';
+                            if (o.previousPriceFormatted) {
+                                html += '        <span style="color: #B45309; font-size: 0.72rem; white-space: nowrap;">(Önceki: <del>' + escapeHtml(o.previousPriceFormatted) + '</del>)</span>';
+                            }
+                            html += '      </div>';
+                        }
+                        if (isRej && o.rejectionReason) {
+                            html += '      <div style="font-size: 0.75rem; color: #991B1B; background: #FEF2F2; border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 4px; padding: 3px 8px; margin-top: 4px; font-weight: 600; display: inline-flex; align-items: gap: 4px; width: fit-content;">🚫 <strong>Red Sebebi:</strong> ' + escapeHtml(o.rejectionReason) + '</div>';
+                        }
+                        html += '    </div>';
+
+                        html += '    <div class="offer-price-box">';
+                        html += '      <span class="offer-price-val">' + o.offeredPriceFormatted + '</span>';
+
+                        if (data.isOwner) {
+                            if (o.status === 'Beklemede' && data.status !== 'Onaylandı') {
+                                html += '      <div style="display: flex; gap: 6px; margin-top: 4px;">';
+                                html += '        <button type="button" class="btn-accept-offer" onclick="handleAcceptOffer(' + o.offerId + ', ' + data.requestId + ', \'' + escapeHtml(o.supplierName) + '\', \'' + escapeHtml(o.offeredPriceFormatted) + '\')">✓ Kabul Et</button>';
+                                html += '        <button type="button" class="btn-reject-offer" onclick="handleRejectOffer(' + o.offerId + ', ' + data.requestId + ', \'' + escapeHtml(o.supplierName) + '\')">✕ Reddet</button>';
+                                html += '      </div>';
+                            } else if (isAcc) {
+                                html += '      <span style="display: inline-block; background: #10B981; color: #FFFFFF; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; margin-top: 4px;">✓ KABUL EDİLDİ (ONAYLANDI)</span>';
+                            } else if (isRej) {
+                                html += '      <span style="display: inline-block; background: #FEF2F2; color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; margin-top: 4px;" title="' + escapeHtml(o.rejectionReason || 'Reddedildi') + '">✕ REDDEDİLDİ</span>';
+                            }
+                        } else {
+                            if (isAcc) {
+                                html += '      <span style="display: inline-block; background: #ECFDF5; color: #059669; border: 1px solid #10B981; font-weight: 700; font-size: 0.78rem; padding: 3px 8px; border-radius: 6px;">✓ Onaylanan Teklif</span>';
+                            } else if (isRej) {
+                                html += '      <span style="display: inline-block; background: #FEF2F2; color: #EF4444; font-size: 0.78rem; padding: 3px 8px; border-radius: 6px;" title="' + escapeHtml(o.rejectionReason || 'Reddedildi') + '">✕ Reddedildi</span>';
+                            } else {
+                                html += '      <span style="color: #64748B; font-size: 0.78rem; font-weight: 600;">⏳ ' + o.status + '</span>';
                             }
                         }
+                        html += '    </div>';
+                        html += '  </div>';
+
+                        if (o.offerItems && o.offerItems.length > 0) {
+                            html += '  <div style="border-top: 1px dashed #E2E8F0; padding-top: 6px; margin-top: 4px;">';
+                            html += '    <button type="button" class="btn-quick-tpl" onclick="toggleOfferBreakdown(this, \'subTable_' + o.offerId + '\')">📋 Kalem Fiyat Dağılımını Göster (' + o.offerItems.length + ' Kalem) ▼</button>';
+                            html += '    <div id="subTable_' + o.offerId + '" style="display: none; margin-top: 8px; overflow-x: auto; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px;">';
+                            html += '      <table style="width: 100%; border-collapse: collapse; font-size: 0.80rem;">';
+                            html += '        <thead><tr style="background: #F8FAFC; color: #475569; border-bottom: 1px solid #E2E8F0; text-align: left;"><th style="padding: 5px 8px;">Talep Kalemi</th><th style="padding: 5px 8px;">Miktar</th><th style="padding: 5px 8px;">Teklif B. Fiyat</th><th style="padding: 5px 8px;">Kalem Tutarı</th><th style="padding: 5px 8px;">Tedarikçi Kalem Notu</th></tr></thead>';
+                            html += '        <tbody>';
+                            o.offerItems.forEach(function(oi) {
+                                var matchedReqItem = (data.items || []).find(function(it) { return it.requestItemId === oi.requestItemId; });
+                                var iName = matchedReqItem ? matchedReqItem.itemName : ('Kalem #' + oi.requestItemId);
+                                var iQty = matchedReqItem ? (matchedReqItem.quantity + ' ' + matchedReqItem.unit) : '1 Birim';
+                                html += '        <tr style="border-bottom: 1px solid #F1F5F9;">';
+                                html += '          <td style="padding: 5px 8px;"><strong>' + escapeHtml(iName) + '</strong></td>';
+                                html += '          <td style="padding: 5px 8px; color: #2563EB;">' + iQty + '</td>';
+                                html += '          <td style="padding: 5px 8px; font-weight: 600;">' + oi.unitPriceFormatted + '</td>';
+                                html += '          <td style="padding: 5px 8px; font-weight: 700; color: #059669;">' + oi.lineTotalFormatted + '</td>';
+                                html += '          <td style="padding: 5px 8px; color: #64748B; font-size: 0.75rem;">' + escapeHtml(oi.notes || '—') + '</td>';
+                                html += '        </tr>';
+                            });
+                            html += '        </tbody>';
+                            html += '      </table>';
+                            html += '    </div>';
+                            html += '  </div>';
+                        }
+
+                        html += '</div>';
+                    });
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<div style="text-align: center; padding: 24px; color: #64748B; background: #F8FAFC; border-radius: 8px; font-size: 0.85rem;">Bu talep için henüz bir tedarikçi teklifi verilmemiştir.</div>';
+                }
+
+                loading.style.display = 'none';
+                content.style.display = 'flex';
+            } catch (err) {
+                loading.innerHTML = '<span style="color: red;">Detaylar alınırken hata oluştu: ' + err.message + '</span>';
+            }
+        }
+
+        function toggleOfferBreakdown(btn, targetId) {
+            var target = document.getElementById(targetId);
+            if (!target) return;
+            if (target.style.display === 'none') {
+                target.style.display = 'block';
+                btn.textContent = btn.textContent.replace('▼', '▲').replace('Göster', 'Gizle');
+            } else {
+                target.style.display = 'none';
+                btn.textContent = btn.textContent.replace('▲', '▼').replace('Gizle', 'Göster');
+            }
+        }
+
+        function closeDetailModal() {
+            var modal = document.getElementById('detailRequestModal');
+            if (modal) {
+                var reqId = modal.getAttribute('data-active-request-id');
+                if (reqId && window.portalHubConnection && window.portalHubConnection.state === 'Connected') {
+                    window.portalHubConnection.invoke('LeaveRequestGroup', parseInt(reqId)).catch(function(e) { console.warn(e); });
+                }
+                modal.removeAttribute('data-active-request-id');
+                modal.classList.remove('is-open');
+            }
+        }
+
+        async function handleAcceptOffer(offerId, requestId, supplierName, priceFormatted) {
+            if (!confirm(supplierName + ' firmasının ' + priceFormatted + ' tutarındaki teklifini KABUL ETMEK ve talebi ONAYLAMAK istiyor musunuz?')) {
+                return;
+            }
+
+            try {
+                var response = await fetch('/Requests/AcceptOfferAjax', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ offerId: offerId })
+                });
+                var res = await response.json();
+                if (res.success) {
+                    if (typeof updatePortalDomForOfferApproved === 'function') {
+                        updatePortalDomForOfferApproved({ requestId: requestId });
                     }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function (val) {
-                                return Number(val).toLocaleString('tr-TR') + ' ₺';
-                            },
-                            font: { size: 11, weight: '500' },
-                            color: '#64748B'
-                        },
-                        grid: { color: '#F1F5F9' }
-                    },
-                    x: {
-                        grid: { display: false },
-                        ticks: { font: { size: 11, weight: '700' }, color: '#334155' }
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('✓ ' + (res.message || 'Teklif başarıyla onaylandı!'), 'success');
+                    }
+                    openDetailModal(requestId);
+                } else {
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('Hata: ' + res.message, 'error');
+                    } else {
+                        alert('Hata: ' + res.message);
                     }
                 }
+            } catch (err) {
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Sunucu hatası: ' + err.message, 'error');
+                } else {
+                    alert('Sunucu hatası: ' + err.message);
+                }
+            }
+        }
+
+        async function handleRejectOffer(offerId, requestId, supplierName) {
+            var reason = prompt(supplierName + ' firmasının teklifini reddetmek üzeresiniz.\nİsteğe bağlı bir red gerekçesi yazabilirsiniz:');
+            if (reason === null) return;
+
+            try {
+                var response = await fetch('/Requests/RejectOfferAjax', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ offerId: offerId, reason: reason })
+                });
+                var res = await response.json();
+                if (res.success) {
+                    if (typeof updatePortalDomForOfferRejected === 'function') {
+                        updatePortalDomForOfferRejected({ requestId: requestId });
+                    }
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('✓ ' + (res.message || 'Teklif reddedildi.'), 'info');
+                    }
+                    openDetailModal(requestId);
+                } else {
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('Hata: ' + res.message, 'error');
+                    } else {
+                        alert('Hata: ' + res.message);
+                    }
+                }
+            } catch (err) {
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Sunucu hatası: ' + err.message, 'error');
+                } else {
+                    alert('Sunucu hatası: ' + err.message);
+                }
+            }
+        }
+
+        // =========================================================================
+        // 4. TEDARİKÇİ FİYAT KIYASLAMA MODALI İŞLEMLERİ (AJAX & CHART.JS)
+        // =========================================================================
+        var cmpChartInstance = null;
+
+        async function openCompareModal(requestId) {
+            var modal = document.getElementById('priceCompareModal');
+            var loading = document.getElementById('cmpLoading');
+            var content = document.getElementById('cmpContent');
+            var empty = document.getElementById('cmpEmpty');
+            var tableBody = document.getElementById('cmpTableBody');
+
+            if (!modal) return;
+
+            modal.classList.add('is-open');
+            loading.style.display = 'block';
+            content.style.display = 'none';
+            empty.style.display = 'none';
+            tableBody.innerHTML = '';
+
+            try {
+                var response = await fetch('/Requests/GetComparisonData/' + requestId);
+                var data = await response.json();
+
+                if (!data.success) {
+                    alert('Kıyaslama verileri yüklenemedi: ' + data.message);
+                    closeCompareModal();
+                    return;
+                }
+
+                document.getElementById('cmpReqCode').textContent = data.requestCode;
+                document.getElementById('cmpProductName').textContent = data.productName;
+                document.getElementById('cmpReqCategory').textContent = 'Kategori: ' + data.requestType;
+                document.getElementById('cmpQuantity').textContent = data.quantity.toLocaleString('tr-TR') + ' Adet';
+                document.getElementById('cmpBudget').textContent = data.estimatedBudgetFormatted;
+
+                var statusBadge = document.getElementById('cmpStatusBadge');
+                if (data.isApproved) {
+                    statusBadge.innerHTML = '<span class="badge-status is-approved" style="font-size: 0.82rem; padding: 4px 8px; font-weight: 700;">✓ Onaylandı (' + escapeHtml(data.winningSupplierName) + ')</span>';
+                } else {
+                    statusBadge.innerHTML = '<span class="badge-status is-pending" style="font-size: 0.82rem; padding: 4px 8px; font-weight: 700;">⏳ ' + escapeHtml(data.status) + '</span>';
+                }
+
+                var notesWrap = document.getElementById('cmpNotesWrap');
+                if (data.notes) {
+                    notesWrap.style.display = 'block';
+                    document.getElementById('cmpNotesText').textContent = data.notes;
+                } else {
+                    notesWrap.style.display = 'none';
+                }
+
+                if (!data.offers || data.offers.length === 0) {
+                    loading.style.display = 'none';
+                    empty.style.display = 'block';
+                    return;
+                }
+
+                document.getElementById('cmpKpiLowestPrice').textContent = data.lowestPriceFormatted;
+                document.getElementById('cmpKpiLowestSupplier').textContent = data.lowestSupplierName;
+
+                document.getElementById('cmpKpiFastestDays').textContent = data.fastestDays + ' Gün';
+                document.getElementById('cmpKpiFastestSupplier').textContent = data.fastestSupplierName;
+
+                document.getElementById('cmpKpiSavings').textContent = data.budgetSavingsFormatted;
+                document.getElementById('cmpKpiSavingsSub').textContent = data.hasBudget ? 'Hedef bütçeye kıyasla fark' : 'En pahalı teklife kıyasla tasarruf';
+
+                document.getElementById('cmpKpiOfferCount').textContent = data.offerCount + ' Teklif';
+                document.getElementById('cmpKpiAvgPrice').textContent = data.avgPriceFormatted;
+                document.getElementById('cmpKpiUnitAvg').textContent = 'Kalem Başına: ~' + data.unitAvgPriceFormatted;
+
+                document.getElementById('cmpTableMeta').textContent = data.offerCount + ' Tedarikçi Teklifi';
+
+                var tableHtml = '';
+                data.offers.forEach(function(o) {
+                    var rowCls = o.isLowestPrice ? 'is-best-row' : '';
+                    tableHtml += '<tr class="' + rowCls + '">';
+
+                    var initial = o.supplierName && o.supplierName.length >= 2 ? o.supplierName.substring(0, 2).toUpperCase() : 'TF';
+                    tableHtml += '  <td>';
+                    tableHtml += '    <div style="display: flex; align-items: center; gap: 10px;">';
+                    tableHtml += '      <div class="cmp-sup-avatar">' + initial + '</div>';
+                    tableHtml += '      <div>';
+                    tableHtml += '        <strong style="color: #0F172A; font-size: 0.88rem; display: block;">' + escapeHtml(o.supplierName) + '</strong>';
+                    if (o.supplierOfficial) {
+                        tableHtml += '        <div style="font-size: 0.74rem; color: #64748B;">Yetkili: ' + escapeHtml(o.supplierOfficial) + '</div>';
+                    }
+                    if (o.supplierPhone || o.supplierMail) {
+                        tableHtml += '        <div style="font-size: 0.72rem; color: #94A3B8;">' + escapeHtml(o.supplierPhone || o.supplierMail) + '</div>';
+                    }
+                    if (o.isRevised) {
+                        tableHtml += '        <div style="display: inline-flex; align-items: center; gap: 4px; background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; font-size: 0.70rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-top: 3px;" title="Reddedilen teklif tedarikçi tarafından güncellendi. ' + (o.previousPriceFormatted ? 'Önceki: ' + escapeHtml(o.previousPriceFormatted) : '') + '">🔄 Revize Edildi' + (o.previousPriceFormatted ? ' (<del>' + escapeHtml(o.previousPriceFormatted) + '</del>)' : '') + '</div>';
+                    }
+                    tableHtml += '      </div>';
+                    tableHtml += '    </div>';
+                    tableHtml += '  </td>';
+
+                    var priceCls = o.isLowestPrice ? 'price-main-modal is-green' : 'price-main-modal';
+                    tableHtml += '  <td>';
+                    tableHtml += '    <div class="' + priceCls + '">' + o.offeredPriceFormatted + '</div>';
+                    tableHtml += '    <div style="display: flex; gap: 4px; margin-top: 4px;">';
+                    if (o.isLowestPrice) {
+                        tableHtml += '      <span class="badge-lowest-modal">🟢 En Uygun</span>';
+                    }
+                    if (o.isFastestDelivery) {
+                        tableHtml += '      <span class="badge-fastest-modal">⚡ En Hızlı</span>';
+                    }
+                    tableHtml += '    </div>';
+                    tableHtml += '  </td>';
+
+                    tableHtml += '  <td>';
+                    tableHtml += '    <strong style="color: #0F172A; font-size: 0.86rem;">' + o.unitPriceFormatted + '</strong>';
+                    tableHtml += '    <div style="font-size: 0.72rem; color: #64748B;">/ Adet</div>';
+                    tableHtml += '  </td>';
+
+                    tableHtml += '  <td>';
+                    tableHtml += '    <div style="display: inline-flex; align-items: center; gap: 4px; background: #F1F5F9; padding: 3px 8px; border-radius: 6px; font-weight: 700; color: #334155; font-size: 0.80rem;">';
+                    tableHtml += '      <span>⏱️ ' + o.deliveryDays + ' Gün</span>';
+                    tableHtml += '    </div>';
+                    tableHtml += '  </td>';
+
+                    tableHtml += '  <td><span style="font-weight: 600; color: #475569;">' + o.validityDays + ' Gün</span></td>';
+
+                    var varColor = (o.budgetVariance !== null && o.budgetVariance <= 0) ? '#059669' : '#DC2626';
+                    var varBg = (o.budgetVariance !== null && o.budgetVariance <= 0) ? '#ECFDF5' : '#FEF2F2';
+                    var varBorder = (o.budgetVariance !== null && o.budgetVariance <= 0) ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)';
+                    tableHtml += '  <td>';
+                    if (o.budgetVarianceFormatted !== '—') {
+                        tableHtml += '    <span style="display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; background: ' + varBg + '; color: ' + varColor + '; border: 1px solid ' + varBorder + ';">' + o.budgetVarianceFormatted + '</span>';
+                    } else {
+                        tableHtml += '    <span style="color: #94A3B8;">—</span>';
+                    }
+                    tableHtml += '  </td>';
+
+                    var notesHtml = '';
+                    if (o.supplierNotes) {
+                        notesHtml += '<div>' + escapeHtml(o.supplierNotes) + '</div>';
+                    }
+                    if (o.isRejected && o.rejectionReason) {
+                        notesHtml += '<div style="font-size: 0.74rem; color: #DC2626; font-weight: 600; margin-top: 2px;">🚫 Red Sebebi: ' + escapeHtml(o.rejectionReason) + '</div>';
+                    }
+                    if (!notesHtml) {
+                        notesHtml = '<span style="color: #94A3B8;">Belirtilmedi</span>';
+                    }
+                    tableHtml += '  <td style="max-width: 200px; font-size: 0.78rem; color: #475569; line-height: 1.4;">' + notesHtml + '</td>';
+
+                    tableHtml += '  <td>';
+                    if (o.isAccepted) {
+                        tableHtml += '    <span class="badge-status is-approved" style="font-size: 0.78rem; font-weight: 700;">✓ Onaylandı</span>';
+                    } else if (o.isRejected) {
+                        tableHtml += '    <span class="badge-status is-rejected" style="font-size: 0.78rem; font-weight: 700;" title="' + escapeHtml(o.rejectionReason || 'Reddedildi') + '">✕ Reddedildi</span>';
+                    } else {
+                        tableHtml += '    <span class="badge-status is-pending" style="font-size: 0.78rem; font-weight: 700;">⏳ ' + escapeHtml(o.status) + '</span>';
+                    }
+                    tableHtml += '  </td>';
+
+                    tableHtml += '  <td style="text-align: right;">';
+                    if (data.isOwner) {
+                        if (o.status === 'Beklemede' && !data.isApproved) {
+                            tableHtml += '    <div style="display: inline-flex; gap: 5px;">';
+                            tableHtml += '      <button type="button" class="btn-cmp-accept" onclick="handleAcceptOfferFromCompareModal(' + o.offerId + ', ' + data.requestId + ', \'' + escapeHtml(o.supplierName) + '\', \'' + escapeHtml(o.offeredPriceFormatted) + '\')" title="Teklifi Kabul Et ve Talebi Onayla">✓ Kabul Et</button>';
+                            tableHtml += '      <button type="button" class="btn-cmp-reject" onclick="handleRejectOfferFromCompareModal(' + o.offerId + ', ' + data.requestId + ', \'' + escapeHtml(o.supplierName) + '\')" title="Teklifi Reddet">✕</button>';
+                            tableHtml += '    </div>';
+                        } else if (o.isAccepted) {
+                            tableHtml += '    <span style="display: inline-flex; align-items: center; gap: 4px; background: #ECFDF5; color: #065F46; border: 1px solid #10B981; font-weight: 800; font-size: 0.78rem; padding: 4px 10px; border-radius: 6px;">✓ Kazanan Teklif</span>';
+                        } else {
+                            tableHtml += '    <span style="color: #94A3B8; font-size: 0.75rem;">Kapalı</span>';
+                        }
+                    } else {
+                        tableHtml += '    <span style="color: #64748B; font-size: 0.75rem;">İnceleme</span>';
+                    }
+                    tableHtml += '  </td>';
+
+                    tableHtml += '</tr>';
+                });
+
+                tableBody.innerHTML = tableHtml;
+
+                renderCompareModalChart(data.offers, data.lowestPrice);
+
+                loading.style.display = 'none';
+                content.style.display = 'flex';
+            } catch (err) {
+                loading.innerHTML = '<span style="color: red;">Kıyaslama yüklenirken hata oluştu: ' + err.message + '</span>';
+            }
+        }
+
+        function closeCompareModal() {
+            var modal = document.getElementById('priceCompareModal');
+            if (modal) {
+                modal.classList.remove('is-open');
+            }
+        }
+
+        function renderCompareModalChart(offers, lowestPrice) {
+            var canvas = document.getElementById('cmpModalChartCanvas');
+            if (!canvas) return;
+
+            if (cmpChartInstance) {
+                cmpChartInstance.destroy();
+                cmpChartInstance = null;
+            }
+
+            var labels = offers.map(function (o) { return o.supplierName.split(' ')[0] + ' ' + (o.supplierName.split(' ')[1] || ''); });
+            var dataPrices = offers.map(function (o) { return o.offeredPrice; });
+
+            var bgColors = dataPrices.map(function (p) {
+                return p === lowestPrice ? 'rgba(16, 185, 129, 0.88)' : 'rgba(59, 130, 246, 0.80)';
+            });
+
+            var borderColors = dataPrices.map(function (p) {
+                return p === lowestPrice ? '#059669' : '#1D4ED8';
+            });
+
+            cmpChartInstance = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Teklif Tutarı (₺)',
+                        data: dataPrices,
+                        backgroundColor: bgColors,
+                        borderColor: borderColors,
+                        borderWidth: 1.5,
+                        borderRadius: 8,
+                        maxBarThickness: 50
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0F172A',
+                            padding: 10,
+                            titleFont: { size: 12, weight: '700' },
+                            bodyFont: { size: 12 },
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                label: function (ctx) {
+                                    return '💰 Toplam Teklif: ' + Number(ctx.raw).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ₺';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function (val) {
+                                    return Number(val).toLocaleString('tr-TR') + ' ₺';
+                                },
+                                font: { size: 11, weight: '500' },
+                                color: '#64748B'
+                            },
+                            grid: { color: '#F1F5F9' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 11, weight: '700' }, color: '#334155' }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function handleAcceptOfferFromCompareModal(offerId, requestId, supplierName, priceFormatted) {
+            if (!confirm(supplierName + ' firmasının ' + priceFormatted + ' tutarındaki teklifini KABUL ETMEK ve bu talebi ONAYLAMAK istiyor musunuz?')) {
+                return;
+            }
+
+            try {
+                var response = await fetch('/Requests/AcceptOfferAjax', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ offerId: offerId })
+                });
+                var res = await response.json();
+                if (res.success) {
+                    if (typeof updatePortalDomForOfferApproved === 'function') {
+                        updatePortalDomForOfferApproved({ requestId: requestId });
+                    }
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('✓ ' + (res.message || 'Teklif başarıyla onaylandı!'), 'success');
+                    }
+                    openCompareModal(requestId);
+                } else {
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('Hata: ' + res.message, 'error');
+                    } else {
+                        alert('Hata: ' + res.message);
+                    }
+                }
+            } catch (err) {
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Sunucu hatası: ' + err.message, 'error');
+                } else {
+                    alert('Sunucu hatası: ' + err.message);
+                }
+            }
+        }
+
+        async function handleRejectOfferFromCompareModal(offerId, requestId, supplierName) {
+            var reason = prompt(supplierName + ' firmasının teklifini reddetmek üzeresiniz.\nİsteğe bağlı bir red gerekçesi yazabilirsiniz:');
+            if (reason === null) return;
+
+            try {
+                var response = await fetch('/Requests/RejectOfferAjax', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ offerId: offerId, reason: reason })
+                });
+                var res = await response.json();
+                if (res.success) {
+                    if (typeof updatePortalDomForOfferRejected === 'function') {
+                        updatePortalDomForOfferRejected({ requestId: requestId });
+                    }
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('✓ ' + (res.message || 'Teklif reddedildi.'), 'info');
+                    }
+                    openCompareModal(requestId);
+                } else {
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast('Hata: ' + res.message, 'error');
+                    } else {
+                        alert('Hata: ' + res.message);
+                    }
+                }
+            } catch (err) {
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast('Sunucu hatası: ' + err.message, 'error');
+                } else {
+                    alert('Sunucu hatası: ' + err.message);
+                }
+            }
+        }
+
+        function exportCompareModalToCSV() {
+            var table = document.getElementById('cmpModalTable');
+            if (!table) return;
+
+            var csv = [];
+            for (var i = 0; i < table.rows.length; i++) {
+                var row = [], cols = table.rows[i].querySelectorAll('td, th');
+                for (var j = 0; j < cols.length - 1; j++) {
+                    var data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, ' ').replace(/"/g, '""').trim();
+                    row.push('"' + data + '"');
+                }
+                csv.push(row.join(';'));
+            }
+
+            var csvString = "\uFEFF" + csv.join('\n');
+            var blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            var link = document.createElement("a");
+            var url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "Tedarikci_Fiyat_Kiyaslama_Raporu.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            var map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        // =========================================================================
+        // 5. GENEL ESC TUŞU VE DIŞ TIKLAMA İLE MODAL KAPATMA
+        // =========================================================================
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeCreateModal();
+                closeDetailModal();
+                closeBidModal();
+                closeCompareModal();
             }
         });
-    }
 
-    async function handleAcceptOfferFromCompareModal(offerId, requestId, supplierName, priceFormatted) {
-        if (!confirm(supplierName + ' firmasının ' + priceFormatted + ' tutarındaki teklifini KABUL ETMEK ve bu talebi ONAYLAMAK istiyor musunuz?')) {
-            return;
-        }
+        // =========================================================================
+        // 6. E-POSTA VE DIŞ BAĞLANTILARDAN GELEN REQUEST_ID İLE OTOMATİK MODAL AÇMA
+        // =========================================================================
+        document.addEventListener('DOMContentLoaded', function () {
+            try {
+                var urlParams = new URLSearchParams(window.location.search);
+                var reqId = urlParams.get('requestId') || urlParams.get('reqId');
+                var openParam = urlParams.get('open');
+                if (reqId) {
+                    var id = parseInt(reqId, 10);
+                    if (!isNaN(id) && id > 0) {
+                        setTimeout(function () {
+                            var targetRow = document.querySelector('tr[data-request-id="' + id + '"]');
+                            if (targetRow) {
+                                targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                targetRow.style.outline = '2px solid #2563EB';
+                                targetRow.style.borderRadius = '8px';
+                                setTimeout(function () { targetRow.style.outline = 'none'; }, 3000);
+                            }
 
-        try {
-            var response = await fetch('/Requests/AcceptOfferAjax', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ offerId: offerId })
-            });
-            var res = await response.json();
-            if (res.success) {
-                if (typeof updatePortalDomForOfferApproved === 'function') {
-                    updatePortalDomForOfferApproved({ requestId: requestId });
+                            if (openParam === 'compare') {
+                                if (typeof openCompareModal === 'function') openCompareModal(id);
+                            } else if (openParam === 'bid') {
+                                if (typeof openOfferModal === 'function') openOfferModal(id, '', '', '', '');
+                            } else {
+                                if (typeof openDetailModal === 'function') openDetailModal(id);
+                            }
+                        }, 350);
+                    }
                 }
-                if (typeof showRealtimeToast === 'function') {
-                    showRealtimeToast('✓ ' + (res.message || 'Teklif başarıyla onaylandı!'), 'success');
-                }
-                openCompareModal(requestId);
-            } else {
-                if (typeof showRealtimeToast === 'function') {
-                    showRealtimeToast('Hata: ' + res.message, 'error');
-                } else {
-                    alert('Hata: ' + res.message);
-                }
+            } catch (e) {
+                console.warn('Auto modal init error:', e);
             }
-        } catch (err) {
-            if (typeof showRealtimeToast === 'function') {
-                showRealtimeToast('Sunucu hatası: ' + err.message, 'error');
-            } else {
-                alert('Sunucu hatası: ' + err.message);
-            }
-        }
-    }
-
-    async function handleRejectOfferFromCompareModal(offerId, requestId, supplierName) {
-        var reason = prompt(supplierName + ' firmasının teklifini reddetmek üzeresiniz.\nİsteğe bağlı bir red gerekçesi yazabilirsiniz:');
-        if (reason === null) return;
-
-        try {
-            var response = await fetch('/Requests/RejectOfferAjax', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ offerId: offerId, reason: reason })
-            });
-            var res = await response.json();
-            if (res.success) {
-                if (typeof updatePortalDomForOfferRejected === 'function') {
-                    updatePortalDomForOfferRejected({ requestId: requestId });
-                }
-                if (typeof showRealtimeToast === 'function') {
-                    showRealtimeToast('✓ ' + (res.message || 'Teklif reddedildi.'), 'info');
-                }
-                openCompareModal(requestId);
-            } else {
-                if (typeof showRealtimeToast === 'function') {
-                    showRealtimeToast('Hata: ' + res.message, 'error');
-                } else {
-                    alert('Hata: ' + res.message);
-                }
-            }
-        } catch (err) {
-            if (typeof showRealtimeToast === 'function') {
-                showRealtimeToast('Sunucu hatası: ' + err.message, 'error');
-            } else {
-                alert('Sunucu hatası: ' + err.message);
-            }
-        }
-    }
-
-    function exportCompareModalToCSV() {
-        var table = document.getElementById('cmpModalTable');
-        if (!table) return;
-
-        var csv = [];
-        for (var i = 0; i < table.rows.length; i++) {
-            var row = [], cols = table.rows[i].querySelectorAll('td, th');
-            for (var j = 0; j < cols.length - 1; j++) {
-                var data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, ' ').replace(/"/g, '""').trim();
-                row.push('"' + data + '"');
-            }
-            csv.push(row.join(';'));
-        }
-
-        var csvString = "\uFEFF" + csv.join('\n');
-        var blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-        var link = document.createElement("a");
-        var url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", "Tedarikci_Fiyat_Kiyaslama_Raporu.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-
-    function escapeHtml(text) {
-        if (!text) return '';
-        var map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-    }
-
-    // =========================================================================
-    // 5. GENEL ESC TUŞU VE DIŞ TIKLAMA İLE MODAL KAPATMA
-    // =========================================================================
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') {
-            closeCreateModal();
-            closeDetailModal();
-            closeBidModal();
-            closeCompareModal();
-        }
-    });
-
-    // =========================================================================
-    // 6. E-POSTA VE DIŞ BAĞLANTILARDAN GELEN REQUEST_ID İLE OTOMATİK MODAL AÇMA
-    // =========================================================================
-    document.addEventListener('DOMContentLoaded', function () {
-        try {
-            var urlParams = new URLSearchParams(window.location.search);
-            var reqId = urlParams.get('requestId') || urlParams.get('reqId');
-            var openParam = urlParams.get('open');
-            if (reqId) {
-                var id = parseInt(reqId, 10);
-                if (!isNaN(id) && id > 0) {
-                    setTimeout(function () {
-                        // İlgili satırı bul ve vurgula
-                        var targetRow = document.querySelector('tr[data-request-id="' + id + '"]');
-                        if (targetRow) {
-                            targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            targetRow.style.outline = '2px solid #2563EB';
-                            targetRow.style.borderRadius = '8px';
-                            setTimeout(function () { targetRow.style.outline = 'none'; }, 3000);
-                        }
-
-                        if (openParam === 'compare') {
-                            if (typeof openCompareModal === 'function') openCompareModal(id);
-                        } else if (openParam === 'bid') {
-                            if (typeof openOfferModal === 'function') openOfferModal(id, '', '', '', '');
-                        } else {
-                            if (typeof openDetailModal === 'function') openDetailModal(id);
-                        }
-                    }, 350);
-                }
-            }
-        } catch (e) {
-            console.warn('Auto modal init error:', e);
-        }
-    });
-</script>
-
-<!-- CDN Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        });
+    </script>
+}

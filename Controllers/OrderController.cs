@@ -73,6 +73,93 @@ namespace satinalmaportali2.Controllers
         }
 
         /// <summary>
+        /// Oturum açmış firmanın veritabanında kayıtlı kurumsal fatura ve teslimat profil bilgilerini döner.
+        /// Satın alma modalında alanların otomatik doldurulmasını sağlar.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetCheckoutProfile()
+        {
+            try
+            {
+                int companyId = GetCurrentCompanyId();
+                if (companyId <= 0)
+                {
+                    return Json(new { isAuthenticated = false });
+                }
+
+                var comp = await _context.Companies
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.CompanyID == companyId);
+
+                if (comp == null)
+                {
+                    return Json(new { isAuthenticated = false });
+                }
+
+                string addressText = "";
+                string deliveryCity = "";
+
+                if (comp.AddressID.HasValue && comp.AddressID.Value > 0)
+                {
+                    var addr = await _context.Addresses
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(a => a.AddressID == comp.AddressID.Value);
+
+                    if (addr != null)
+                    {
+                        addressText = addr.AddressText ?? "";
+                        if (addr.DistrictID.HasValue)
+                        {
+                            var district = await _context.Districts
+                                .AsNoTracking()
+                                .FirstOrDefaultAsync(d => d.DistrictID == addr.DistrictID.Value);
+                            if (district != null)
+                            {
+                                string dName = district.DistrictName ?? "";
+                                if (district.TownID.HasValue)
+                                {
+                                    var town = await _context.Towns
+                                        .AsNoTracking()
+                                        .FirstOrDefaultAsync(t => t.TownID == district.TownID.Value);
+                                    if (town != null)
+                                    {
+                                        deliveryCity = $"{town.TownName} / {dName}".Trim(' ', '/');
+                                    }
+                                    else
+                                    {
+                                        deliveryCity = dName;
+                                    }
+                                }
+                                else
+                                {
+                                    deliveryCity = dName;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return Json(new
+                {
+                    isAuthenticated = true,
+                    companyId = comp.CompanyID,
+                    companyName = comp.CompanyName ?? comp.CompanyOfficial ?? "",
+                    companyOfficial = comp.CompanyOfficial ?? "",
+                    taxNumber = comp.TCNO ?? "",
+                    taxOffice = comp.TaxOffice ?? "",
+                    phone = comp.CompanyPhone ?? "",
+                    email = comp.CompanyMail ?? "",
+                    deliveryCity = deliveryCity,
+                    deliveryAddress = addressText
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { isAuthenticated = false, error = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Doğrudan sepetteki ürünler veya hızlı satın alma için sipariş oluşturan AJAX endpoint.
         /// Firma kendi satışa sunduğu ürünü satın alamaz.
         /// </summary>
@@ -84,11 +171,6 @@ namespace satinalmaportali2.Controllers
                 return Json(new { success = false, message = "Sepetinizde ürün bulunmamaktadır." });
             }
 
-            if (string.IsNullOrWhiteSpace(input.BuyerCompany) || string.IsNullOrWhiteSpace(input.DeliveryCity) || string.IsNullOrWhiteSpace(input.DeliveryAddress))
-            {
-                return Json(new { success = false, message = "Lütfen firma ünvanı, teslimat şehri ve adresini eksiksiz doldurunuz." });
-            }
-
             try
             {
                 int currentCompanyId = GetCurrentCompanyId();
@@ -96,20 +178,68 @@ namespace satinalmaportali2.Controllers
                 string currentEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? input.BuyerEmail ?? "";
                 Company? comp = null;
 
-                // Firma varlık doğrulaması
+                // Firma varlık doğrulaması ve veritabanı profilinden eksik alanları tamamlama
                 if (currentCompanyId > 0)
                 {
                     comp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId);
                     if (comp != null)
                     {
                         if (string.IsNullOrWhiteSpace(currentCompanyName)) currentCompanyName = comp.CompanyName ?? comp.CompanyOfficial ?? "";
+                        if (string.IsNullOrWhiteSpace(input.BuyerCompany)) input.BuyerCompany = comp.CompanyName ?? comp.CompanyOfficial ?? "";
                         if (string.IsNullOrWhiteSpace(input.BuyerTaxNumber)) input.BuyerTaxNumber = comp.TCNO;
                         if (string.IsNullOrWhiteSpace(input.BuyerTaxOffice)) input.BuyerTaxOffice = comp.TaxOffice;
+                        if (string.IsNullOrWhiteSpace(input.ReceiverPhone)) input.ReceiverPhone = comp.CompanyPhone;
+                        if (string.IsNullOrWhiteSpace(input.ReceiverName)) input.ReceiverName = comp.CompanyOfficial ?? comp.CompanyName;
+
+                        if (comp.AddressID.HasValue && comp.AddressID.Value > 0 && 
+                            (string.IsNullOrWhiteSpace(input.DeliveryCity) || string.IsNullOrWhiteSpace(input.DeliveryAddress)))
+                        {
+                            var addr = await _context.Addresses.AsNoTracking().FirstOrDefaultAsync(a => a.AddressID == comp.AddressID.Value);
+                            if (addr != null)
+                            {
+                                if (string.IsNullOrWhiteSpace(input.DeliveryAddress)) input.DeliveryAddress = addr.AddressText ?? "";
+                                if (string.IsNullOrWhiteSpace(input.DeliveryCity) && addr.DistrictID.HasValue)
+                                {
+                                    var district = await _context.Districts.AsNoTracking().FirstOrDefaultAsync(d => d.DistrictID == addr.DistrictID.Value);
+                                    if (district != null)
+                                    {
+                                        var town = district.TownID.HasValue ? await _context.Towns.AsNoTracking().FirstOrDefaultAsync(t => t.TownID == district.TownID.Value) : null;
+                                        input.DeliveryCity = town != null ? $"{town.TownName} / {district.DistrictName}" : district.DistrictName ?? "";
+                                    }
+                                }
+                            }
+                        }
                     }
                     else
                     {
                         currentCompanyId = 0;
                     }
+                }
+
+                if (string.IsNullOrWhiteSpace(input.BuyerCompany) || string.IsNullOrWhiteSpace(input.DeliveryCity) || string.IsNullOrWhiteSpace(input.DeliveryAddress))
+                {
+                    return Json(new { success = false, message = "Lütfen firma ünvanı, teslimat şehri ve adresini eksiksiz doldurunuz." });
+                }
+
+                if (!string.IsNullOrWhiteSpace(input.BuyerTaxNumber))
+                {
+                    var cleanTax = new string(input.BuyerTaxNumber.Where(char.IsDigit).ToArray());
+                    if (cleanTax.Length != 10 && cleanTax.Length != 11)
+                    {
+                        return Json(new { success = false, message = "Vergi Kimlik Numarası 10 hane veya TC Kimlik Numarası 11 hane olmalıdır." });
+                    }
+                    input.BuyerTaxNumber = cleanTax;
+                }
+
+                if (!string.IsNullOrWhiteSpace(input.ReceiverPhone))
+                {
+                    var cleanPhone = new string(input.ReceiverPhone.Where(char.IsDigit).ToArray());
+                    if (cleanPhone.StartsWith("0")) cleanPhone = cleanPhone.Substring(1);
+                    if (cleanPhone.Length != 10)
+                    {
+                        return Json(new { success = false, message = "Telefon numarası başında 0 olmadan 10 hane olmalıdır (Örn: 5321234567)." });
+                    }
+                    input.ReceiverPhone = "0" + cleanPhone;
                 }
 
                 // Kendi ürününü satın alma kontrolü
@@ -168,15 +298,31 @@ namespace satinalmaportali2.Controllers
                             {
                                 dbItem.Quantity = 0;
                             }
+
+                            // Properties içindeki FirmaID kontrolü
+                            if (!string.IsNullOrWhiteSpace(dbItem.Properties))
+                            {
+                                var match = System.Text.RegularExpressions.Regex.Match(dbItem.Properties, @"(?:FirmaID|CompanyID)\s*:\s*(\d+)");
+                                if (match.Success && int.TryParse(match.Groups[1].Value, out int pid))
+                                {
+                                    supplierCompId = pid;
+                                }
+                            }
                         }
                     }
 
-                    if (!string.IsNullOrWhiteSpace(supplierName))
+                    if (!supplierCompId.HasValue && !string.IsNullOrWhiteSpace(supplierName))
                     {
-                        var matchedComp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyName != null && c.CompanyName.ToLower() == supplierName.Trim().ToLower());
+                        var matchedComp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => 
+                            (c.CompanyName != null && c.CompanyName.ToLower() == supplierName.Trim().ToLower()) ||
+                            (c.CompanyOfficial != null && c.CompanyOfficial.ToLower() == supplierName.Trim().ToLower()));
                         if (matchedComp != null)
                         {
                             supplierCompId = matchedComp.CompanyID;
+                            if (string.IsNullOrWhiteSpace(supplierName) && !string.IsNullOrWhiteSpace(matchedComp.CompanyName))
+                            {
+                                supplierName = matchedComp.CompanyName;
+                            }
                         }
                     }
 
@@ -190,7 +336,8 @@ namespace satinalmaportali2.Controllers
                         Quantity = item.Quantity,
                         LineTotal = lineTotal,
                         SupplierCompanyName = supplierName,
-                        SupplierCompanyID = supplierCompId
+                        SupplierCompanyID = supplierCompId,
+                        ItemStatus = "Onaylandı"
                     });
                 }
 
@@ -287,7 +434,7 @@ namespace satinalmaportali2.Controllers
                     Console.WriteLine($"SignalR CreateOrder broadcast error: {hubEx.Message}");
                 }
 
-                // E-Posta Bildirimi Gönder (Async Arka Plan)
+                // 1. Alıcı Firmaya Sipariş Onay E-Postası Gönder (Async Arka Plan)
                 try
                 {
                     if (!string.IsNullOrWhiteSpace(currentEmail))
@@ -311,8 +458,110 @@ namespace satinalmaportali2.Controllers
                 }
                 catch (Exception emailEx)
                 {
-                    Console.WriteLine($"Order confirmation email failed: {emailEx.Message}");
+                    Console.WriteLine($"Order confirmation email to buyer failed: {emailEx.Message}");
                 }
+
+                // 2. Ürünleri Satın Alınan Tedarikçi/Satıcı Firmalara Bildirim E-Postası Gönder (Async Arka Plan)
+                try
+                {
+                    // Siparişteki ürünleri satıcı firmaya göre grupla
+                    var supplierGroups = orderItemsList
+                        .GroupBy(oi => oi.SupplierCompanyID.HasValue && oi.SupplierCompanyID.Value > 0
+                            ? oi.SupplierCompanyID.Value.ToString()
+                            : (oi.SupplierCompanyName ?? "Onaylı Tedarikçi"))
+                        .ToList();
+
+                    foreach (var group in supplierGroups)
+                    {
+                        try
+                        {
+                            Company? supplierComp = null;
+                            var firstItem = group.First();
+
+                            if (firstItem.SupplierCompanyID.HasValue && firstItem.SupplierCompanyID.Value > 0)
+                            {
+                                supplierComp = await _context.Companies
+                                    .AsNoTracking()
+                                    .FirstOrDefaultAsync(c => c.CompanyID == firstItem.SupplierCompanyID.Value);
+                            }
+
+                            if (supplierComp == null && !string.IsNullOrWhiteSpace(firstItem.SupplierCompanyName))
+                            {
+                                var sName = firstItem.SupplierCompanyName.Trim().ToLower();
+                                supplierComp = await _context.Companies
+                                    .AsNoTracking()
+                                    .FirstOrDefaultAsync(c => (c.CompanyName != null && c.CompanyName.ToLower() == sName) ||
+                                                             (c.CompanyOfficial != null && c.CompanyOfficial.ToLower() == sName));
+                            }
+
+                            string targetEmail = supplierComp?.CompanyMail?.Trim() ?? "";
+                            string displaySupplierName = supplierComp?.CompanyName ?? supplierComp?.CompanyOfficial ?? firstItem.SupplierCompanyName ?? "Değerli Tedarikçimiz";
+
+                            if (!string.IsNullOrWhiteSpace(targetEmail))
+                            {
+                                var supplierItemsDto = group.Select((oi, idx) => new SoldProductItemEmailDto
+                                {
+                                    ItemOrder = idx + 1,
+                                    ProductName = oi.ProductName,
+                                    Sku = oi.Sku,
+                                    CategoryName = oi.CategoryName,
+                                    Quantity = oi.Quantity,
+                                    Unit = "Adet",
+                                    UnitPrice = oi.UnitPrice,
+                                    LineTotal = oi.LineTotal
+                                }).ToList();
+
+                                decimal groupTotalAmount = supplierItemsDto.Sum(i => i.LineTotal);
+                                decimal groupTaxAmount = Math.Round(groupTotalAmount * taxRate, 2);
+                                decimal groupGrandTotal = groupTotalAmount + groupTaxAmount;
+
+                                await _emailService.SendProductSoldSupplierNotificationEmailAsync(
+                                    toEmail: targetEmail,
+                                    supplierName: displaySupplierName,
+                                    buyerCompanyName: finalBuyerName,
+                                    receiverName: order.ReceiverName,
+                                    receiverPhone: order.ReceiverPhone,
+                                    deliveryCity: order.DeliveryCity,
+                                    deliveryAddress: order.DeliveryAddress,
+                                    orderNumber: order.OrderNumber,
+                                    orderDate: order.OrderDate,
+                                    paymentMethod: order.PaymentMethod,
+                                    paymentStatus: order.PaymentStatus,
+                                    notes: order.Notes,
+                                    items: supplierItemsDto,
+                                    totalAmount: groupTotalAmount,
+                                    taxAmount: groupTaxAmount,
+                                    grandTotal: groupGrandTotal,
+                                    supplierOrdersUrl: "https://localhost:7019/Dashboard/SupplierOrders");
+
+                                Console.WriteLine($"✅ Satıcı firmaya ({displaySupplierName} - {targetEmail}) ürün satış e-postası başarıyla gönderildi.");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"⚠️ Satıcı firma ({displaySupplierName}) için kayıtlı e-posta adresi bulunamadı.");
+                            }
+                        }
+                        catch (Exception supEmailEx)
+                        {
+                            Console.WriteLine($"Supplier order notification email error: {supEmailEx.Message}");
+                        }
+                    }
+                }
+                catch (Exception groupEx)
+                {
+                    Console.WriteLine($"Supplier email notification grouping error: {groupEx.Message}");
+                }
+
+                var distinctSellers = orderItemsList
+                    .Where(oi => !string.IsNullOrWhiteSpace(oi.SupplierCompanyName))
+                    .GroupBy(oi => (oi.SupplierCompanyID ?? 0, oi.SupplierCompanyName!.Trim()))
+                    .Select(g => new
+                    {
+                        sellerCompanyId = g.Key.Item1,
+                        sellerName = g.Key.Item2,
+                        itemCount = g.Count()
+                    })
+                    .ToList();
 
                 return Json(new
                 {
@@ -320,6 +569,10 @@ namespace satinalmaportali2.Controllers
                     orderId = order.OrderID,
                     orderNumber = order.OrderNumber,
                     grandTotal = order.GrandTotal,
+                    sellerCount = distinctSellers.Count,
+                    singleSellerName = distinctSellers.Count == 1 ? distinctSellers[0].sellerName : null,
+                    singleSellerCompanyId = distinctSellers.Count == 1 ? distinctSellers[0].sellerCompanyId : 0,
+                    sellers = distinctSellers,
                     message = $"🎉 Tebrikler! {order.OrderNumber} numaralı kurumsal siparişiniz {order.GrandTotal:N0} ₺ tutarında başarıyla onaylandı."
                 });
             }

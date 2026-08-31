@@ -693,11 +693,64 @@ namespace satinalmaportali2.Services
                     };
                 }).ToList();
 
-                // KPI Özeti (Tamamen gerçek veritabanı taleplerinden hesaplanır)
+                // Gerçek Satın Alınan Ürünler ve Siparişler (Veritabanından)
+                var dbOrdersQuery = _context.Orders
+                    .Include(o => o.OrderItems)
+                    .AsNoTracking()
+                    .AsQueryable();
+
+                if (currentCompanyId.HasValue && currentCompanyId.Value > 0)
+                {
+                    var comp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId.Value, cancellationToken);
+                    string cMail = comp?.CompanyMail ?? "";
+                    string cName = comp?.CompanyName ?? "";
+
+                    dbOrdersQuery = dbOrdersQuery.Where(o => 
+                        (o.BuyerCompanyID.HasValue && o.BuyerCompanyID.Value == currentCompanyId.Value) ||
+                        (!string.IsNullOrWhiteSpace(cMail) && o.BuyerEmail != null && o.BuyerEmail.ToLower() == cMail.ToLower()) ||
+                        (!string.IsNullOrWhiteSpace(cName) && o.BuyerCompanyName != null && o.BuyerCompanyName.ToLower() == cName.ToLower()));
+                }
+
+                var dbOrders = await dbOrdersQuery
+                    .OrderByDescending(o => o.OrderDate)
+                    .ToListAsync(cancellationToken);
+
+                var purchasedItemsList = new List<BuyerPurchasedItemDto>();
+                foreach (var order in dbOrders)
+                {
+                    foreach (var oi in order.OrderItems)
+                    {
+                        purchasedItemsList.Add(new BuyerPurchasedItemDto
+                        {
+                            ItemID = oi.ItemID,
+                            ProductName = oi.ProductName,
+                            Sku = oi.Sku,
+                            CategoryName = oi.CategoryName ?? "Endüstriyel",
+                            Quantity = oi.Quantity,
+                            Unit = "Adet",
+                            UnitPrice = oi.UnitPrice,
+                            LineTotal = oi.LineTotal > 0 ? oi.LineTotal : (oi.UnitPrice * oi.Quantity),
+                            SupplierCompanyName = oi.SupplierCompanyName ?? order.SupplierCompanyName ?? "Onaylı Tedarikçi",
+                            SupplierCompanyID = oi.SupplierCompanyID ?? order.SupplierCompanyID,
+                            OrderID = order.OrderID,
+                            OrderNumber = order.OrderNumber,
+                            OrderDate = order.OrderDate,
+                            OrderStatus = order.OrderStatus,
+                            PaymentStatus = order.PaymentStatus,
+                            TrackingNumber = order.TrackingNumber,
+                            ShippingCarrier = order.ShippingCarrier
+                        });
+                    }
+                }
+
+                decimal totalPurchasedSpend = dbOrders.Sum(o => o.GrandTotal);
+                int totalPurchasedCount = purchasedItemsList.Count;
+
+                // KPI Özeti (Tamamen gerçek veritabanı talepleri ve siparişlerinden hesaplanır)
                 var activeCount = recentRequests.Count(r => r.Status != "İptal Edildi" && r.Status != "Reddedildi" && r.Status != "Tamamlandı");
                 var pendingCount = recentRequests.Count(r => r.Status == "Beklemede" || r.Status == "Açık");
                 var thisWeekCount = recentRequests.Count(r => r.RequestDate >= DateTime.Today.AddDays(-7));
-                var totalSpend = dbRequests.Where(r => r.Status == "Onaylandı" || r.Status == "Kabul Edildi" || r.Status == "Tamamlandı").Sum(r => r.EstimatedBudget ?? 0);
+                var totalSpend = dbRequests.Where(r => r.Status == "Onaylandı" || r.Status == "Kabul Edildi" || r.Status == "Tamamlandı").Sum(r => r.EstimatedBudget ?? 0) + totalPurchasedSpend;
 
                 decimal avgReviewScore = allReviews.Any() ? (decimal)Math.Round(allReviews.Average(r => r.ReviewScore ?? 0), 1) : (topSuppliers.Any() ? 5.0m : 0.0m);
                 int totalReviewCount = allReviews.Count;
@@ -724,6 +777,9 @@ namespace satinalmaportali2.Services
                     Summary = summary,
                     SpendTrend = spendTrend,
                     RecentRequests = recentRequests,
+                    PurchasedProducts = purchasedItemsList,
+                    TotalPurchasedProductsCount = totalPurchasedCount,
+                    TotalPurchasedProductsSpend = totalPurchasedSpend,
                     BudgetCategories = categoryGroups,
                     TopSuppliers = topSuppliers
                 };
