@@ -24,12 +24,18 @@ namespace satinalmaportali2.Controllers
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
         private readonly IHubContext<PortalHub> _hubContext;
+        private readonly IIyzicoPaymentService _iyzicoService;
 
-        public SuperAdminController(ApplicationDbContext context, EmailService emailService, IHubContext<PortalHub> hubContext)
+        public SuperAdminController(
+            ApplicationDbContext context,
+            EmailService emailService,
+            IHubContext<PortalHub> hubContext,
+            IIyzicoPaymentService iyzicoService)
         {
             _context = context;
             _emailService = emailService;
             _hubContext = hubContext;
+            _iyzicoService = iyzicoService;
         }
 
         private int GetCurrentCompanyId()
@@ -2138,6 +2144,38 @@ namespace satinalmaportali2.Controllers
             }
 
             return RedirectToAction(nameof(Index), new { tab = "orders" });
+        }
+
+        /// <summary>
+        /// Süper Admin: Havuzdaki bloke parayı manuel olarak tedarikçiye aktarır.
+        /// </summary>
+        [HttpPost("AdminForceApproveEscrow")]
+        public async Task<IActionResult> AdminForceApproveEscrow(int orderId)
+        {
+            if (!await CheckIsSuperAdminAsync())
+            {
+                return Json(new { success = false, message = "Yetkisiz işlem." });
+            }
+
+            int currentCompanyId = GetCurrentCompanyId();
+            var result = await _iyzicoService.ApproveEscrowReleaseAsync(orderId, currentCompanyId, isAdmin: true);
+            return Json(new { success = result.Success, message = result.Message });
+        }
+
+        /// <summary>
+        /// Süper Admin: İtiraz edilen siparişin bedelini alıcının kartına iade eder.
+        /// </summary>
+        [HttpPost("AdminRefundDispute")]
+        public async Task<IActionResult> AdminRefundDispute(int orderId, string reason)
+        {
+            if (!await CheckIsSuperAdminAsync())
+            {
+                return Json(new { success = false, message = "Yetkisiz işlem." });
+            }
+
+            int currentCompanyId = GetCurrentCompanyId();
+            var result = await _iyzicoService.DisapproveEscrowRefundAsync(orderId, currentCompanyId, reason ?? "Admin İade Kararı", isAdmin: true);
+            return Json(new { success = result.Success, message = result.Message });
         }
     }
 }

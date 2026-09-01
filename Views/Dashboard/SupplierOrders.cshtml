@@ -19,6 +19,16 @@
             <span>@Model.CompanyName mağazanıza gelen doğrudan kurumsal siparişler, hazırlık ve kargo sevk işlemleri</span>
         </p>
     </div>
+
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <button type="button" class="btn-primary" onclick="openSubMerchantModal()" style="display: inline-flex; align-items: center; gap: 6px; background: #0f172a; padding: 10px 18px; font-size: 0.88rem; font-weight: 700; border-radius: 8px; border: none; color: #fff; cursor: pointer;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                <line x1="2" y1="10" x2="22" y2="10"></line>
+            </svg>
+            <span>💳 iyzico Alt Üye İşyeri &amp; IBAN Tanımla</span>
+        </button>
+    </div>
 </div>
 
 <!-- ==================== 4 BÜYÜK KPI KARTI ==================== -->
@@ -215,8 +225,32 @@
                             </td>
                             <td>
                                 <span style="font-size: 0.82rem; font-weight: 600;">@o.PaymentMethod</span>
-                                <div>
-                                    <span class="status-badge badge-emerald" style="font-size: 0.68rem; padding: 2px 6px;">@o.PaymentStatus</span>
+                                <div style="display: flex; flex-direction: column; gap: 3px; margin-top: 3px;">
+                                    @if (o.EscrowStatus == "InEscrow")
+                                    {
+                                        <span class="status-badge" style="background:#f0fdf4; color:#166534; border:1px solid #bbf7d0; font-size:0.68rem; padding:2px 6px;">🛡️ Havuzda Bloke (Kargolayın)</span>
+                                    }
+                                    else if (o.EscrowStatus == "Released_ToSeller")
+                                    {
+                                        <span class="status-badge badge-emerald" style="font-size:0.68rem; padding:2px 6px;">✓ Hesaba Aktarıldı</span>
+                                    }
+                                    else if (o.EscrowStatus == "Disputed")
+                                    {
+                                        <span class="status-badge badge-amber" style="font-size:0.68rem; padding:2px 6px;">⚠️ İncelemede / İtiraz</span>
+                                    }
+                                    else if (o.EscrowStatus == "Refunded")
+                                    {
+                                        <span class="status-badge" style="background:#fef2f2; color:#991b1b; border:1px solid #fecaca; font-size:0.68rem; padding:2px 6px;">↩️ İade Edildi</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge badge-emerald" style="font-size: 0.68rem; padding: 2px 6px;">@o.PaymentStatus</span>
+                                    }
+
+                                    @if (o.SupplierPayoutAmount > 0)
+                                    {
+                                        <small style="font-size: 0.72rem; color: #16a34a; font-weight: 700;">Hak Ediş: @o.SupplierPayoutAmount.ToString("N2", ChartHelper.Tr) ₺</small>
+                                    }
                                 </div>
                             </td>
                             <td>
@@ -635,5 +669,159 @@
 
             return false;
         }
+
+        // ==================== İYZİCO ALT ÜYE İŞYERİ MODALI ====================
+        async function openSubMerchantModal() {
+            const modal = document.getElementById('subMerchantModal');
+            if (!modal) return;
+
+            // Mevcut durumu sunucudan yükle
+            try {
+                const res = await fetch('/Payment/GetSubMerchantStatus');
+                const data = await res.json();
+                if (data && data.isAuthenticated) {
+                    if (data.legalCompanyTitle) document.getElementById('subMerchantLegalTitle').value = data.legalCompanyTitle;
+                    if (data.identityNumber) document.getElementById('subMerchantIdentityNo').value = data.identityNumber;
+                    if (data.taxOffice) document.getElementById('subMerchantTaxOffice').value = data.taxOffice;
+                    if (data.iban) document.getElementById('subMerchantIban').value = data.iban;
+                    if (data.subMerchantType) document.getElementById('subMerchantType').value = data.subMerchantType;
+                    if (data.email) document.getElementById('subMerchantEmail').value = data.email;
+                    if (data.phone) document.getElementById('subMerchantPhone').value = data.phone;
+
+                    const statusBadge = document.getElementById('subMerchantStatusBadge');
+                    if (statusBadge) {
+                        if (data.isIyzicoApproved) {
+                            statusBadge.className = 'status-badge badge-emerald';
+                            statusBadge.textContent = '✓ iyzico Onaylı (Key: ' + (data.subMerchantKey || 'Aktif') + ')';
+                        } else {
+                            statusBadge.className = 'status-badge badge-amber';
+                            statusBadge.textContent = '⚠️ Başvuru Bekleniyor';
+                        }
+                    }
+                }
+            } catch (e) {
+                console.log('SubMerchant status fetch error:', e);
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function closeSubMerchantModal() {
+            const modal = document.getElementById('subMerchantModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function submitSubMerchantForm(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmitSubMerchant');
+            if (btn) { btn.disabled = true; btn.textContent = 'İşleniyor & iyzico Doğrulanıyor...'; }
+
+            const payload = {
+                subMerchantType: document.getElementById('subMerchantType').value,
+                legalCompanyTitle: document.getElementById('subMerchantLegalTitle').value.trim(),
+                identityNumber: document.getElementById('subMerchantIdentityNo').value.trim(),
+                taxOffice: document.getElementById('subMerchantTaxOffice').value.trim(),
+                iban: document.getElementById('subMerchantIban').value.trim(),
+                contactName: document.getElementById('subMerchantContactName').value.trim(),
+                email: document.getElementById('subMerchantEmail').value.trim(),
+                phone: document.getElementById('subMerchantPhone').value.trim(),
+                address: document.getElementById('subMerchantAddress').value.trim()
+            };
+
+            try {
+                const res = await fetch('/Payment/RegisterSubMerchant', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    closeSubMerchantModal();
+                    alert(data.message || 'iyzico Alt Üye İşyeri kaydınız başarıyla tamamlandı!');
+                    location.reload();
+                } else {
+                    alert('iyzico Hatası: ' + (data.message || 'Kayıt yapılamadı.'));
+                }
+            } catch (err) {
+                alert('Bağlantı hatası: ' + err.message);
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = 'Bilgileri Kaydet & iyzico Hesabı Aç'; }
+            }
+        }
     </script>
 }
+
+<!-- ==================== İYZİCO ALT ÜYE İŞYERİ MODALI ==================== -->
+<div id="subMerchantModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.75); backdrop-filter: blur(5px); z-index: 100000; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this)closeSubMerchantModal()">
+    <div class="ty-modal-box" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; width: 100%; max-width: 580px; max-height: 90vh; overflow-y: auto; padding: 26px; box-shadow: 0 25px 40px -5px rgba(0,0,0,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+            <div>
+                <span id="subMerchantStatusBadge" class="status-badge badge-blue" style="font-size: 0.72rem; padding: 3px 8px; font-weight: 800;">İYZİCO PAZARYERİ ENTEGRASYONU</span>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-top: 6px; margin-bottom: 2px;">Alt Üye İşyeri &amp; IBAN Hesabı</h3>
+                <small style="color: #64748b; font-size: 0.8rem;">Siparişlerden kazandığınız hak edişlerin iyzico tarafından banka hesabınıza aktarılması için gereklidir.</small>
+            </div>
+            <button type="button" onclick="closeSubMerchantModal()" style="border: none; background: transparent; font-size: 1.3rem; cursor: pointer; color: #64748b;">&times;</button>
+        </div>
+
+        <form id="subMerchantForm" onsubmit="submitSubMerchantForm(event)">
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 0.8rem; font-weight: 750; color: #334155; display: block; margin-bottom: 4px;">Şirket Türü *</label>
+                <select id="subMerchantType" class="form-control" style="font-size: 0.85rem; border-radius: 8px;">
+                    <option value="LIMITED_OR_JOINT_STOCK_COMPANY">Limited veya Anonim Şirket (A.Ş. / Ltd. Şti.)</option>
+                    <option value="PERSONAL_COMPANY">Şahıs Şirketi (TCKN ile Kayıtlı)</option>
+                    <option value="PRIVATE_COMPANY">Adi Ortaklık / Özel Şirket</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 0.8rem; font-weight: 750; color: #334155; display: block; margin-bottom: 4px;">Resmi Ticari Unvan *</label>
+                <input type="text" id="subMerchantLegalTitle" class="form-control" placeholder="Örn: Atlas Metal Sanayi ve Ticaret A.Ş." required style="font-size: 0.85rem; border-radius: 8px;" />
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: 750; color: #334155; display: block; margin-bottom: 4px;">VKN veya TC Kimlik No *</label>
+                    <input type="text" id="subMerchantIdentityNo" class="form-control" placeholder="10 Haneli VKN veya 11 Haneli TCKN" maxlength="11" required style="font-size: 0.85rem; border-radius: 8px;" />
+                </div>
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: 750; color: #334155; display: block; margin-bottom: 4px;">Vergi Dairesi</label>
+                    <input type="text" id="subMerchantTaxOffice" class="form-control" placeholder="Örn: Kadıköy VD" style="font-size: 0.85rem; border-radius: 8px;" />
+                </div>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 0.8rem; font-weight: 750; color: #334155; display: block; margin-bottom: 4px;">Hak Ediş Ödemesi İçin IBAN (26 Karakter) *</label>
+                <input type="text" id="subMerchantIban" class="form-control" placeholder="TR320006200000000001234567" maxlength="32" required style="font-size: 0.9rem; font-family: monospace; font-weight: 700; border-radius: 8px; letter-spacing: 0.05em;" />
+                <small style="font-size: 0.72rem; color: #64748b;">Örn Test IBAN: <code>TR320006200000000001234567</code> (TR ile başlayan 26 haneli geçerli IBAN)</small>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: 750; color: #334155; display: block; margin-bottom: 4px;">Yetkili Adı Soyadı</label>
+                    <input type="text" id="subMerchantContactName" class="form-control" placeholder="Ad Soyad" style="font-size: 0.85rem; border-radius: 8px;" />
+                </div>
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: 750; color: #334155; display: block; margin-bottom: 4px;">Telefon</label>
+                    <input type="text" id="subMerchantPhone" class="form-control" placeholder="5XX XXX XX XX" maxlength="11" style="font-size: 0.85rem; border-radius: 8px;" />
+                </div>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 0.8rem; font-weight: 750; color: #334155; display: block; margin-bottom: 4px;">E-Posta</label>
+                <input type="email" id="subMerchantEmail" class="form-control" placeholder="finans@sirketiniz.com" style="font-size: 0.85rem; border-radius: 8px;" />
+            </div>
+
+            <div style="margin-bottom: 18px;">
+                <label style="font-size: 0.8rem; font-weight: 750; color: #334155; display: block; margin-bottom: 4px;">Tebligat / Şirket Adresi</label>
+                <textarea id="subMerchantAddress" class="form-control" rows="2" placeholder="Şirket merkez açık adresi..." style="font-size: 0.85rem; border-radius: 8px;"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn-cancel" onclick="closeSubMerchantModal()">Vazgeç</button>
+                <button type="submit" id="btnSubmitSubMerchant" class="btn-primary" style="padding: 10px 20px; font-weight: 750; background: #0f172a; border: none; border-radius: 8px; color: #fff; cursor: pointer;">
+                    Bilgileri Kaydet &amp; iyzico Hesabı Aç
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

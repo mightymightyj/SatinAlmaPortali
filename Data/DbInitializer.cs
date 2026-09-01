@@ -134,11 +134,69 @@ namespace satinalmaportali2.Data
                         ALTER TABLE reviews ADD COLUMN IF NOT EXISTS communicationscore DOUBLE PRECISION;
                         ALTER TABLE reviews ADD COLUMN IF NOT EXISTS reviewdate TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
                         ALTER TABLE reviews ADD COLUMN IF NOT EXISTS isverifiedpurchase BOOLEAN DEFAULT TRUE;
+
+                        -- iyzico & Escrow (Havuz) Alanları: Orders Tablosu
+                        ALTER TABLE orders ADD COLUMN IF NOT EXISTS paymentid VARCHAR(100);
+                        ALTER TABLE orders ADD COLUMN IF NOT EXISTS paymenttransactionid VARCHAR(100);
+                        ALTER TABLE orders ADD COLUMN IF NOT EXISTS escrowstatus VARCHAR(50) DEFAULT 'InEscrow';
+                        ALTER TABLE orders ADD COLUMN IF NOT EXISTS escrowreleasedate TIMESTAMP WITH TIME ZONE;
+                        ALTER TABLE orders ADD COLUMN IF NOT EXISTS commissionrate DECIMAL(18,2) DEFAULT 0.05;
+                        ALTER TABLE orders ADD COLUMN IF NOT EXISTS commissionamount DECIMAL(18,2) DEFAULT 0;
+                        ALTER TABLE orders ADD COLUMN IF NOT EXISTS supplierpayoutamount DECIMAL(18,2) DEFAULT 0;
+                        ALTER TABLE orders ADD COLUMN IF NOT EXISTS autoapprovaldeadline TIMESTAMP WITH TIME ZONE;
+                        ALTER TABLE orders ADD COLUMN IF NOT EXISTS isescrowapproved BOOLEAN DEFAULT FALSE;
+                        ALTER TABLE orders ADD COLUMN IF NOT EXISTS disputereason TEXT;
+
+                        -- iyzico Alt Üye İşyeri Alanları: Companies Tablosu
+                        ALTER TABLE companies ADD COLUMN IF NOT EXISTS iyzicosubmerchantkey VARCHAR(100);
+                        ALTER TABLE companies ADD COLUMN IF NOT EXISTS submerchanttype VARCHAR(100);
+                        ALTER TABLE companies ADD COLUMN IF NOT EXISTS iban VARCHAR(100);
+                        ALTER TABLE companies ADD COLUMN IF NOT EXISTS legalcompanytitle VARCHAR(255);
+                        ALTER TABLE companies ADD COLUMN IF NOT EXISTS identitynumber VARCHAR(50);
+                        ALTER TABLE companies ADD COLUMN IF NOT EXISTS isiyzicoapproved BOOLEAN DEFAULT FALSE;
+
+                        -- iyzico Finansal İşlem Hareketleri Tablosu
+                        CREATE TABLE IF NOT EXISTS paymenttransactions (
+                            transactionid SERIAL PRIMARY KEY,
+                            orderid INT,
+                            conversationid VARCHAR(100),
+                            paymentid VARCHAR(100),
+                            paymenttransactionid VARCHAR(100),
+                            submerchantkey VARCHAR(100),
+                            totalamount DECIMAL(18,2) NOT NULL DEFAULT 0,
+                            merchantpayoutamount DECIMAL(18,2) NOT NULL DEFAULT 0,
+                            platformcommission DECIMAL(18,2) NOT NULL DEFAULT 0,
+                            transactiontype VARCHAR(50) NOT NULL,
+                            status VARCHAR(50) NOT NULL,
+                            errorcode VARCHAR(100),
+                            errormessage TEXT,
+                            rawresponse TEXT,
+                            createdat TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                        );
+
+                        -- iyzico Uyuşmazlık & İade Talepleri Tablosu
+                        CREATE TABLE IF NOT EXISTS orderdisputes (
+                            disputeid SERIAL PRIMARY KEY,
+                            orderid INT NOT NULL,
+                            buyercompanyid INT NOT NULL,
+                            suppliercompanyid INT,
+                            reason VARCHAR(100) NOT NULL,
+                            description TEXT NOT NULL,
+                            evidenceattachmenturl TEXT,
+                            status VARCHAR(50) NOT NULL DEFAULT 'Open',
+                            adminnotes TEXT,
+                            createdat TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                            resolvedat TIMESTAMP WITH TIME ZONE
+                        );
+                        
+                        -- Temizlik: Ödemesi tamamlanmamış / askıda kalmış eski taslak kayıtları temizle
+                        DELETE FROM orderitems WHERE orderid IN (SELECT orderid FROM orders WHERE orderstatus = 'Ödeme Bekleniyor' OR paymentstatus = 'Beklemede (3D)');
+                        DELETE FROM orders WHERE orderstatus = 'Ödeme Bekleniyor' OR paymentstatus = 'Beklemede (3D)';
                     ");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Orders/CartItems/RequestItems/Reviews table check/create note: " + ex.Message);
+                    Console.WriteLine("Orders/CartItems/RequestItems/Reviews/Escrow table check/create note: " + ex.Message);
                 }
 
                 // ====================================================

@@ -28,10 +28,34 @@ namespace satinalmaportali2.Data
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<CartItem> CartItems { get; set; }
+        public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
+        public DbSet<OrderDispute> OrderDisputes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<PaymentTransaction>(entity =>
+            {
+                entity.ToTable("paymenttransactions");
+                entity.HasKey(e => e.TransactionID);
+                entity.Property(e => e.TransactionID).ValueGeneratedOnAdd();
+                entity.HasOne(e => e.Order)
+                      .WithMany()
+                      .HasForeignKey(e => e.OrderID)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<OrderDispute>(entity =>
+            {
+                entity.ToTable("orderdisputes");
+                entity.HasKey(e => e.DisputeID);
+                entity.Property(e => e.DisputeID).ValueGeneratedOnAdd();
+                entity.HasOne(e => e.Order)
+                      .WithMany()
+                      .HasForeignKey(e => e.OrderID)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
 
             modelBuilder.Entity<CartItem>(entity =>
             {

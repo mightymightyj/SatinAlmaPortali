@@ -36,5 +36,18 @@ namespace satinalmaportali2.Models
         public string? ResetToken { get; set; }
 
         public DateTime? ResetTokenExpiry { get; set; }
+
+        // iyzico Pazaryeri / Alt Üye İşyeri (Sub-Merchant) Alanları
+        public string? IyzicoSubMerchantKey { get; set; }
+
+        public string? SubMerchantType { get; set; } // LIMITED_OR_JOINT_STOCK_COMPANY, PERSONAL_COMPANY, PRIVATE_COMPANY
+
+        public string? IBAN { get; set; }
+
+        public string? LegalCompanyTitle { get; set; }
+
+        public string? IdentityNumber { get; set; }
+
+        public bool IsIyzicoApproved { get; set; } = false;
     }
 }

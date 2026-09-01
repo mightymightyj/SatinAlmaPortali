@@ -39,6 +39,10 @@ builder.Services.AddSignalR();
 // Dashboard Servis Kaydı
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
+// iyzico Sandbox & Escrow (Havuz) Servis Kaydı
+builder.Services.AddScoped<IIyzicoPaymentService, IyzicoPaymentService>();
+builder.Services.AddHostedService<EscrowAutoApprovalBackgroundService>();
+
 // Kimlik Doğrulama (Cookie Authentication)
 builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options => {

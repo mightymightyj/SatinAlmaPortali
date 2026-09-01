@@ -2392,6 +2392,49 @@ async function submitCorporateOrder(e) {
             }))
         };
 
+        if (payMethod === 'Kredi Kartı') {
+            const cardHolder = (document.getElementById('checkoutCardHolder')?.value || '').trim();
+            const cardNumber = (document.getElementById('checkoutCardNumber')?.value || '').replace(/\D/g, '');
+            const cardExpiry = (document.getElementById('checkoutCardExpiry')?.value || '').trim();
+            const cardCvv = (document.getElementById('checkoutCardCvv')?.value || '').replace(/\D/g, '');
+
+            const expiryParts = cardExpiry.split('/');
+            const expMonth = expiryParts[0] ? expiryParts[0].trim() : '12';
+            const expYear = expiryParts[1] ? expiryParts[1].trim() : '28';
+
+            const payment3DPayload = {
+                orderData: orderPayload,
+                cardInfo: {
+                    cardHolderName: cardHolder,
+                    cardNumber: cardNumber,
+                    expireMonth: expMonth,
+                    expireYear: expYear,
+                    cvc: cardCvv
+                }
+            };
+
+            const response = await fetch('/Payment/Initialize3DCheckout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payment3DPayload)
+            });
+
+            const result = await response.json();
+            if (result.success && result.htmlContent) {
+                clearB2BCart();
+                closeCheckoutModal();
+                openIyzico3DModal(result.htmlContent);
+                return;
+            } else if (!result.success) {
+                showB2BToast("❌ Ödeme Başarısız: " + (result.message || "Banka işlemi onaylamadı."), "danger");
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnHtml;
+                }
+                return;
+            }
+        }
+
         const response = await fetch('/Order/CreateOrder', {
             method: 'POST',
             headers: {
@@ -2634,7 +2677,58 @@ document.addEventListener('keydown', function(e) {
         closeTyModal('tySellerOfferModal');
         closeCartDrawer();
         closeCheckoutModal();
+        closeIyzico3DModal();
     }
 });
+
+/**
+ * iyzico 3D Secure Doğrulama Modalını Açar ve Formu Yükler
+ */
+function openIyzico3DModal(htmlContent) {
+    const modal = document.getElementById('iyzico3DModal');
+    const container = document.getElementById('iyzico3DFrameContainer');
+    if (!modal || !container) {
+        // Eğer modal sayfada yoksa doğrudan bir iframe oluştur
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.inset = '0';
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.zIndex = '9999999';
+        iframe.style.border = 'none';
+        document.body.appendChild(iframe);
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        doc.open();
+        doc.write(htmlContent);
+        doc.close();
+        return;
+    }
+
+    container.innerHTML = '';
+    const iframe = document.createElement('iframe');
+    iframe.style.width = '100%';
+    iframe.style.height = '520px';
+    iframe.style.border = 'none';
+    container.appendChild(iframe);
+
+    modal.style.display = 'flex';
+    modal.classList.add('show');
+    modal.classList.add('is-open');
+
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.open();
+    doc.write(htmlContent);
+    doc.close();
+}
+
+function closeIyzico3DModal() {
+    const modal = document.getElementById('iyzico3DModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+        modal.classList.remove('is-open');
+    }
+}
+
 
 

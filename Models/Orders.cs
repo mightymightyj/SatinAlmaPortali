@@ -55,6 +55,33 @@ namespace satinalmaportali2.Models
         public string? ShippingCarrier { get; set; } // Yurtiçi Kargo, MNG, Aras, Borusan Lojistik, Ambar
         public string? Notes { get; set; }
 
+        // iyzico & Havuz (Escrow) Sistemi Alanları
+        [MaxLength(100)]
+        public string? PaymentId { get; set; }
+
+        [MaxLength(100)]
+        public string? PaymentTransactionId { get; set; }
+
+        [MaxLength(50)]
+        public string EscrowStatus { get; set; } = "InEscrow"; // PendingPayment, InEscrow, Delivered_WaitingApproval, Released_ToSeller, Refunded, Disputed
+
+        public DateTime? EscrowReleaseDate { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal CommissionRate { get; set; } = 0.05m; // %5
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal CommissionAmount { get; set; } = 0m;
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal SupplierPayoutAmount { get; set; } = 0m;
+
+        public DateTime? AutoApprovalDeadline { get; set; }
+
+        public bool IsEscrowApproved { get; set; } = false;
+
+        public string? DisputeReason { get; set; }
+
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
 }

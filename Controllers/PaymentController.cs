@@ -1,0 +1,438 @@
+using System;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using satinalmaportali2.Data;
+using satinalmaportali2.Models;
+using satinalmaportali2.Services;
+
+namespace satinalmaportali2.Controllers
+{
+    public class PaymentController : Controller
+    {
+        private readonly ApplicationDbContext _context;
+        private readonly IIyzicoPaymentService _iyzicoService;
+        private readonly EmailService _emailService;
+
+        public PaymentController(
+            ApplicationDbContext context,
+            IIyzicoPaymentService iyzicoService,
+            EmailService emailService)
+        {
+            _context = context;
+            _iyzicoService = iyzicoService;
+            _emailService = emailService;
+        }
+
+        private int GetCurrentCompanyId()
+        {
+            var cidClaim = User.FindFirst("CompanyID")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(cidClaim) && int.TryParse(cidClaim, out int cid))
+            {
+                return cid;
+            }
+            return 0;
+        }
+
+        private bool IsSuperAdmin()
+        {
+            var userType = User.FindFirst("UserType")?.Value ?? User.FindFirst(ClaimTypes.Role)?.Value;
+            var compTypeClaim = User.FindFirst("CompanyTypeID")?.Value;
+            return string.Equals(userType, "admin", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(userType, "SuperAdmin", StringComparison.OrdinalIgnoreCase) ||
+                   compTypeClaim == "4";
+        }
+
+        /// <summary>
+        /// 3D Secure Kurumsal Ödeme Başlatma (AJAX).
+        /// Sipariş oluşturur ve iyzico 3D Secure HTML form içeriğini döner.
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> Initialize3DCheckout([FromBody] CorporateCheckoutPaymentInputModel input)
+        {
+            if (input == null || input.OrderData == null || input.OrderData.Items == null || !input.OrderData.Items.Any())
+            {
+                return Json(new { success = false, message = "Geçersiz sipariş verisi veya sepet boş." });
+            }
+
+            if (input.CardInfo == null || string.IsNullOrWhiteSpace(input.CardInfo.CardNumber))
+            {
+                return Json(new { success = false, message = "Lütfen kredi kartı bilgilerinizi eksiksiz giriniz." });
+            }
+
+            try
+            {
+                int currentCompanyId = GetCurrentCompanyId();
+                string currentCompanyName = User.FindFirst("CompanyName")?.Value ?? "";
+                string currentEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? input.OrderData.BuyerEmail ?? "";
+
+                Company? comp = null;
+                if (currentCompanyId > 0)
+                {
+                    comp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId);
+                    if (comp != null)
+                    {
+                        if (string.IsNullOrWhiteSpace(input.OrderData.BuyerCompany)) input.OrderData.BuyerCompany = comp.CompanyName ?? comp.CompanyOfficial ?? "";
+                        if (string.IsNullOrWhiteSpace(input.OrderData.BuyerTaxNumber)) input.OrderData.BuyerTaxNumber = comp.TCNO;
+                        if (string.IsNullOrWhiteSpace(input.OrderData.BuyerTaxOffice)) input.OrderData.BuyerTaxOffice = comp.TaxOffice;
+                        if (string.IsNullOrWhiteSpace(input.OrderData.ReceiverPhone)) input.OrderData.ReceiverPhone = comp.CompanyPhone;
+                        if (string.IsNullOrWhiteSpace(input.OrderData.ReceiverName)) input.OrderData.ReceiverName = comp.CompanyOfficial ?? comp.CompanyName;
+                    }
+                }
+
+                // Sipariş Numarası ve Konuşma ID Üret
+                int countToday = await _context.Orders.CountAsync(o => o.OrderDate.Date == DateTime.UtcNow.Date);
+                string orderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{(countToday + 1):D4}";
+                string conversationId = $"CONV-{orderNumber}-{DateTime.UtcNow.Ticks}";
+
+                decimal totalAmount = 0;
+                var memoryItems = new List<OrderItem>();
+                int? primarySupplierCompId = null;
+                string primarySupplierName = "Onaylı Tedarikçi";
+
+                foreach (var item in input.OrderData.Items)
+                {
+                    if (item.Quantity <= 0) item.Quantity = 1;
+                    decimal lineTotal = item.Price * item.Quantity;
+                    totalAmount += lineTotal;
+
+                    string sellerName = item.Seller ?? "Onaylı Tedarikçi";
+                    int? sCompId = null;
+
+                    if (item.ProductID > 0)
+                    {
+                        var dbItem = await _context.Items.AsNoTracking().FirstOrDefaultAsync(i => i.ItemID == item.ProductID);
+                        if (dbItem != null)
+                        {
+                            if (!string.IsNullOrWhiteSpace(dbItem.Brand)) sellerName = dbItem.Brand;
+                            if (!string.IsNullOrWhiteSpace(dbItem.Properties))
+                            {
+                                var match = System.Text.RegularExpressions.Regex.Match(dbItem.Properties, @"(?:FirmaID|CompanyID)\s*:\s*(\d+)");
+                                if (match.Success && int.TryParse(match.Groups[1].Value, out int pid))
+                                    sCompId = pid;
+                            }
+                        }
+                    }
+
+                    if (!sCompId.HasValue && !string.IsNullOrWhiteSpace(sellerName))
+                    {
+                        var matchedComp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => 
+                            (c.CompanyName != null && c.CompanyName.ToLower() == sellerName.Trim().ToLower()) ||
+                            (c.CompanyOfficial != null && c.CompanyOfficial.ToLower() == sellerName.Trim().ToLower()));
+                        if (matchedComp != null) sCompId = matchedComp.CompanyID;
+                    }
+
+                    if (!primarySupplierCompId.HasValue && sCompId.HasValue)
+                    {
+                        primarySupplierCompId = sCompId;
+                        primarySupplierName = sellerName;
+                    }
+
+                    memoryItems.Add(new OrderItem
+                    {
+                        ProductName = item.Title,
+                        Sku = item.Sku ?? $"SKU-{item.ProductID}",
+                        CategoryName = item.Category ?? "Endüstriyel",
+                        UnitPrice = item.Price,
+                        Quantity = item.Quantity,
+                        LineTotal = lineTotal,
+                        SupplierCompanyName = sellerName,
+                        SupplierCompanyID = sCompId,
+                        ItemStatus = "Havuzda Bloke"
+                    });
+                }
+
+                decimal taxRate = 0.20m;
+                decimal taxAmount = Math.Round(totalAmount * taxRate, 2);
+                decimal grandTotal = totalAmount + taxAmount;
+
+                // Bellekte geçici sipariş nesnesi oluştur (Henüz DB'ye eklenmez!)
+                var draftOrder = new Order
+                {
+                    OrderNumber = orderNumber,
+                    BuyerCompanyID = currentCompanyId > 0 ? currentCompanyId : null,
+                    BuyerCompanyName = !string.IsNullOrWhiteSpace(input.OrderData.BuyerCompany) ? input.OrderData.BuyerCompany.Trim() : (currentCompanyName ?? "Kurumsal Alıcı"),
+                    BuyerTaxNumber = input.OrderData.BuyerTaxNumber,
+                    BuyerTaxOffice = input.OrderData.BuyerTaxOffice,
+                    BuyerEmail = currentEmail,
+                    BuyerPhone = input.OrderData.BuyerPhone ?? input.OrderData.ReceiverPhone,
+                    SupplierCompanyID = primarySupplierCompId,
+                    SupplierCompanyName = primarySupplierName,
+                    OrderDate = DateTime.UtcNow,
+                    DeliveryDate = DateTime.UtcNow.AddDays(3),
+                    TotalAmount = totalAmount,
+                    TaxAmount = taxAmount,
+                    GrandTotal = grandTotal,
+                    PaymentMethod = "iyzico Kredi Kartı (Havuz)",
+                    PaymentStatus = "Beklemede (3D)",
+                    OrderStatus = "Ödeme Bekleniyor",
+                    EscrowStatus = "PendingPayment",
+                    DeliveryCity = input.OrderData.DeliveryCity?.Trim(),
+                    DeliveryAddress = input.OrderData.DeliveryAddress?.Trim(),
+                    ReceiverName = input.OrderData.ReceiverName ?? input.OrderData.BuyerCompany,
+                    ReceiverPhone = input.OrderData.ReceiverPhone,
+                    Notes = input.OrderData.Notes,
+                    OrderItems = memoryItems
+                };
+
+                // Taslak sipariş verisini PaymentTransactions tablosuna güvenli bir şekilde kaydet
+                var draftPayload = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    OrderData = input.OrderData,
+                    OrderNumber = orderNumber,
+                    BuyerCompanyID = currentCompanyId > 0 ? currentCompanyId : (int?)null,
+                    BuyerCompanyName = draftOrder.BuyerCompanyName,
+                    BuyerEmail = currentEmail,
+                    TotalAmount = totalAmount,
+                    TaxAmount = taxAmount,
+                    GrandTotal = grandTotal
+                });
+
+                var draftTransaction = new PaymentTransaction
+                {
+                    ConversationId = conversationId,
+                    TotalAmount = grandTotal,
+                    TransactionType = "Initialize_3D_Draft",
+                    Status = "Pending",
+                    RawResponse = draftPayload,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.PaymentTransactions.Add(draftTransaction);
+                await _context.SaveChangesAsync();
+
+                // iyzico 3D Secure Başlat
+                string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+                string callbackUrl = $"{Request.Scheme}://{Request.Host}/Payment/IyzicoCallback";
+
+                var iyzicoResult = await _iyzicoService.Initialize3DCheckoutAsync(draftOrder, input.CardInfo, ipAddress, callbackUrl);
+
+                if (iyzicoResult.Success)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        orderNumber = draftOrder.OrderNumber,
+                        htmlContent = iyzicoResult.HtmlContent,
+                        grandTotal = draftOrder.GrandTotal,
+                        message = "3D Secure kimlik doğrulama penceresi yükleniyor..."
+                    });
+                }
+                else
+                {
+                    return Json(new { success = false, message = iyzicoResult.Message });
+                }
+            }
+            catch (Exception ex)
+            {
+                var detail = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                return Json(new { success = false, message = "Ödeme başlatılırken hata oluştu: " + detail });
+            }
+        }
+
+        /// <summary>
+        /// iyzico 3D Secure Callback Endpoint.
+        /// Banka onayından sonra tarayıcı bu endpoint'e yönlendirilir.
+        /// </summary>
+        [HttpPost]
+        [AllowAnonymous]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> IyzicoCallback(
+            [FromForm] string? status,
+            [FromForm] string? paymentId,
+            [FromForm] string? conversationData,
+            [FromForm] string? conversationId,
+            [FromForm] string? mdStatus)
+        {
+            string redirectUrl = Url.Action("Orders", "Dashboard") ?? "/Dashboard/Orders";
+
+            if (string.IsNullOrWhiteSpace(paymentId) || string.IsNullOrWhiteSpace(conversationId))
+            {
+                TempData["PaymentError"] = "Geçersiz ödeme callback parametreleri.";
+                return Content(BuildIframeBreakoutHtml(false, "Geçersiz ödeme parametreleri.", redirectUrl), "text/html");
+            }
+
+            var completeResult = await _iyzicoService.Complete3DPaymentAsync(conversationId, paymentId, conversationData);
+
+            if (completeResult.Success)
+            {
+                TempData["PaymentSuccess"] = $"🎉 Tebrikler! {completeResult.OrderNumber} numaralı kurumsal siparişiniz {completeResult.GrandTotal:N2} ₺ tutarında iyzico Havuz Koruması ile güvenceye alındı.";
+                return Content(BuildIframeBreakoutHtml(true, $"🎉 Ödemeniz başarıyla alındı! {completeResult.OrderNumber} nolu sipariş havuzda güvenceye alındı.", redirectUrl), "text/html");
+            }
+            else
+            {
+                TempData["PaymentError"] = $"Ödeme Onaylanamadı: {completeResult.Message}";
+                return Content(BuildIframeBreakoutHtml(false, $"Ödeme Onaylanamadı: {completeResult.Message}", redirectUrl), "text/html");
+            }
+        }
+
+        private static string BuildIframeBreakoutHtml(bool success, string message, string targetUrl)
+        {
+            string icon = success ? "🎉" : "⚠️";
+            string title = success ? "Ödeme Başarıyla Tamamlandı!" : "Ödeme Başarısız";
+            string color = success ? "#059669" : "#dc2626";
+
+            return $@"
+<!DOCTYPE html>
+<html lang='tr'>
+<head>
+    <meta charset='utf-8' />
+    <title>{title}</title>
+    <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }}
+        .card {{ background: #ffffff; border-radius: 12px; padding: 24px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.08); max-width: 360px; width: 90%; }}
+        .icon {{ font-size: 40px; margin-bottom: 8px; }}
+        h3 {{ margin: 0 0 8px 0; color: #0f172a; font-size: 1.15rem; }}
+        p {{ margin: 0 0 16px 0; color: #64748b; font-size: 0.85rem; line-height: 1.4; }}
+        .btn {{ display: inline-block; background: {color}; color: #ffffff; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600; }}
+    </style>
+</head>
+<body>
+    <div class='card'>
+        <div class='icon'>{icon}</div>
+        <h3>{title}</h3>
+        <p>{message}</p>
+        <p style='font-size:0.75rem; color:#94a3b8;'>Sipariş takip paneline yönlendiriliyorsunuz...</p>
+        <a href='{targetUrl}' target='_top' class='btn'>Siparişlerime Git →</a>
+    </div>
+    <script>
+        setTimeout(function() {{
+            if (window.top && window.top !== window) {{
+                window.top.location.href = '{targetUrl}';
+            }} else {{
+                window.location.href = '{targetUrl}';
+            }}
+        }}, 600);
+    </script>
+</body>
+</html>";
+        }
+
+        /// <summary>
+        /// Alıcı firma siparişi teslim aldığında havuzdaki parayı çözer ve tedarikçiye aktarır.
+        /// </summary>
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> ApproveEscrowRelease([FromBody] EscrowActionInputDto input)
+        {
+            if (input == null || input.OrderID <= 0)
+            {
+                return Json(new { success = false, message = "Geçersiz sipariş ID." });
+            }
+
+            int currentCompanyId = GetCurrentCompanyId();
+            bool isAdmin = IsSuperAdmin();
+
+            var result = await _iyzicoService.ApproveEscrowReleaseAsync(input.OrderID, currentCompanyId, isAdmin);
+            return Json(new { success = result.Success, message = result.Message });
+        }
+
+        /// <summary>
+        /// Süper Admin iade talebini onaylayıp parayı alıcıya kesintisiz iade eder.
+        /// </summary>
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> DisapproveEscrowRefund([FromBody] EscrowActionInputDto input)
+        {
+            if (input == null || input.OrderID <= 0)
+            {
+                return Json(new { success = false, message = "Geçersiz sipariş ID." });
+            }
+
+            if (!IsSuperAdmin())
+            {
+                return Json(new { success = false, message = "İade yetkisi yalnızca Süper Admin hesaba aittir." });
+            }
+
+            int currentCompanyId = GetCurrentCompanyId();
+            var result = await _iyzicoService.DisapproveEscrowRefundAsync(input.OrderID, currentCompanyId, input.Reason ?? "Admin Tarafından İade Edildi", isAdmin: true);
+            return Json(new { success = result.Success, message = result.Message });
+        }
+
+        /// <summary>
+        /// Alıcı firma eksik/kusurlu ürün için itiraz talebi açar.
+        /// </summary>
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> CreateDispute([FromBody] DisputeCreateInputDto input)
+        {
+            if (input == null || input.OrderID <= 0 || string.IsNullOrWhiteSpace(input.Reason))
+            {
+                return Json(new { success = false, message = "Lütfen itiraz nedenini ve açıklamasını belirtiniz." });
+            }
+
+            int currentCompanyId = GetCurrentCompanyId();
+            var result = await _iyzicoService.CreateDisputeAsync(input, currentCompanyId);
+            return Json(new { success = result.Success, message = result.Message });
+        }
+
+        /// <summary>
+        /// Tedarikçi firmanın iyzico Alt Üye İşyeri (Sub-Merchant) kaydını gerçekleştirir.
+        /// </summary>
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> RegisterSubMerchant([FromBody] SubMerchantRegisterDto input)
+        {
+            if (input == null || string.IsNullOrWhiteSpace(input.IBAN) || string.IsNullOrWhiteSpace(input.IdentityNumber))
+            {
+                return Json(new { success = false, message = "Lütfen IBAN, Vergi/TC Kimlik Numarası ve Şirket Unvanını eksiksiz doldurunuz." });
+            }
+
+            int currentCompanyId = GetCurrentCompanyId();
+            if (currentCompanyId <= 0 && !IsSuperAdmin())
+            {
+                return Json(new { success = false, message = "Oturum açmış geçerli bir firma bulunamadı." });
+            }
+
+            input.CompanyID = input.CompanyID > 0 && IsSuperAdmin() ? input.CompanyID : currentCompanyId;
+
+            var result = await _iyzicoService.CreateOrUpdateSubMerchantAsync(input);
+            return Json(new { success = result.Success, subMerchantKey = result.SubMerchantKey, message = result.Message });
+        }
+
+        /// <summary>
+        /// Giriş yapan tedarikçinin iyzico alt üye işyeri durumunu döner.
+        /// </summary>
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetSubMerchantStatus()
+        {
+            int currentCompanyId = GetCurrentCompanyId();
+            if (currentCompanyId <= 0)
+            {
+                return Json(new { isAuthenticated = false });
+            }
+
+            var comp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId);
+            if (comp == null)
+            {
+                return Json(new { isAuthenticated = false });
+            }
+
+            return Json(new
+            {
+                isAuthenticated = true,
+                companyId = comp.CompanyID,
+                companyName = comp.CompanyName ?? comp.CompanyOfficial ?? "",
+                legalCompanyTitle = comp.LegalCompanyTitle ?? comp.CompanyName ?? "",
+                identityNumber = comp.IdentityNumber ?? comp.TCNO ?? "",
+                taxOffice = comp.TaxOffice ?? "",
+                iban = comp.IBAN ?? "",
+                subMerchantType = comp.SubMerchantType ?? "LIMITED_OR_JOINT_STOCK_COMPANY",
+                subMerchantKey = comp.IyzicoSubMerchantKey ?? "",
+                isIyzicoApproved = comp.IsIyzicoApproved || !string.IsNullOrWhiteSpace(comp.IyzicoSubMerchantKey),
+                phone = comp.CompanyPhone ?? "",
+                email = comp.CompanyMail ?? ""
+            });
+        }
+    }
+
+    public class CorporateCheckoutPaymentInputModel
+    {
+        public CreateOrderInputModel? OrderData { get; set; }
+        public CardPaymentInputDto? CardInfo { get; set; }
+    }
+}

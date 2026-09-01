@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="CloudinaryDotNet" Version="1.29.2" />
+    <PackageReference Include="Iyzipay" Version="2.1.80" />
     <PackageReference Include="MailKit" Version="4.17.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="10.0.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.11">
