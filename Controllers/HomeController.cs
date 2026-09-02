@@ -306,11 +306,33 @@ namespace satinalmaportali2.Controllers {
                 // 1. Oturum açmış firmanın bilgilerini tespit et
                 var (currentCompanyId, currentCompanyName, comp) = await GetCurrentCompanyContextAsync();
 
+                if (currentCompanyId <= 0 || User?.Identity?.IsAuthenticated != true || comp == null)
+                {
+                    return Json(new 
+                    { 
+                        success = false, 
+                        requireLogin = true, 
+                        message = "Ürün satışa sunabilmek için lütfen kurumsal satıcı hesabınızla giriş yapınız veya yeni bir firma hesabı oluşturunuz." 
+                    });
+                }
+
+                // 2. iyzico Alt Üye İşyeri (SubMerchant) hesap açılışı kontrolü
+                bool hasIyzicoSubMerchant = comp.IsIyzicoApproved || !string.IsNullOrWhiteSpace(comp.IyzicoSubMerchantKey);
+                if (!hasIyzicoSubMerchant)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        requireIyzico = true,
+                        message = "Ürün satışa koyabilmek ve ödemelerinizi güvence havuzundan tahsil edebilmek için öncelikle iyzico Satıcı (Alt Üye İşyeri) kaydınızı tamamlamanız gerekmektedir."
+                    });
+                }
+
                 string finalBrand = !string.IsNullOrWhiteSpace(currentCompanyName) 
                     ? currentCompanyName.Trim() 
                     : (!string.IsNullOrWhiteSpace(input.Brand) ? input.Brand.Trim() : "Onaylı Tedarikçi");
 
-                // 2. Kategori ID Çözümleme
+                // 3. Kategori ID Çözümleme
                 int? finalCatId = input.CategoryID;
                 string finalCatName = input.CategoryName ?? "Endüstriyel Ürünler";
 
@@ -385,6 +407,15 @@ namespace satinalmaportali2.Controllers {
 
                 string formattedSku = $"SKU-B2B-{newItem.ItemID:D4}";
 
+                // Firmanın gerçek değerlendirme puanı ve sayısını hesapla
+                var compReviews = await _context.Reviews
+                    .AsNoTracking()
+                    .Where(r => r.CompanyID == currentCompanyId && r.ReviewScore.HasValue && r.ReviewType == "BuyerToSeller")
+                    .ToListAsync();
+
+                double realSellerScore = compReviews.Any() ? Math.Round(compReviews.Average(r => r.ReviewScore!.Value), 1) : 10.0;
+                int realReviewCount = compReviews.Count;
+
                 var productPayload = new
                 {
                     id = newItem.ItemID,
@@ -392,8 +423,9 @@ namespace satinalmaportali2.Controllers {
                     title = newItem.ItemName,
                     brand = finalBrand,
                     seller = finalBrand,
-                    sellerScore = 9.9,
-                    sellerBadge = "Yeni İlan / Onaylı",
+                    sellerScore = realSellerScore,
+                    sellerReviewCount = realReviewCount,
+                    sellerBadge = realReviewCount > 0 ? $"Onaylı Satıcı ({realReviewCount} Değerlendirme)" : "Yeni Onaylı Satıcı",
                     sellerLocation = "Türkiye",
                     category = finalCatName.ToLowerInvariant().Contains("metal") ? "metal" : 
                                finalCatName.ToLowerInvariant().Contains("it") || finalCatName.ToLowerInvariant().Contains("bilişim") ? "it" :
@@ -410,7 +442,7 @@ namespace satinalmaportali2.Controllers {
                     tierPricing = $"1-4 Adet: {(decimal)(newItem.ItemPrice ?? 0):N0} ₺ | 5+ Adet: {Math.Round((decimal)(newItem.ItemPrice ?? 0) * 0.92m, 0):N0} ₺",
                     image = !string.IsNullOrWhiteSpace(input.ImageUrl) 
                         ? input.ImageUrl 
-                        : "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&auto=format&fit=crop&q=80",
+                        : "/images/default-product.svg",
                     badge = "Doğrudan Üreticiden",
                     badgeType = "manufacturer",
                     sellerCompanyId = currentCompanyId,
@@ -637,7 +669,38 @@ namespace satinalmaportali2.Controllers {
 
                 var allCompanies = await _context.Companies
                     .AsNoTracking()
-                    .Select(c => new { c.CompanyID, c.CompanyName, c.CompanyOfficial, c.CompanyMail })
+                    .Select(c => new { c.CompanyID, c.CompanyName, c.CompanyOfficial, c.CompanyMail, c.AddressID })
+                    .ToListAsync();
+
+                // Tüm satıcı değerlendirmelerini çekip firma bazlı puan ve yorum sayılarını hesapla
+                var allReviews = await _context.Reviews
+                    .AsNoTracking()
+                    .Where(r => r.ReviewScore.HasValue && r.CompanyID.HasValue && r.ReviewType == "BuyerToSeller")
+                    .ToListAsync();
+
+                var reviewStats = allReviews
+                    .GroupBy(r => r.CompanyID!.Value)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => new
+                        {
+                            Count = g.Count(),
+                            AverageScore = Math.Round(g.Average(r => r.ReviewScore!.Value), 1)
+                        });
+
+                var allAddresses = await _context.Addresses
+                    .AsNoTracking()
+                    .Select(a => new { a.AddressID, a.DistrictID })
+                    .ToListAsync();
+
+                var allDistricts = await _context.Districts
+                    .AsNoTracking()
+                    .Select(d => new { d.DistrictID, d.DistrictName, d.TownID })
+                    .ToListAsync();
+
+                var allTowns = await _context.Towns
+                    .AsNoTracking()
+                    .Select(t => new { t.TownID, t.TownName })
                     .ToListAsync();
 
                 var list = items.Select(it =>
@@ -647,6 +710,8 @@ namespace satinalmaportali2.Controllers {
                     decimal price = (decimal)(it.ItemPrice ?? 0);
 
                     int sellerCompId = 1;
+                    string sellerName = !string.IsNullOrWhiteSpace(it.Brand) ? it.Brand.Trim() : "Onaylı Tedarikçi";
+
                     if (!string.IsNullOrWhiteSpace(it.Properties))
                     {
                         var prop = it.Properties;
@@ -668,6 +733,48 @@ namespace satinalmaportali2.Controllers {
                         if (matchedComp != null)
                         {
                             sellerCompId = matchedComp.CompanyID;
+                            sellerName = matchedComp.CompanyName ?? sellerName;
+                        }
+                    }
+
+                    // Gerçek değerlendirme puanı ve yorum sayısı
+                    double sellerScore = 10.0;
+                    int sellerReviewCount = 0;
+                    if (reviewStats.TryGetValue(sellerCompId, out var stats))
+                    {
+                        sellerScore = stats.AverageScore;
+                        sellerReviewCount = stats.Count;
+                    }
+
+                    // Gerçek tedarikçi lokasyonunu çözümle
+                    string sellerLocation = "Türkiye";
+                    var compObj = allCompanies.FirstOrDefault(c => c.CompanyID == sellerCompId);
+                    if (compObj != null && compObj.AddressID.HasValue)
+                    {
+                        var addrObj = allAddresses.FirstOrDefault(a => a.AddressID == compObj.AddressID.Value);
+                        if (addrObj != null && addrObj.DistrictID.HasValue)
+                        {
+                            var distObj = allDistricts.FirstOrDefault(d => d.DistrictID == addrObj.DistrictID.Value);
+                            if (distObj != null)
+                            {
+                                var townObj = distObj.TownID.HasValue ? allTowns.FirstOrDefault(t => t.TownID == distObj.TownID.Value) : null;
+                                sellerLocation = townObj != null ? $"{townObj.TownName} / {distObj.DistrictName}" : distObj.DistrictName ?? "Türkiye";
+                            }
+                        }
+                    }
+
+                    int rawStock = it.Quantity ?? 0;
+                    bool isOutOfStock = rawStock <= 0;
+                    string stockText = isOutOfStock ? "Tükendi (Stokta Yok)" : $"{rawStock} Adet Hazır Stok";
+
+                    // Ürünün özel görsel URL'i varsa Properties'ten çek, yoksa varsayılan görseli kullan
+                    string itemImage = "/images/default-product.svg";
+                    if (!string.IsNullOrWhiteSpace(it.Properties))
+                    {
+                        var imgMatch = System.Text.RegularExpressions.Regex.Match(it.Properties, @"(?:Resim|Image|ImageUrl|Gorsel)\s*:\s*(https?://[^\s\|;,]+|/[^\s\|;,]+)");
+                        if (imgMatch.Success)
+                        {
+                            itemImage = imgMatch.Groups[1].Value.Trim();
                         }
                     }
 
@@ -676,12 +783,13 @@ namespace satinalmaportali2.Controllers {
                         id = it.ItemID,
                         sku = $"SKU-B2B-{it.ItemID:D4}",
                         title = it.ItemName ?? "Kurumsal Ürün",
-                        brand = !string.IsNullOrWhiteSpace(it.Brand) ? it.Brand : "Tedarikçi Portalı",
-                        seller = !string.IsNullOrWhiteSpace(it.Brand) ? it.Brand : "Onaylı Tedarikçi",
+                        brand = !string.IsNullOrWhiteSpace(it.Brand) ? it.Brand : sellerName,
+                        seller = sellerName,
                         sellerCompanyId = sellerCompId,
-                        sellerScore = 9.8,
-                        sellerBadge = "Onaylı Tedarikçi",
-                        sellerLocation = "Türkiye",
+                        sellerScore = sellerScore,
+                        sellerReviewCount = sellerReviewCount,
+                        sellerBadge = sellerReviewCount > 0 ? $"Onaylı Satıcı ({sellerReviewCount} Değerlendirme)" : "Yeni Onaylı Satıcı",
+                        sellerLocation = sellerLocation,
                         categoryId = it.CategoryID ?? 0,
                         categoryName = catName,
                         categoryPath = catPath,
@@ -694,10 +802,12 @@ namespace satinalmaportali2.Controllers {
                         moq = "1 Adet",
                         unit = "Adet",
                         taxText = "+ %20 KDV",
-                        stockStatus = $"{it.Quantity ?? 50} Adet Hazır Stok",
+                        stock = rawStock,
+                        isOutOfStock = isOutOfStock,
+                        stockStatus = stockText,
                         leadTime = "1-2 İş Günü",
                         tierPricing = $"1-4 Adet: {price:N0} ₺ | 5+ Adet: {Math.Round(price * 0.92m, 0):N0} ₺",
-                        image = "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&auto=format&fit=crop&q=80",
+                        image = itemImage,
                         badge = "Doğrudan Üreticiden",
                         badgeType = "manufacturer"
                     };

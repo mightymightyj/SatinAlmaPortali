@@ -1623,7 +1623,7 @@ namespace satinalmaportali2.Controllers
                 var offer = await _context.RequestOffers
                     .Include(o => o.OfferItems)
                     .Include(o => o.Supplier)
-                    .Include(o => o.Request).ThenInclude(r => r.Items)
+                    .Include(o => o.Request!).ThenInclude(r => r.Items)
                     .FirstOrDefaultAsync(o => o.OfferID == offerId);
 
                 if (offer == null || offer.Request == null)
@@ -1714,7 +1714,7 @@ namespace satinalmaportali2.Controllers
                 var offer = await _context.RequestOffers
                     .Include(o => o.OfferItems)
                     .Include(o => o.Supplier)
-                    .Include(o => o.Request).ThenInclude(r => r.Items)
+                    .Include(o => o.Request!).ThenInclude(r => r.Items)
                     .FirstOrDefaultAsync(o => o.OfferID == input.OfferId);
 
                 if (offer == null || offer.Request == null)
@@ -1798,7 +1798,7 @@ namespace satinalmaportali2.Controllers
                 var offer = await _context.RequestOffers
                     .Include(o => o.OfferItems)
                     .Include(o => o.Supplier)
-                    .Include(o => o.Request).ThenInclude(r => r.Items)
+                    .Include(o => o.Request!).ThenInclude(r => r.Items)
                     .FirstOrDefaultAsync(o => o.OfferID == offerId);
 
                 if (offer == null || offer.Request == null)
@@ -1871,7 +1871,7 @@ namespace satinalmaportali2.Controllers
                 var offer = await _context.RequestOffers
                     .Include(o => o.OfferItems)
                     .Include(o => o.Supplier)
-                    .Include(o => o.Request).ThenInclude(r => r.Items)
+                    .Include(o => o.Request!).ThenInclude(r => r.Items)
                     .FirstOrDefaultAsync(o => o.OfferID == input.OfferId);
 
                 if (offer == null || offer.Request == null)

@@ -66,27 +66,33 @@ namespace satinalmaportali2.Controllers
             try
             {
                 int currentCompanyId = GetCurrentCompanyId();
+                if (currentCompanyId <= 0 || User?.Identity?.IsAuthenticated != true)
+                {
+                    return Json(new 
+                    { 
+                        success = false, 
+                        requireLogin = true, 
+                        message = "Satın alma işlemi yapabilmek için lütfen kurumsal hesabınızla giriş yapınız veya yeni bir firma hesabı oluşturunuz." 
+                    });
+                }
+
                 string currentCompanyName = User.FindFirst("CompanyName")?.Value ?? "";
                 string currentEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? input.OrderData.BuyerEmail ?? "";
 
-                Company? comp = null;
-                if (currentCompanyId > 0)
+                Company? comp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId);
+                if (comp != null)
                 {
-                    comp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId);
-                    if (comp != null)
-                    {
-                        if (string.IsNullOrWhiteSpace(input.OrderData.BuyerCompany)) input.OrderData.BuyerCompany = comp.CompanyName ?? comp.CompanyOfficial ?? "";
-                        if (string.IsNullOrWhiteSpace(input.OrderData.BuyerTaxNumber)) input.OrderData.BuyerTaxNumber = comp.TCNO;
-                        if (string.IsNullOrWhiteSpace(input.OrderData.BuyerTaxOffice)) input.OrderData.BuyerTaxOffice = comp.TaxOffice;
-                        if (string.IsNullOrWhiteSpace(input.OrderData.ReceiverPhone)) input.OrderData.ReceiverPhone = comp.CompanyPhone;
-                        if (string.IsNullOrWhiteSpace(input.OrderData.ReceiverName)) input.OrderData.ReceiverName = comp.CompanyOfficial ?? comp.CompanyName;
-                    }
+                    if (string.IsNullOrWhiteSpace(input.OrderData.BuyerCompany)) input.OrderData.BuyerCompany = comp.CompanyName ?? comp.CompanyOfficial ?? "";
+                    if (string.IsNullOrWhiteSpace(input.OrderData.BuyerTaxNumber)) input.OrderData.BuyerTaxNumber = comp.TCNO;
+                    if (string.IsNullOrWhiteSpace(input.OrderData.BuyerTaxOffice)) input.OrderData.BuyerTaxOffice = comp.TaxOffice;
+                    if (string.IsNullOrWhiteSpace(input.OrderData.ReceiverPhone)) input.OrderData.ReceiverPhone = comp.CompanyPhone;
+                    if (string.IsNullOrWhiteSpace(input.OrderData.ReceiverName)) input.OrderData.ReceiverName = comp.CompanyOfficial ?? comp.CompanyName;
                 }
 
                 // Sipariş Numarası ve Konuşma ID Üret
                 int countToday = await _context.Orders.CountAsync(o => o.OrderDate.Date == DateTime.UtcNow.Date);
                 string orderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{(countToday + 1):D4}";
-                string conversationId = $"CONV-{orderNumber}-{DateTime.UtcNow.Ticks}";
+                string conversationId = $"CONV-{orderNumber}";
 
                 decimal totalAmount = 0;
                 var memoryItems = new List<OrderItem>();
@@ -107,6 +113,16 @@ namespace satinalmaportali2.Controllers
                         var dbItem = await _context.Items.AsNoTracking().FirstOrDefaultAsync(i => i.ItemID == item.ProductID);
                         if (dbItem != null)
                         {
+                            int availableStock = dbItem.Quantity ?? 0;
+                            if (availableStock <= 0)
+                            {
+                                return Json(new { success = false, message = $"'{dbItem.ItemName ?? item.Title}' ürününün stoğu tükenmiştir." });
+                            }
+                            if (item.Quantity > availableStock)
+                            {
+                                return Json(new { success = false, message = $"'{dbItem.ItemName ?? item.Title}' ürünü için talep edilen adet ({item.Quantity}), mevcut stok miktarını ({availableStock}) aşmaktadır." });
+                            }
+
                             if (!string.IsNullOrWhiteSpace(dbItem.Brand)) sellerName = dbItem.Brand;
                             if (!string.IsNullOrWhiteSpace(dbItem.Properties))
                             {
@@ -133,6 +149,7 @@ namespace satinalmaportali2.Controllers
 
                     memoryItems.Add(new OrderItem
                     {
+                        ItemID = item.ProductID > 0 ? item.ProductID : null,
                         ProductName = item.Title,
                         Sku = item.Sku ?? $"SKU-{item.ProductID}",
                         CategoryName = item.Category ?? "Endüstriyel",
@@ -149,8 +166,8 @@ namespace satinalmaportali2.Controllers
                 decimal taxAmount = Math.Round(totalAmount * taxRate, 2);
                 decimal grandTotal = totalAmount + taxAmount;
 
-                // Bellekte geçici sipariş nesnesi oluştur (Henüz DB'ye eklenmez!)
-                var draftOrder = new Order
+                // Siparişi doğrudan veritabanına 'Ödeme Bekleniyor' durumunda kaydet
+                var pendingOrder = new Order
                 {
                     OrderNumber = orderNumber,
                     BuyerCompanyID = currentCompanyId > 0 ? currentCompanyId : null,
@@ -178,51 +195,32 @@ namespace satinalmaportali2.Controllers
                     OrderItems = memoryItems
                 };
 
-                // Taslak sipariş verisini PaymentTransactions tablosuna güvenli bir şekilde kaydet
-                var draftPayload = System.Text.Json.JsonSerializer.Serialize(new
-                {
-                    OrderData = input.OrderData,
-                    OrderNumber = orderNumber,
-                    BuyerCompanyID = currentCompanyId > 0 ? currentCompanyId : (int?)null,
-                    BuyerCompanyName = draftOrder.BuyerCompanyName,
-                    BuyerEmail = currentEmail,
-                    TotalAmount = totalAmount,
-                    TaxAmount = taxAmount,
-                    GrandTotal = grandTotal
-                });
-
-                var draftTransaction = new PaymentTransaction
-                {
-                    ConversationId = conversationId,
-                    TotalAmount = grandTotal,
-                    TransactionType = "Initialize_3D_Draft",
-                    Status = "Pending",
-                    RawResponse = draftPayload,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                _context.PaymentTransactions.Add(draftTransaction);
+                _context.Orders.Add(pendingOrder);
                 await _context.SaveChangesAsync();
 
                 // iyzico 3D Secure Başlat
                 string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
                 string callbackUrl = $"{Request.Scheme}://{Request.Host}/Payment/IyzicoCallback";
 
-                var iyzicoResult = await _iyzicoService.Initialize3DCheckoutAsync(draftOrder, input.CardInfo, ipAddress, callbackUrl);
+                var iyzicoResult = await _iyzicoService.Initialize3DCheckoutAsync(pendingOrder, input.CardInfo, ipAddress, callbackUrl);
 
                 if (iyzicoResult.Success)
                 {
                     return Json(new
                     {
                         success = true,
-                        orderNumber = draftOrder.OrderNumber,
+                        orderNumber = pendingOrder.OrderNumber,
                         htmlContent = iyzicoResult.HtmlContent,
-                        grandTotal = draftOrder.GrandTotal,
+                        grandTotal = pendingOrder.GrandTotal,
                         message = "3D Secure kimlik doğrulama penceresi yükleniyor..."
                     });
                 }
                 else
                 {
+                    pendingOrder.OrderStatus = "Ödeme Başlatılamadı";
+                    pendingOrder.PaymentStatus = "Hata";
+                    pendingOrder.Notes = (pendingOrder.Notes ?? "") + $" [iyzico Başlatma Hatası: {iyzicoResult.Message}]";
+                    await _context.SaveChangesAsync();
                     return Json(new { success = false, message = iyzicoResult.Message });
                 }
             }

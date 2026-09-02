@@ -1,3 +1,5 @@
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
 using Microsoft.EntityFrameworkCore;
 using satinalmaportali2.Data;
 using satinalmaportali2.Hubs;
@@ -6,8 +8,16 @@ using satinalmaportali2.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Türkçe karakter desteği için global HTML ve JavaScript Encoder ayarları
+builder.Services.AddSingleton<HtmlEncoder>(HtmlEncoder.Create(UnicodeRanges.All));
+builder.Services.AddSingleton<JavaScriptEncoder>(JavaScriptEncoder.Create(UnicodeRanges.All));
+
 // Add services to the container.
 builder.Services.AddControllersWithViews()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.All);
+    })
     .AddRazorRuntimeCompilation();
 builder.Services.AddMemoryCache();
 

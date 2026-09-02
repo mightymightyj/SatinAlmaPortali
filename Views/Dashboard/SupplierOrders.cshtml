@@ -269,10 +269,10 @@
                             </td>
                             <td class="text-right">
                                 <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
-                                    <button type="button" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem;" onclick="openShipmentModal(@o.OrderID, '@o.OrderNumber', '@o.OrderStatus', '@o.TrackingNumber', '@o.ShippingCarrier')">
+                                    <button type="button" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem;" onclick="openShipmentModal(@o.OrderID, '@Html.Raw(o.OrderNumber)', '@Html.Raw(o.OrderStatus)', '@Html.Raw(o.TrackingNumber)', '@Html.Raw(o.ShippingCarrier)')">
                                         Sevkiyatı Yönet
                                     </button>
-                                    <button type="button" class="btn-primary" style="padding: 5px 11px; font-size: 0.76rem; font-weight: 700; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border: none; border-radius: 6px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3); cursor: pointer;" id="btn-rate-buyer-@o.OrderID" onclick="openSellerRateBuyerModal(@o.OrderID, '@o.BuyerCompanyName?.Replace("'", "\\'") ')">
+                                    <button type="button" class="btn-primary" style="padding: 5px 11px; font-size: 0.76rem; font-weight: 700; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border: none; border-radius: 6px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3); cursor: pointer;" id="btn-rate-buyer-@o.OrderID" onclick="openSellerRateBuyerModal(@o.OrderID, '@Html.Raw(o.BuyerCompanyName?.Replace("'", "\\'"))')">
                                         ★ Alıcıyı Değerlendir
                                     </button>
                                 </div>

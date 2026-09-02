@@ -288,6 +288,8 @@ namespace satinalmaportali2.Models {
         public string? SearchQuery { get; set; }
         public string? SelectedStatus { get; set; }
         public string CompanyName { get; set; } = "";
+        public bool IsIyzicoApproved { get; set; }
+        public string? IyzicoSubMerchantKey { get; set; }
     }
 
     public class SupplierListingDetailDto {

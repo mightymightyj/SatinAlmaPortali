@@ -1015,29 +1015,37 @@ function renderCorporateVitrin() {
     let html = '';
     filtered.forEach((item) => {
         const isFav = favoriteIds.includes(item.id);
+        const sellerId = getSellerCompanyId(item);
+        const scoreNum = typeof item.sellerScore === 'number' ? item.sellerScore.toFixed(1) : (item.sellerScore || '10.0');
+        const isOutOfStock = (typeof item.stock === 'number' && item.stock <= 0) || item.isOutOfStock || (item.stockStatus && item.stockStatus.toLowerCase().includes('tükendi'));
+        const cleanStock = isOutOfStock ? 'Stok Tükenmiştir' : (item.stockStatus || 'Hazır Stok').replace(/📦|📦|📦/g, '').trim();
+        const cleanCategory = (item.categoryName || '').replace(/[^\w\sğüşıöçĞÜŞİÖÇ\/-]/gi, '').trim();
 
         html += `
-            <article class="b2b-product-card" data-id="${item.id}" data-category-id="${item.categoryId || 0}" data-category="${item.categoryName || ''}">
-                <!-- Kart Üst Barı: Tedarikçi & Lokasyon -->
-                <div class="b2b-card-supplier-bar" title="Tedarikçi: ${item.seller} (${item.sellerLocation})">
-                    <a href="/Seller/${getSellerCompanyId(item)}" target="_blank" class="b2b-verified-badge" title="${item.seller} - 10 Yıldızlı Satıcı Sayfasını İncele" style="text-decoration: none; color: inherit; display: inline-flex; align-items: center;">
+            <article class="b2b-product-card ${isOutOfStock ? 'out-of-stock' : ''}" data-id="${item.id}" data-category-id="${item.categoryId || 0}" data-category="${item.categoryName || ''}">
+                <!-- Kart Üst Barı: Tedarikçi (Sol) & Değerlendirme Puanı (Sağ) -->
+                <div class="b2b-card-supplier-bar">
+                    <a href="/Seller/${sellerId}" target="_blank" class="b2b-verified-badge" title="${item.seller} - Kurumsal Tedarikçi Profili" style="text-decoration: none; color: inherit; display: inline-flex; align-items: center; gap: 4px;">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="#059669" stroke="currentColor" stroke-width="1.5">
                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                             <polyline points="22 4 12 14.01 9 11.01" stroke="#fff" stroke-width="2.5"></polyline>
                         </svg>
                         <span class="supplier-name-text">${item.seller}</span>
-                        <span style="background: rgba(245,158,11,0.15); color: #d97706; padding: 1px 5px; border-radius: 4px; font-weight: 800; font-size: 0.72rem; margin-left: 4px;">★ ${item.sellerScore}</span>
                     </a>
-                    <span class="b2b-location-pill">${item.sellerLocation ? item.sellerLocation.split('(')[0] : 'Türkiye'}</span>
+                    <a href="/Seller/${sellerId}" target="_blank" class="b2b-score-badge" title="${item.seller} - ${item.sellerReviewCount || 0} Adet Kurumsal Değerlendirme" style="text-decoration: none; display: inline-flex; align-items: center; gap: 2px; background: rgba(245,158,11,0.12); color: #b45309; border: 1px solid rgba(245,158,11,0.25); padding: 1px 6px; border-radius: 4px; font-weight: 800; font-size: 0.72rem;">
+                        <span style="color: #d97706; font-size: 0.76rem;">★</span>
+                        <span>${scoreNum}</span>
+                        ${item.sellerReviewCount ? `<span style="font-weight: 600; opacity: 0.85; margin-left: 2px;">(${item.sellerReviewCount})</span>` : ''}
+                    </a>
                 </div>
 
-                <!-- Görsel ve Rozet Katmanı -->
+                <!-- Görsel ve Kategori Rozeti -->
                 <div class="b2b-img-container">
-                    <img src="${item.image}" alt="${item.title}" loading="lazy" class="b2b-img" onerror="this.src='https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500&auto=format&fit=crop&q=80'" />
+                    <img src="${item.image || '/images/default-product.svg'}" alt="${item.title}" loading="lazy" class="b2b-img" onerror="this.src='/images/default-product.svg'" />
                     
                     <div class="b2b-badges-stack">
-                        ${item.categoryName ? `<span class="b2b-badge badge-corp" style="background: rgba(15,23,42,0.85); color: #ffffff;">📁 ${item.categoryName}</span>` : ''}
-                        ${item.discount >= 18 ? `<span class="b2b-badge badge-disc">%${item.discount} Kurumsal İndirim</span>` : ''}
+                        ${isOutOfStock ? `<span class="b2b-badge" style="background: #dc2626; color: #ffffff; font-weight: 800;">Tükendi</span>` : ''}
+                        ${cleanCategory ? `<span class="b2b-badge badge-corp" style="background: rgba(15,23,42,0.85); color: #ffffff;">${cleanCategory}</span>` : ''}
                     </div>
 
                     <!-- Favori / Takip Butonu -->
@@ -1070,42 +1078,50 @@ function renderCorporateVitrin() {
                         ${item.title}
                     </h3>
 
-                    <!-- Toptan Fiyat Kademesi & MOQ -->
-                    <div class="b2b-spec-bar">
-                        <span class="b2b-moq-chip">MOQ: <strong>${item.moq}</strong></span>
-                        <span class="b2b-stock-chip">📦 ${item.stockStatus}</span>
+                    <!-- Stok Durumu -->
+                    <div class="b2b-spec-bar" style="justify-content: flex-start;">
+                        <span class="b2b-stock-chip" style="display: inline-flex; align-items: center; gap: 5px; color: ${isOutOfStock ? '#dc2626' : '#059669'}; font-weight: 700; font-size: 0.73rem; max-width: none;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${isOutOfStock ? '#dc2626' : '#059669'}" stroke-width="2" style="flex-shrink: 0;">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                            </svg>
+                            <span>${cleanStock}</span>
+                        </span>
                     </div>
 
                     <!-- Fiyat Bloğu -->
-                    <div class="b2b-pricing-box">
-                        <div class="b2b-old-price-line">
-                            <span class="b2b-crossed">${formatB2BMoney(item.oldPrice)}</span>
-                            <span class="b2b-save-tag">%${item.discount} Tasarruf</span>
-                        </div>
+                    <div class="b2b-pricing-box" style="margin-bottom: 10px; padding-top: 6px; border-top: 1px dashed #e2e8f0;">
                         <div class="b2b-current-price-line">
                             <span class="b2b-price-val">${formatB2BMoney(item.price)}</span>
-                            <span class="b2b-tax-text">${item.taxText || '+ KDV'}</span>
-                        </div>
-                        <div class="b2b-tier-subtext" title="Toptan alım kademe indirimi">
-                            ${item.tierPricing || 'Toplu siparişlerde özel proje iskontosu'}
+                            <span class="b2b-tax-text">${item.taxText || '+ %20 KDV'}</span>
                         </div>
                     </div>
 
                     <!-- Aksiyon Butonları (Satın Al & Sepete Ekle) -->
                     <div class="b2b-actions">
-                        <button type="button" class="b2b-btn-buy" onclick="directBuy(${item.id})" title="Bu ürünü doğrudan kurumsal siparişle satın alın">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                            </svg>
-                            Satın Al
-                        </button>
-                        <button type="button" class="b2b-btn-cart" onclick="addToCart(${item.id})" title="Sepete Ekle">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="9" cy="21" r="1"></circle>
-                                <circle cx="20" cy="21" r="1"></circle>
-                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                            </svg>
-                        </button>
+                        ${isOutOfStock ? `
+                            <button type="button" class="b2b-btn-buy" disabled style="background: #cbd5e1; color: #64748b; cursor: not-allowed; opacity: 0.85;" title="Bu ürünün stoğu tükenmiştir">
+                                Tükendi
+                            </button>
+                            <button type="button" class="b2b-btn-cart" disabled style="background: #f1f5f9; color: #94a3b8; cursor: not-allowed; opacity: 0.6;" title="Stok tükenmiştir">
+                                ✕
+                            </button>
+                        ` : `
+                            <button type="button" class="b2b-btn-buy" onclick="directBuy(${item.id})" title="Bu ürünü doğrudan kurumsal siparişle satın alın">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                </svg>
+                                Satın Al
+                            </button>
+                            <button type="button" class="b2b-btn-cart" onclick="addToCart(${item.id})" title="Sepete Ekle">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="9" cy="21" r="1"></circle>
+                                    <circle cx="20" cy="21" r="1"></circle>
+                                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                                </svg>
+                            </button>
+                        `}
                         <button type="button" class="b2b-btn-contact" onclick="openProductQuickView(${item.id})" title="Şartname ve Tedarikçi Detaylarını Gör">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"></circle>
@@ -1226,19 +1242,31 @@ function openProductQuickView(productId) {
     document.getElementById('qvModalSku').textContent = product.sku;
     document.getElementById('qvModalSeller').textContent = product.seller;
     document.getElementById('qvModalLocation').textContent = product.sellerLocation || 'Türkiye';
-    document.getElementById('qvModalScore').textContent = `★ ${product.sellerScore} / 10`;
+    
+    const scoreVal = typeof product.sellerScore === 'number' ? product.sellerScore.toFixed(1) : (product.sellerScore || '10.0');
+    const reviewCountVal = product.sellerReviewCount ? ` (${product.sellerReviewCount} Değerlendirme)` : '';
+    document.getElementById('qvModalScore').textContent = `★ ${scoreVal} / 10${reviewCountVal}`;
+
     const qvSellerLink = document.getElementById('qvModalSellerLink');
     if (qvSellerLink) {
         qvSellerLink.href = `/Seller/${getSellerCompanyId(product)}`;
+        qvSellerLink.textContent = `${product.seller} Sayfası & Değerlendirmeleri Gör →`;
     }
     document.getElementById('qvModalPrice').textContent = formatB2BMoney(product.price);
-    document.getElementById('qvModalOldPrice').textContent = formatB2BMoney(product.oldPrice);
-    document.getElementById('qvModalDiscount').textContent = `%${product.discount} İskonto`;
-    document.getElementById('qvModalCategory').textContent = product.categoryName;
-    document.getElementById('qvModalStock').textContent = product.stockStatus;
-    document.getElementById('qvModalMoq').textContent = `Min. Sipariş (MOQ): ${product.moq}`;
-    document.getElementById('qvModalLeadTime').textContent = `Termin: ${product.leadTime || '1-2 Gün'}`;
-    document.getElementById('qvModalTierPricing').textContent = product.tierPricing || 'Adet arttıkça özel iskonto uygulanır.';
+    const oldPriceEl = document.getElementById('qvModalOldPrice');
+    if (oldPriceEl) oldPriceEl.textContent = '';
+    const discountEl = document.getElementById('qvModalDiscount');
+    if (discountEl) discountEl.textContent = '';
+
+    document.getElementById('qvModalCategory').textContent = (product.categoryName || '').replace(/[^\w\sğüşıöçĞÜŞİÖÇ\/-]/gi, '').trim();
+    document.getElementById('qvModalStock').textContent = (product.stockStatus || 'Hazır Stok').replace(/📦|📦|📦/g, '').trim();
+    
+    const moqEl = document.getElementById('qvModalMoq');
+    if (moqEl) moqEl.textContent = '';
+    const leadTimeEl = document.getElementById('qvModalLeadTime');
+    if (leadTimeEl) leadTimeEl.textContent = (product.leadTime || '1-2 İş Günü').replace(/🚚/g, '').trim();
+    const tierPricingEl = document.getElementById('qvModalTierPricing');
+    if (tierPricingEl) tierPricingEl.style.display = 'none';
 
     const modalQuoteBtn = document.getElementById('qvModalQuoteBtn');
     if (modalQuoteBtn) {
@@ -1425,8 +1453,8 @@ function selectCatFromTree(catId, catName, breadcrumbPath) {
         displayBox.style.background = '#eff6ff';
         displayBox.style.borderColor = '#93c5fd';
         displayBox.style.color = '#1d4ed8';
-        displayText.innerHTML = `<strong>${catName}</strong> <span style="font-size:0.74rem; opacity:0.85; margin-left:4px;">(${breadcrumbPath || catName})</span>`;
-        if (displayIcon) displayIcon.textContent = '✅';
+        displayText.innerHTML = `<strong style="color: #1d4ed8;">${catName}</strong> <span style="font-size:0.74rem; opacity:0.85; margin-left:4px;">(${breadcrumbPath || catName})</span>`;
+        if (displayIcon) displayIcon.innerHTML = '<span style="color: #059669; font-weight: 800; margin-right: 2px;">✓</span>';
     }
 
     // Seçilen satırı görsel olarak vurgula
@@ -1480,8 +1508,8 @@ function clearCatTreeSelection() {
         displayBox.style.background = '';
         displayBox.style.borderColor = '';
         displayBox.style.color = '';
-        displayText.textContent = 'Lütfen aşağıdaki ağaçtan bir kategori seçiniz...';
-        if (displayIcon) displayIcon.textContent = '📁';
+        displayText.textContent = 'Lütfen aşağıdaki listeden bir kategori seçiniz...';
+        if (displayIcon) displayIcon.innerHTML = '';
     }
 
     document.querySelectorAll('#catTreePickerList .cat-node-row').forEach(row => {
@@ -1627,8 +1655,19 @@ async function submitSellerOffer(e) {
             showB2BToast(result.message + " İlanınızı 'Satıştaki Ürünlerim' panelinden yönetebilirsiniz.", "success");
 
             // Formu sıfırla
-            e.target.reset();
+            if (formEl && typeof formEl.reset === 'function') formEl.reset();
             clearCatTreeSelection();
+        } else if (result.requireLogin) {
+            showB2BToast("🔒 " + (result.message || "Lütfen kurumsal satıcı hesabınızla giriş yapınız."), "warning");
+            setTimeout(() => {
+                window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname + window.location.search);
+            }, 1500);
+        } else if (result.requireIyzico) {
+            closeTyModal('tySellerOfferModal');
+            showB2BToast("🛡️ " + (result.message || "Satış yapabilmek için iyzico satıcı kaydınızı tamamlayınız."), "warning");
+            setTimeout(() => {
+                window.location.href = '/Dashboard/SupplierOrders';
+            }, 1800);
         } else {
             showB2BToast("⚠️ " + (result.message || "İlan kaydedilemedi."), "danger");
         }
@@ -1748,9 +1787,25 @@ async function initB2BCartSync() {
  * Sepete ürün ekler (Sunucu doğrulamalı)
  */
 async function addToCart(productId, qty = 1, showDrawer = false) {
-    const product = activeProducts.find(p => p.id === productId) || B2B_PRODUCT_CATALOG.find(p => p.id === productId);
+    const product = activeProducts.find(p => p.id === productId) || (typeof B2B_PRODUCT_CATALOG !== 'undefined' ? B2B_PRODUCT_CATALOG.find(p => p.id === productId) : null);
     if (!product) {
         showB2BToast("⚠️ Ürün bilgisi bulunamadı.", "danger");
+        return false;
+    }
+
+    const availableStock = typeof product.stock === 'number' ? product.stock : (product.isOutOfStock ? 0 : 9999);
+    if (availableStock <= 0 || product.isOutOfStock || (product.stockStatus && product.stockStatus.toLowerCase().includes('tükendi'))) {
+        showB2BToast(`⚠️ "${product.title}" ürününün stoğu tükenmiştir, sepete eklenemez.`, "danger");
+        return false;
+    }
+
+    let cart = getB2BCart();
+    const existingIndex = cart.findIndex(item => item.productId === productId);
+    const currentInCart = existingIndex > -1 ? cart[existingIndex].quantity : 0;
+    const requestedTotal = currentInCart + qty;
+
+    if (requestedTotal > availableStock) {
+        showB2BToast(`⚠️ Yetersiz stok! Bu üründen en fazla ${availableStock} adet alabilirsiniz (Sepetinizde: ${currentInCart} adet).`, "danger");
         return false;
     }
 
@@ -1761,12 +1816,13 @@ async function addToCart(productId, qty = 1, showDrawer = false) {
         category: product.categoryName || product.category || 'Endüstriyel',
         price: product.price,
         quantity: qty,
+        maxStock: availableStock,
         seller: product.seller || 'Onaylı Tedarikçi',
         image: product.image || ''
     };
 
     try {
-        // Sunucu doğrulaması (Kendi ürününü satın alma engeli)
+        // Sunucu doğrulaması (Kendi ürününü satın alma ve stok engeli)
         const response = await fetch('/Cart/AddToCart', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1783,22 +1839,28 @@ async function addToCart(productId, qty = 1, showDrawer = false) {
         });
 
         const data = await response.json();
+        if (data && data.requireLogin) {
+            showB2BToast("🔒 " + (data.message || "Sepete ürün eklemek için lütfen kurumsal hesabınızla giriş yapınız."), "warning");
+            setTimeout(() => {
+                window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname + window.location.search);
+            }, 1200);
+            return false;
+        }
+
         if (data && data.success === false) {
             showB2BToast("⚠️ " + (data.message || "Bu ürünü sepete ekleyemezsiniz."), "danger");
             return false;
         }
 
-        let cart = getB2BCart();
-        const existingIndex = cart.findIndex(item => item.productId === productId);
-
         if (existingIndex > -1) {
-            cart[existingIndex].quantity += qty;
+            cart[existingIndex].quantity = requestedTotal;
+            cart[existingIndex].maxStock = availableStock;
         } else {
             cart.push(itemToAdd);
         }
 
         saveB2BCart(cart);
-        showB2BToast(`🛒 "${product.title}" sepete eklendi!`, "success");
+        showB2BToast(`"${product.title}" sepete eklendi!`, "success");
 
         if (showDrawer) {
             openCartDrawer();
@@ -1814,6 +1876,15 @@ async function addToCart(productId, qty = 1, showDrawer = false) {
  * Doğrudan Satın Al (Hemen Satın Al): Ürünü sepete ekleyip direkt Checkout modalını açar
  */
 async function directBuy(productId) {
+    const product = activeProducts.find(p => p.id === productId) || (typeof B2B_PRODUCT_CATALOG !== 'undefined' ? B2B_PRODUCT_CATALOG.find(p => p.id === productId) : null);
+    if (product) {
+        const availableStock = typeof product.stock === 'number' ? product.stock : (product.isOutOfStock ? 0 : 9999);
+        if (availableStock <= 0 || product.isOutOfStock || (product.stockStatus && product.stockStatus.toLowerCase().includes('tükendi'))) {
+            showB2BToast(`⚠️ "${product.title}" ürününün stoğu tükenmiştir, satın alınamaz.`, "danger");
+            return;
+        }
+    }
+
     const success = await addToCart(productId, 1, false);
     if (success) {
         openCheckoutModal();
@@ -1840,7 +1911,7 @@ function removeFromCart(productId) {
 /**
  * Sepetteki ürünün miktarını günceller
  */
-function updateCartQty(productId, newQty) {
+async function updateCartQty(productId, newQty) {
     let cart = getB2BCart();
     const item = cart.find(i => i.productId === productId);
     if (item) {
@@ -1848,15 +1919,51 @@ function updateCartQty(productId, newQty) {
             removeFromCart(productId);
             return;
         }
+
+        const product = activeProducts.find(p => p.id === productId) || (typeof B2B_PRODUCT_CATALOG !== 'undefined' ? B2B_PRODUCT_CATALOG.find(p => p.id === productId) : null);
+        const maxStock = (product && typeof product.stock === 'number') ? product.stock : (item.maxStock || 9999);
+
+        if (maxStock <= 0) {
+            showB2BToast(`⚠️ "${item.title}" ürününün stoğu tükenmiştir.`, "danger");
+            removeFromCart(productId);
+            return;
+        }
+
+        if (newQty > maxStock) {
+            showB2BToast(`⚠️ Yetersiz stok! Bu ürün için mevcut maksimum stok ${maxStock} adettir.`, "danger");
+            item.quantity = maxStock;
+            saveB2BCart(cart);
+            renderCartDrawer();
+            return;
+        }
+
+        try {
+            const res = await fetch('/Cart/UpdateQuantity', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productID: productId, quantity: newQty })
+            });
+            const data = await res.json();
+            if (data && data.success === false) {
+                showB2BToast("⚠️ " + (data.message || "Stok yetersiz."), "danger");
+                if (typeof data.availableStock === 'number') {
+                    if (data.availableStock <= 0) {
+                        removeFromCart(productId);
+                    } else {
+                        item.quantity = data.availableStock;
+                        saveB2BCart(cart);
+                        renderCartDrawer();
+                    }
+                }
+                return;
+            }
+        } catch (e) {
+            console.warn("UpdateQuantity server sync:", e);
+        }
+
         item.quantity = newQty;
         saveB2BCart(cart);
         renderCartDrawer();
-
-        fetch('/Cart/UpdateQuantity', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ productID: productId, quantity: newQty })
-        }).catch(e => console.warn("UpdateQuantity server sync:", e));
     }
 }
 
@@ -2010,7 +2117,7 @@ function renderCartDrawer() {
         const itemLineTotal = item.price * item.quantity;
         html += `
             <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; gap: 12px; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                <img src="${item.image}" alt="${item.title}" style="width: 54px; height: 54px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;" onerror="this.src='https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=100&auto=format&fit=crop&q=80'" />
+                <img src="${item.image || '/images/default-product.svg'}" alt="${item.title}" style="width: 54px; height: 54px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;" onerror="this.src='/images/default-product.svg'" />
                 
                 <div style="flex: 1; min-width: 0;">
                     <div style="font-size: 0.72rem; color: #0284c7; font-weight: 700;">${item.seller || 'Onaylı Tedarikçi'}</div>
@@ -2197,6 +2304,27 @@ async function openCheckoutModal() {
         return;
     }
 
+    // Kurumsal üyelik / giriş kontrolü
+    let isAuthenticated = false;
+    let profileData = null;
+    try {
+        const res = await fetch('/Order/GetCheckoutProfile');
+        profileData = await res.json();
+        if (profileData && profileData.isAuthenticated) {
+            isAuthenticated = true;
+        }
+    } catch (e) {
+        console.log('Checkout profil getirme hatası:', e);
+    }
+
+    if (!isAuthenticated) {
+        showB2BToast("🔒 Satın alma işlemi yapabilmek için lütfen kurumsal hesabınızla giriş yapınız veya yeni bir firma hesabı oluşturunuz.", "warning");
+        setTimeout(() => {
+            window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname === '/Cart' ? '/Cart' : window.location.pathname);
+        }, 1200);
+        return;
+    }
+
     closeCartDrawer();
 
     const totals = getCartTotals();
@@ -2206,7 +2334,7 @@ async function openCheckoutModal() {
     if (grandTotalEl) grandTotalEl.textContent = formatB2BMoney(totals.grandTotal);
     if (countEl) countEl.textContent = `${totals.uniqueItemCount} Kalem (${totals.totalCount} Adet)`;
 
-    // Veritabanındaki kayıtlı kurumsal profil bilgilerini getirip dolduralım
+    // Veritabanındaki kayıtlı kurumsal profil bilgilerini dolduralım
     const compInput = document.getElementById('checkoutBuyerCompany');
     const taxNoInput = document.getElementById('checkoutBuyerTaxNo');
     const taxOfficeInput = document.getElementById('checkoutBuyerTaxOffice');
@@ -2214,29 +2342,21 @@ async function openCheckoutModal() {
     const phoneInput = document.getElementById('checkoutReceiverPhone');
     const addrInput = document.getElementById('checkoutDeliveryAddress');
 
-    if (compInput && (!compInput.value || !cityInput?.value || !addrInput?.value)) {
-        try {
-            const res = await fetch('/Order/GetCheckoutProfile');
-            const data = await res.json();
-            if (data && data.isAuthenticated) {
-                if (compInput && !compInput.value) compInput.value = data.companyName || data.companyOfficial || '';
-                if (taxNoInput && !taxNoInput.value) {
-                    taxNoInput.value = (data.taxNumber || '').replace(/\D/g, '').slice(0, 11);
-                    formatTaxNumberInput(taxNoInput);
-                }
-                if (taxOfficeInput && !taxOfficeInput.value) taxOfficeInput.value = data.taxOffice || '';
-                if (cityInput && !cityInput.value) cityInput.value = data.deliveryCity || '';
-                if (phoneInput && !phoneInput.value) {
-                    let p = (data.phone || '').replace(/\D/g, '');
-                    if (p.startsWith('0')) p = p.substring(1);
-                    phoneInput.value = p.slice(0, 10);
-                    formatPhoneInput(phoneInput);
-                }
-                if (addrInput && !addrInput.value) addrInput.value = data.deliveryAddress || '';
-            }
-        } catch (e) {
-            console.log('Checkout profil getirme hatası:', e);
+    if (profileData && profileData.isAuthenticated) {
+        if (compInput && !compInput.value) compInput.value = profileData.companyName || profileData.companyOfficial || '';
+        if (taxNoInput && !taxNoInput.value) {
+            taxNoInput.value = (profileData.taxNumber || '').replace(/\D/g, '').slice(0, 11);
+            formatTaxNumberInput(taxNoInput);
         }
+        if (taxOfficeInput && !taxOfficeInput.value) taxOfficeInput.value = profileData.taxOffice || '';
+        if (cityInput && !cityInput.value) cityInput.value = profileData.deliveryCity || '';
+        if (phoneInput && !phoneInput.value) {
+            let p = (profileData.phone || '').replace(/\D/g, '');
+            if (p.startsWith('0')) p = p.substring(1);
+            phoneInput.value = p.slice(0, 10);
+            formatPhoneInput(phoneInput);
+        }
+        if (addrInput && !addrInput.value) addrInput.value = profileData.deliveryAddress || '';
     }
 
     if (taxNoInput) formatTaxNumberInput(taxNoInput);
@@ -2420,6 +2540,14 @@ async function submitCorporateOrder(e) {
             });
 
             const result = await response.json();
+            if (result.requireLogin) {
+                showB2BToast("🔒 " + (result.message || "Satın alma işlemi için lütfen kurumsal hesabınızla giriş yapınız."), "warning");
+                setTimeout(() => {
+                    window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname === '/Cart' ? '/Cart' : window.location.pathname);
+                }, 1200);
+                return;
+            }
+
             if (result.success && result.htmlContent) {
                 clearB2BCart();
                 closeCheckoutModal();
@@ -2444,6 +2572,14 @@ async function submitCorporateOrder(e) {
         });
 
         const result = await response.json();
+        if (result.requireLogin) {
+            showB2BToast("🔒 " + (result.message || "Satın alma işlemi için lütfen kurumsal hesabınızla giriş yapınız."), "warning");
+            setTimeout(() => {
+                window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname === '/Cart' ? '/Cart' : window.location.pathname);
+            }, 1200);
+            return;
+        }
+
         if (result.success) {
             // Sepeti boşalt
             clearB2BCart();

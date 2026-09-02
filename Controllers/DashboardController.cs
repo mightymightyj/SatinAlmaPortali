@@ -260,6 +260,12 @@ namespace satinalmaportali2.Controllers
                 };
             }).ToList();
 
+            Company? currentComp = null;
+            if (companyId > 0)
+            {
+                currentComp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == companyId, cancellationToken);
+            }
+
             var vm = new SupplierListingsViewModel
             {
                 Listings = listingDtos,
@@ -271,7 +277,9 @@ namespace satinalmaportali2.Controllers
                 SelectedCategory = category,
                 SearchQuery = search,
                 SelectedStatus = status,
-                CompanyName = !string.IsNullOrWhiteSpace(currentCompanyName) ? currentCompanyName : "Kurumsal Tedarikçi"
+                CompanyName = !string.IsNullOrWhiteSpace(currentCompanyName) ? currentCompanyName : "Kurumsal Tedarikçi",
+                IsIyzicoApproved = currentComp != null && (currentComp.IsIyzicoApproved || !string.IsNullOrWhiteSpace(currentComp.IyzicoSubMerchantKey)),
+                IyzicoSubMerchantKey = currentComp?.IyzicoSubMerchantKey
             };
 
             var allCats = await _context.Category.AsNoTracking().ToListAsync(cancellationToken);

@@ -499,7 +499,7 @@
                                     </span>
                                 </td>
                                 <td class="text-right">
-                                    <button type="button" class="btn-table-action" onclick="openPriceModal(@prod.ItemId, '@prod.ItemName.Replace("'", "\\'") ', @prod.UnitPrice, @prod.Stock)">
+                                    <button type="button" class="btn-table-action" onclick="openPriceModal(@prod.ItemId, '@Html.Raw(prod.ItemName.Replace("'", "\\'"))', @prod.UnitPrice, @prod.Stock)">
                                         Fiyat Düzenle
                                     </button>
                                 </td>

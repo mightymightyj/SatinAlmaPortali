@@ -226,7 +226,7 @@ namespace satinalmaportali2.Services
 
             try
             {
-                string conversationId = $"CONV-{order.OrderNumber}-{DateTime.UtcNow.Ticks}";
+                string conversationId = $"CONV-{order.OrderNumber}";
                 string finalCallback = !string.IsNullOrWhiteSpace(callbackUrl) ? callbackUrl : _settings.CallbackUrl;
 
                 // Komisyon ve Tedarikçi Hakediş Tutarları
@@ -466,29 +466,67 @@ namespace satinalmaportali2.Services
 
                 var threedsPayment = await Task.Run(() => ThreedsPayment.Create(request, _options));
 
-                // İlgili siparişi bul veya taslaktan oluştur
+                // İlgili siparişi bul
+                string cleanOrderNo = conversationId.Replace("CONV-", "").Trim();
                 var order = await _context.Orders
                     .Include(o => o.OrderItems)
-                    .FirstOrDefaultAsync(o => o.OrderNumber == conversationId || 
+                    .FirstOrDefaultAsync(o => o.OrderNumber == cleanOrderNo || 
+                                              o.OrderNumber == conversationId || 
                                               conversationId.Contains(o.OrderNumber) || 
-                                              o.PaymentId == paymentId);
+                                              (!string.IsNullOrWhiteSpace(paymentId) && o.PaymentId == paymentId));
 
                 var draftTx = await _context.PaymentTransactions
-                    .FirstOrDefaultAsync(t => t.ConversationId == conversationId && t.TransactionType == "Initialize_3D_Draft");
+                    .FirstOrDefaultAsync(t => (t.ConversationId == conversationId || t.ConversationId.Contains(cleanOrderNo)) && t.TransactionType == "Initialize_3D_Draft");
 
                 string paymentTxId = threedsPayment.PaymentItems?.FirstOrDefault()?.PaymentTransactionId ?? "";
 
                 if (threedsPayment.Status == Status.SUCCESS.ToString())
                 {
-                    // Eğer sipariş veritabanında henüz yoksa taslak veriden şimdi oluştur
-                    if (order == null && draftTx != null && !string.IsNullOrWhiteSpace(draftTx.RawResponse))
+                    if (order != null)
                     {
+                        order.PaymentId = paymentId;
+                        order.PaymentTransactionId = paymentTxId;
+                        order.PaymentStatus = "Havuzda (Ödendi)";
+                        order.EscrowStatus = "InEscrow";
+                        order.OrderStatus = "Onaylandı";
+                        order.AutoApprovalDeadline = DateTime.UtcNow.AddDays(_settings.AutoApprovalDays);
+                        order.Notes = (order.Notes ?? "") + $" [iyzico Havuz Ödemesi Alındı: {DateTime.UtcNow:dd.MM.yyyy HH:mm} (Tx: {paymentTxId})]";
+
+                        // Stokları düş
+                        if (order.OrderItems != null && order.OrderItems.Any())
+                        {
+                            foreach (var oItem in order.OrderItems)
+                            {
+                                if (oItem.ItemID.HasValue && oItem.ItemID.Value > 0)
+                                {
+                                    var dbItem = await _context.Items.FirstOrDefaultAsync(i => i.ItemID == oItem.ItemID.Value);
+                                    if (dbItem != null && dbItem.Quantity.HasValue)
+                                    {
+                                        if (dbItem.Quantity.Value >= oItem.Quantity)
+                                            dbItem.Quantity -= oItem.Quantity;
+                                        else
+                                            dbItem.Quantity = 0;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Alıcının sepetini temizle
+                        if (order.BuyerCompanyID.HasValue && order.BuyerCompanyID.Value > 0)
+                        {
+                            var userCart = await _context.CartItems.Where(c => c.CompanyID == order.BuyerCompanyID.Value).ToListAsync();
+                            if (userCart.Any()) _context.CartItems.RemoveRange(userCart);
+                        }
+                    }
+                    else if (draftTx != null && !string.IsNullOrWhiteSpace(draftTx.RawResponse))
+                    {
+                        // Fallback: Veritabanında sipariş yoksa taslak veriden oluştur
                         try
                         {
                             using var doc = JsonDocument.Parse(draftTx.RawResponse);
                             var root = doc.RootElement;
 
-                            string orderNo = root.TryGetProperty("OrderNumber", out var onProp) ? onProp.GetString() ?? $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 4)}" : $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 4)}";
+                            string orderNo = root.TryGetProperty("OrderNumber", out var onProp) ? onProp.GetString() ?? cleanOrderNo : cleanOrderNo;
                             int? buyerCompId = root.TryGetProperty("BuyerCompanyID", out var bcProp) && bcProp.ValueKind == JsonValueKind.Number ? bcProp.GetInt32() : (int?)null;
                             string buyerCompName = root.TryGetProperty("BuyerCompanyName", out var bcnProp) ? bcnProp.GetString() ?? "Kurumsal Alıcı" : "Kurumsal Alıcı";
                             string buyerEmail = root.TryGetProperty("BuyerEmail", out var beProp) ? beProp.GetString() ?? "" : "";
@@ -628,16 +666,6 @@ namespace satinalmaportali2.Services
                             Console.WriteLine($"Order recreation error: {parseEx.Message}");
                         }
                     }
-                    else if (order != null)
-                    {
-                        order.PaymentId = paymentId;
-                        order.PaymentTransactionId = paymentTxId;
-                        order.PaymentStatus = "Havuzda (Ödendi)";
-                        order.EscrowStatus = "InEscrow";
-                        order.OrderStatus = "Onaylandı";
-                        order.AutoApprovalDeadline = DateTime.UtcNow.AddDays(_settings.AutoApprovalDays);
-                        order.Notes = (order.Notes ?? "") + $" [iyzico Havuz Ödemesi Alındı: {DateTime.UtcNow:dd.MM.yyyy HH:mm} (Tx: {paymentTxId})]";
-                    }
 
                     if (draftTx != null)
                     {
@@ -735,6 +763,12 @@ namespace satinalmaportali2.Services
                 if (!isAdmin && order.BuyerCompanyID.HasValue && order.BuyerCompanyID.Value != currentCompanyId)
                 {
                     return (false, "Bu sipariş için havuz onayını yalnızca satın alma yapan alıcı firma verebilir.");
+                }
+
+                // Tedarikçi teslimat kontrolü: Tedarikçi sevk veya teslim etmeden alıcı onay veremez
+                if (!isAdmin && order.OrderStatus != "Teslim Edildi" && order.OrderStatus != "Kargoya Verildi" && order.OrderStatus != "Tamamlandı")
+                {
+                    return (false, "Tedarikçi firma henüz siparişi kargoya vermedi veya teslim etmedi. Sevkiyat/teslimat gerçekleşmeden teslim alma onayı verilemez.");
                 }
 
                 if (order.IsEscrowApproved || order.EscrowStatus == "Released_ToSeller")

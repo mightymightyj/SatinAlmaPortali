@@ -221,7 +221,9 @@ namespace satinalmaportali2.Controllers
                 UnitPrice = (decimal)(p.ItemPrice ?? 0),
                 Stock = p.Quantity ?? 50,
                 Properties = p.Properties,
-                ImageUrl = "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&auto=format&fit=crop&q=80"
+                ImageUrl = (!string.IsNullOrWhiteSpace(p.Properties) && System.Text.RegularExpressions.Regex.IsMatch(p.Properties, @"(?:Resim|Image|ImageUrl|Gorsel)\s*:\s*(https?://[^\s\|;,]+|/[^\s\|;,]+)"))
+                    ? System.Text.RegularExpressions.Regex.Match(p.Properties, @"(?:Resim|Image|ImageUrl|Gorsel)\s*:\s*(https?://[^\s\|;,]+|/[^\s\|;,]+)").Groups[1].Value.Trim()
+                    : "/images/default-product.svg"
             }).ToList();
 
             // Giriş yapmış kullanıcının bu satıcıdan siparişi var mı kontrol et

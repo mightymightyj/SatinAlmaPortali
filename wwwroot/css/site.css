@@ -1,5 +1,5 @@
 /* 
-   Tedarik Portal─▒ - Custom Design Styles
+   Tedarik Portali - Custom Design Styles
    Import modern font 
 */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -6168,13 +6168,13 @@ html, body {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     font-weight: 700;
     color: #1e293b;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 140px;
+    max-width: 155px;
 }
 
 .b2b-verified-badge svg {
@@ -6185,6 +6185,28 @@ html, body {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.b2b-score-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    background: rgba(245, 158, 11, 0.12);
+    color: #b45309;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 800;
+    font-size: 0.72rem;
+    white-space: nowrap;
+    text-decoration: none;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.b2b-score-badge:hover {
+    background: rgba(245, 158, 11, 0.22);
+    border-color: #f59e0b;
 }
 
 .b2b-location-pill {
@@ -6359,18 +6381,18 @@ html, body {
     min-height: 33px;
 }
 
-/* MOQ & Stok */
+/* Stok Durumu */
 .b2b-spec-bar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 4px;
-    font-size: 0.68rem;
+    font-size: 0.72rem;
     color: #475569;
     margin-bottom: 8px;
     background: #f8fafc;
+    border: 1px solid #f1f5f9;
     border-radius: 4px;
-    padding: 3px 6px;
+    padding: 3px 8px;
 }
 
 .b2b-moq-chip strong {
@@ -6380,10 +6402,12 @@ html, body {
 .b2b-stock-chip {
     color: #059669;
     font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 100px;
 }
 
 /* Fiyat Alanı */

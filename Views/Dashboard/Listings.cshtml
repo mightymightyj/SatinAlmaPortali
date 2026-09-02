@@ -14,6 +14,12 @@
             <span class="status-badge badge-emerald" style="font-size: 0.75rem; padding: 3px 10px;">
                 <span class="status-dot"></span> Canlı Vitrin Entegre
             </span>
+            @if (Model.IsIyzicoApproved)
+            {
+                <span class="status-badge badge-blue" style="font-size: 0.75rem; padding: 3px 10px; font-weight: 750;">
+                    ✓ iyzico Onaylı Satıcı
+                </span>
+            }
         </div>
         <p>
             <span>@Model.CompanyName portföyündeki kurumsal ürünler, toptan fiyat listeleri ve stok yönetimi</span>
@@ -38,6 +44,27 @@
         </button>
     </div>
 </div>
+
+@if (!Model.IsIyzicoApproved)
+{
+    <!-- ==================== İYZİCO SATICI HESAP AÇILIŞ UYARISI ==================== -->
+    <div style="background: linear-gradient(135deg, #fffbeb, #fef3c7); border: 1px solid #fde68a; border-left: 5px solid #f59e0b; padding: 16px 22px; border-radius: 10px; margin-bottom: 22px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.08);">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="background: #fef08a; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0;">
+                ⚠️
+            </div>
+            <div>
+                <strong style="color: #92400e; font-size: 0.98rem; display: block;">iyzico Satıcı (Alt Üye İşyeri) Kaydınız Bulunmuyor!</strong>
+                <p style="margin: 2px 0 0 0; color: #b45309; font-size: 0.84rem;">
+                    Platform kuralları gereği, ürün satışa koyabilmek ve ödemelerinizi güvence havuzundan tahsil edebilmek için iyzico satıcı hesabınızı tamamlamanız gerekmektedir.
+                </p>
+            </div>
+        </div>
+        <a href="/Dashboard/SupplierOrders" class="btn-primary" style="background: #0f172a; color: #ffffff; padding: 9px 18px; border-radius: 8px; text-decoration: none; font-size: 0.86rem; font-weight: 750; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
+            <span>🛡️ iyzico Satıcı Kaydını Başlat</span> →
+        </a>
+    </div>
+}
 
 <!-- ==================== 4 BÜYÜK KPI KARTI ==================== -->
 <section class="kpi-row" aria-label="İlan Göstergeleri" style="margin-bottom: 20px;">
@@ -321,7 +348,7 @@
                         <button type="button" class="btn-tree-tool" onclick="clearDashCatTreeSelection()" style="padding: 2px 8px; font-size: 0.72rem;">Temizle</button>
                     </div>
 
-                    <div style="max-height: 160px; overflow-y: auto; border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px; padding: 6px; background: var(--card-bg, #ffffff);">
+                    <div class="b2b-tree-scrollbox" id="dashCatTreeBox" style="max-height: 180px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px; background: #ffffff;">
                         @if (ViewBag.CategoryTree != null && ((IEnumerable<satinalmaportali2.Controllers.HierarchicalCategoryItem>)ViewBag.CategoryTree).Any())
                         {
                             var rootCategories = (IEnumerable<satinalmaportali2.Controllers.HierarchicalCategoryItem>)ViewBag.CategoryTree;
@@ -370,13 +397,17 @@
     public Microsoft.AspNetCore.Html.IHtmlContent RenderDashTree(satinalmaportali2.Controllers.HierarchicalCategoryItem node, int depth)
     {
         var sb = new System.Text.StringBuilder();
-        var indent = depth * 14;
+        var indent = depth * 16;
         var hasChildren = node.Children != null && node.Children.Any();
+        var encodedName = System.Net.WebUtility.HtmlEncode(node.CategoryName ?? "");
+        var safeJsName = (node.CategoryName ?? "").Replace("'", "\\'");
         
-        sb.Append($"<div class=\"cat-tree-node\" style=\"margin-left: {indent}px; margin-bottom: 3px; display: flex; align-items: center; gap: 4px;\">");
-        sb.Append($"<span style=\"font-size: 0.78rem; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: background 0.15s;\" class=\"dash-cat-opt\" onclick=\"selectDashCategory({node.CategoryID}, '{Html.Raw(node.CategoryName.Replace("'", "\\'"))}')\" onmouseover=\"this.style.background='rgba(59,130,246,0.1)'\" onmouseout=\"this.style.background='transparent'\">");
-        sb.Append($"<strong>{Html.Raw(node.CategoryName)}</strong>");
-        sb.Append("</span>");
+        sb.Append($"<div class=\"cat-tree-node level-{Math.Min(depth, 3)}\" style=\"margin-left: {indent}px; margin-bottom: 2px;\">");
+        sb.Append($"<div class=\"cat-node-row {(depth == 0 ? "is-root" : "")}\" id=\"dashCatRow-{node.CategoryID}\" onclick=\"selectDashCategory({node.CategoryID}, '{safeJsName}')\" style=\"display: flex; align-items: center; padding: 6px 10px; border-radius: 6px; background: #ffffff; border: 1px solid #f1f5f9; cursor: pointer; transition: all 0.15s;\">");
+        sb.Append("<div class=\"cat-node-left\" style=\"display: flex; align-items: center; gap: 8px;\">");
+        sb.Append("<span class=\"cat-tree-bullet\" style=\"color: #94a3b8; font-size: 0.9rem;\">•</span>");
+        sb.Append($"<span class=\"cat-node-title\" style=\"font-size: 0.84rem; font-weight: 600; color: #1e293b;\">{encodedName}</span>");
+        sb.Append("</div>");
         sb.Append("</div>");
 
         if (hasChildren && node.Children != null)
@@ -387,6 +418,7 @@
             }
         }
 
+        sb.Append("</div>");
         return new Microsoft.AspNetCore.Html.HtmlString(sb.ToString());
     }
 }
@@ -532,6 +564,19 @@
 
         // Modal Fonksiyonları
         function openCreateListingModal() {
+            var isIyzicoApproved = @(Model.IsIyzicoApproved ? "true" : "false");
+            if (!isIyzicoApproved) {
+                if (typeof showRealtimeToast === 'function') {
+                    showRealtimeToast("⚠️ Ürün satışa koyabilmek için lütfen önce iyzico Satıcı (Alt Üye İşyeri) kaydınızı tamamlayınız.", "warning");
+                } else {
+                    alert("⚠️ Ürün satışa koyabilmek için lütfen önce iyzico Satıcı (Alt Üye İşyeri) kaydınızı tamamlayınız.");
+                }
+                setTimeout(function() {
+                    window.location.href = '/Dashboard/SupplierOrders';
+                }, 1200);
+                return;
+            }
+
             var modal = document.getElementById('dashCreateListingModal');
             if (modal) {
                 modal.style.display = 'flex';
@@ -549,7 +594,22 @@
             document.getElementById('dashListingCategory').value = name;
             var textEl = document.getElementById('dashCatSelectedText');
             if (textEl) {
-                textEl.innerHTML = '<span style="color: #10b981; font-weight: 700;">' + name + '</span>';
+                textEl.innerHTML = '<strong style="color: #0284c7;">' + name + '</strong>';
+            }
+
+            document.querySelectorAll('#dashCatTreeBox .cat-node-row').forEach(function(row) {
+                row.style.background = '#ffffff';
+                row.style.borderColor = '#f1f5f9';
+                var title = row.querySelector('.cat-node-title');
+                if (title) { title.style.color = '#1e293b'; title.style.fontWeight = '600'; }
+            });
+
+            var target = document.getElementById('dashCatRow-' + id);
+            if (target) {
+                target.style.background = '#eff6ff';
+                target.style.borderColor = '#3b82f6';
+                var title = target.querySelector('.cat-node-title');
+                if (title) { title.style.color = '#1d4ed8'; title.style.fontWeight = '800'; }
             }
         }
 
@@ -558,6 +618,13 @@
             document.getElementById('dashListingCategory').value = '';
             var textEl = document.getElementById('dashCatSelectedText');
             if (textEl) textEl.textContent = 'Aşağıdaki ağaçtan bir kategori seçiniz...';
+
+            document.querySelectorAll('#dashCatTreeBox .cat-node-row').forEach(function(row) {
+                row.style.background = '#ffffff';
+                row.style.borderColor = '#f1f5f9';
+                var title = row.querySelector('.cat-node-title');
+                if (title) { title.style.color = '#1e293b'; title.style.fontWeight = '600'; }
+            });
         }
 
         async function handleDashCreateListing(e) {
@@ -648,92 +715,44 @@
                                         </div>
                                     </div>
                                 </td>
+                                <td><span class="badge-dept">${typeof escapeHtml === 'function' ? escapeHtml(catName) : catName}</span></td>
+                                <td><strong>${typeof formatCurrency === 'function' ? formatCurrency(itemPrice) : (itemPrice.toLocaleString('tr-TR') + ' ₺')}</strong></td>
+                                <td><strong>${itemStock} Adet</strong></td>
+                                <td><span class="status-badge ${statusCls}"><span class="status-dot"></span>${statusText}</span></td>
+                                <td><span class="badge-blue" style="font-size: 0.75rem;">Canlı Vitrinde</span></td>
                                 <td>
-                                    <span class="category-tag">${typeof escapeHtml === 'function' ? escapeHtml(catName) : catName}</span>
-                                </td>
-                                <td>
-                                    <div style="display: flex; flex-direction: column; gap: 2px;">
-                                        <strong class="${isOut ? 'text-danger' : (isCrit ? 'text-warning' : '')}" style="font-size: 0.9rem;">
-                                            ${itemStock} Adet
-                                        </strong>
-                                        <span class="status-badge ${statusCls}" style="font-size: 0.68rem; padding: 2px 6px; width: fit-content;">
-                                            <span class="status-dot"></span>
-                                            ${statusText}
-                                        </span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <strong style="font-size: 0.95rem; color: var(--text);">
-                                        ${Number(itemPrice).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺
-                                    </strong>
-                                    <div style="font-size: 0.72rem; color: var(--muted);">+ %20 KDV</div>
-                                </td>
-                                <td>
-                                    <span class="status-badge badge-emerald" style="font-size: 0.75rem; padding: 3px 8px;">
-                                        <span class="status-dot"></span> Vitrinde Yayında
-                                    </span>
-                                </td>
-                                <td>
-                                    <span style="font-size: 0.8rem; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 220px;" title="${typeof escapeHtml === 'function' ? escapeHtml(itemDesc) : itemDesc}">
-                                        ${itemDesc ? (typeof escapeHtml === 'function' ? escapeHtml(itemDesc) : itemDesc) : '-'}
-                                    </span>
-                                </td>
-                                <td class="text-right">
-                                    <div style="display: flex; gap: 6px; justify-content: flex-end;">
-                                        <button type="button" class="btn-table-action" onclick="openPriceModal(${itemId}, '${safeName}', ${itemPrice}, ${itemStock})" title="Fiyat ve Stok Düzenle">
-                                            Düzenle
-                                        </button>
-                                        <button type="button" class="btn-cancel" onclick="deleteListing(${itemId}, '${safeName}')" style="padding: 5px 9px; font-size: 0.78rem; color: #ef4444; border-color: rgba(239,68,68,0.3);" title="İlanı Sil">
-                                            Sil
-                                        </button>
+                                    <div style="display: flex; gap: 4px;">
+                                        <button type="button" class="btn-cancel" style="padding: 5px 10px; font-size: 0.78rem;" onclick="openEditListingModal(${itemId}, '${safeName}', ${itemPrice}, ${itemStock}, '${catName}')">Düzenle</button>
+                                        <button type="button" class="btn-cancel" style="padding: 5px 8px; font-size: 0.78rem; color: var(--coral);" onclick="deleteListing(${itemId})">Sil</button>
                                     </div>
                                 </td>
                             </tr>
                         `;
-
                         tbody.insertAdjacentHTML('afterbegin', newRowHtml);
                     }
 
-                    // KPI Sayaçlarını Canlı Güncelle
-                    const kpiCount = document.getElementById('kpiTotalListings');
-                    if (kpiCount) {
-                        const curCount = parseInt(kpiCount.textContent.replace(/\D/g, '') || '0', 10);
-                        kpiCount.textContent = (curCount + 1).toString();
-                    }
-
-                    const kpiVal = document.getElementById('kpiTotalCatalogValue');
-                    if (kpiVal) {
-                        const curVal = parseFloat(kpiVal.textContent.replace(/[^\d]/g, '') || '0');
-                        const addedVal = itemPrice * itemStock;
-                        kpiVal.textContent = Number(curVal + addedVal).toLocaleString('tr-TR', { maximumFractionDigits: 0 }) + ' ₺';
-                    }
-
-                    const kpiActive = document.getElementById('kpiActiveStockListings');
-                    if (kpiActive && itemStock > 0) {
-                        const curActive = parseInt(kpiActive.textContent.replace(/\D/g, '') || '0', 10);
-                        kpiActive.textContent = (curActive + 1).toString();
-                    }
-
-                    formEl.reset();
-                    clearDashCatTreeSelection();
-                    window.ListingsManager.apply();
-
                     if (typeof showRealtimeToast === 'function') {
-                        showRealtimeToast(result.message || 'Ürün ilanı başarıyla yayınlandı!', 'success');
+                        showRealtimeToast(result.message || "İlanınız başarıyla vitrine eklendi!", "success");
                     }
+                } else if (result.requireIyzico) {
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast("🔒 " + (result.message || "iyzico alt üye işyeri kaydı gereklidir."), "warning");
+                    } else {
+                        alert(result.message || "iyzico satıcı kaydınızı tamamlayınız.");
+                    }
+                    setTimeout(function() {
+                        window.location.href = '/Dashboard/SupplierOrders';
+                    }, 1500);
                 } else {
                     if (typeof showRealtimeToast === 'function') {
-                        showRealtimeToast('Hata: ' + (result.message || 'İlan kaydedilemedi.'), 'error');
+                        showRealtimeToast("Hata: " + (result.message || "İlan eklenemedi."), "error");
                     } else {
-                        alert("Hata: " + (result.message || "İlan kaydedilemedi."));
+                        alert("Hata: " + (result.message || "İlan eklenemedi."));
                     }
                 }
             } catch (err) {
-                if (typeof showRealtimeToast === 'function') {
-                    showRealtimeToast('Bağlantı hatası: ' + err.message, 'error');
-                } else {
-                    alert("Bağlantı hatası: " + err.message);
-                }
+                console.error('Create listing error:', err);
+                if (typeof showRealtimeToast === 'function') showRealtimeToast("Sunucu iletişim hatası oluştu.", "error");
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;

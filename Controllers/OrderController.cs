@@ -174,45 +174,47 @@ namespace satinalmaportali2.Controllers
             try
             {
                 int currentCompanyId = GetCurrentCompanyId();
+                if (currentCompanyId <= 0 || User?.Identity?.IsAuthenticated != true)
+                {
+                    return Json(new 
+                    { 
+                        success = false, 
+                        requireLogin = true, 
+                        message = "Satın alma işlemi yapabilmek için lütfen kurumsal hesabınızla giriş yapınız veya yeni bir firma hesabı oluşturunuz." 
+                    });
+                }
+
                 string currentCompanyName = User.FindFirst("CompanyName")?.Value ?? "";
                 string currentEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? input.BuyerEmail ?? "";
-                Company? comp = null;
 
                 // Firma varlık doğrulaması ve veritabanı profilinden eksik alanları tamamlama
-                if (currentCompanyId > 0)
+                var comp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId);
+                if (comp != null)
                 {
-                    comp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId);
-                    if (comp != null)
-                    {
-                        if (string.IsNullOrWhiteSpace(currentCompanyName)) currentCompanyName = comp.CompanyName ?? comp.CompanyOfficial ?? "";
-                        if (string.IsNullOrWhiteSpace(input.BuyerCompany)) input.BuyerCompany = comp.CompanyName ?? comp.CompanyOfficial ?? "";
-                        if (string.IsNullOrWhiteSpace(input.BuyerTaxNumber)) input.BuyerTaxNumber = comp.TCNO;
-                        if (string.IsNullOrWhiteSpace(input.BuyerTaxOffice)) input.BuyerTaxOffice = comp.TaxOffice;
-                        if (string.IsNullOrWhiteSpace(input.ReceiverPhone)) input.ReceiverPhone = comp.CompanyPhone;
-                        if (string.IsNullOrWhiteSpace(input.ReceiverName)) input.ReceiverName = comp.CompanyOfficial ?? comp.CompanyName;
+                    if (string.IsNullOrWhiteSpace(currentCompanyName)) currentCompanyName = comp.CompanyName ?? comp.CompanyOfficial ?? "";
+                    if (string.IsNullOrWhiteSpace(input.BuyerCompany)) input.BuyerCompany = comp.CompanyName ?? comp.CompanyOfficial ?? "";
+                    if (string.IsNullOrWhiteSpace(input.BuyerTaxNumber)) input.BuyerTaxNumber = comp.TCNO;
+                    if (string.IsNullOrWhiteSpace(input.BuyerTaxOffice)) input.BuyerTaxOffice = comp.TaxOffice;
+                    if (string.IsNullOrWhiteSpace(input.ReceiverPhone)) input.ReceiverPhone = comp.CompanyPhone;
+                    if (string.IsNullOrWhiteSpace(input.ReceiverName)) input.ReceiverName = comp.CompanyOfficial ?? comp.CompanyName;
 
-                        if (comp.AddressID.HasValue && comp.AddressID.Value > 0 && 
-                            (string.IsNullOrWhiteSpace(input.DeliveryCity) || string.IsNullOrWhiteSpace(input.DeliveryAddress)))
+                    if (comp.AddressID.HasValue && comp.AddressID.Value > 0 && 
+                        (string.IsNullOrWhiteSpace(input.DeliveryCity) || string.IsNullOrWhiteSpace(input.DeliveryAddress)))
+                    {
+                        var addr = await _context.Addresses.AsNoTracking().FirstOrDefaultAsync(a => a.AddressID == comp.AddressID.Value);
+                        if (addr != null)
                         {
-                            var addr = await _context.Addresses.AsNoTracking().FirstOrDefaultAsync(a => a.AddressID == comp.AddressID.Value);
-                            if (addr != null)
+                            if (string.IsNullOrWhiteSpace(input.DeliveryAddress)) input.DeliveryAddress = addr.AddressText ?? "";
+                            if (string.IsNullOrWhiteSpace(input.DeliveryCity) && addr.DistrictID.HasValue)
                             {
-                                if (string.IsNullOrWhiteSpace(input.DeliveryAddress)) input.DeliveryAddress = addr.AddressText ?? "";
-                                if (string.IsNullOrWhiteSpace(input.DeliveryCity) && addr.DistrictID.HasValue)
+                                var district = await _context.Districts.AsNoTracking().FirstOrDefaultAsync(d => d.DistrictID == addr.DistrictID.Value);
+                                if (district != null)
                                 {
-                                    var district = await _context.Districts.AsNoTracking().FirstOrDefaultAsync(d => d.DistrictID == addr.DistrictID.Value);
-                                    if (district != null)
-                                    {
-                                        var town = district.TownID.HasValue ? await _context.Towns.AsNoTracking().FirstOrDefaultAsync(t => t.TownID == district.TownID.Value) : null;
-                                        input.DeliveryCity = town != null ? $"{town.TownName} / {district.DistrictName}" : district.DistrictName ?? "";
-                                    }
+                                    var town = district.TownID.HasValue ? await _context.Towns.AsNoTracking().FirstOrDefaultAsync(t => t.TownID == district.TownID.Value) : null;
+                                    input.DeliveryCity = town != null ? $"{town.TownName} / {district.DistrictName}" : district.DistrictName ?? "";
                                 }
                             }
                         }
-                    }
-                    else
-                    {
-                        currentCompanyId = 0;
                     }
                 }
 
@@ -286,18 +288,21 @@ namespace satinalmaportali2.Controllers
                         var dbItem = await _context.Items.FirstOrDefaultAsync(i => i.ItemID == item.ProductID);
                         if (dbItem != null)
                         {
+                            int availableStock = dbItem.Quantity ?? 0;
+                            if (availableStock <= 0)
+                            {
+                                return Json(new { success = false, message = $"'{dbItem.ItemName ?? item.Title}' ürününün stoğu tükenmiştir." });
+                            }
+                            if (item.Quantity > availableStock)
+                            {
+                                return Json(new { success = false, message = $"'{dbItem.ItemName ?? item.Title}' ürünü için talep edilen adet ({item.Quantity}), mevcut stok miktarını ({availableStock}) aşmaktadır." });
+                            }
+
                             matchedItemId = dbItem.ItemID;
                             if (!string.IsNullOrWhiteSpace(dbItem.Brand)) supplierName = dbItem.Brand;
 
                             // Stok düşümü
-                            if (dbItem.Quantity.HasValue && dbItem.Quantity.Value >= item.Quantity)
-                            {
-                                dbItem.Quantity -= item.Quantity;
-                            }
-                            else if (dbItem.Quantity.HasValue)
-                            {
-                                dbItem.Quantity = 0;
-                            }
+                            dbItem.Quantity -= item.Quantity;
 
                             // Properties içindeki FirmaID kontrolü
                             if (!string.IsNullOrWhiteSpace(dbItem.Properties))

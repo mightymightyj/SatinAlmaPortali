@@ -391,8 +391,8 @@ namespace satinalmaportali2.Controllers
                 {
                     OrderID = o.OrderID,
                     OrderNumber = o.OrderNumber,
-                    BuyerCompanyName = o.BuyerCompanyName,
-                    SupplierCompanyName = o.SupplierCompanyName,
+                    BuyerCompanyName = o.BuyerCompanyName ?? "Kurumsal Alıcı",
+                    SupplierCompanyName = o.SupplierCompanyName ?? "Onaylı Tedarikçi",
                     GrandTotal = o.GrandTotal,
                     OrderDate = o.OrderDate,
                     OrderStatus = o.OrderStatus
@@ -1743,7 +1743,7 @@ namespace satinalmaportali2.Controllers
                 if (string.IsNullOrWhiteSpace(reviewerName) && input.ReviewerCompanyID.HasValue && input.ReviewerCompanyID.Value > 0)
                 {
                     var revComp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == input.ReviewerCompanyID.Value);
-                    if (revComp != null) reviewerName = revComp.CompanyName;
+                    if (revComp != null && !string.IsNullOrWhiteSpace(revComp.CompanyName)) reviewerName = revComp.CompanyName;
                 }
                 if (string.IsNullOrWhiteSpace(reviewerName))
                 {

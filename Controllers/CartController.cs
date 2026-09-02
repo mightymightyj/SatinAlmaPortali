@@ -302,28 +302,53 @@ namespace satinalmaportali2.Controllers
             {
                 var (companyId, currentCompanyName, comp) = await GetCurrentCompanyContextAsync();
 
-                if (companyId > 0)
+                if (companyId <= 0 || User?.Identity?.IsAuthenticated != true)
                 {
-                    var dbItem = await _context.Items.AsNoTracking().FirstOrDefaultAsync(i => i.ItemID == input.ProductID);
-                    if (dbItem != null && IsProductOwnedByCompany(dbItem, companyId, currentCompanyName, comp))
-                    {
-                        return Json(new { success = false, message = "Kendi satışa sunduğunuz ürünü sepete ekleyemez ve satın alamazsınız." });
-                    }
+                    return Json(new 
+                    { 
+                        success = false, 
+                        requireLogin = true, 
+                        message = "Sepete ürün ekleyebilmek için lütfen kurumsal hesabınızla giriş yapınız veya yeni bir firma hesabı oluşturunuz." 
+                    });
                 }
 
-                if (companyId <= 0)
+                var dbItem = await _context.Items.AsNoTracking().FirstOrDefaultAsync(i => i.ItemID == input.ProductID);
+                if (dbItem == null)
                 {
-                    return Json(new { success = true, isAuthenticated = false, message = "Misafir oturumu." });
+                    return Json(new { success = false, message = "Ürün sistemde bulunamadı." });
+                }
+
+                int availableStock = dbItem.Quantity ?? 0;
+                if (availableStock <= 0)
+                {
+                    return Json(new { success = false, message = $"'{dbItem.ItemName ?? "Ürün"}' ürününün stoğu tükenmiştir, sepete eklenemez." });
+                }
+
+                if (IsProductOwnedByCompany(dbItem, companyId, currentCompanyName, comp))
+                {
+                    return Json(new { success = false, message = "Kendi satışa sunduğunuz ürünü sepete ekleyemez ve satın alamazsınız." });
                 }
 
                 var existing = await _context.CartItems
                     .FirstOrDefaultAsync(c => c.CompanyID == companyId && c.ProductID == input.ProductID);
 
                 int addQty = input.Quantity > 0 ? input.Quantity : 1;
+                int currentInCart = existing != null ? existing.Quantity : 0;
+                int totalRequested = currentInCart + addQty;
+
+                if (totalRequested > availableStock)
+                {
+                    return Json(new 
+                    { 
+                        success = false, 
+                        availableStock = availableStock,
+                        message = $"Yetersiz stok! Bu üründen en fazla {availableStock} adet ekleyebilirsiniz. (Sepetinizde: {currentInCart} adet, Eklenmek istenen: {addQty} adet)" 
+                    });
+                }
 
                 if (existing != null)
                 {
-                    existing.Quantity += addQty;
+                    existing.Quantity = totalRequested;
                     existing.UpdatedAt = DateTime.UtcNow;
                 }
                 else
@@ -332,12 +357,12 @@ namespace satinalmaportali2.Controllers
                     {
                         CompanyID = companyId,
                         ProductID = input.ProductID,
-                        Title = input.Title ?? "Ürün",
-                        Sku = input.Sku ?? "",
+                        Title = input.Title ?? dbItem.ItemName ?? "Ürün",
+                        Sku = input.Sku ?? $"SKU-B2B-{dbItem.ItemID:D4}",
                         Category = input.Category ?? "Endüstriyel",
-                        Price = input.Price,
+                        Price = dbItem.ItemPrice.HasValue ? (decimal)dbItem.ItemPrice.Value : input.Price,
                         Quantity = addQty,
-                        Seller = input.Seller ?? "Onaylı Tedarikçi",
+                        Seller = input.Seller ?? dbItem.Brand ?? "Onaylı Tedarikçi",
                         Image = input.Image ?? "",
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow
@@ -347,7 +372,7 @@ namespace satinalmaportali2.Controllers
 
                 await _context.SaveChangesAsync();
                 await BroadcastCartUpdatedAsync(companyId);
-                return Json(new { success = true, isAuthenticated = true });
+                return Json(new { success = true, isAuthenticated = true, availableStock = availableStock });
             }
             catch (Exception ex)
             {
@@ -374,6 +399,19 @@ namespace satinalmaportali2.Controllers
                     return Json(new { success = true, isAuthenticated = false });
                 }
 
+                var dbItem = await _context.Items.AsNoTracking().FirstOrDefaultAsync(i => i.ItemID == input.ProductID);
+                int availableStock = dbItem?.Quantity ?? 0;
+
+                if (input.Quantity > availableStock)
+                {
+                    return Json(new 
+                    { 
+                        success = false, 
+                        availableStock = availableStock,
+                        message = $"Yetersiz stok! Bu ürün için mevcut maksimum stok {availableStock} adettir." 
+                    });
+                }
+
                 var item = await _context.CartItems
                     .FirstOrDefaultAsync(c => c.CompanyID == companyId && c.ProductID == input.ProductID);
 
@@ -392,7 +430,7 @@ namespace satinalmaportali2.Controllers
                     await BroadcastCartUpdatedAsync(companyId);
                 }
 
-                return Json(new { success = true, isAuthenticated = true });
+                return Json(new { success = true, isAuthenticated = true, availableStock = availableStock });
             }
             catch (Exception ex)
             {

@@ -354,22 +354,22 @@
                             window.ordersDataMap = window.ordersDataMap || {};
                             window.ordersDataMap[@o.OrderID] = {
                                 orderId: @o.OrderID,
-                                orderNumber: '@o.OrderNumber',
-                                orderDate: '@o.OrderDate.ToString("dd MMMM yyyy, HH:mm")',
-                                grandTotal: '@o.GrandTotal.ToString("N2", ChartHelper.Tr) ₺',
-                                totalAmount: '@o.TotalAmount.ToString("N2", ChartHelper.Tr) ₺',
-                                taxAmount: '@o.TaxAmount.ToString("N2", ChartHelper.Tr) ₺',
-                                orderStatus: '@o.OrderStatus',
-                                paymentMethod: '@o.PaymentMethod',
-                                paymentStatus: '@o.PaymentStatus',
-                                escrowStatus: '@o.EscrowStatus',
+                                orderNumber: '@Html.Raw(o.OrderNumber)',
+                                orderDate: '@Html.Raw(o.OrderDate.ToString("dd MMMM yyyy, HH:mm"))',
+                                grandTotal: '@Html.Raw(o.GrandTotal.ToString("N2", ChartHelper.Tr)) ₺',
+                                totalAmount: '@Html.Raw(o.TotalAmount.ToString("N2", ChartHelper.Tr)) ₺',
+                                taxAmount: '@Html.Raw(o.TaxAmount.ToString("N2", ChartHelper.Tr)) ₺',
+                                orderStatus: '@Html.Raw(o.OrderStatus)',
+                                paymentMethod: '@Html.Raw(o.PaymentMethod)',
+                                paymentStatus: '@Html.Raw(o.PaymentStatus)',
+                                escrowStatus: '@Html.Raw(o.EscrowStatus)',
                                 isEscrowApproved: @(o.IsEscrowApproved ? "true" : "false"),
-                                deliveryCity: '@o.DeliveryCity',
-                                deliveryAddress: '@(o.DeliveryAddress?.Replace("'", "\\'").Replace("\r", "").Replace("\n", " "))',
-                                receiverName: '@(o.ReceiverName?.Replace("'", "\\'"))',
-                                receiverPhone: '@o.ReceiverPhone',
-                                trackingNumber: '@o.TrackingNumber',
-                                shippingCarrier: '@o.ShippingCarrier',
+                                deliveryCity: '@Html.Raw(o.DeliveryCity)',
+                                deliveryAddress: '@Html.Raw(o.DeliveryAddress?.Replace("'", "\\'").Replace("\r", "").Replace("\n", " "))',
+                                receiverName: '@Html.Raw(o.ReceiverName?.Replace("'", "\\'"))',
+                                receiverPhone: '@Html.Raw(o.ReceiverPhone)',
+                                trackingNumber: '@Html.Raw(o.TrackingNumber)',
+                                shippingCarrier: '@Html.Raw(o.ShippingCarrier)',
                                 distinctSellerCount: @distinctSellers.Count,
                                 items: [
                                     @foreach (var item in o.OrderItems)
@@ -381,17 +381,17 @@
                                         var itemCarrier = !string.IsNullOrWhiteSpace(item.ShippingCarrier) ? item.ShippingCarrier : (o.ShippingCarrier ?? "");
                                         <text>{
                                             orderItemId: @item.OrderItemID,
-                                            productName: '@item.ProductName.Replace("'", "\\'") ',
-                                            sku: '@(item.Sku ?? "SKU-B2B")',
-                                            categoryName: '@(item.CategoryName ?? "Endüstriyel")',
+                                            productName: '@Html.Raw(item.ProductName.Replace("'", "\\'"))',
+                                            sku: '@Html.Raw(item.Sku ?? "SKU-B2B")',
+                                            categoryName: '@Html.Raw(item.CategoryName ?? "Endüstriyel")',
                                             quantity: @item.Quantity,
-                                            unitPrice: '@item.UnitPrice.ToString("N2", ChartHelper.Tr) ₺',
-                                            lineTotal: '@item.LineTotal.ToString("N2", ChartHelper.Tr) ₺',
-                                            supplierName: '@itemSellerName.Replace("'", "\\'") ',
+                                            unitPrice: '@Html.Raw(item.UnitPrice.ToString("N2", ChartHelper.Tr)) ₺',
+                                            lineTotal: '@Html.Raw(item.LineTotal.ToString("N2", ChartHelper.Tr)) ₺',
+                                            supplierName: '@Html.Raw(itemSellerName.Replace("'", "\\'"))',
                                             supplierCompanyId: @itemSellerId,
-                                            status: '@itemStatus',
-                                            trackingNumber: '@itemTracking',
-                                            shippingCarrier: '@itemCarrier'
+                                            status: '@Html.Raw(itemStatus)',
+                                            trackingNumber: '@Html.Raw(itemTracking)',
+                                            shippingCarrier: '@Html.Raw(itemCarrier)'
                                         },</text>
                                     }
                                 ]
@@ -968,6 +968,8 @@
             const btnDispute = document.getElementById('btnOpenDispute');
             const escrowActions = document.getElementById('modalEscrowActions');
 
+            const isShippedOrDelivered = data.orderStatus === 'Teslim Edildi' || data.orderStatus === 'Kargoya Verildi' || data.orderStatus === 'Tamamlandı';
+
             if (data.escrowStatus === 'Released_ToSeller' || data.isEscrowApproved) {
                 if (escrowBadge) { escrowBadge.textContent = '✓ Ödeme Satıcıya Aktarıldı'; escrowBadge.className = 'status-badge badge-emerald'; }
                 if (escrowText) escrowText.textContent = 'Alıcı onayı ile havuzdaki ödeme tedarikçi IBAN hesabına aktarılmıştır.';
@@ -988,10 +990,32 @@
                 if (escrowActions) escrowActions.style.display = 'none';
             } else {
                 if (escrowBadge) { escrowBadge.textContent = '🛡️ Havuzda Güvence Altında'; escrowBadge.className = 'status-badge badge-emerald'; }
-                if (escrowText) escrowText.textContent = 'Ödemeniz iyzico güvence havuzunda bloke tutulmaktadır. Ürünü teslim aldığınızda onaylayarak satıcıya aktarabilirsiniz.';
-                if (btnRelease) btnRelease.style.display = 'inline-flex';
-                if (btnDispute) btnDispute.style.display = 'inline-flex';
                 if (escrowActions) escrowActions.style.display = 'flex';
+                if (btnDispute) btnDispute.style.display = 'inline-flex';
+
+                if (isShippedOrDelivered) {
+                    if (escrowText) escrowText.textContent = 'Tedarikçi siparişinizi sevk/teslim etti. Ürünü eksiksiz teslim aldığınızı onaylayarak ödemeyi satıcıya aktarabilirsiniz.';
+                    if (btnRelease) {
+                        btnRelease.style.display = 'inline-flex';
+                        btnRelease.disabled = false;
+                        btnRelease.style.background = '#16a34a';
+                        btnRelease.style.cursor = 'pointer';
+                        btnRelease.style.opacity = '1';
+                        btnRelease.title = '';
+                        btnRelease.innerHTML = '<span>✓ Ürünü Teslim Aldım &amp; Ödemeyi Satıcıya Aktar</span>';
+                    }
+                } else {
+                    if (escrowText) escrowText.textContent = 'Ödemeniz iyzico güvence havuzunda bloke tutulmaktadır. Tedarikçi ürünü kargolayıp teslim ettikten sonra teslim alma onayını verebilirsiniz.';
+                    if (btnRelease) {
+                        btnRelease.style.display = 'inline-flex';
+                        btnRelease.disabled = true;
+                        btnRelease.style.background = '#94a3b8';
+                        btnRelease.style.cursor = 'not-allowed';
+                        btnRelease.style.opacity = '0.7';
+                        btnRelease.title = 'Tedarikçi firma henüz siparişi sevk veya teslim etmedi.';
+                        btnRelease.innerHTML = '<span>⏳ Tedarikçi Teslimatı / Sevkiyatı Bekleniyor</span>';
+                    }
+                }
             }
 
             // Modal Aç
@@ -1018,6 +1042,13 @@
 
         async function confirmReleaseEscrow() {
             if (!currentActiveDetailOrderId) return;
+            const data = (window.ordersDataMap && window.ordersDataMap[currentActiveDetailOrderId]) ? window.ordersDataMap[currentActiveDetailOrderId] : null;
+            const isShippedOrDelivered = data && (data.orderStatus === 'Teslim Edildi' || data.orderStatus === 'Kargoya Verildi' || data.orderStatus === 'Tamamlandı');
+            if (!isShippedOrDelivered) {
+                alert('Tedarikçi firma henüz siparişi sevk veya teslim etmedi. Sevkiyat/teslimat gerçekleşmeden onay verilemez.');
+                return;
+            }
+
             if (!confirm('Ürünü eksiksiz teslim aldığınızı ve havuzdaki ödemenin satıcı firmaya aktarılmasını onaylıyor musunuz?')) {
                 return;
             }
