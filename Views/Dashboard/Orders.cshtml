@@ -228,8 +228,17 @@
                 {
                     @foreach (var o in Model.Orders)
                     {
-                        var isShipped = o.OrderStatus == "Kargoya Verildi";
-                        var isDelivered = o.OrderStatus == "Teslim Edildi" || o.OrderStatus == "Tamamlandı";
+                        var activeItems = o.OrderItems.Where(oi => oi.ItemStatus != "İptal" && oi.ItemStatus != "İptal Edildi").ToList();
+                        bool allDelivered = (activeItems.Any() && activeItems.All(oi => oi.ItemStatus == "Teslim Edildi" || oi.ItemStatus == "Tamamlandı")) || o.OrderStatus == "Teslim Edildi";
+                        bool partialDelivered = !allDelivered && activeItems.Any(oi => oi.ItemStatus == "Teslim Edildi");
+                        int deliveredCount = activeItems.Count(oi => oi.ItemStatus == "Teslim Edildi" || oi.ItemStatus == "Tamamlandı");
+                        int totalActiveCount = activeItems.Count;
+
+                        var isPreparing = o.OrderStatus == "Hazırlanıyor";
+                        var isShipped = o.OrderStatus == "Kargoya Verildi" || (activeItems.Any(oi => oi.ItemStatus == "Kargoya Verildi"));
+                        var isDelivered = allDelivered;
+                        var isCompleted = o.OrderStatus == "Tamamlandı";
+                        var isCancelled = o.OrderStatus == "İptal" || o.OrderStatus == "İptal Edildi" || o.OrderStatus.Contains("İptal");
                         var searchableText = $"{o.OrderNumber} {o.SupplierCompanyName} {o.DeliveryCity} {o.TrackingNumber} {string.Join(" ", o.OrderItems.Select(oi => oi.ProductName))}".ToLowerInvariant();
 
                         var distinctSellers = o.OrderItems
@@ -331,12 +340,12 @@
                             </td>
                             <td>
                                 <div>
-                                    <span class="status-badge @(isDelivered ? "badge-emerald" : (isShipped ? "badge-amber" : "badge-blue"))" style="font-size: 0.78rem; padding: 3px 8px;">
-                                        <span class="status-dot"></span>
+                                    <span class="status-badge @(isCancelled ? "" : (isDelivered ? "badge-emerald" : (isShipped ? "badge-amber" : "badge-blue")))" style="font-size: 0.78rem; padding: 3px 8px; @(isCancelled ? "background:#fef2f2; color:#991b1b; border:1px solid #fecaca;" : "")">
+                                        <span class="status-dot" style="@(isCancelled ? "background:#dc2626;" : "")"></span>
                                         @o.OrderStatus
                                     </span>
                                 </div>
-                                @if (!string.IsNullOrWhiteSpace(o.TrackingNumber))
+                                @if (!string.IsNullOrWhiteSpace(o.TrackingNumber) && !isCancelled)
                                 {
                                     <div style="font-size: 0.75rem; margin-top: 4px; color: var(--muted);">
                                         <strong>@o.ShippingCarrier:</strong> @o.TrackingNumber
@@ -344,9 +353,32 @@
                                 }
                             </td>
                             <td class="text-right">
-                                <button type="button" class="btn-table-action" style="font-size: 0.8rem; padding: 6px 14px; border-radius: 8px; font-weight: 600;" onclick="showOrderDetailsModal(@o.OrderID)">
-                                    Detay Gör
-                                </button>
+                                <div style="display: flex; flex-direction: column; gap: 5px; align-items: flex-end;" id="buyer-actions-wrap-@o.OrderID">
+                                    @if (allDelivered && !isCompleted && !isCancelled)
+                                    {
+                                        <!-- Teslim Edildi: Teslim aldım tuşu AKTİF! -->
+                                        <button type="button" class="btn-primary" style="font-size: 0.78rem; padding: 6px 12px; border-radius: 7px; font-weight: 750; background: #16a34a; border: none; cursor: pointer; box-shadow: 0 2px 6px rgba(22,163,74,0.3); color: #fff;" onclick="confirmReleaseEscrowDirect(@o.OrderID, '@Html.Raw(o.OrderNumber)')">
+                                            @(distinctSellers.Count > 1 ? $"✓ Tümünü Teslim Aldım ({distinctSellers.Count} Satıcı)" : "✓ Teslim Aldım")
+                                        </button>
+                                    }
+                                    else if (partialDelivered && !isCompleted && !isCancelled)
+                                    {
+                                        <!-- Kısmi Teslimat: Bazı satıcılar teslim etti ama diğerleri yolda -->
+                                        <span class="status-badge badge-amber" style="font-size: 0.73rem; padding: 4px 8px; font-weight: 700; border-radius: 6px;" title="Bu siparişteki satıcılardan bazıları teslimatı gerçekleştirdi, diğerleri bekleniyor.">
+                                            ⏳ Kısmi Teslim (@deliveredCount/@totalActiveCount)
+                                        </span>
+                                    }
+                                    else if (!isShipped && !allDelivered && !isCompleted && !isCancelled)
+                                    {
+                                        <!-- Onaylandı veya Hazırlanıyor: Alıcı iptal edebilir -->
+                                        <button type="button" style="font-size: 0.74rem; padding: 4px 8px; border-radius: 6px; font-weight: 600; background: #fff; color: #dc2626; border: 1px solid #fecaca; cursor: pointer;" onclick="openBuyerCancelModal(@o.OrderID, '@Html.Raw(o.OrderNumber)')">
+                                            ✕ İptal Et
+                                        </button>
+                                    }
+                                    <button type="button" class="btn-table-action" style="font-size: 0.8rem; padding: 5px 12px; border-radius: 7px; font-weight: 600;" onclick="showOrderDetailsModal(@o.OrderID)">
+                                        Detay Gör
+                                    </button>
+                                </div>
                             </td>
                         </tr>
 
@@ -461,6 +493,9 @@
                     <button type="button" id="btnOpenDispute" class="btn-cancel" onclick="openDisputeModalFromDetail()" style="background: #fff; border: 1px solid #f87171; color: #dc2626; padding: 8px 14px; font-size: 0.82rem; font-weight: 700; border-radius: 8px; cursor: pointer;">
                         <span>⚠️ İade / İtiraz Bildir</span>
                     </button>
+                    <button type="button" id="btnCancelFromDetail" class="btn-cancel" onclick="openBuyerCancelModalFromDetail()" style="background: #fff; border: 1px solid #fca5a5; color: #b91c1c; padding: 8px 14px; font-size: 0.82rem; font-weight: 700; border-radius: 8px; cursor: pointer; display: none;">
+                        <span>✕ Siparişi İptal Et</span>
+                    </button>
                 </div>
             </div>
 
@@ -531,6 +566,36 @@
                 <button type="button" class="btn-cancel" onclick="closeDisputeModal()">Vazgeç</button>
                 <button type="submit" id="btnSubmitDispute" class="btn-primary" style="padding: 10px 20px; font-weight: 750; background: #dc2626; border: none; border-radius: 8px; color: #fff; cursor: pointer;">
                     İtirazı Kaydet &amp; Havuzu Dondur
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Alıcı Gerekçeli Sipariş İptali -->
+<div id="buyerCancelOrderModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(4px); z-index: 100002; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this)closeBuyerCancelModal()">
+    <div class="ty-modal-box" style="background: #fff; border: 1px solid #fecaca; border-radius: 14px; width: 100%; max-width: 460px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(220,38,38,0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+            <div>
+                <span class="status-badge" style="background:#fef2f2; color:#991b1b; border:1px solid #fecaca; font-size: 0.72rem; padding: 2px 8px;">SİPARİŞ İPTAL TALEBİ</span>
+                <h3 id="buyerCancelOrderModalTitle" style="font-size: 1.15rem; font-weight: 800; color: #991b1b; margin-top: 6px; margin-bottom: 2px;">Siparişi İptal Et</h3>
+                <small style="color: #64748b; font-size: 0.78rem;">Siparişiniz henüz kargoya verilmediği için kesintisiz iptal edebilirsiniz.</small>
+            </div>
+            <button type="button" onclick="closeBuyerCancelModal()" style="border: none; background: transparent; font-size: 1.2rem; cursor: pointer; color: #64748b;">✕</button>
+        </div>
+
+        <form id="buyerCancelOrderForm" onsubmit="submitBuyerCancelOrder(event); return false;">
+            <input type="hidden" id="buyerCancelOrderID" />
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 0.82rem; font-weight: 750; margin-bottom: 4px; color: #0f172a;">İptal Gerekçesi (Zorunlu) *</label>
+                <textarea id="buyerCancelOrderReason" class="form-control" rows="3" placeholder="Örn: Yanlış ürün seçimi yaptım / Satın almaktan vazgeçtim." style="font-size: 0.86rem;" required></textarea>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn-cancel" onclick="closeBuyerCancelModal()">Vazgeç</button>
+                <button type="submit" id="btnSubmitBuyerCancel" class="btn-primary" style="padding: 10px 18px; font-weight: 750; background: #dc2626; border: none; box-shadow: 0 4px 12px rgba(220,38,38,0.35);">
+                    Siparişi İptal Et &amp; İade Al
                 </button>
             </div>
         </form>
@@ -968,44 +1033,103 @@
             const btnDispute = document.getElementById('btnOpenDispute');
             const escrowActions = document.getElementById('modalEscrowActions');
 
-            const isShippedOrDelivered = data.orderStatus === 'Teslim Edildi' || data.orderStatus === 'Kargoya Verildi' || data.orderStatus === 'Tamamlandı';
+            // Çok satıcılı teslimat ve onay hesaplama
+            const activeItems = (data.items || []).filter(it => it.status !== 'İptal' && it.status !== 'İptal Edildi');
+            const totalActive = activeItems.length;
+            const deliveredItems = activeItems.filter(it => it.status === 'Teslim Edildi' || it.status === 'Tamamlandı');
+            const deliveredCount = deliveredItems.length;
+            const distinctSellerCount = data.distinctSellerCount || 1;
 
-            if (data.escrowStatus === 'Released_ToSeller' || data.isEscrowApproved) {
+            const allItemsDelivered = (totalActive > 0 && deliveredCount === totalActive) || data.orderStatus === 'Teslim Edildi';
+            const isPartiallyDelivered = !allItemsDelivered && deliveredCount > 0;
+            const isShipped = data.orderStatus === 'Kargoya Verildi' || activeItems.some(it => it.status === 'Kargoya Verildi');
+            const isPreparingOrConfirmed = !allItemsDelivered && !isPartiallyDelivered && !isShipped && (data.orderStatus === 'Onaylandı' || data.orderStatus === 'Hazırlanıyor' || data.orderStatus === 'Ödeme Bekleniyor');
+            const btnCancelDetail = document.getElementById('btnCancelFromDetail');
+
+            if (data.escrowStatus === 'Released_ToSeller' || data.isEscrowApproved || data.orderStatus === 'Tamamlandı') {
                 if (escrowBadge) { escrowBadge.textContent = '✓ Ödeme Satıcıya Aktarıldı'; escrowBadge.className = 'status-badge badge-emerald'; }
                 if (escrowText) escrowText.textContent = 'Alıcı onayı ile havuzdaki ödeme tedarikçi IBAN hesabına aktarılmıştır.';
                 if (btnRelease) btnRelease.style.display = 'none';
                 if (btnDispute) btnDispute.style.display = 'none';
+                if (btnCancelDetail) btnCancelDetail.style.display = 'none';
                 if (escrowActions) escrowActions.style.display = 'none';
             } else if (data.escrowStatus === 'Disputed') {
                 if (escrowBadge) { escrowBadge.textContent = '⚠️ İtiraz / İncelemede'; escrowBadge.className = 'status-badge badge-amber'; }
                 if (escrowText) escrowText.textContent = 'Bu sipariş için itiraz talebi açılmıştır. Havuzdaki bakiye dondurulmuştur.';
                 if (btnRelease) btnRelease.style.display = 'none';
                 if (btnDispute) btnDispute.style.display = 'none';
+                if (btnCancelDetail) btnCancelDetail.style.display = 'none';
                 if (escrowActions) escrowActions.style.display = 'none';
-            } else if (data.escrowStatus === 'Refunded') {
-                if (escrowBadge) { escrowBadge.textContent = '↩️ İade Edildi'; escrowBadge.className = 'status-badge badge-red'; }
+            } else if (data.escrowStatus === 'Refunded' || data.orderStatus === 'İptal Edildi') {
+                if (escrowBadge) { escrowBadge.textContent = '↩️ İade Edildi / İptal'; escrowBadge.className = 'status-badge badge-red'; }
                 if (escrowText) escrowText.textContent = 'Sipariş bedeli alıcı firmanın kartına kesintisiz iade edilmiştir.';
                 if (btnRelease) btnRelease.style.display = 'none';
                 if (btnDispute) btnDispute.style.display = 'none';
+                if (btnCancelDetail) btnCancelDetail.style.display = 'none';
                 if (escrowActions) escrowActions.style.display = 'none';
             } else {
                 if (escrowBadge) { escrowBadge.textContent = '🛡️ Havuzda Güvence Altında'; escrowBadge.className = 'status-badge badge-emerald'; }
                 if (escrowActions) escrowActions.style.display = 'flex';
-                if (btnDispute) btnDispute.style.display = 'inline-flex';
 
-                if (isShippedOrDelivered) {
-                    if (escrowText) escrowText.textContent = 'Tedarikçi siparişinizi sevk/teslim etti. Ürünü eksiksiz teslim aldığınızı onaylayarak ödemeyi satıcıya aktarabilirsiniz.';
+                // İptal Butonu: Yalnızca hiçbir ürün kargoya verilmemişken görünür
+                if (btnCancelDetail) {
+                    btnCancelDetail.style.display = isPreparingOrConfirmed ? 'inline-flex' : 'none';
+                }
+
+                // İtiraz Butonu: Teslim edildiğinde, kısmi teslimatta veya kargodayken görünür
+                if (btnDispute) {
+                    btnDispute.style.display = (allItemsDelivered || isPartiallyDelivered || isShipped) ? 'inline-flex' : 'none';
+                }
+
+                // Teslim Aldım Butonu: ÇOK SATICILI SİPARİŞ KONTROLÜ
+                if (allItemsDelivered) {
+                    if (distinctSellerCount > 1) {
+                        if (escrowText) escrowText.textContent = `Tüm tedarikçiler (${distinctSellerCount} Farklı Tedarikçi) siparişinizdeki ürünleri teslim etti. Ürünlerinizi kontrol ettiyseniz onay vererek havuzdaki ödemeyi satıcılara aktarabilirsiniz.`;
+                        if (btnRelease) {
+                            btnRelease.style.display = 'inline-flex';
+                            btnRelease.disabled = false;
+                            btnRelease.style.background = '#16a34a';
+                            btnRelease.style.cursor = 'pointer';
+                            btnRelease.style.opacity = '1';
+                            btnRelease.title = '';
+                            btnRelease.innerHTML = `<span>✓ Tüm Ürünleri Teslim Aldım &amp; Ödemeyi Aktar (${distinctSellerCount} Satıcı)</span>`;
+                        }
+                    } else {
+                        if (escrowText) escrowText.textContent = 'Kargocu/tedarikçi siparişinizi teslim etti. Ürünü kontrol ettiyseniz onay vererek ödemeyi satıcıya aktarabilirsiniz.';
+                        if (btnRelease) {
+                            btnRelease.style.display = 'inline-flex';
+                            btnRelease.disabled = false;
+                            btnRelease.style.background = '#16a34a';
+                            btnRelease.style.cursor = 'pointer';
+                            btnRelease.style.opacity = '1';
+                            btnRelease.title = '';
+                            btnRelease.innerHTML = '<span>✓ Ürünü Teslim Aldım &amp; Ödemeyi Satıcıya Aktar</span>';
+                        }
+                    }
+                } else if (isPartiallyDelivered) {
+                    if (escrowText) escrowText.textContent = `Bu siparişiniz ${distinctSellerCount} farklı tedarikçiden oluşmaktadır. Şu ana kadar ${deliveredCount}/${totalActive} ürün teslim edildi, diğer tedarikçilerin teslimatı beklenmektedir. Siparişinizdeki tüm ürünler teslim edildiğinde onay butonu aktifleşecektir.`;
                     if (btnRelease) {
                         btnRelease.style.display = 'inline-flex';
-                        btnRelease.disabled = false;
-                        btnRelease.style.background = '#16a34a';
-                        btnRelease.style.cursor = 'pointer';
-                        btnRelease.style.opacity = '1';
-                        btnRelease.title = '';
-                        btnRelease.innerHTML = '<span>✓ Ürünü Teslim Aldım &amp; Ödemeyi Satıcıya Aktar</span>';
+                        btnRelease.disabled = true;
+                        btnRelease.style.background = '#f59e0b';
+                        btnRelease.style.cursor = 'not-allowed';
+                        btnRelease.style.opacity = '0.95';
+                        btnRelease.title = `Kalan ${totalActive - deliveredCount} ürünün teslimatı bekleniyor.`;
+                        btnRelease.innerHTML = `<span>⏳ Kısmi Teslimat (${deliveredCount}/${totalActive} Ürün Teslim Edildi)</span>`;
+                    }
+                } else if (isShipped) {
+                    if (escrowText) escrowText.textContent = 'Siparişiniz kargoya verildi ve yolda. Ürünler size ulaşıp kargo teslim edildikten sonra teslim alma onay butonu aktif olacaktır.';
+                    if (btnRelease) {
+                        btnRelease.style.display = 'inline-flex';
+                        btnRelease.disabled = true;
+                        btnRelease.style.background = '#94a3b8';
+                        btnRelease.style.cursor = 'not-allowed';
+                        btnRelease.style.opacity = '0.75';
+                        btnRelease.title = 'Kargocu teslimatı gerçekleştirdiğinde onay butonu aktif olacaktır.';
+                        btnRelease.innerHTML = '<span>⏳ Kargo Teslimatı Bekleniyor (Yolda)</span>';
                     }
                 } else {
-                    if (escrowText) escrowText.textContent = 'Ödemeniz iyzico güvence havuzunda bloke tutulmaktadır. Tedarikçi ürünü kargolayıp teslim ettikten sonra teslim alma onayını verebilirsiniz.';
+                    if (escrowText) escrowText.textContent = 'Ödemeniz iyzico güvence havuzunda bloke tutulmaktadır. Tedarikçiler hazırlık ve kargo teslimatını tamamlayana kadar onay butonu aktif olmaz.';
                     if (btnRelease) {
                         btnRelease.style.display = 'inline-flex';
                         btnRelease.disabled = true;
@@ -1013,7 +1137,7 @@
                         btnRelease.style.cursor = 'not-allowed';
                         btnRelease.style.opacity = '0.7';
                         btnRelease.title = 'Tedarikçi firma henüz siparişi sevk veya teslim etmedi.';
-                        btnRelease.innerHTML = '<span>⏳ Tedarikçi Teslimatı / Sevkiyatı Bekleniyor</span>';
+                        btnRelease.innerHTML = '<span>⏳ Tedarikçi Hazırlığı / Sevkiyatı Bekleniyor</span>';
                     }
                 }
             }
@@ -1049,7 +1173,12 @@
                 return;
             }
 
-            if (!confirm('Ürünü eksiksiz teslim aldığınızı ve havuzdaki ödemenin satıcı firmaya aktarılmasını onaylıyor musunuz?')) {
+            const sellerCount = data ? (data.distinctSellerCount || 1) : 1;
+            const promptMsg = sellerCount > 1
+                ? `Bu siparişte ${sellerCount} farklı tedarikçi bulunmaktadır.\n\nTÜM tedarikçilerden ürünlerinizi eksiksiz teslim aldığınızı ve havuzdaki ödemenin satıcılara aktarılmasını onaylıyor musunuz?`
+                : 'Ürünü eksiksiz teslim aldığınızı ve havuzdaki ödemenin satıcı firmaya aktarılmasını onaylıyor musunuz?';
+
+            if (!confirm(promptMsg)) {
                 return;
             }
             const btn = document.getElementById('btnReleaseEscrow');
@@ -1118,6 +1247,102 @@
             } finally {
                 if (btn) { btn.disabled = false; btn.textContent = 'İtirazı Kaydet & Havuzu Dondur'; }
             }
+        }
+
+        // ==================== ALICI TESLİM ALMA & İPTAL FONKSİYONLARI ====================
+
+        async function confirmReleaseEscrowDirect(orderId, orderNumber) {
+            const data = (window.ordersDataMap && window.ordersDataMap[orderId]) ? window.ordersDataMap[orderId] : null;
+            const sellerCount = data ? (data.distinctSellerCount || 1) : 1;
+
+            const promptMsg = sellerCount > 1
+                ? `#${orderNumber} numaralı siparişinizde ${sellerCount} farklı tedarikçi bulunmaktadır.\n\nTÜM tedarikçilerden ürünlerinizi eksiksiz teslim aldığınızı ve havuzdaki ödemenin satıcılara aktarılmasını onaylıyor musunuz?`
+                : `#${orderNumber} numaralı siparişin ürünlerini eksiksiz teslim aldığınızı ve havuzdaki bakiyenin satıcıya aktarılmasını onaylıyor musunuz?`;
+
+            const confirmed = confirm(promptMsg);
+            if (!confirmed) return;
+
+            try {
+                const res = await fetch('/Payment/ApproveEscrowRelease', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderID: orderId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('🎉 ' + (data.message || 'Ödeme onayı verildi! Siparişiniz tamamlandı.'));
+                    location.reload();
+                } else {
+                    alert('Hata: ' + (data.message || 'İşlem tamamlanamadı.'));
+                }
+            } catch(err) {
+                alert('Bağlantı hatası: ' + err.message);
+            }
+        }
+
+        function openBuyerCancelModal(orderId, orderNumber) {
+            document.getElementById('buyerCancelOrderID').value = orderId;
+            document.getElementById('buyerCancelOrderModalTitle').textContent = '#' + orderNumber + ' - Siparişi İptal Et';
+            document.getElementById('buyerCancelOrderReason').value = '';
+            const modal = document.getElementById('buyerCancelOrderModal');
+            if (modal) modal.style.setProperty('display', 'flex', 'important');
+        }
+
+        function closeBuyerCancelModal() {
+            const modal = document.getElementById('buyerCancelOrderModal');
+            if (modal) modal.style.setProperty('display', 'none', 'important');
+        }
+
+        function openBuyerCancelModalFromDetail() {
+            if (!currentActiveDetailOrderId) return;
+            closeOrderDetailModal();
+            const data = (window.ordersDataMap && window.ordersDataMap[currentActiveDetailOrderId]) || {};
+            openBuyerCancelModal(currentActiveDetailOrderId, data.orderNumber || currentActiveDetailOrderId);
+        }
+
+        async function submitBuyerCancelOrder(e) {
+            if (e) {
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+            }
+
+            const id = parseInt(document.getElementById('buyerCancelOrderID').value, 10);
+            const reason = document.getElementById('buyerCancelOrderReason').value.trim();
+
+            if (!reason) {
+                alert('Lütfen siparişi iptal etme gerekçenizi belirtiniz.');
+                document.getElementById('buyerCancelOrderReason').focus();
+                return false;
+            }
+
+            const confirmed = confirm('Bu siparişi kesin olarak iptal etmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz, sipariş iptal edilecek ve havuzdaki ödemeniz kartınıza iade edilecektir.');
+            if (!confirmed) return false;
+
+            const btn = document.getElementById('btnSubmitBuyerCancel');
+            if (btn) { btn.disabled = true; btn.textContent = 'İptal Ediliyor...'; }
+
+            try {
+                const res = await fetch('/Dashboard/CancelOrderByBuyer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderID: id, reason: reason })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    closeBuyerCancelModal();
+                    alert('✓ ' + (data.message || 'Siparişiniz başarıyla iptal edildi.'));
+                    location.reload();
+                } else {
+                    alert('Hata: ' + (data.message || 'Sipariş iptal edilemedi.'));
+                }
+            } catch(err) {
+                alert('Bağlantı hatası: ' + err.message);
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = 'Siparişi İptal Et & İade Al'; }
+            }
+
+            return false;
         }
     </script>
 }

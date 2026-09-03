@@ -310,7 +310,12 @@
                 var statusBadge = row.querySelector('.status-badge, .badge-status, [data-order-status-badge]');
                 if (statusBadge) {
                     statusBadge.textContent = data.status;
-                    if (data.status === 'Kargoya Verildi' || data.status === 'Teslim Edildi' || data.status === 'Tamamlandı') {
+                    if (data.status === 'İptal' || data.status === 'İptal Edildi') {
+                        statusBadge.className = 'status-badge';
+                        statusBadge.style.background = '#fef2f2';
+                        statusBadge.style.color = '#991b1b';
+                        statusBadge.style.border = '1px solid #fecaca';
+                    } else if (data.status === 'Kargoya Verildi' || data.status === 'Teslim Edildi' || data.status === 'Tamamlandı') {
                         statusBadge.className = 'status-badge badge-green';
                     } else if (data.status === 'Hazırlanıyor') {
                         statusBadge.className = 'status-badge badge-blue';
@@ -447,6 +452,9 @@
         }
 
         toast.textContent = message;
+        toast.style.setProperty('z-index', '2147483647', 'important');
+        toast.style.setProperty('position', 'fixed', 'important');
+        toast.style.setProperty('pointer-events', 'auto', 'important');
         toast.style.background = (type === 'success') ? '#059669' : ((type === 'error') ? '#DC2626' : '#0F172A');
         toast.style.color = '#FFFFFF';
         toast.style.border = '1px solid ' + ((type === 'success') ? '#10B981' : ((type === 'error') ? '#EF4444' : '#334155'));

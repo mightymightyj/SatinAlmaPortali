@@ -158,7 +158,7 @@ namespace satinalmaportali2.Controllers
                         LineTotal = lineTotal,
                         SupplierCompanyName = sellerName,
                         SupplierCompanyID = sCompId,
-                        ItemStatus = "Havuzda Bloke"
+                        ItemStatus = "Onaylandı"
                     });
                 }
 
@@ -217,10 +217,32 @@ namespace satinalmaportali2.Controllers
                 }
                 else
                 {
-                    pendingOrder.OrderStatus = "Ödeme Başlatılamadı";
-                    pendingOrder.PaymentStatus = "Hata";
-                    pendingOrder.Notes = (pendingOrder.Notes ?? "") + $" [iyzico Başlatma Hatası: {iyzicoResult.Message}]";
-                    await _context.SaveChangesAsync();
+                    // 3D Başlatılamadıysa veritabanında geçersiz/çöp sipariş bırakma!
+                    // Düşülen stokları geri iade et ve siparişi veritabanından tamamen kaldır
+                    try
+                    {
+                        if (pendingOrder.OrderItems != null)
+                        {
+                            foreach (var oi in pendingOrder.OrderItems)
+                            {
+                                if (oi.ItemID.HasValue && oi.ItemID.Value > 0)
+                                {
+                                    var dbItem = await _context.Items.FirstOrDefaultAsync(i => i.ItemID == oi.ItemID.Value);
+                                    if (dbItem != null && dbItem.Quantity.HasValue)
+                                    {
+                                        dbItem.Quantity += oi.Quantity;
+                                    }
+                                }
+                            }
+                        }
+                        _context.Orders.Remove(pendingOrder);
+                        await _context.SaveChangesAsync();
+                    }
+                    catch (Exception cleanEx)
+                    {
+                        Console.WriteLine($"Cleanup error: {cleanEx.Message}");
+                    }
+
                     return Json(new { success = false, message = iyzicoResult.Message });
                 }
             }
@@ -245,6 +267,10 @@ namespace satinalmaportali2.Controllers
             [FromForm] string? conversationId,
             [FromForm] string? mdStatus)
         {
+            // Private Network Access (PNA) header'ları (Chrome/Edge localhost CORS & PNA engeli için)
+            Response.Headers["Access-Control-Allow-Private-Network"] = "true";
+            Response.Headers["Access-Control-Allow-Origin"] = "*";
+
             string redirectUrl = Url.Action("Orders", "Dashboard") ?? "/Dashboard/Orders";
 
             if (string.IsNullOrWhiteSpace(paymentId) || string.IsNullOrWhiteSpace(conversationId))
@@ -262,6 +288,40 @@ namespace satinalmaportali2.Controllers
             }
             else
             {
+                // 3D Secure banka onayı alınamadıysa / başarısız olduysa:
+                // Sipariş veritabanından tamamen kaldırılır ve stoklar geri iade edilir.
+                try
+                {
+                    string cleanOrderNo = conversationId.Replace("CONV-", "").Trim();
+                    var failedOrder = await _context.Orders
+                        .Include(o => o.OrderItems)
+                        .FirstOrDefaultAsync(o => o.OrderNumber == conversationId || o.OrderNumber == cleanOrderNo || conversationId.Contains(o.OrderNumber));
+
+                    if (failedOrder != null)
+                    {
+                        if (failedOrder.OrderItems != null)
+                        {
+                            foreach (var oi in failedOrder.OrderItems)
+                            {
+                                if (oi.ItemID.HasValue && oi.ItemID.Value > 0)
+                                {
+                                    var dbItem = await _context.Items.FirstOrDefaultAsync(i => i.ItemID == oi.ItemID.Value);
+                                    if (dbItem != null && dbItem.Quantity.HasValue)
+                                    {
+                                        dbItem.Quantity += oi.Quantity;
+                                    }
+                                }
+                            }
+                        }
+                        _context.Orders.Remove(failedOrder);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+                catch (Exception cancelEx)
+                {
+                    Console.WriteLine($"Payment callback cleanup error: {cancelEx.Message}");
+                }
+
                 TempData["PaymentError"] = $"Ödeme Onaylanamadı: {completeResult.Message}";
                 return Content(BuildIframeBreakoutHtml(false, $"Ödeme Onaylanamadı: {completeResult.Message}", redirectUrl), "text/html");
             }
@@ -278,14 +338,15 @@ namespace satinalmaportali2.Controllers
 <html lang='tr'>
 <head>
     <meta charset='utf-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
     <title>{title}</title>
     <style>
         body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }}
-        .card {{ background: #ffffff; border-radius: 12px; padding: 24px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.08); max-width: 360px; width: 90%; }}
-        .icon {{ font-size: 40px; margin-bottom: 8px; }}
-        h3 {{ margin: 0 0 8px 0; color: #0f172a; font-size: 1.15rem; }}
-        p {{ margin: 0 0 16px 0; color: #64748b; font-size: 0.85rem; line-height: 1.4; }}
-        .btn {{ display: inline-block; background: {color}; color: #ffffff; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600; }}
+        .card {{ background: #ffffff; border-radius: 14px; padding: 28px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.08); max-width: 400px; width: 90%; }}
+        .icon {{ font-size: 44px; margin-bottom: 12px; }}
+        h3 {{ margin: 0 0 10px 0; color: #0f172a; font-size: 1.25rem; font-weight: 800; }}
+        p {{ margin: 0 0 18px 0; color: #475569; font-size: 0.9rem; line-height: 1.5; }}
+        .btn {{ display: inline-block; background: {color}; color: #ffffff; padding: 10px 22px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }}
     </style>
 </head>
 <body>
@@ -293,17 +354,36 @@ namespace satinalmaportali2.Controllers
         <div class='icon'>{icon}</div>
         <h3>{title}</h3>
         <p>{message}</p>
-        <p style='font-size:0.75rem; color:#94a3b8;'>Sipariş takip paneline yönlendiriliyorsunuz...</p>
+        <p style='font-size:0.78rem; color:#94a3b8; margin-bottom: 20px;'>Sipariş takip paneline yönlendiriliyorsunuz...</p>
         <a href='{targetUrl}' target='_top' class='btn'>Siparişlerime Git →</a>
     </div>
     <script>
-        setTimeout(function() {{
+        try {{
+            var payload = {{
+                type: 'IYZICO_3D_RESULT',
+                success: {(success ? "true" : "false")},
+                targetUrl: '{targetUrl}'
+            }};
+            if (window.opener && !window.opener.closed) {{
+                window.opener.postMessage(payload, '*');
+                try {{ window.opener.location.href = '{targetUrl}'; }} catch(e) {{}}
+            }}
             if (window.top && window.top !== window) {{
+                window.top.postMessage(payload, '*');
+                try {{ window.top.location.href = '{targetUrl}'; }} catch(e) {{}}
+            }}
+        }} catch(err) {{}}
+
+        setTimeout(function() {{
+            if (window.opener && !window.opener.closed) {{
+                try {{ window.opener.location.href = '{targetUrl}'; }} catch(e) {{}}
+                window.close();
+            }} else if (window.top && window.top !== window) {{
                 window.top.location.href = '{targetUrl}';
             }} else {{
                 window.location.href = '{targetUrl}';
             }}
-        }}, 600);
+        }}, 800);
     </script>
 </body>
 </html>";

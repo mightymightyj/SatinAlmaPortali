@@ -6824,25 +6824,28 @@ html, body {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    z-index: 10000;
-    max-width: 400px;
+    z-index: 2147483647 !important; /* Modalların ve tüm katmanların en üstünde */
+    max-width: 440px;
+    pointer-events: none !important;
 }
 
 .ty-toast {
     background: #0f172a;
     color: #ffffff;
-    padding: 12px 16px;
-    border-radius: 8px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    padding: 13px 18px;
+    border-radius: 10px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    font-size: 0.84rem;
-    font-weight: 600;
+    font-size: 0.86rem;
+    font-weight: 650;
     animation: tySlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     transition: opacity 0.25s, transform 0.25s;
-    border-left: 4px solid #38bdf8;
+    border-left: 5px solid #38bdf8;
+    pointer-events: auto !important;
+    z-index: 2147483647 !important;
 }
 
 .ty-toast-success {
@@ -8180,6 +8183,32 @@ html, body {
 
 .b2b-tree-scrollbox .cat-children-wrap.is-hidden {
     display: none;
+}
+
+/* =============================================================================
+   TÜM PROJEDE TOAST BİLDİRİMLERİNİN EN ÜSTTE YER ALMASI (MODALLARIN DA ÜSTÜNDE)
+   ============================================================================= */
+.ty-toast-container,
+#tyToastContainer,
+.app-toast,
+#appToast,
+#realtimeToast,
+#adminToastContainer,
+.toast-container,
+.b2b-toast-container {
+    position: fixed !important;
+    z-index: 2147483647 !important; /* Maksimum 32-bit integer z-index */
+    pointer-events: none !important;
+}
+
+.ty-toast,
+.app-toast,
+#appToast,
+#realtimeToast,
+.toast,
+.b2b-toast {
+    z-index: 2147483647 !important;
+    pointer-events: auto !important;
 }
 
 

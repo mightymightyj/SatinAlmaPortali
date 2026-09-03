@@ -821,6 +821,201 @@ namespace satinalmaportali2.Controllers {
             }
         }
 
+        /// <summary>
+        /// Bağımsız Ürün Detay Sayfası (Product Detail Page - PDP).
+        /// Doğrudan ürün ID'si ile rota eşleşir: /Product/{id}
+        /// </summary>
+        [HttpGet("/Product/{id:int}")]
+        [HttpGet("/Home/ProductDetail/{id:int}")]
+        public async Task<IActionResult> ProductDetail(int id)
+        {
+            if (id <= 0) return RedirectToAction("Index", "Home");
+
+            var item = await _context.Items.AsNoTracking().FirstOrDefaultAsync(i => i.ItemID == id);
+            if (item == null)
+            {
+                TempData["ErrorMessage"] = "Aradığınız ürün bulunamadı veya satıştan kaldırılmış olabilir.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            var (currentCompanyId, currentCompanyName, comp) = await GetCurrentCompanyContextAsync();
+            bool isOwner = IsProductOwnedByCompany(item, currentCompanyId, currentCompanyName, comp);
+
+            // Kategori Bilgisi
+            string categoryName = "Endüstriyel Ürünler";
+            if (item.CategoryID.HasValue && item.CategoryID.Value > 0)
+            {
+                var cat = await _context.Category.AsNoTracking().FirstOrDefaultAsync(c => c.CategoryID == item.CategoryID.Value);
+                if (cat != null && !string.IsNullOrWhiteSpace(cat.CategoryName))
+                {
+                    categoryName = cat.CategoryName;
+                }
+            }
+
+            // Tedarikçi Firma ve Özellik Çözümleme
+            int supplierCompanyId = 1;
+            string supplierName = !string.IsNullOrWhiteSpace(item.Brand) ? item.Brand.Trim() : "Onaylı Tedarikçi";
+            string supplierOfficial = "";
+            string supplierLocation = "Türkiye";
+            string imageUrl = "/images/default-product.svg";
+            var specs = new Dictionary<string, string>();
+
+            if (!string.IsNullOrWhiteSpace(item.Properties))
+            {
+                var prop = item.Properties;
+                if (prop.Contains("FirmaID:") || prop.Contains("CompanyID:"))
+                {
+                    var match = System.Text.RegularExpressions.Regex.Match(prop, @"(?:FirmaID|CompanyID)\s*:\s*(\d+)");
+                    if (match.Success && int.TryParse(match.Groups[1].Value, out int pid))
+                    {
+                        supplierCompanyId = pid;
+                    }
+                }
+
+                var imgMatch = System.Text.RegularExpressions.Regex.Match(prop, @"(?:Resim|Image|ImageUrl|Gorsel)\s*:\s*(https?://[^\s\|;,]+|/[^\s\|;,]+)");
+                if (imgMatch.Success)
+                {
+                    imageUrl = imgMatch.Groups[1].Value.Trim();
+                }
+
+                // Özellikleri parçala (key:value)
+                var rawPairs = prop.Split(new[] { ';', '|', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var pair in rawPairs)
+                {
+                    var parts = pair.Split(new[] { ':' }, 2);
+                    if (parts.Length == 2)
+                    {
+                        string k = parts[0].Trim();
+                        string v = parts[1].Trim();
+                        if (!string.IsNullOrWhiteSpace(k) && !string.IsNullOrWhiteSpace(v))
+                        {
+                            if (!k.Equals("FirmaID", StringComparison.OrdinalIgnoreCase) &&
+                                !k.Equals("CompanyID", StringComparison.OrdinalIgnoreCase) &&
+                                !k.Equals("Resim", StringComparison.OrdinalIgnoreCase) &&
+                                !k.Equals("Image", StringComparison.OrdinalIgnoreCase) &&
+                                !k.Equals("ImageUrl", StringComparison.OrdinalIgnoreCase) &&
+                                !k.Equals("Gorsel", StringComparison.OrdinalIgnoreCase))
+                            {
+                                specs[k] = v;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Firma nesnesini getir
+            Company? supplierComp = null;
+            if (supplierCompanyId > 1)
+            {
+                supplierComp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == supplierCompanyId);
+            }
+            if (supplierComp == null && !string.IsNullOrWhiteSpace(item.Brand))
+            {
+                supplierComp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c =>
+                    (!string.IsNullOrWhiteSpace(c.CompanyName) && c.CompanyName.ToLower() == item.Brand.Trim().ToLower()) ||
+                    (!string.IsNullOrWhiteSpace(c.CompanyOfficial) && c.CompanyOfficial.ToLower() == item.Brand.Trim().ToLower()));
+            }
+
+            if (supplierComp != null)
+            {
+                supplierCompanyId = supplierComp.CompanyID;
+                supplierName = supplierComp.CompanyName ?? supplierName;
+                supplierOfficial = supplierComp.CompanyOfficial ?? "";
+
+                if (supplierComp.AddressID.HasValue)
+                {
+                    var addrObj = await _context.Addresses.AsNoTracking().FirstOrDefaultAsync(a => a.AddressID == supplierComp.AddressID.Value);
+                    if (addrObj != null && addrObj.DistrictID.HasValue)
+                    {
+                        var distObj = await _context.Districts.AsNoTracking().FirstOrDefaultAsync(d => d.DistrictID == addrObj.DistrictID.Value);
+                        if (distObj != null)
+                        {
+                            var townObj = distObj.TownID.HasValue ? await _context.Towns.AsNoTracking().FirstOrDefaultAsync(t => t.TownID == distObj.TownID.Value) : null;
+                            supplierLocation = townObj != null ? $"{townObj.TownName} / {distObj.DistrictName}" : distObj.DistrictName ?? "Türkiye";
+                        }
+                    }
+                }
+            }
+
+            // Tedarikçi Değerlendirme Puanı
+            double supplierScore = 9.8;
+            int supplierReviewCount = 0;
+            var reviews = await _context.Reviews
+                .AsNoTracking()
+                .Where(r => r.ReviewScore.HasValue && r.CompanyID == supplierCompanyId && r.ReviewType == "BuyerToSeller")
+                .ToListAsync();
+
+            if (reviews.Any())
+            {
+                supplierScore = Math.Round(reviews.Average(r => r.ReviewScore!.Value), 1);
+                supplierReviewCount = reviews.Count;
+            }
+
+            // Benzer / İlgili Ürünler (Aynı kategoriden veya diğer ürünlerden 4 adet)
+            var relatedDbItems = await _context.Items
+                .AsNoTracking()
+                .Where(i => i.ItemID != item.ItemID && (item.CategoryID == null || i.CategoryID == item.CategoryID))
+                .OrderByDescending(i => i.ItemID)
+                .Take(4)
+                .ToListAsync();
+
+            if (relatedDbItems.Count < 4)
+            {
+                var fallbackItems = await _context.Items
+                    .AsNoTracking()
+                    .Where(i => i.ItemID != item.ItemID && !relatedDbItems.Select(r => r.ItemID).Contains(i.ItemID))
+                    .OrderByDescending(i => i.ItemID)
+                    .Take(4 - relatedDbItems.Count)
+                    .ToListAsync();
+                relatedDbItems.AddRange(fallbackItems);
+            }
+
+            var relatedList = relatedDbItems.Select(r =>
+            {
+                string rImg = "/images/default-product.svg";
+                if (!string.IsNullOrWhiteSpace(r.Properties))
+                {
+                    var m = System.Text.RegularExpressions.Regex.Match(r.Properties, @"(?:Resim|Image|ImageUrl|Gorsel)\s*:\s*(https?://[^\s\|;,]+|/[^\s\|;,]+)");
+                    if (m.Success) rImg = m.Groups[1].Value.Trim();
+                }
+
+                return new RelatedProductCardDto
+                {
+                    ItemID = r.ItemID,
+                    Title = r.ItemName ?? "Endüstriyel Ürün",
+                    Brand = !string.IsNullOrWhiteSpace(r.Brand) ? r.Brand : "Tedarikçi",
+                    UnitPrice = (decimal)(r.ItemPrice ?? 0),
+                    ImageUrl = rImg,
+                    StockQuantity = r.Quantity ?? 0
+                };
+            }).ToList();
+
+            var viewModel = new ProductDetailPageViewModel
+            {
+                ItemID = item.ItemID,
+                Title = item.ItemName ?? "Endüstriyel Malzeme",
+                Sku = !string.IsNullOrWhiteSpace(item.ItemDescryption) && item.ItemDescryption.StartsWith("SKU-") ? item.ItemDescryption : $"SKU-{item.ItemID:D5}",
+                Brand = supplierName,
+                UnitPrice = (decimal)(item.ItemPrice ?? 0),
+                StockQuantity = item.Quantity ?? 0,
+                CategoryName = categoryName,
+                Description = item.ItemDescryption ?? $"{item.ItemName} endüstriyel standartlara ve fabrika normlarına uygun olarak üretilmiş olup kurumsal satınalma ve tedarik süreçleriniz için kullanıma hazırdır.",
+                ImageUrl = imageUrl,
+                Specifications = specs,
+                SupplierCompanyID = supplierCompanyId,
+                SupplierCompanyName = supplierName,
+                SupplierOfficial = supplierOfficial,
+                SupplierLocation = supplierLocation,
+                SupplierScore = supplierScore,
+                SupplierReviewCount = supplierReviewCount,
+                IsOwner = isOwner,
+                RelatedProducts = relatedList
+            };
+
+            ViewData["Title"] = $"{viewModel.Title} - Tedarik Portalı";
+            return View(viewModel);
+        }
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error() {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });

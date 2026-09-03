@@ -85,6 +85,25 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Private Network Access (PNA) ve Cross-Origin Callback Desteği (iyzico 3D Secure sandbox -> localhost)
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("Access-Control-Allow-Private-Network", "true");
+    context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+    context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    context.Response.Headers.Append("Access-Control-Allow-Headers", "*");
+
+    if (HttpMethods.IsOptions(context.Request.Method))
+    {
+        context.Response.StatusCode = StatusCodes.Status204NoContent;
+        await context.Response.CompleteAsync();
+        return;
+    }
+
+    await next();
+});
+
 app.UseRouting();
 
 app.UseAuthentication();

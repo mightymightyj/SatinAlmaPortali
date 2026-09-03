@@ -2895,7 +2895,7 @@
             if (!container) {
                 container = document.createElement('div');
                 container.id = 'adminToastContainer';
-                container.style.cssText = 'position: fixed; bottom: 24px; right: 24px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; max-width: 420px;';
+                container.style.cssText = 'position: fixed; bottom: 24px; right: 24px; z-index: 2147483647 !important; display: flex; flex-direction: column; gap: 10px; max-width: 420px; pointer-events: none !important;';
                 document.body.appendChild(container);
             }
             const toast = document.createElement('div');
@@ -2913,6 +2913,8 @@
                 gap: 10px;
                 border-left: 4px solid ${isSuccess ? '#10B981' : '#EF4444'};
                 transition: all 0.3s ease;
+                z-index: 2147483647 !important;
+                pointer-events: auto !important;
             `;
             toast.innerHTML = `<span>${message}</span>`;
             container.appendChild(toast);

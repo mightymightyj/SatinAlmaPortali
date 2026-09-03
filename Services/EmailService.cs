@@ -1835,6 +1835,692 @@ namespace satinalmaportali2.Services
 </body>
 </html>";
         }
+
+        /// <summary>
+        /// Satıcı siparişi olumsuz bir durumdan dolayı iptal ettiğinde alıcı firmaya detaylı ve gerekçeli iptal bilgilendirme e-postası gönderir.
+        /// </summary>
+        public async Task<bool> SendOrderCancelledBySupplierEmailAsync(
+            string toEmail,
+            string buyerCompanyName,
+            string supplierCompanyName,
+            string orderNumber,
+            DateTime orderDate,
+            decimal grandTotal,
+            string cancellationReason,
+            List<SoldProductItemEmailDto>? items = null,
+            string? buyerOrdersUrl = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(toEmail))
+                {
+                    _logger?.LogWarning("İptal e-postası için alıcı adresi boş olamaz.");
+                    return false;
+                }
+
+                var htmlBody = GetOrderCancelledBySupplierEmailHtml(
+                    toEmail: toEmail,
+                    buyerCompanyName: buyerCompanyName,
+                    supplierCompanyName: supplierCompanyName,
+                    orderNumber: orderNumber,
+                    orderDate: orderDate,
+                    grandTotal: grandTotal,
+                    cancellationReason: cancellationReason,
+                    items: items,
+                    buyerOrdersUrl: buyerOrdersUrl);
+
+                var displayOrderNo = string.IsNullOrWhiteSpace(orderNumber) ? "Sipariş" : orderNumber;
+                var subject = $"⚠️ Sipariş İptal Bilgilendirmesi: #{displayOrderNo} — {supplierCompanyName}";
+
+                return await SendEmailAsync(toEmail, subject, htmlBody);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Sipariş iptal e-postası gönderim hatası ({ToEmail}): {Message}", toEmail, ex.Message);
+                Console.WriteLine($"Sipariş iptal e-postası gönderim hatası: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Satıcı tarafından iptal edilen sipariş için HTML e-posta içeriği üretir.
+        /// </summary>
+        public string GetOrderCancelledBySupplierEmailHtml(
+            string toEmail,
+            string buyerCompanyName,
+            string supplierCompanyName,
+            string orderNumber,
+            DateTime orderDate,
+            decimal grandTotal,
+            string cancellationReason,
+            List<SoldProductItemEmailDto>? items = null,
+            string? buyerOrdersUrl = null)
+        {
+            var sendTime = DateTime.UtcNow.AddHours(3).ToString("dd.MM.yyyy HH:mm");
+            var formattedOrderDate = (orderDate.Kind == DateTimeKind.Utc ? orderDate.AddHours(3) : orderDate).ToString("dd.MM.yyyy HH:mm");
+            var formattedGrandTotal = grandTotal.ToString("N2", new System.Globalization.CultureInfo("tr-TR"));
+            var displayBuyer = string.IsNullOrWhiteSpace(buyerCompanyName) ? "Değerli Müşterimiz" : buyerCompanyName;
+            var displaySupplier = string.IsNullOrWhiteSpace(supplierCompanyName) ? "Tedarikçi Firma" : supplierCompanyName;
+            var displayReason = string.IsNullOrWhiteSpace(cancellationReason) ? "Satıcı firma tarafından operasyonel gerekçeler nedeniyle sipariş iptal edilmiştir." : cancellationReason.Trim();
+            var targetOrdersUrl = string.IsNullOrWhiteSpace(buyerOrdersUrl) ? "https://localhost:7019/Dashboard/Orders" : buyerOrdersUrl;
+
+            // İptal edilen ürün kalemleri tablosu
+            string itemsTableHtml = "";
+            if (items != null && items.Any())
+            {
+                var rowsSb = new System.Text.StringBuilder();
+                int idx = 1;
+                foreach (var it in items)
+                {
+                    var itName = string.IsNullOrWhiteSpace(it.ProductName) ? $"Ürün #{idx}" : it.ProductName;
+                    var itQty = it.Quantity.ToString("0.##", new System.Globalization.CultureInfo("tr-TR"));
+                    var itUnit = string.IsNullOrWhiteSpace(it.Unit) ? "Adet" : it.Unit;
+                    var itLineTotal = (it.LineTotal > 0 ? it.LineTotal : (it.UnitPrice * it.Quantity)).ToString("N2", new System.Globalization.CultureInfo("tr-TR"));
+
+                    rowsSb.Append($@"
+                        <tr style='border-bottom:1px solid #e2e8f0;'>
+                            <td style='padding:10px 12px;font-size:13px;font-weight:700;color:#64748b;text-align:center;'>{idx}</td>
+                            <td style='padding:10px 12px;font-size:13.5px;color:#0f172a;'>
+                                <strong>{itName}</strong>
+                            </td>
+                            <td style='padding:10px 12px;font-size:13px;color:#1e293b;text-align:center;white-space:nowrap;'>
+                                <span style='background:#f1f5f9;color:#475569;padding:3px 8px;border-radius:6px;font-weight:600;'>
+                                    {itQty} {itUnit}
+                                </span>
+                            </td>
+                            <td style='padding:10px 12px;font-size:13.5px;color:#0f172a;text-align:right;font-weight:700;white-space:nowrap;'>
+                                {itLineTotal} ₺
+                            </td>
+                        </tr>");
+                    idx++;
+                }
+
+                itemsTableHtml = $@"
+                    <div style='margin-bottom:24px;'>
+                        <div style='color:#0f172a;font-size:14px;font-weight:800;margin-bottom:8px;'>
+                            📋 İptal Edilen Kalemler ({items.Count} Kalem)
+                        </div>
+                        <div style='border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden;background:#ffffff;'>
+                            <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='border-collapse:collapse;width:100%;'>
+                                <thead>
+                                    <tr style='background:#f8fafc;border-bottom:2px solid #e2e8f0;'>
+                                        <th style='padding:9px 12px;text-align:center;color:#475569;font-size:11px;font-weight:800;width:35px;'>#</th>
+                                        <th style='padding:9px 12px;text-align:left;color:#475569;font-size:11px;font-weight:800;'>Ürün Adı</th>
+                                        <th style='padding:9px 12px;text-align:center;color:#475569;font-size:11px;font-weight:800;width:95px;'>Miktar</th>
+                                        <th style='padding:9px 12px;text-align:right;color:#475569;font-size:11px;font-weight:800;width:110px;'>Tutar</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {rowsSb}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>";
+            }
+
+            return $@"
+<!DOCTYPE html>
+<html lang='tr' xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Sipariş İptal Bilgilendirmesi</title>
+</head>
+<body style='margin:0;padding:0;background-color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,&quot;Segoe UI&quot;,Roboto,&quot;Helvetica Neue&quot;,Arial,sans-serif;-webkit-font-smoothing:antialiased;'>
+    <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='background-color:#f1f5f9;'>
+        <tr>
+            <td align='center' style='padding:40px 16px;'>
+                <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='max-width:640px;background-color:#ffffff;border-radius:24px;box-shadow:0 10px 40px rgba(0,0,0,0.07);border:1px solid #e2e8f0;overflow:hidden;'>
+                    
+                    <!-- Header Banner (Kırmızı / Uyarı Teması) -->
+                    <tr>
+                        <td style='background:linear-gradient(135deg,#991b1b 0%,#dc2626 50%,#ef4444 100%);padding:36px 44px;text-align:center;'>
+                            <div style='background:rgba(255,255,255,0.2);display:inline-block;padding:7px 16px;border-radius:20px;margin-bottom:12px;'>
+                                <span style='color:#ffffff;font-size:13px;font-weight:800;letter-spacing:0.5px;'>⚠️ SİPARİŞ İPTAL BİLDİRİMİ</span>
+                            </div>
+                            <h1 style='margin:0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;line-height:1.3;'>
+                                Siparişiniz Satıcı Tarafından İptal Edildi
+                            </h1>
+                            <p style='margin:10px 0 0;color:rgba(255,255,255,0.92);font-size:14px;'>
+                                #{orderNumber} numaralı sipariş için satıcı firma tarafından iptal işlemi gerçekleştirildi
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Body Content -->
+                    <tr>
+                        <td style='padding:36px 44px 32px;'>
+                            <p style='margin:0 0 14px;color:#1e293b;font-size:16px;font-weight:700;'>
+                                Sayın {displayBuyer},
+                            </p>
+                            <p style='margin:0 0 20px;color:#475569;font-size:14.5px;line-height:1.7;'>
+                                Tedarik Portalı üzerinden vermiş olduğunuz <strong>#{orderNumber}</strong> numaralı sipariş, satıcı firma <strong>{displaySupplier}</strong> tarafından meydana gelen beklenmedik bir olumsuz durum nedeniyle iptal edilmiştir.
+                            </p>
+
+                            <!-- İptal Gerekçesi Kutusu (Kırmızı) -->
+                            <div style='background:#fef2f2;border:1.5px solid #fca5a5;border-left:5px solid #dc2626;border-radius:14px;padding:18px 20px;margin-bottom:24px;'>
+                                <div style='color:#991b1b;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;'>
+                                    📝 Satıcı Firma İptal Gerekçesi:
+                                </div>
+                                <p style='margin:0;color:#7f1d1d;font-size:14.5px;font-weight:600;line-height:1.6;'>
+                                    {displayReason}
+                                </p>
+                            </div>
+
+                            <!-- Para İadesi ve Escrow Güvencesi Bilgi Kutusu (Yeşil / Güven Veren) -->
+                            <div style='background:#f0fdf4;border:1.5px solid #86efac;border-left:5px solid #16a34a;border-radius:14px;padding:18px 20px;margin-bottom:24px;'>
+                                <div style='color:#166534;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;'>
+                                    🛡️ Havuz Hesabı Güvencesi & Ücret İadesi:
+                                </div>
+                                <p style='margin:0;color:#14532d;font-size:14px;line-height:1.6;'>
+                                    Sipariş tutarınız olan <strong>{formattedGrandTotal} ₺</strong>, Güvenli Havuz (Escrow) hesabında güvence altında tutulmaktadır. Satıcı iptali sebebiyle ödemeniz alıcı kartınıza / hesabınıza iade süreci başlatılarak güvenle aktarılacaktır.
+                                </p>
+                            </div>
+
+                            <!-- Sipariş Kalemleri -->
+                            {itemsTableHtml}
+
+                            <!-- Sipariş Bilgileri Tablosu -->
+                            <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='margin-bottom:24px;border-collapse:separate;border-spacing:0 8px;'>
+                                <tr>
+                                    <td style='width:160px;color:#64748b;font-size:13px;font-weight:700;padding:8px 0;'>📦 Sipariş No:</td>
+                                    <td style='color:#0f172a;font-size:14px;font-weight:700;padding:8px 14px;background:#f8fafc;border-radius:8px;'>#{orderNumber}</td>
+                                </tr>
+                                <tr>
+                                    <td style='width:160px;color:#64748b;font-size:13px;font-weight:700;padding:8px 0;'>🏢 Satıcı Firma:</td>
+                                    <td style='color:#0f172a;font-size:14px;font-weight:700;padding:8px 14px;background:#f8fafc;border-radius:8px;'>{displaySupplier}</td>
+                                </tr>
+                                <tr>
+                                    <td style='width:160px;color:#64748b;font-size:13px;font-weight:700;padding:8px 0;'>💰 Toplam Tutar:</td>
+                                    <td style='color:#0f172a;font-size:14px;font-weight:800;padding:8px 14px;background:#f8fafc;border-radius:8px;'>{formattedGrandTotal} ₺</td>
+                                </tr>
+                                <tr>
+                                    <td style='width:160px;color:#64748b;font-size:13px;font-weight:700;padding:8px 0;'>🕒 Sipariş Tarihi:</td>
+                                    <td style='color:#64748b;font-size:13px;font-weight:600;padding:8px 14px;background:#f8fafc;border-radius:8px;'>{formattedOrderDate}</td>
+                                </tr>
+                                <tr>
+                                    <td style='width:160px;color:#64748b;font-size:13px;font-weight:700;padding:8px 0;'>⏱️ İptal Zamanı:</td>
+                                    <td style='color:#dc2626;font-size:13px;font-weight:700;padding:8px 14px;background:#fef2f2;border-radius:8px;'>{sendTime}</td>
+                                </tr>
+                            </table>
+
+                            <!-- CTA Butonu -->
+                            <div style='margin:28px 0 16px;text-align:center;'>
+                                <table role='presentation' cellpadding='0' cellspacing='0' border='0' style='margin:0 auto;'>
+                                    <tr>
+                                        <td align='center' bgcolor='#2563eb' style='border-radius:12px;background-color:#2563eb;box-shadow:0 4px 16px rgba(37,99,235,0.35);'>
+                                            <a href='{targetOrdersUrl}' target='_blank' style='display:inline-block;padding:15px 36px;background-color:#2563eb;color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;border-radius:12px;letter-spacing:0.3px;'>
+                                                📋 Siparişlerimi Portaldan Görüntüle &rarr;
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style='background-color:#f8fafc;padding:24px 44px;text-align:center;border-top:1px solid #e2e8f0;'>
+                            <p style='margin:0 0 6px;color:#64748b;font-size:12px;font-weight:700;'>
+                                Tedarik Portal — Satın Alma ve Tedarik Zinciri Platformu
+                            </p>
+                            <p style='margin:0 0 8px;color:#94a3b8;font-size:11px;'>
+                                &copy; 2026 Tedarik Portalı. Tüm hakları saklıdır.
+                            </p>
+                            <p style='margin:0;color:#94a3b8;font-size:11px;'>
+                                Bu bildirim <strong>{toEmail}</strong> alıcı adresine gönderilmiştir.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
+        }
+
+        // =========================================================================================
+        // KADEMELİ SİPARİŞ DURUM BİLDİRİM E-POSTALARI (HAZIRLANIYOR, KARGOYA VERİLDİ, TESLİM EDİLDİ)
+        // =========================================================================================
+
+        /// <summary>
+        /// Sipariş satıcı tarafından hazırlanmaya başlandığında (Hazırlanıyor) alıcı firmaya bildirim e-postası gönderir.
+        /// </summary>
+        public async Task<bool> SendOrderPreparingEmailAsync(
+            string toEmail,
+            string buyerCompanyName,
+            string supplierCompanyName,
+            string orderNumber,
+            DateTime orderDate,
+            decimal grandTotal,
+            List<SoldProductItemEmailDto>? items = null,
+            string? buyerOrdersUrl = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(toEmail)) return false;
+
+                var htmlBody = GetOrderPreparingEmailHtml(toEmail, buyerCompanyName, supplierCompanyName, orderNumber, orderDate, grandTotal, items, buyerOrdersUrl);
+                var displayOrderNo = string.IsNullOrWhiteSpace(orderNumber) ? "Sipariş" : orderNumber;
+                var subject = $"📦 Siparişiniz Hazırlanıyor: #{displayOrderNo} — {supplierCompanyName}";
+
+                return await SendEmailAsync(toEmail, subject, htmlBody);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Sipariş hazırlanıyor e-postası gönderim hatası ({ToEmail}): {Message}", toEmail, ex.Message);
+                return false;
+            }
+        }
+
+        public string GetOrderPreparingEmailHtml(
+            string toEmail,
+            string buyerCompanyName,
+            string supplierCompanyName,
+            string orderNumber,
+            DateTime orderDate,
+            decimal grandTotal,
+            List<SoldProductItemEmailDto>? items = null,
+            string? buyerOrdersUrl = null)
+        {
+            var sendTime = DateTime.UtcNow.AddHours(3).ToString("dd.MM.yyyy HH:mm");
+            var formattedOrderDate = (orderDate.Kind == DateTimeKind.Utc ? orderDate.AddHours(3) : orderDate).ToString("dd.MM.yyyy HH:mm");
+            var formattedGrandTotal = grandTotal.ToString("N2", new System.Globalization.CultureInfo("tr-TR"));
+            var displayBuyer = string.IsNullOrWhiteSpace(buyerCompanyName) ? "Değerli Müşterimiz" : buyerCompanyName;
+            var displaySupplier = string.IsNullOrWhiteSpace(supplierCompanyName) ? "Tedarikçi Firma" : supplierCompanyName;
+            var targetOrdersUrl = string.IsNullOrWhiteSpace(buyerOrdersUrl) ? "https://localhost:7019/Dashboard/Orders" : buyerOrdersUrl;
+
+            string itemsTableHtml = BuildSoldItemsTableHtml(items);
+
+            return $@"<!DOCTYPE html>
+<html lang='tr'>
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Siparişiniz Hazırlanıyor</title>
+</head>
+<body style='margin:0;padding:0;background-color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,""Segoe UI"",Roboto,""Helvetica Neue"",Arial,sans-serif;'>
+    <table role='presentation' width='100%' cellspacing='0' cellpadding='0' style='background-color:#f1f5f9;padding:30px 15px;'>
+        <tr>
+            <td align='center'>
+                <table role='presentation' width='600' cellspacing='0' cellpadding='0' style='max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 10px 25px -5px rgba(0,0,0,0.1);border:1px solid #e2e8f0;'>
+                    <tr>
+                        <td style='background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 100%);padding:28px 36px;text-align:center;'>
+                            <span style='display:inline-block;background:rgba(255,255,255,0.2);color:#ffffff;font-size:12px;font-weight:800;padding:4px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;'>
+                                📦 SİPARİŞ AŞAMASI: HAZIRLANIYOR
+                            </span>
+                            <h1 style='margin:12px 0 0;color:#ffffff;font-size:22px;font-weight:800;'>
+                                Siparişiniz Paketleniyor & Hazırlanıyor
+                            </h1>
+                            <p style='margin:6px 0 0;color:#bfdbfe;font-size:14px;'>
+                                #{orderNumber} nolu siparişinizin hazırlık süreci başladı.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='padding:32px 36px;'>
+                            <p style='margin:0 0 16px;color:#0f172a;font-size:15px;line-height:1.6;'>
+                                Sayın <strong>{displayBuyer}</strong>,
+                            </p>
+                            <p style='margin:0 0 20px;color:#334155;font-size:14px;line-height:1.6;'>
+                                <strong>{displaySupplier}</strong> firmanızdan satın aldığınız ürünleri hazırlamaya ve paketlemeye başlamıştır. Siparişiniz paketleme tamamlandığında kargoya verilecek ve kargo takip numarası tarafınıza e-posta ile iletilecektir.
+                            </p>
+
+                            <!-- Bilgilendirme Kutusu -->
+                            <div style='background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:16px 20px;margin-bottom:24px;'>
+                                <div style='font-size:13px;color:#1e40af;line-height:1.5;'>
+                                    ℹ️ <strong>Sipariş Durumu:</strong> Siparişiniz henüz kargoya verilmediği için olumsuz bir durumda portaldan gerekçe belirterek iptal talebi oluşturabilirsiniz. Kargonuz yola çıktığı andan itibaren iptal yapılamayacaktır.
+                                </div>
+                            </div>
+
+                            {itemsTableHtml}
+
+                            <!-- Sipariş Özeti -->
+                            <table width='100%' cellspacing='0' cellpadding='0' style='margin:20px 0;background:#f8fafc;border-radius:10px;padding:14px 18px;border:1px solid #e2e8f0;'>
+                                <tr>
+                                    <td style='color:#64748b;font-size:13px;padding:4px 0;'>📦 Sipariş No:</td>
+                                    <td style='color:#0f172a;font-size:13px;font-weight:700;padding:4px 0;text-align:right;'>#{orderNumber}</td>
+                                </tr>
+                                <tr>
+                                    <td style='color:#64748b;font-size:13px;padding:4px 0;'>🏢 Tedarikçi:</td>
+                                    <td style='color:#0f172a;font-size:13px;font-weight:700;padding:4px 0;text-align:right;'>{displaySupplier}</td>
+                                </tr>
+                                <tr>
+                                    <td style='color:#64748b;font-size:13px;padding:4px 0;'>🕒 Sipariş Tarihi:</td>
+                                    <td style='color:#0f172a;font-size:13px;padding:4px 0;text-align:right;'>{formattedOrderDate}</td>
+                                </tr>
+                                <tr>
+                                    <td style='color:#0f172a;font-size:14px;font-weight:800;padding:8px 0 0;border-top:1px dashed #cbd5e1;'>💰 Toplam Tutar:</td>
+                                    <td style='color:#2563eb;font-size:16px;font-weight:800;padding:8px 0 0;border-top:1px dashed #cbd5e1;text-align:right;'>{formattedGrandTotal} ₺</td>
+                                </tr>
+                            </table>
+
+                            <!-- CTA Buton -->
+                            <div style='text-align:center;margin-top:28px;'>
+                                <a href='{targetOrdersUrl}' target='_blank' style='display:inline-block;padding:14px 32px;background:#2563eb;color:#ffffff;font-size:14px;font-weight:800;text-decoration:none;border-radius:10px;'>
+                                    📋 Sipariş Detayını Görüntüle &rarr;
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='background-color:#f8fafc;padding:20px;text-align:center;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;'>
+                            &copy; 2026 Tedarik Portalı. Tüm hakları saklıdır. Bu bildirim {toEmail} adresine iletilmiştir.
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
+        }
+
+        /// <summary>
+        /// Sipariş kargoya verildiğinde alıcı firmaya kargo takip no ile bildirim e-postası gönderir.
+        /// </summary>
+        public async Task<bool> SendOrderShippedEmailAsync(
+            string toEmail,
+            string buyerCompanyName,
+            string supplierCompanyName,
+            string orderNumber,
+            DateTime orderDate,
+            decimal grandTotal,
+            string shippingCarrier,
+            string trackingNumber,
+            List<SoldProductItemEmailDto>? items = null,
+            string? buyerOrdersUrl = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(toEmail)) return false;
+
+                var htmlBody = GetOrderShippedEmailHtml(toEmail, buyerCompanyName, supplierCompanyName, orderNumber, orderDate, grandTotal, shippingCarrier, trackingNumber, items, buyerOrdersUrl);
+                var displayOrderNo = string.IsNullOrWhiteSpace(orderNumber) ? "Sipariş" : orderNumber;
+                var subject = $"🚚 Siparişiniz Kargoya Verildi! #{displayOrderNo} — Takip No: {trackingNumber}";
+
+                return await SendEmailAsync(toEmail, subject, htmlBody);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Sipariş kargoya verildi e-postası gönderim hatası ({ToEmail}): {Message}", toEmail, ex.Message);
+                return false;
+            }
+        }
+
+        public string GetOrderShippedEmailHtml(
+            string toEmail,
+            string buyerCompanyName,
+            string supplierCompanyName,
+            string orderNumber,
+            DateTime orderDate,
+            decimal grandTotal,
+            string shippingCarrier,
+            string trackingNumber,
+            List<SoldProductItemEmailDto>? items = null,
+            string? buyerOrdersUrl = null)
+        {
+            var sendTime = DateTime.UtcNow.AddHours(3).ToString("dd.MM.yyyy HH:mm");
+            var formattedOrderDate = (orderDate.Kind == DateTimeKind.Utc ? orderDate.AddHours(3) : orderDate).ToString("dd.MM.yyyy HH:mm");
+            var formattedGrandTotal = grandTotal.ToString("N2", new System.Globalization.CultureInfo("tr-TR"));
+            var displayBuyer = string.IsNullOrWhiteSpace(buyerCompanyName) ? "Değerli Müşterimiz" : buyerCompanyName;
+            var displaySupplier = string.IsNullOrWhiteSpace(supplierCompanyName) ? "Tedarikçi Firma" : supplierCompanyName;
+            var targetOrdersUrl = string.IsNullOrWhiteSpace(buyerOrdersUrl) ? "https://localhost:7019/Dashboard/Orders" : buyerOrdersUrl;
+            var carrier = string.IsNullOrWhiteSpace(shippingCarrier) ? "Lojistik / Kargo Firması" : shippingCarrier;
+            var tracking = string.IsNullOrWhiteSpace(trackingNumber) ? "-" : trackingNumber;
+
+            string itemsTableHtml = BuildSoldItemsTableHtml(items);
+
+            return $@"<!DOCTYPE html>
+<html lang='tr'>
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Siparişiniz Kargoya Verildi</title>
+</head>
+<body style='margin:0;padding:0;background-color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,""Segoe UI"",Roboto,""Helvetica Neue"",Arial,sans-serif;'>
+    <table role='presentation' width='100%' cellspacing='0' cellpadding='0' style='background-color:#f1f5f9;padding:30px 15px;'>
+        <tr>
+            <td align='center'>
+                <table role='presentation' width='600' cellspacing='0' cellpadding='0' style='max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 10px 25px -5px rgba(0,0,0,0.1);border:1px solid #e2e8f0;'>
+                    <tr>
+                        <td style='background:linear-gradient(135deg,#b45309 0%,#d97706 50%,#f59e0b 100%);padding:28px 36px;text-align:center;'>
+                            <span style='display:inline-block;background:rgba(255,255,255,0.25);color:#ffffff;font-size:12px;font-weight:800;padding:4px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;'>
+                                🚚 SİPARİŞ AŞAMASI: KARGOYA VERİLDİ
+                            </span>
+                            <h1 style='margin:12px 0 0;color:#ffffff;font-size:22px;font-weight:800;'>
+                                Siparişiniz Yola Çıktı!
+                            </h1>
+                            <p style='margin:6px 0 0;color:#fef3c7;font-size:14px;'>
+                                #{orderNumber} nolu siparişiniz sevk edildi.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='padding:32px 36px;'>
+                            <p style='margin:0 0 16px;color:#0f172a;font-size:15px;line-height:1.6;'>
+                                Sayın <strong>{displayBuyer}</strong>,
+                            </p>
+                            <p style='margin:0 0 20px;color:#334155;font-size:14px;line-height:1.6;'>
+                                <strong>{displaySupplier}</strong> firmanızdan verdiğiniz siparişi kargo/lojistik firmasına teslim etmiştir. Paketiniz teslimat adresinize doğru yola çıkmıştır.
+                            </p>
+
+                            <!-- Kargo Takip Kartı -->
+                            <div style='background:linear-gradient(135deg,#fffbeb 0%,#fef3c7 100%);border:1px solid #fde68a;border-radius:14px;padding:20px;margin-bottom:24px;text-align:center;'>
+                                <div style='font-size:12px;color:#92400e;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;'>
+                                    📦 Kargo & Sevkiyat Bilgileri
+                                </div>
+                                <div style='font-size:18px;font-weight:800;color:#78350f;margin-top:6px;'>
+                                    {carrier}
+                                </div>
+                                <div style='margin-top:8px;display:inline-block;background:#ffffff;border:1px dashed #f59e0b;padding:8px 18px;border-radius:8px;font-family:monospace;font-size:16px;font-weight:800;color:#b45309;letter-spacing:1px;'>
+                                    {tracking}
+                                </div>
+                                <div style='font-size:12px;color:#b45309;margin-top:8px;'>
+                                    Kargonuzu bu takip numarası veya irsaliye ile sorgulayabilirsiniz.
+                                </div>
+                            </div>
+
+                            <!-- Kural Uyarısı -->
+                            <div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin-bottom:24px;font-size:13px;color:#475569;line-height:1.5;'>
+                                🔒 <strong>Kural Hatırlatması:</strong> Kargonuz yola çıktığı için sipariş iptal edilemez. Ürünleriniz tarafınıza ulaştığında ve kargocu teslimatı gerçekleştirdiğinde portal üzerinden <em>'Ürünü Teslim Aldım'</em> onayınızı verebilirsiniz.
+                            </div>
+
+                            {itemsTableHtml}
+
+                            <!-- CTA Buton -->
+                            <div style='text-align:center;margin-top:28px;'>
+                                <a href='{targetOrdersUrl}' target='_blank' style='display:inline-block;padding:14px 32px;background:#d97706;color:#ffffff;font-size:14px;font-weight:800;text-decoration:none;border-radius:10px;box-shadow:0 4px 14px rgba(217,119,6,0.35);'>
+                                    🚚 Kargo Durumunu & Siparişi Görüntüle &rarr;
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='background-color:#f8fafc;padding:20px;text-align:center;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;'>
+                            &copy; 2026 Tedarik Portalı. Tüm hakları saklıdır. Bu bildirim {toEmail} adresine iletilmiştir.
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
+        }
+
+        /// <summary>
+        /// Sipariş teslim edildiğinde (Teslim Edildi) alıcı firmaya teslim alma onayı vermesi için bildirim e-postası gönderir.
+        /// </summary>
+        public async Task<bool> SendOrderDeliveredEmailAsync(
+            string toEmail,
+            string buyerCompanyName,
+            string supplierCompanyName,
+            string orderNumber,
+            DateTime orderDate,
+            decimal grandTotal,
+            string? shippingCarrier = null,
+            string? trackingNumber = null,
+            List<SoldProductItemEmailDto>? items = null,
+            string? buyerOrdersUrl = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(toEmail)) return false;
+
+                var htmlBody = GetOrderDeliveredEmailHtml(toEmail, buyerCompanyName, supplierCompanyName, orderNumber, orderDate, grandTotal, shippingCarrier, trackingNumber, items, buyerOrdersUrl);
+                var displayOrderNo = string.IsNullOrWhiteSpace(orderNumber) ? "Sipariş" : orderNumber;
+                var subject = $"✅ Siparişiniz Teslim Edildi! #{displayOrderNo} — Lütfen Teslim Alma Onayı Veriniz";
+
+                return await SendEmailAsync(toEmail, subject, htmlBody);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Sipariş teslim edildi e-postası gönderim hatası ({ToEmail}): {Message}", toEmail, ex.Message);
+                return false;
+            }
+        }
+
+        public string GetOrderDeliveredEmailHtml(
+            string toEmail,
+            string buyerCompanyName,
+            string supplierCompanyName,
+            string orderNumber,
+            DateTime orderDate,
+            decimal grandTotal,
+            string? shippingCarrier = null,
+            string? trackingNumber = null,
+            List<SoldProductItemEmailDto>? items = null,
+            string? buyerOrdersUrl = null)
+        {
+            var sendTime = DateTime.UtcNow.AddHours(3).ToString("dd.MM.yyyy HH:mm");
+            var formattedOrderDate = (orderDate.Kind == DateTimeKind.Utc ? orderDate.AddHours(3) : orderDate).ToString("dd.MM.yyyy HH:mm");
+            var formattedGrandTotal = grandTotal.ToString("N2", new System.Globalization.CultureInfo("tr-TR"));
+            var displayBuyer = string.IsNullOrWhiteSpace(buyerCompanyName) ? "Değerli Müşterimiz" : buyerCompanyName;
+            var displaySupplier = string.IsNullOrWhiteSpace(supplierCompanyName) ? "Tedarikçi Firma" : supplierCompanyName;
+            var targetOrdersUrl = string.IsNullOrWhiteSpace(buyerOrdersUrl) ? "https://localhost:7019/Dashboard/Orders" : buyerOrdersUrl;
+
+            string itemsTableHtml = BuildSoldItemsTableHtml(items);
+
+            return $@"<!DOCTYPE html>
+<html lang='tr'>
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Siparişiniz Teslim Edildi</title>
+</head>
+<body style='margin:0;padding:0;background-color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,""Segoe UI"",Roboto,""Helvetica Neue"",Arial,sans-serif;'>
+    <table role='presentation' width='100%' cellspacing='0' cellpadding='0' style='background-color:#f1f5f9;padding:30px 15px;'>
+        <tr>
+            <td align='center'>
+                <table role='presentation' width='600' cellspacing='0' cellpadding='0' style='max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 10px 25px -5px rgba(0,0,0,0.1);border:1px solid #e2e8f0;'>
+                    <tr>
+                        <td style='background:linear-gradient(135deg,#065f46 0%,#059669 50%,#10b981 100%);padding:28px 36px;text-align:center;'>
+                            <span style='display:inline-block;background:rgba(255,255,255,0.25);color:#ffffff;font-size:12px;font-weight:800;padding:4px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;'>
+                                ✅ SİPARİŞ AŞAMASI: TESLİM EDİLDİ
+                            </span>
+                            <h1 style='margin:12px 0 0;color:#ffffff;font-size:22px;font-weight:800;'>
+                                Ürünleriniz Teslim Edildi!
+                            </h1>
+                            <p style='margin:6px 0 0;color:#d1fae5;font-size:14px;'>
+                                #{orderNumber} nolu siparişinizin teslimatı yapıldı.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='padding:32px 36px;'>
+                            <p style='margin:0 0 16px;color:#0f172a;font-size:15px;line-height:1.6;'>
+                                Sayın <strong>{displayBuyer}</strong>,
+                            </p>
+                            <p style='margin:0 0 20px;color:#334155;font-size:14px;line-height:1.6;'>
+                                <strong>{displaySupplier}</strong> tarafından sevk edilen siparişiniz taşıyıcı/kargocu tarafından adresinize teslim edilmiştir.
+                            </p>
+
+                            <!-- Havuz ve Onay Çağrısı Kutusu -->
+                            <div style='background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);border:1px solid #86efac;border-radius:14px;padding:22px;margin-bottom:24px;'>
+                                <div style='display:flex;align-items:center;gap:10px;margin-bottom:8px;'>
+                                    <span style='font-size:24px;'>🛡️</span>
+                                    <strong style='color:#166534;font-size:15px;'>iyzico Güvenli Havuz (Escrow) Koruması</strong>
+                                </div>
+                                <p style='margin:0;color:#15803d;font-size:13.5px;line-height:1.55;'>
+                                    Ödemeniz olan <strong>{formattedGrandTotal} ₺</strong> hala güvenli havuz hesabında bloke tutulmaktadır. Lütfen teslim aldığınız ürünleri kontrol ediniz. Herhangi bir sorun yoksa portala giriş yaparak <strong>&quot;✓ Ürünü Teslim Aldım&quot;</strong> butonuna basıp ödemeyi satıcıya aktarınız.
+                                </p>
+                                <div style='margin-top:10px;font-size:12px;color:#166534;'>
+                                    ⚠️ Hasar, eksik veya şartname uyumsuzluğu durumunda portal üzerinden itiraz talebi açabilirsiniz.
+                                </div>
+                            </div>
+
+                            {itemsTableHtml}
+
+                            <!-- CTA Buton -->
+                            <div style='text-align:center;margin-top:28px;'>
+                                <a href='{targetOrdersUrl}' target='_blank' style='display:inline-block;padding:15px 36px;background:#059669;color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;border-radius:12px;box-shadow:0 4px 14px rgba(5,150,105,0.35);letter-spacing:0.3px;'>
+                                    ✓ Ürünü Kontrol Et & Teslim Aldım Onayı Ver &rarr;
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='background-color:#f8fafc;padding:20px;text-align:center;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;'>
+                            &copy; 2026 Tedarik Portalı. Tüm hakları saklıdır. Bu bildirim {toEmail} adresine iletilmiştir.
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
+        }
+
+        private string BuildSoldItemsTableHtml(List<SoldProductItemEmailDto>? items)
+        {
+            if (items == null || !items.Any()) return "";
+
+            var rowsSb = new System.Text.StringBuilder();
+            int idx = 1;
+            foreach (var it in items)
+            {
+                var itName = string.IsNullOrWhiteSpace(it.ProductName) ? $"Ürün #{idx}" : it.ProductName;
+                var itQty = it.Quantity.ToString("0.##", new System.Globalization.CultureInfo("tr-TR"));
+                var itUnit = string.IsNullOrWhiteSpace(it.Unit) ? "Adet" : it.Unit;
+                var itLineTotal = (it.LineTotal > 0 ? it.LineTotal : (it.UnitPrice * it.Quantity)).ToString("N2", new System.Globalization.CultureInfo("tr-TR"));
+
+                rowsSb.Append($@"
+                    <tr>
+                        <td style='padding:10px 12px;border-bottom:1px solid #e2e8f0;font-size:13px;color:#0f172a;'>
+                            <strong>{itName}</strong>
+                            {(string.IsNullOrWhiteSpace(it.Sku) ? "" : $"<br><small style='color:#64748b;'>SKU: {it.Sku}</small>")}
+                        </td>
+                        <td style='padding:10px 12px;border-bottom:1px solid #e2e8f0;font-size:13px;color:#334155;text-align:center;'>
+                            {itQty} {itUnit}
+                        </td>
+                        <td style='padding:10px 12px;border-bottom:1px solid #e2e8f0;font-size:13px;color:#0f172a;font-weight:700;text-align:right;'>
+                            {itLineTotal} ₺
+                        </td>
+                    </tr>");
+                idx++;
+            }
+
+            return $@"
+                <div style='margin-bottom:20px;'>
+                    <div style='font-size:13px;font-weight:700;color:#475569;margin-bottom:8px;'>📋 Sipariş Edilen Ürünler:</div>
+                    <table width='100%' cellspacing='0' cellpadding='0' style='border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;border-collapse:collapse;'>
+                        <thead>
+                            <tr style='background:#f8fafc;'>
+                                <th style='padding:8px 12px;text-align:left;font-size:12px;color:#64748b;font-weight:700;border-bottom:1px solid #e2e8f0;'>Ürün</th>
+                                <th style='padding:8px 12px;text-align:center;font-size:12px;color:#64748b;font-weight:700;border-bottom:1px solid #e2e8f0;'>Adet</th>
+                                <th style='padding:8px 12px;text-align:right;font-size:12px;color:#64748b;font-weight:700;border-bottom:1px solid #e2e8f0;'>Toplam</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {rowsSb}
+                        </tbody>
+                    </table>
+                </div>";
+        }
     }
 
     /// <summary>

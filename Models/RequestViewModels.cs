@@ -416,9 +416,19 @@ namespace satinalmaportali2.Models
     public class UpdateOrderStatusInputModel
     {
         public int OrderID { get; set; }
-        public string OrderStatus { get; set; } = "Kargoya Verildi"; // Hazırlanıyor, Kargoya Verildi, Teslim Edildi, İptal
+        public string OrderStatus { get; set; } = "Kargoya Verildi"; // Hazırlanıyor, Kargoya Verildi, Teslim Edildi, İptal Edildi
         public string? TrackingNumber { get; set; }
         public string? ShippingCarrier { get; set; }
         public string? Notes { get; set; }
+        public string? CancellationReason { get; set; } // Satıcı olumsuz durumda siparişi iptal ettiğinde girilen gerekçe
+    }
+
+    /// <summary>
+    /// Alıcının siparişi gerekçe belirterek iptal etme modeli.
+    /// </summary>
+    public class CancelOrderByBuyerInputModel
+    {
+        public int OrderID { get; set; }
+        public string Reason { get; set; } = string.Empty;
     }
 }

@@ -191,8 +191,11 @@
                 {
                     @foreach (var o in Model.Orders)
                     {
+                        var isPreparing = o.OrderStatus == "Hazırlanıyor";
                         var isShipped = o.OrderStatus == "Kargoya Verildi";
-                        var isDelivered = o.OrderStatus == "Teslim Edildi" || o.OrderStatus == "Tamamlandı";
+                        var isDelivered = o.OrderStatus == "Teslim Edildi";
+                        var isCompleted = o.OrderStatus == "Tamamlandı";
+                        var isCancelled = o.OrderStatus == "İptal" || o.OrderStatus == "İptal Edildi" || o.OrderStatus.Contains("İptal");
                         var searchableText = $"{o.OrderNumber} {o.BuyerCompanyName} {o.DeliveryCity} {o.TrackingNumber} {string.Join(" ", o.OrderItems.Select(oi => oi.ProductName))}".ToLowerInvariant();
                         <tr id="supp-order-row-@o.OrderID" data-status="@o.OrderStatus" data-search="@searchableText">
                             <td>
@@ -255,12 +258,12 @@
                             </td>
                             <td>
                                 <div>
-                                    <span class="status-badge @(isDelivered ? "badge-emerald" : (isShipped ? "badge-amber" : "badge-blue"))" style="font-size: 0.78rem; padding: 3px 8px;" id="badge-order-@o.OrderID">
+                                    <span class="status-badge @(isCancelled ? "" : (isDelivered ? "badge-emerald" : (isShipped ? "badge-amber" : "badge-blue")))" style="font-size: 0.78rem; padding: 3px 8px; @(isCancelled ? "background:#fef2f2; color:#991b1b; border:1px solid #fecaca;" : "")" id="badge-order-@o.OrderID">
                                         <span class="status-dot"></span>
                                         @o.OrderStatus
                                     </span>
                                 </div>
-                                @if (!string.IsNullOrWhiteSpace(o.TrackingNumber))
+                                @if (!string.IsNullOrWhiteSpace(o.TrackingNumber) && !isCancelled)
                                 {
                                     <div style="font-size: 0.75rem; margin-top: 4px; color: var(--muted);" id="tracking-order-@o.OrderID">
                                         <strong>@o.ShippingCarrier:</strong> @o.TrackingNumber
@@ -268,10 +271,56 @@
                                 }
                             </td>
                             <td class="text-right">
-                                <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
-                                    <button type="button" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem;" onclick="openShipmentModal(@o.OrderID, '@Html.Raw(o.OrderNumber)', '@Html.Raw(o.OrderStatus)', '@Html.Raw(o.TrackingNumber)', '@Html.Raw(o.ShippingCarrier)')">
-                                        Sevkiyatı Yönet
-                                    </button>
+                                <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;" id="order-actions-wrap-@o.OrderID">
+                                    @if (isCancelled)
+                                    {
+                                         <span class="status-badge" style="background:#fef2f2; color:#991b1b; border:1px solid #fecaca; font-size:0.75rem; padding:4px 8px; font-weight:700;">
+                                             ✕ İptal Edildi
+                                         </span>
+                                    }
+                                    else if (isCompleted)
+                                    {
+                                         <span class="status-badge badge-emerald" style="font-size:0.75rem; padding:4px 8px; font-weight:700;">
+                                             ✓ Tamamlandı
+                                         </span>
+                                    }
+                                    else if (isDelivered)
+                                    {
+                                         <span class="status-badge badge-emerald" style="font-size:0.75rem; padding:4px 8px; font-weight:700;">
+                                             ✓ Teslim Edildi (Alıcı Onayı Bekleniyor)
+                                         </span>
+                                    }
+                                    else if (isShipped)
+                                    {
+                                         <!-- Kargoya Verildi: 2 taraf da iptal yapamaz! Sadece 'Teslim Edildi Olarak İşaretle' -->
+                                         <button type="button" class="btn-primary" style="padding: 6px 12px; font-size: 0.78rem; font-weight: 750; background: #059669; border: none; border-radius: 6px; box-shadow: 0 2px 6px rgba(5,150,105,0.3); cursor: pointer;" id="btn-deliver-@o.OrderID" onclick="advanceOrderToDelivered(@o.OrderID, '@Html.Raw(o.OrderNumber)')">
+                                             ✅ Teslim Edildi Olarak İşaretle
+                                         </button>
+                                    }
+                                    else if (isPreparing)
+                                    {
+                                         <!-- Hazırlanıyor: 'Kargoya Ver' ve gerekçeli 'İptal' -->
+                                         <div style="display: flex; gap: 6px; align-items: center;" id="step-actions-@o.OrderID">
+                                             <button type="button" class="btn-primary" style="padding: 6px 12px; font-size: 0.78rem; font-weight: 750; background: #2563eb; border: none; border-radius: 6px; box-shadow: 0 2px 6px rgba(37,99,235,0.3); cursor: pointer;" id="btn-ship-@o.OrderID" onclick="openShipModal(@o.OrderID, '@Html.Raw(o.OrderNumber)', '@Html.Raw(o.TrackingNumber)', '@Html.Raw(o.ShippingCarrier)')">
+                                                 🚚 Kargoya Ver
+                                             </button>
+                                             <button type="button" style="padding: 5px 8px; font-size: 0.75rem; font-weight: 700; background: #fff; color: #dc2626; border: 1px solid #fecaca; border-radius: 6px; cursor: pointer;" title="Olumsuz durumda gerekçeli iptal et" onclick="openCancelOrderModal(@o.OrderID, '@Html.Raw(o.OrderNumber)', 'seller')">
+                                                 ✕ İptal
+                                             </button>
+                                         </div>
+                                    }
+                                    else
+                                    {
+                                         <!-- Onaylandı / Yeni Sipariş: 'Siparişi Hazırla' ve gerekçeli 'İptal' -->
+                                         <div style="display: flex; gap: 6px; align-items: center;" id="step-actions-@o.OrderID">
+                                             <button type="button" class="btn-primary" style="padding: 6px 12px; font-size: 0.78rem; font-weight: 750; background: #0284c7; border: none; border-radius: 6px; box-shadow: 0 2px 6px rgba(2,132,199,0.3); cursor: pointer;" id="btn-prep-@o.OrderID" onclick="advanceOrderToPreparing(@o.OrderID, '@Html.Raw(o.OrderNumber)')">
+                                                 📦 Siparişi Hazırla
+                                             </button>
+                                             <button type="button" style="padding: 5px 8px; font-size: 0.75rem; font-weight: 700; background: #fff; color: #dc2626; border: 1px solid #fecaca; border-radius: 6px; cursor: pointer;" title="Olumsuz durumda gerekçeli iptal et" onclick="openCancelOrderModal(@o.OrderID, '@Html.Raw(o.OrderNumber)', 'seller')">
+                                                 ✕ İptal
+                                             </button>
+                                         </div>
+                                    }
                                     <button type="button" class="btn-primary" style="padding: 5px 11px; font-size: 0.76rem; font-weight: 700; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border: none; border-radius: 6px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3); cursor: pointer;" id="btn-rate-buyer-@o.OrderID" onclick="openSellerRateBuyerModal(@o.OrderID, '@Html.Raw(o.BuyerCompanyName?.Replace("'", "\\'"))')">
                                         ★ Alıcıyı Değerlendir
                                     </button>
@@ -285,51 +334,77 @@
     </div>
 </article>
 
-<!-- Modal: Sevkiyat ve Kargo Güncelleme -->
-<div id="suppShipmentModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this)closeShipmentModal()">
-    <div class="ty-modal-box" style="background: var(--card-bg, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 12px; width: 100%; max-width: 500px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+<!-- Modal: Siparişi Kargoya Ver -->
+<div id="suppShipModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this)closeShipModal()">
+    <div class="ty-modal-box" style="background: var(--card-bg, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 12px; width: 100%; max-width: 480px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
             <div>
-                <span class="status-badge badge-emerald" style="font-size: 0.72rem; padding: 2px 8px;">SEVKİYAT İŞLEMLERİ</span>
-                <h3 id="shipmentModalTitle" style="font-size: 1.2rem; font-weight: 800; color: var(--text, #0f172a); margin-top: 6px; margin-bottom: 4px;">Sipariş Sevkiyatını Güncelle</h3>
+                <span class="status-badge badge-blue" style="font-size: 0.72rem; padding: 2px 8px;">SEVKİYAT AŞAMASI</span>
+                <h3 id="shipModalTitle" style="font-size: 1.2rem; font-weight: 800; color: var(--text, #0f172a); margin-top: 6px; margin-bottom: 4px;">Siparişi Kargoya Ver</h3>
+                <div style="font-size: 0.8rem; color: var(--muted);">Kargo takip bilgilerini girerek siparişi kargoya verildi durumuna alınız.</div>
             </div>
-            <button type="button" class="modal-close-btn" onclick="closeShipmentModal()" style="border: none; background: transparent; font-size: 1.2rem; cursor: pointer; color: var(--muted);">✕</button>
+            <button type="button" class="modal-close-btn" onclick="closeShipModal()" style="border: none; background: transparent; font-size: 1.2rem; cursor: pointer; color: var(--muted);">✕</button>
         </div>
 
-        <form id="suppShipmentForm" onsubmit="handleShipmentSubmit(event); return false;">
-            <input type="hidden" id="shipmentOrderID" />
+        <form id="suppShipForm" onsubmit="handleShipSubmit(event); return false;">
+            <input type="hidden" id="shipOrderID" />
 
-            <div class="form-group" style="margin-bottom: 12px;">
-                <label class="form-label" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Sipariş Durumu</label>
-                <select id="shipmentStatusSelect" class="form-control" style="font-size: 0.88rem;">
-                    <option value="Hazırlanıyor">Hazırlanıyor / Paketleniyor</option>
-                    <option value="Kargoya Verildi" selected>Kargoya Verildi / Sevk Edildi</option>
-                    <option value="Teslim Edildi">Teslim Edildi / Mal Kabul Onaylı</option>
-                    <option value="İptal">İptal Edildi</option>
-                </select>
-            </div>
-
-            <div class="form-group" style="margin-bottom: 12px;">
-                <label class="form-label" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Kargo / Lojistik Firması</label>
-                <select id="shipmentCarrierSelect" class="form-control" style="font-size: 0.88rem;">
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label class="form-label" style="display: block; font-size: 0.82rem; font-weight: 750; margin-bottom: 4px;">Kargo / Lojistik Firması *</label>
+                <select id="shipCarrierSelect" class="form-control" style="font-size: 0.88rem;" required>
                     <option value="Yurtiçi Kargo">Yurtiçi Kargo</option>
                     <option value="MNG Kargo">MNG Kargo</option>
                     <option value="Aras Kargo">Aras Kargo</option>
+                    <option value="Sürat Kargo">Sürat Kargo</option>
+                    <option value="PTT Kargo">PTT Kargo</option>
                     <option value="Borusan Lojistik">Borusan Lojistik</option>
                     <option value="Özel Ambar / Kamyon">Özel Ambar / Kamyon Sevkiyatı</option>
                     <option value="Fabrikadan Teslim">Fabrikadan Doğrudan Teslim</option>
                 </select>
             </div>
 
-            <div class="form-group" style="margin-bottom: 16px;">
-                <label class="form-label" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Kargo Takip No / İrsaliye No</label>
-                <input type="text" id="shipmentTrackingNumber" class="form-control" placeholder="Örn: YRT-9823149812" style="font-size: 0.88rem;" />
+            <div class="form-group" style="margin-bottom: 18px;">
+                <label class="form-label" style="display: block; font-size: 0.82rem; font-weight: 750; margin-bottom: 4px;">Kargo Takip No / İrsaliye No *</label>
+                <input type="text" id="shipTrackingNumber" class="form-control" placeholder="Örn: YRT-9823149812" style="font-size: 0.88rem;" required />
             </div>
 
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button type="button" class="btn-cancel" onclick="closeShipmentModal()">Vazgeç</button>
-                <button type="submit" class="btn-primary" style="padding: 10px 18px; font-weight: 700;">
-                    Kaydet & Müşteriye Bildir
+                <button type="button" class="btn-cancel" onclick="closeShipModal()">Vazgeç</button>
+                <button type="submit" id="btnSubmitShip" class="btn-primary" style="padding: 10px 18px; font-weight: 750; background: #2563eb;">
+                    🚚 Kargoyu Onayla & Kargoya Ver
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Gerekçeli Sipariş İptali (Satıcı) -->
+<div id="orderCancelModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this)closeCancelOrderModal()">
+    <div class="ty-modal-box" style="background: var(--card-bg, #ffffff); border: 1px solid #fecaca; border-radius: 12px; width: 100%; max-width: 480px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(220,38,38,0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+            <div>
+                <span class="status-badge" style="background:#fef2f2; color:#991b1b; border:1px solid #fecaca; font-size: 0.72rem; padding: 2px 8px;">SİPARİŞ İPTALİ</span>
+                <h3 id="cancelOrderModalTitle" style="font-size: 1.2rem; font-weight: 800; color: #991b1b; margin-top: 6px; margin-bottom: 4px;">Siparişi İptal Et</h3>
+            </div>
+            <button type="button" class="modal-close-btn" onclick="closeCancelOrderModal()" style="border: none; background: transparent; font-size: 1.2rem; cursor: pointer; color: var(--muted);">✕</button>
+        </div>
+
+        <div style="font-size: 0.82rem; color: #991b1b; margin-bottom: 14px; background: #fef2f2; padding: 10px 12px; border-radius: 8px; border: 1px solid #fecaca; line-height: 1.4;">
+            ⚠️ <strong>Dikkat:</strong> Bu işlem geri alınamaz. Sipariş iptal edilecek, havuzdaki ödeme iade sürecine alınacak ve gerekçeniz alıcı firmaya iletilecektir.
+        </div>
+
+        <form id="orderCancelForm" onsubmit="handleOrderCancelSubmit(event); return false;">
+            <input type="hidden" id="cancelOrderID" />
+
+            <div class="form-group" style="margin-bottom: 18px;">
+                <label class="form-label" style="display: block; font-size: 0.82rem; font-weight: 750; margin-bottom: 4px; color: var(--text);">İptal Gerekçesi (Zorunlu) *</label>
+                <textarea id="cancelOrderReason" class="form-control" rows="3" placeholder="Örn: Stok yetersizliği / Hasar nedeniyle temin edilememektedir." style="font-size: 0.86rem;" required></textarea>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn-cancel" onclick="closeCancelOrderModal()">Vazgeç</button>
+                <button type="submit" id="btnSubmitCancel" class="btn-primary" style="padding: 10px 18px; font-weight: 750; background: #dc2626; border: none; box-shadow: 0 4px 12px rgba(220,38,38,0.35);">
+                    ⚠️ Siparişi Kesin Olarak İptal Et
                 </button>
             </div>
         </form>
@@ -587,31 +662,92 @@
             } catch (e) {}
         }
 
-        function openShipmentModal(id, number, status, tracking, carrier) {
-            document.getElementById('shipmentOrderID').value = id;
-            document.getElementById('shipmentModalTitle').textContent = number + ' - Sevkiyat Güncelle';
-            if (status) document.getElementById('shipmentStatusSelect').value = status;
-            if (carrier) document.getElementById('shipmentCarrierSelect').value = carrier;
-            if (tracking && tracking !== 'null') document.getElementById('shipmentTrackingNumber').value = tracking;
-            else document.getElementById('shipmentTrackingNumber').value = '';
+        // ==================== KADEMELİ ADIM ADIM SİPARİŞ DURUM YÖNETİMİ ====================
 
-            document.getElementById('suppShipmentModal').style.display = 'flex';
+        // 1. Hazırlığa Başla (Onaylandı -> Hazırlanıyor)
+        async function advanceOrderToPreparing(id, orderNumber) {
+            const confirmed = confirm('#' + orderNumber + ' numaralı siparişin hazırlık sürecini başlatmak istiyor musunuz?\n\nDurum: Hazırlanıyor olarak güncellenecektir.');
+            if (!confirmed) return;
+
+            try {
+                const response = await fetch('/Dashboard/UpdateOrderStatus', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderID: id, orderStatus: 'Hazırlanıyor' })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    // Durum Rozetini Güncelle
+                    const badge = document.getElementById('badge-order-' + id);
+                    if (badge) {
+                        badge.className = 'status-badge badge-blue';
+                        badge.innerHTML = '<span class="status-dot"></span>Hazırlanıyor';
+                    }
+
+                    // Butonları Güncelle: Artık [Kargoya Ver] ve [İptal] butonları yer alır
+                    const actionsWrap = document.getElementById('order-actions-wrap-' + id);
+                    if (actionsWrap) {
+                        actionsWrap.innerHTML = `
+                            <div style="display: flex; gap: 6px; align-items: center;" id="step-actions-${id}">
+                                <button type="button" class="btn-primary" style="padding: 6px 12px; font-size: 0.78rem; font-weight: 750; background: #2563eb; border: none; border-radius: 6px; box-shadow: 0 2px 6px rgba(37,99,235,0.3); cursor: pointer;" id="btn-ship-${id}" onclick="openShipModal(${id}, '${orderNumber}', '', '')">
+                                    🚚 Kargoya Ver
+                                </button>
+                                <button type="button" style="padding: 5px 8px; font-size: 0.75rem; font-weight: 700; background: #fff; color: #dc2626; border: 1px solid #fecaca; border-radius: 6px; cursor: pointer;" title="Olumsuz durumda gerekçeli iptal et" onclick="openCancelOrderModal(${id}, '${orderNumber}', 'seller')">
+                                    ✕ İptal
+                                </button>
+                            </div>
+                            <button type="button" class="btn-primary" style="padding: 5px 11px; font-size: 0.76rem; font-weight: 700; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border: none; border-radius: 6px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3); cursor: pointer;" onclick="openSellerRateBuyerModal(${id}, '')">
+                                ★ Alıcıyı Değerlendir
+                            </button>
+                        `;
+                    }
+
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast(result.message || 'Sipariş hazırlanıyor aşamasına alındı.', 'success');
+                    }
+                } else {
+                    alert('Hata: ' + (result.message || 'Güncellenemedi.'));
+                }
+            } catch (err) {
+                alert('Bağlantı hatası: ' + err.message);
+            }
         }
 
-        function closeShipmentModal() {
-            document.getElementById('suppShipmentModal').style.display = 'none';
+        // 2. Kargoya Ver Modalı Aç / Kapat / Gönder (Hazırlanıyor -> Kargoya Verildi)
+        function openShipModal(id, orderNumber, tracking, carrier) {
+            document.getElementById('shipOrderID').value = id;
+            document.getElementById('shipModalTitle').textContent = '#' + orderNumber + ' - Kargoya Ver';
+            if (carrier) document.getElementById('shipCarrierSelect').value = carrier;
+            if (tracking && tracking !== 'null') document.getElementById('shipTrackingNumber').value = tracking;
+            else document.getElementById('shipTrackingNumber').value = '';
+
+            document.getElementById('suppShipModal').style.display = 'flex';
         }
 
-        async function handleShipmentSubmit(e) {
+        function closeShipModal() {
+            document.getElementById('suppShipModal').style.display = 'none';
+        }
+
+        async function handleShipSubmit(e) {
             if (e) {
                 if (typeof e.preventDefault === 'function') e.preventDefault();
                 if (typeof e.stopPropagation === 'function') e.stopPropagation();
             }
 
-            const id = parseInt(document.getElementById('shipmentOrderID').value, 10);
-            const status = document.getElementById('shipmentStatusSelect').value;
-            const carrier = document.getElementById('shipmentCarrierSelect').value;
-            const tracking = document.getElementById('shipmentTrackingNumber').value;
+            const id = parseInt(document.getElementById('shipOrderID').value, 10);
+            const carrier = document.getElementById('shipCarrierSelect').value;
+            const tracking = document.getElementById('shipTrackingNumber').value.trim();
+
+            if (!carrier) {
+                alert('Lütfen kargo firması seçiniz.');
+                return false;
+            }
+            if (!tracking) {
+                alert('Lütfen geçerli bir kargo takip numarası giriniz.');
+                document.getElementById('shipTrackingNumber').focus();
+                return false;
+            }
 
             try {
                 const response = await fetch('/Dashboard/UpdateOrderStatus', {
@@ -619,7 +755,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         orderID: id,
-                        orderStatus: status,
+                        orderStatus: 'Kargoya Verildi',
                         shippingCarrier: carrier,
                         trackingNumber: tracking
                     })
@@ -627,44 +763,171 @@
 
                 const result = await response.json();
                 if (result.success) {
-                    closeShipmentModal();
+                    closeShipModal();
+
+                    // Rozeti Kargoya Verildi yap
+                    const badge = document.getElementById('badge-order-' + id);
+                    if (badge) {
+                        badge.className = 'status-badge badge-amber';
+                        badge.innerHTML = '<span class="status-dot"></span>Kargoya Verildi';
+                    }
+
+                    // Kargo Takip Bilgisi ekle
+                    let trackingEl = document.getElementById('tracking-order-' + id);
+                    if (!trackingEl && badge && badge.parentElement && badge.parentElement.parentElement) {
+                        trackingEl = document.createElement('div');
+                        trackingEl.id = 'tracking-order-' + id;
+                        trackingEl.style.cssText = 'font-size: 0.75rem; margin-top: 4px; color: var(--muted);';
+                        badge.parentElement.parentElement.appendChild(trackingEl);
+                    }
+                    if (trackingEl) {
+                        trackingEl.style.display = '';
+                        trackingEl.innerHTML = '<strong>' + carrier + ':</strong> ' + tracking;
+                    }
+
+                    // BUTONLARI GÜNCELLE: Kargoya verildiğinde İPTAL ASLA YOK! Yalnızca 'Teslim Edildi Olarak İşaretle'
+                    const actionsWrap = document.getElementById('order-actions-wrap-' + id);
+                    if (actionsWrap) {
+                        actionsWrap.innerHTML = `
+                            <button type="button" class="btn-primary" style="padding: 6px 12px; font-size: 0.78rem; font-weight: 750; background: #059669; border: none; border-radius: 6px; box-shadow: 0 2px 6px rgba(5,150,105,0.3); cursor: pointer;" id="btn-deliver-${id}" onclick="advanceOrderToDelivered(${id}, '${result.orderNumber || ''}')">
+                                ✅ Teslim Edildi Olarak İşaretle
+                            </button>
+                            <button type="button" class="btn-primary" style="padding: 5px 11px; font-size: 0.76rem; font-weight: 700; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border: none; border-radius: 6px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3); cursor: pointer;" onclick="openSellerRateBuyerModal(${id}, '')">
+                                ★ Alıcıyı Değerlendir
+                            </button>
+                        `;
+                    }
+
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast(result.message || 'Sipariş kargoya verildi olarak güncellendi.', 'success');
+                    }
+                } else {
+                    alert('Hata: ' + (result.message || 'Kargoya verilemedi.'));
+                }
+            } catch (err) {
+                alert('Bağlantı hatası: ' + err.message);
+            }
+
+            return false;
+        }
+
+        // 3. Teslimatı Tamamla (Kargoya Verildi -> Teslim Edildi)
+        async function advanceOrderToDelivered(id, orderNumber) {
+            const confirmed = confirm('#' + orderNumber + ' numaralı siparişin kargocu/taşıyıcı tarafından teslimatı yapıldı mı?\n\nBu işlem sipariş durumunu "Teslim Edildi" yapacak ve alıcının onay vermesini sağlayacaktır.');
+            if (!confirmed) return;
+
+            try {
+                const response = await fetch('/Dashboard/UpdateOrderStatus', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderID: id, orderStatus: 'Teslim Edildi' })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    const badge = document.getElementById('badge-order-' + id);
+                    if (badge) {
+                        badge.className = 'status-badge badge-emerald';
+                        badge.innerHTML = '<span class="status-dot"></span>Teslim Edildi';
+                    }
+
+                    const actionsWrap = document.getElementById('order-actions-wrap-' + id);
+                    if (actionsWrap) {
+                        actionsWrap.innerHTML = `
+                            <span class="status-badge badge-emerald" style="font-size:0.75rem; padding:4px 8px; font-weight:700;">
+                                ✓ Teslim Edildi (Alıcı Onayı Bekleniyor)
+                            </span>
+                            <button type="button" class="btn-primary" style="padding: 5px 11px; font-size: 0.76rem; font-weight: 700; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border: none; border-radius: 6px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3); cursor: pointer;" onclick="openSellerRateBuyerModal(${id}, '')">
+                                ★ Alıcıyı Değerlendir
+                            </button>
+                        `;
+                    }
+
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast(result.message || 'Sipariş teslim edildi olarak işaretlendi.', 'success');
+                    }
+                } else {
+                    alert('Hata: ' + (result.message || 'İşlem tamamlanamadı.'));
+                }
+            } catch (err) {
+                alert('Bağlantı hatası: ' + err.message);
+            }
+        }
+
+        // 4. Gerekçeli İptal Modalı Aç / Kapat / Gönder
+        function openCancelOrderModal(id, orderNumber, role) {
+            document.getElementById('cancelOrderID').value = id;
+            document.getElementById('cancelOrderModalTitle').textContent = '#' + orderNumber + ' - Siparişi İptal Et';
+            document.getElementById('cancelOrderReason').value = '';
+            document.getElementById('orderCancelModal').style.display = 'flex';
+        }
+
+        function closeCancelOrderModal() {
+            document.getElementById('orderCancelModal').style.display = 'none';
+        }
+
+        async function handleOrderCancelSubmit(e) {
+            if (e) {
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+            }
+
+            const id = parseInt(document.getElementById('cancelOrderID').value, 10);
+            const reason = document.getElementById('cancelOrderReason').value.trim();
+
+            if (!reason) {
+                alert('Lütfen geçerli bir iptal gerekçesi belirtiniz.');
+                document.getElementById('cancelOrderReason').focus();
+                return false;
+            }
+
+            const confirmed = confirm('Bu siparişi kesin olarak iptal etmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz!');
+            if (!confirmed) return false;
+
+            try {
+                const response = await fetch('/Dashboard/UpdateOrderStatus', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        orderID: id,
+                        orderStatus: 'İptal Edildi',
+                        cancellationReason: reason
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    closeCancelOrderModal();
 
                     const badge = document.getElementById('badge-order-' + id);
                     if (badge) {
-                        const isDel = status === "Teslim Edildi" || status === "Tamamlandı";
-                        const isShip = status === "Kargoya Verildi";
-                        badge.className = 'status-badge ' + (isDel ? 'badge-emerald' : (isShip ? 'badge-amber' : 'badge-blue'));
-                        badge.innerHTML = '<span class="status-dot"></span>' + status;
+                        badge.className = 'status-badge';
+                        badge.style.background = '#fef2f2';
+                        badge.style.color = '#991b1b';
+                        badge.style.border = '1px solid #fecaca';
+                        badge.innerHTML = '<span class="status-dot" style="background:#dc2626;"></span>İptal Edildi';
                     }
-                    let trackingEl = document.getElementById('tracking-order-' + id);
-                    if (tracking && tracking.trim() !== '') {
-                        if (!trackingEl && badge && badge.parentElement && badge.parentElement.parentElement) {
-                            trackingEl = document.createElement('div');
-                            trackingEl.id = 'tracking-order-' + id;
-                            trackingEl.style.cssText = 'font-size: 0.75rem; margin-top: 4px; color: var(--muted);';
-                            badge.parentElement.parentElement.appendChild(trackingEl);
-                        }
-                        if (trackingEl) {
-                            trackingEl.innerHTML = '<strong>' + carrier + ':</strong> ' + tracking;
-                        }
+
+                    const trackingEl = document.getElementById('tracking-order-' + id);
+                    if (trackingEl) trackingEl.style.display = 'none';
+
+                    const actionsWrap = document.getElementById('order-actions-wrap-' + id);
+                    if (actionsWrap) {
+                        actionsWrap.innerHTML = `
+                            <span class="status-badge" style="background:#fef2f2; color:#991b1b; border:1px solid #fecaca; font-size:0.75rem; padding:4px 8px; font-weight:700;">
+                                ✕ İptal Edildi
+                            </span>
+                        `;
                     }
 
                     if (typeof showRealtimeToast === 'function') {
-                        showRealtimeToast(result.message || 'Sipariş durumu güncellendi!', 'success');
+                        showRealtimeToast(result.message || 'Sipariş başarıyla iptal edildi.', 'success');
                     }
                 } else {
-                    if (typeof showRealtimeToast === 'function') {
-                        showRealtimeToast('Hata: ' + (result.message || 'Güncellenemedi.'), 'error');
-                    } else {
-                        alert("Hata: " + (result.message || "Güncellenemedi."));
-                    }
+                    alert('Hata: ' + (result.message || 'Sipariş iptal edilemedi.'));
                 }
             } catch (err) {
-                if (typeof showRealtimeToast === 'function') {
-                    showRealtimeToast('Bağlantı hatası: ' + err.message, 'error');
-                } else {
-                    alert("Bağlantı hatası: " + err.message);
-                }
+                alert('Bağlantı hatası: ' + err.message);
             }
 
             return false;

@@ -294,8 +294,32 @@ namespace satinalmaportali2.Services
                     Description = buyerAddress
                 };
 
+                bool isSandboxEnv = _settings.BaseUrl.Contains("sandbox", StringComparison.OrdinalIgnoreCase) || 
+                                    _settings.ApiKey.StartsWith("sandbox", StringComparison.OrdinalIgnoreCase);
+
+                // iyzico Güvenlik Limiti Kuralı: Price ve PaidPrice parametreleri 100.000 TL veya üzerinde olamaz (Hata kodu: 5008).
+                // Sandbox test ortamında geliştiricilerin büyük tutarlı B2B siparişlerini rahatça test edebilmesi için,
+                // tutar 100.000 TL ve üzerindeyse test amacıyla güvenli bir çekim tutarına (9.999 ₺) normalize edilir.
+                // Gerçek sipariş tutarı veritabanında (order.GrandTotal) aynen korunur.
+                decimal apiGrandTotal = order.GrandTotal;
+                if (isSandboxEnv && apiGrandTotal >= 100000m)
+                {
+                    apiGrandTotal = 9999.00m;
+                }
+                else if (!isSandboxEnv && apiGrandTotal >= 100000m)
+                {
+                    return new IyzicoPaymentResultDto
+                    {
+                        Success = false,
+                        OrderID = order.OrderID,
+                        OrderNumber = order.OrderNumber,
+                        GrandTotal = order.GrandTotal,
+                        Message = "Bankacılık ve iyzico güvenlik standartları gereği tek seferlik kredi kartı çekim limiti 99.999 ₺'dir. 100.000 ₺ ve üzeri kurumsal siparişleriniz için lütfen 'Kurumsal Havale / EFT' veya 'Cari Vadeli / DBS' ödeme yöntemini tercih ediniz."
+                    };
+                }
+
                 // Sepet Kalemleri (BasketItems)
-                // iyzico Kuralı: Tüm BasketItem'ların Price toplamı, siparişin GrandTotal (KDV Dahil) tutarına kuruşu kuruşuna eşit olmalıdır.
+                // iyzico Kuralı: Tüm BasketItem'ların Price toplamı, siparişin iyzico'ya iletilen PaidPrice tutarına kuruşu kuruşuna eşit olmalıdır.
                 var basketItems = new List<BasketItem>();
                 if (order.OrderItems != null && order.OrderItems.Any())
                 {
@@ -309,12 +333,12 @@ namespace satinalmaportali2.Services
                         decimal itemTaxInclusivePrice;
                         if (i == itemsList.Count - 1)
                         {
-                            itemTaxInclusivePrice = order.GrandTotal - runningTotal;
+                            itemTaxInclusivePrice = apiGrandTotal - runningTotal;
                         }
                         else
                         {
                             decimal itemRatio = order.TotalAmount > 0 ? (item.LineTotal / order.TotalAmount) : (1m / itemsList.Count);
-                            itemTaxInclusivePrice = Math.Round(order.GrandTotal * itemRatio, 2);
+                            itemTaxInclusivePrice = Math.Round(apiGrandTotal * itemRatio, 2);
                             runningTotal += itemTaxInclusivePrice;
                         }
 
@@ -349,14 +373,16 @@ namespace satinalmaportali2.Services
                         Name = $"{order.OrderNumber} Endüstriyel Sipariş",
                         Category1 = "Endüstriyel",
                         ItemType = BasketItemType.PHYSICAL.ToString(),
-                        Price = order.GrandTotal.ToString("F2", CultureInfo.InvariantCulture)
+                        Price = apiGrandTotal.ToString("F2", CultureInfo.InvariantCulture)
                     };
 
                     bool isRealSubMerchant = !string.IsNullOrWhiteSpace(subMerchantKey) && !subMerchantKey.StartsWith("SUB_SANDBOX_");
                     if (isRealSubMerchant)
                     {
+                        decimal itemCommission = Math.Round(apiGrandTotal * commissionRate, 2);
+                        decimal itemPayout = apiGrandTotal - itemCommission;
                         bItem.SubMerchantKey = subMerchantKey;
-                        bItem.SubMerchantPrice = supplierPayout.ToString("F2", CultureInfo.InvariantCulture);
+                        bItem.SubMerchantPrice = itemPayout.ToString("F2", CultureInfo.InvariantCulture);
                     }
 
                     basketItems.Add(bItem);
@@ -367,8 +393,8 @@ namespace satinalmaportali2.Services
                 {
                     Locale = Locale.TR.ToString(),
                     ConversationId = conversationId,
-                    Price = order.GrandTotal.ToString("F2", CultureInfo.InvariantCulture),
-                    PaidPrice = order.GrandTotal.ToString("F2", CultureInfo.InvariantCulture),
+                    Price = apiGrandTotal.ToString("F2", CultureInfo.InvariantCulture),
+                    PaidPrice = apiGrandTotal.ToString("F2", CultureInfo.InvariantCulture),
                     Currency = Currency.TRY.ToString(),
                     Installment = 1,
                     BasketId = order.OrderNumber,
@@ -497,6 +523,8 @@ namespace satinalmaportali2.Services
                         {
                             foreach (var oItem in order.OrderItems)
                             {
+                                oItem.ItemStatus = "Onaylandı";
+
                                 if (oItem.ItemID.HasValue && oItem.ItemID.Value > 0)
                                 {
                                     var dbItem = await _context.Items.FirstOrDefaultAsync(i => i.ItemID == oItem.ItemID.Value);
@@ -612,7 +640,7 @@ namespace satinalmaportali2.Services
                                             LineTotal = price * quantity,
                                             SupplierCompanyName = seller,
                                             SupplierCompanyID = supplierCompId,
-                                            ItemStatus = "Havuzda Bloke"
+                                            ItemStatus = "Onaylandı"
                                         });
                                     }
                                 }
@@ -765,10 +793,10 @@ namespace satinalmaportali2.Services
                     return (false, "Bu sipariş için havuz onayını yalnızca satın alma yapan alıcı firma verebilir.");
                 }
 
-                // Tedarikçi teslimat kontrolü: Tedarikçi sevk veya teslim etmeden alıcı onay veremez
-                if (!isAdmin && order.OrderStatus != "Teslim Edildi" && order.OrderStatus != "Kargoya Verildi" && order.OrderStatus != "Tamamlandı")
+                // Tedarikçi teslimat kontrolü: Sipariş 'Teslim Edildi' olmadan alıcı onay veremez
+                if (!isAdmin && order.OrderStatus != "Teslim Edildi" && order.OrderStatus != "Tamamlandı")
                 {
-                    return (false, "Tedarikçi firma henüz siparişi kargoya vermedi veya teslim etmedi. Sevkiyat/teslimat gerçekleşmeden teslim alma onayı verilemez.");
+                    return (false, "Sipariş henüz 'Teslim Edildi' durumuna gelmemiştir. Teslim alma ve ödeme onayı yalnızca ürün kargocu/satıcı tarafından 'Teslim Edildi' olarak işaretlendikten sonra verilebilir.");
                 }
 
                 if (order.IsEscrowApproved || order.EscrowStatus == "Released_ToSeller")
@@ -846,6 +874,18 @@ namespace satinalmaportali2.Services
                     order.EscrowStatus = "Released_ToSeller";
                     order.OrderStatus = "Tamamlandı";
                     order.EscrowReleaseDate = DateTime.UtcNow;
+
+                    if (order.OrderItems != null && order.OrderItems.Any())
+                    {
+                        foreach (var oi in order.OrderItems)
+                        {
+                            if (oi.ItemStatus != "İptal" && oi.ItemStatus != "İptal Edildi")
+                            {
+                                oi.ItemStatus = "Tamamlandı";
+                            }
+                        }
+                    }
+
                     await _context.SaveChangesAsync();
 
                     // SignalR Canlı Bildirim

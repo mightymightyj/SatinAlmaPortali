@@ -1041,7 +1041,9 @@ function renderCorporateVitrin() {
 
                 <!-- Görsel ve Kategori Rozeti -->
                 <div class="b2b-img-container">
-                    <img src="${item.image || '/images/default-product.svg'}" alt="${item.title}" loading="lazy" class="b2b-img" onerror="this.src='/images/default-product.svg'" />
+                    <a href="/Product/${item.id}" style="display:block; width:100%; height:100%; text-decoration:none;">
+                        <img src="${item.image || '/images/default-product.svg'}" alt="${item.title}" loading="lazy" class="b2b-img" onerror="this.src='/images/default-product.svg'" />
+                    </a>
                     
                     <div class="b2b-badges-stack">
                         ${isOutOfStock ? `<span class="b2b-badge" style="background: #dc2626; color: #ffffff; font-weight: 800;">Tükendi</span>` : ''}
@@ -1055,14 +1057,14 @@ function renderCorporateVitrin() {
                         </svg>
                     </button>
 
-                    <!-- Hızlı İncele Butonu -->
-                    <button type="button" class="b2b-quick-look-btn" onclick="openProductQuickView(${item.id})">
+                    <!-- Ürün Detay Sayfası Butonu -->
+                    <a href="/Product/${item.id}" class="b2b-quick-look-btn" style="text-decoration:none;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                             <circle cx="12" cy="12" r="3"></circle>
                         </svg>
-                        Şartname & Detay
-                    </button>
+                        Ürün Detayı →
+                    </a>
                 </div>
 
                 <!-- Ürün Gövdesi -->
@@ -1075,7 +1077,9 @@ function renderCorporateVitrin() {
 
                     <!-- Ürün Başlığı -->
                     <h3 class="b2b-title" title="${item.title}">
-                        ${item.title}
+                        <a href="/Product/${item.id}" style="text-decoration:none; color:inherit;">
+                            ${item.title}
+                        </a>
                     </h3>
 
                     <!-- Stok Durumu -->
@@ -1112,7 +1116,7 @@ function renderCorporateVitrin() {
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                                 </svg>
-                                Satın Al
+                                ⚡ Hemen Al
                             </button>
                             <button type="button" class="b2b-btn-cart" onclick="addToCart(${item.id})" title="Sepete Ekle">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1122,13 +1126,13 @@ function renderCorporateVitrin() {
                                 </svg>
                             </button>
                         `}
-                        <button type="button" class="b2b-btn-contact" onclick="openProductQuickView(${item.id})" title="Şartname ve Tedarikçi Detaylarını Gör">
+                        <a href="/Product/${item.id}" class="b2b-btn-contact" title="Ürün Detay Sayfası ve Şartnameleri Gör" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none;">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <line x1="12" y1="16" x2="12" y2="12"></line>
                                 <line x1="12" y1="8" x2="12.01" y2="8"></line>
                             </svg>
-                        </button>
+                        </a>
                     </div>
                 </div>
             </article>
@@ -1227,27 +1231,15 @@ function toggleB2BFavorite(e, id) {
 }
 
 /**
- * Hızlı Ürün & Şartname İnceleme Modalı
+ * Ürün Detay Sayfasına Yönlendirir (Eski modal yerine direkt müstakil ürün sayfasına gider)
  */
 function openProductQuickView(productId) {
-    const product = activeProducts.find(p => p.id === productId) || (typeof B2B_PRODUCT_CATALOG !== 'undefined' ? B2B_PRODUCT_CATALOG.find(p => p.id === productId) : null);
-    if (!product) return;
+    if (productId) {
+        window.location.href = `/Product/${productId}`;
+    }
+}
 
-    const modal = document.getElementById('tyQuickViewModal');
-    if (!modal) return;
-
-    document.getElementById('qvModalImage').src = product.image;
-    document.getElementById('qvModalTitle').textContent = product.title;
-    document.getElementById('qvModalBrand').textContent = product.brand;
-    document.getElementById('qvModalSku').textContent = product.sku;
-    document.getElementById('qvModalSeller').textContent = product.seller;
-    document.getElementById('qvModalLocation').textContent = product.sellerLocation || 'Türkiye';
-    
-    const scoreVal = typeof product.sellerScore === 'number' ? product.sellerScore.toFixed(1) : (product.sellerScore || '10.0');
-    const reviewCountVal = product.sellerReviewCount ? ` (${product.sellerReviewCount} Değerlendirme)` : '';
-    document.getElementById('qvModalScore').textContent = `★ ${scoreVal} / 10${reviewCountVal}`;
-
-    const qvSellerLink = document.getElementById('qvModalSellerLink');
+function _legacyOpenProductQuickView(productId) {
     if (qvSellerLink) {
         qvSellerLink.href = `/Seller/${getSellerCompanyId(product)}`;
         qvSellerLink.textContent = `${product.seller} Sayfası & Değerlendirmeleri Gör →`;
@@ -1274,7 +1266,7 @@ function openProductQuickView(productId) {
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
             </svg>
-            Hemen Satın Al
+            ⚡ Hemen Al
         `;
         modalQuoteBtn.onclick = function() {
             closeTyModal('tyQuickViewModal');
@@ -1695,8 +1687,15 @@ function showB2BToast(message, type = "default") {
         document.body.appendChild(container);
     }
 
+    // Modalların ve her katmanın en üstünde olmasını garanti et
+    container.style.setProperty('z-index', '2147483647', 'important');
+    container.style.setProperty('position', 'fixed', 'important');
+    container.style.setProperty('pointer-events', 'none', 'important');
+
     const toast = document.createElement('div');
     toast.className = `ty-toast ty-toast-${type}`;
+    toast.style.setProperty('z-index', '2147483647', 'important');
+    toast.style.setProperty('pointer-events', 'auto', 'important');
     toast.innerHTML = `
         <div class="ty-toast-content">
             <span class="ty-toast-msg">${message}</span>
@@ -2817,44 +2816,169 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-/**
- * iyzico 3D Secure Doğrulama Modalını Açar ve Formu Yükler
- */
-function openIyzico3DModal(htmlContent) {
-    const modal = document.getElementById('iyzico3DModal');
-    const container = document.getElementById('iyzico3DFrameContainer');
-    if (!modal || !container) {
-        // Eğer modal sayfada yoksa doğrudan bir iframe oluştur
-        const iframe = document.createElement('iframe');
-        iframe.style.position = 'fixed';
-        iframe.style.inset = '0';
-        iframe.style.width = '100%';
-        iframe.style.height = '100%';
-        iframe.style.zIndex = '9999999';
-        iframe.style.border = 'none';
-        document.body.appendChild(iframe);
-        const doc = iframe.contentDocument || iframe.contentWindow.document;
-        doc.open();
-        doc.write(htmlContent);
-        doc.close();
-        return;
+// ==================== İYZİCO 3D SECURE GÜVENLİ DOĞRULAMA (PNA & POP-UP DESTEKLİ) ====================
+let currentIyzicoPopup = null;
+let cachedIyzicoHtml = null;
+let iyzicoListenerAttached = false;
+
+function setupIyzicoMessageListener() {
+    if (iyzicoListenerAttached) return;
+    iyzicoListenerAttached = true;
+
+    window.addEventListener('message', function(event) {
+        if (event && event.data && event.data.type === 'IYZICO_3D_RESULT') {
+            closeIyzico3DModal();
+            if (currentIyzicoPopup && !currentIyzicoPopup.closed) {
+                try { currentIyzicoPopup.close(); } catch(e) {}
+            }
+
+            if (event.data.success) {
+                try {
+                    localStorage.removeItem('b2b_portal_cart');
+                    if (typeof updateCartCountBadge === 'function') updateCartCountBadge(0);
+                    const navCartBadge = document.getElementById('navCartBadge');
+                    if (navCartBadge) navCartBadge.textContent = '0';
+                } catch(e) {}
+
+                if (typeof showB2BToast === 'function') {
+                    showB2BToast("🎉 Ödeme başarıyla tamamlandı! Siparişiniz havuz korumasında oluşturuldu.", "success");
+                }
+            } else {
+                if (typeof showB2BToast === 'function') {
+                    showB2BToast("⚠️ Ödeme doğrulanamadı veya işlem iptal edildi.", "warning");
+                }
+            }
+
+            setTimeout(() => {
+                window.location.href = event.data.targetUrl || '/Dashboard/Orders';
+            }, 600);
+        }
+    });
+}
+
+function launchIyzico3DPopup() {
+    if (!cachedIyzicoHtml) return;
+    const width = 640;
+    const height = 740;
+    const left = Math.max(0, Math.round((window.screen.width - width) / 2));
+    const top = Math.max(0, Math.round((window.screen.height - height) / 2));
+
+    currentIyzicoPopup = window.open('', 'iyzico_3d_secure_window', `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,resizable=yes,status=no,toolbar=no,menubar=no`);
+    if (currentIyzicoPopup) {
+        try {
+            currentIyzicoPopup.document.open();
+            currentIyzicoPopup.document.write(cachedIyzicoHtml);
+            currentIyzicoPopup.document.close();
+            currentIyzicoPopup.focus();
+        } catch(e) {
+            console.warn("Pop-up belgesi yazılamadı:", e);
+        }
     }
+}
+
+function loadIyzicoInIframeDirectly() {
+    const container = document.getElementById('iyzico3DFrameContainer');
+    if (!container || !cachedIyzicoHtml) return;
 
     container.innerHTML = '';
     const iframe = document.createElement('iframe');
     iframe.style.width = '100%';
-    iframe.style.height = '520px';
+    iframe.style.height = '540px';
     iframe.style.border = 'none';
     container.appendChild(iframe);
+
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.open();
+    doc.write(cachedIyzicoHtml);
+    doc.close();
+}
+
+/**
+ * iyzico 3D Secure Doğrulama Modalını Açar ve Formu Yükler
+ * Tarayıcı Private Network Access (PNA) kısıtlamasını aşmak için bağımsız güvenli pencere kullanır.
+ */
+function openIyzico3DModal(htmlContent) {
+    cachedIyzicoHtml = htmlContent;
+    setupIyzicoMessageListener();
+
+    const modal = document.getElementById('iyzico3DModal');
+    const container = document.getElementById('iyzico3DFrameContainer');
+
+    // 1. Önce doğrudan bağımsız pop-up pencere açmayı dene (PNA engeline asla takılmaz)
+    const width = 640;
+    const height = 740;
+    const left = Math.max(0, Math.round((window.screen.width - width) / 2));
+    const top = Math.max(0, Math.round((window.screen.height - height) / 2));
+
+    let popupOpened = false;
+    try {
+        currentIyzicoPopup = window.open('', 'iyzico_3d_secure_window', `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,resizable=yes,status=no,toolbar=no,menubar=no`);
+        if (currentIyzicoPopup && !currentIyzicoPopup.closed && typeof currentIyzicoPopup.closed !== 'undefined') {
+            currentIyzicoPopup.document.open();
+            currentIyzicoPopup.document.write(htmlContent);
+            currentIyzicoPopup.document.close();
+            currentIyzicoPopup.focus();
+            popupOpened = true;
+        }
+    } catch(e) {
+        popupOpened = false;
+    }
+
+    if (!modal || !container) {
+        if (!popupOpened) {
+            // Modal yoksa ve pop-up engellendiyse iframe fallback
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'fixed';
+            iframe.style.inset = '0';
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+            iframe.style.zIndex = '9999999';
+            iframe.style.border = 'none';
+            document.body.appendChild(iframe);
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            doc.open();
+            doc.write(htmlContent);
+            doc.close();
+        }
+        return;
+    }
+
+    container.innerHTML = `
+        <div style="padding: 40px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 480px;">
+            <div style="width: 72px; height: 72px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; font-size: 34px; margin-bottom: 20px; border: 2px solid #bfdbfe; box-shadow: 0 4px 14px rgba(37,99,235,0.18);">
+                🛡️
+            </div>
+            <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-bottom: 8px;">
+                Banka 3D Secure Doğrulama Penceresi
+            </h3>
+            <p style="font-size: 0.92rem; color: #475569; max-width: 440px; line-height: 1.6; margin-bottom: 24px;">
+                ${popupOpened 
+                    ? 'Bankanızın güvenli SMS onay penceresi açıldı. Lütfen telefonunuza gelen şifreyi açılan pencerede onaylayınız.' 
+                    : 'Tarayıcınız otomatik pencereyi engellemiş olabilir. Lütfen aşağıdaki butona tıklayarak doğrulama penceresini açınız.'}
+            </p>
+
+            <div style="display: inline-flex; align-items: center; gap: 10px; background: #f1f5f9; padding: 10px 22px; border-radius: 30px; border: 1px solid #cbd5e1; margin-bottom: 28px;">
+                <div style="width: 14px; height: 14px; border: 2.5px solid #2563eb; border-top-color: transparent; border-radius: 50%; animation: spin3D 1s linear infinite;"></div>
+                <span style="font-size: 0.86rem; font-weight: 700; color: #0f172a;">Banka onayı bekleniyor...</span>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 320px;">
+                <button type="button" onclick="launchIyzico3DPopup()" class="btn-primary" style="padding: 13px 24px; font-weight: 750; font-size: 0.95rem; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); border: none; border-radius: 10px; box-shadow: 0 4px 14px rgba(37,99,235,0.35); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>🔗</span> ${popupOpened ? 'Pencereyi Tekrar Aç / Öne Getir' : 'Banka Onay Ekranını Aç'}
+                </button>
+                <button type="button" onclick="loadIyzicoInIframeDirectly()" style="background: transparent; border: 1px dashed #cbd5e1; color: #64748b; padding: 8px 16px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; font-weight: 600;">
+                    Modal içinde açmayı dene (Yerel Iframe)
+                </button>
+            </div>
+        </div>
+        <style>
+            @@keyframes spin3D { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        </style>
+    `;
 
     modal.style.display = 'flex';
     modal.classList.add('show');
     modal.classList.add('is-open');
-
-    const doc = iframe.contentDocument || iframe.contentWindow.document;
-    doc.open();
-    doc.write(htmlContent);
-    doc.close();
 }
 
 function closeIyzico3DModal() {

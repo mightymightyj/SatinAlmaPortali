@@ -369,4 +369,48 @@ namespace satinalmaportali2.Models {
         public string DeliveryCity { get; set; } = string.Empty;
         public string DeliveryAddress { get; set; } = string.Empty;
     }
+
+    /// <summary>
+    /// Bağımsız Ürün Detay Sayfası (Product Detail Page) ViewModel
+    /// </summary>
+    public class ProductDetailPageViewModel
+    {
+        public int ItemID { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Sku { get; set; } = string.Empty;
+        public string Brand { get; set; } = string.Empty;
+        public decimal UnitPrice { get; set; }
+        public decimal TaxRate { get; set; } = 0.20m;
+        public decimal TaxAmount => Math.Round(UnitPrice * TaxRate, 2);
+        public decimal GrandTotal => UnitPrice + TaxAmount;
+        public int StockQuantity { get; set; }
+        public bool IsOutOfStock => StockQuantity <= 0;
+        public string CategoryName { get; set; } = "Endüstriyel Ürünler";
+        public string Description { get; set; } = string.Empty;
+        public string ImageUrl { get; set; } = "/images/default-product.svg";
+        public Dictionary<string, string> Specifications { get; set; } = new();
+
+        // Tedarikçi Firma Bilgileri
+        public int SupplierCompanyID { get; set; }
+        public string SupplierCompanyName { get; set; } = "Onaylı Tedarikçi";
+        public string SupplierOfficial { get; set; } = string.Empty;
+        public string SupplierLocation { get; set; } = "Türkiye";
+        public double SupplierScore { get; set; } = 9.8;
+        public int SupplierReviewCount { get; set; } = 0;
+        public bool IsOwner { get; set; } // Giriş yapan firma ürünün sahibi mi?
+
+        // Benzer / İlgili Ürünler
+        public List<RelatedProductCardDto> RelatedProducts { get; set; } = new();
+    }
+
+    public class RelatedProductCardDto
+    {
+        public int ItemID { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Brand { get; set; } = string.Empty;
+        public decimal UnitPrice { get; set; }
+        public string ImageUrl { get; set; } = "/images/default-product.svg";
+        public int StockQuantity { get; set; }
+        public bool IsOutOfStock => StockQuantity <= 0;
+    }
 }

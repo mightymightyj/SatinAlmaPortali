@@ -855,7 +855,16 @@
                     <div id="paymentCreditCardFields" class="b2b-card-box">
                         <div class="b2b-card-visual-header">
                             <span style="font-size: 0.76rem; font-weight: 700; color: #475569;">Kart Bilgileri</span>
-                            <span id="cardTypeBadge" class="b2b-card-type-badge">💳 KURUMSAL KART</span>
+                            <span id="cardTypeBadge" class="b2b-card-type-badge">💳 3D SECURE &amp; İYZİCO HAVUZ</span>
+                        </div>
+
+                        <!-- iyzico Escrow Bilgilendirme Rozeti -->
+                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 1.2rem;">🛡️</span>
+                            <div style="font-size: 0.76rem; color: #166534; line-height: 1.35;">
+                                <strong>B2B Güvenli Havuz (Escrow) Garantisi:</strong><br />
+                                Ödemeniz satıcıya hemen aktarılmaz; ürün teslim edilip onaylayana kadar <strong>iyzico güvence havuzunda</strong> bloke edilir.
+                            </div>
                         </div>
 
                         <div style="margin-bottom: 10px;">
@@ -866,7 +875,7 @@
                         <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px;">
                             <div>
                                 <label class="b2b-input-label" style="margin-bottom: 3px;">Kart Numarası (16 Hane)</label>
-                                <input type="text" id="checkoutCardNumber" class="b2b-custom-input" placeholder="**** **** **** ****" maxlength="19" inputmode="numeric" oninput="formatCardNumberInput(this)" style="font-family: monospace; font-weight: 700; letter-spacing: 0.06em;" />
+                                <input type="text" id="checkoutCardNumber" class="b2b-custom-input" placeholder="5528 7900 0000 0008" maxlength="19" inputmode="numeric" oninput="formatCardNumberInput(this)" style="font-family: monospace; font-weight: 700; letter-spacing: 0.06em;" />
                             </div>
                             <div>
                                 <label class="b2b-input-label" style="margin-bottom: 3px;">SKT (AA/YY)</label>
@@ -1045,6 +1054,22 @@
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- ==================== İYZİCO 3D SECURE MODALI ==================== -->
+<div id="iyzico3DModal" class="b2b-checkout-overlay" style="display: none; z-index: 1000002;">
+    <div style="background: #fff; border-radius: 16px; width: 100%; max-width: 680px; max-height: 90vh; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35); display: flex; flex-direction: column;">
+        <div style="padding: 16px 20px; background: #0f172a; color: #fff; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.2rem;">🔒</span>
+                <strong style="font-size: 0.95rem;">Banka 3D Secure Doğrulama Ekranı</strong>
+            </div>
+            <button type="button" onclick="closeIyzico3DModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer;">&times;</button>
+        </div>
+        <div id="iyzico3DFrameContainer" style="flex: 1; min-height: 520px; width: 100%; position: relative; background: #f8fafc;">
+            <!-- 3D Secure HTML form / iframe dinamik basılır -->
+        </div>
     </div>
 </div>
 

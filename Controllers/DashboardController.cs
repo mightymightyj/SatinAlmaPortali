@@ -22,12 +22,18 @@ namespace satinalmaportali2.Controllers
         private readonly IDashboardService _dashboardService;
         private readonly ApplicationDbContext _context;
         private readonly IHubContext<PortalHub> _hubContext;
+        private readonly EmailService? _emailService;
 
-        public DashboardController(IDashboardService dashboardService, ApplicationDbContext context, IHubContext<PortalHub> hubContext)
+        public DashboardController(
+            IDashboardService dashboardService, 
+            ApplicationDbContext context, 
+            IHubContext<PortalHub> hubContext,
+            EmailService? emailService = null)
         {
             _dashboardService = dashboardService;
             _context = context;
             _hubContext = hubContext;
+            _emailService = emailService;
         }
 
         private int GetCurrentCompanyId()
@@ -43,6 +49,16 @@ namespace satinalmaportali2.Controllers
         private string GetCurrentUserType()
         {
             return User.FindFirstValue("UserType") ?? User.FindFirstValue(ClaimTypes.Role) ?? "User";
+        }
+
+        private string GetCurrentEmail()
+        {
+            return User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst("Email")?.Value ?? "";
+        }
+
+        private bool IsSuperAdmin()
+        {
+            return User.IsInRole("SuperAdmin") || User.FindFirst("IsAdmin")?.Value == "True" || GetCurrentUserType() == "SuperAdmin";
         }
 
         private async Task<string> GetCurrentCompanyNameAsync()
@@ -404,6 +420,14 @@ namespace satinalmaportali2.Controllers
                 .AsNoTracking()
                 .AsQueryable();
 
+            // Yalnızca 3D Secure / ödemesi tamamlanmış veya geçerli kurumsal siparişleri listele (3D onayı bekleyen veya başarısız olan taslaklar görünmez)
+            query = query.Where(o => 
+                o.OrderStatus != "Ödeme Bekleniyor" && 
+                o.OrderStatus != "Ödeme Başlatılamadı" && 
+                o.OrderStatus != "Taslak" &&
+                o.PaymentStatus != "Beklemede (3D)" &&
+                o.PaymentStatus != "Hata");
+
             if (companyId > 0)
             {
                 var userOrdersQuery = query.Where(o => o.BuyerCompanyID == companyId);
@@ -485,6 +509,15 @@ namespace satinalmaportali2.Controllers
                 .AsNoTracking()
                 .AsQueryable();
 
+            // Tedarikçi yalnızca 3D Secure banka onayını tamamlamış veya geçerli kurumsal siparişleri görür!
+            // Ödeme aşamasında yarım bırakılmış veya başarısız olan sipariş denemeleri satıcıya ASLA gösterilmez!
+            query = query.Where(o => 
+                o.OrderStatus != "Ödeme Bekleniyor" && 
+                o.OrderStatus != "Ödeme Başlatılamadı" && 
+                o.OrderStatus != "Taslak" &&
+                o.PaymentStatus != "Beklemede (3D)" &&
+                o.PaymentStatus != "Hata");
+
             if (companyId > 0)
             {
                 var comp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == companyId, cancellationToken);
@@ -537,7 +570,25 @@ namespace satinalmaportali2.Controllers
         }
 
         /// <summary>
-        /// Sipariş durumunu ve kargo takip bilgisini günceller (AJAX).
+        /// Sipariş durumu metninin hiyerarşik kademe seviyesini döndürür.
+        /// Seviyeler: 1: Onaylandı, 2: Hazırlanıyor, 3: Kargoya Verildi, 4: Teslim Edildi, 5: Tamamlandı, 99: İptal Edildi.
+        /// </summary>
+        private static int GetOrderStatusLevel(string? status)
+        {
+            if (string.IsNullOrWhiteSpace(status)) return 0;
+            var s = status.Trim().ToLowerInvariant();
+            if (s.Contains("onaylan") || s == "ödendi" || s == "yeni sipariş") return 1;
+            if (s.Contains("hazırlan") || s.Contains("hazirlan")) return 2;
+            if (s.Contains("kargo") || s.Contains("sevk")) return 3;
+            if (s.Contains("teslim")) return 4;
+            if (s.Contains("tamamlan")) return 5;
+            if (s.Contains("iptal")) return 99;
+            return 0;
+        }
+
+        /// <summary>
+        /// Sipariş durumunu ve kargo takip bilgisini kademeli olarak günceller veya gerekçeli iptal eder (AJAX).
+        /// Durumlar geriye alınamaz; yalnızca kademeli ilerletilebilir veya olumsuz durumda gerekçeli iptal edilebilir.
         /// </summary>
         [HttpPost]
         [AllowAnonymous]
@@ -562,40 +613,311 @@ namespace satinalmaportali2.Controllers
                 int currentCompanyId = GetCurrentCompanyId();
                 string currentCompanyName = await GetCurrentCompanyNameAsync();
 
+                // Yetki kontrolü: Kullanıcı sisteme giriş yapmış bir tedarikçi ise siparişin satıcısı olmalıdır
+                bool isAuthorized = (currentCompanyId <= 0) ||
+                                    (order.SupplierCompanyID == currentCompanyId) ||
+                                    (!string.IsNullOrWhiteSpace(currentCompanyName) && !string.IsNullOrWhiteSpace(order.SupplierCompanyName) && string.Equals(order.SupplierCompanyName.Trim(), currentCompanyName.Trim(), StringComparison.OrdinalIgnoreCase)) ||
+                                    (order.OrderItems.Any(oi => oi.SupplierCompanyID == currentCompanyId || (!string.IsNullOrWhiteSpace(currentCompanyName) && oi.SupplierCompanyName != null && string.Equals(oi.SupplierCompanyName.Trim(), currentCompanyName.Trim(), StringComparison.OrdinalIgnoreCase))));
+
+                if (!isAuthorized)
+                {
+                    return Json(new { success = false, message = "Bu siparişin durumunu güncelleme yetkiniz bulunmamaktadır." });
+                }
+
+                string currentStatus = !string.IsNullOrWhiteSpace(order.OrderStatus) ? order.OrderStatus.Trim() : "Onaylandı";
+                int currentLevel = GetOrderStatusLevel(currentStatus);
+
+                // 1. NİHAİ DURUM KONTROLÜ (Teslim Edildi, Tamamlandı veya İptal Edildi ise durum kilitlidir)
+                if (currentLevel >= 4)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = $"Bu sipariş '{currentStatus}' aşamasındadır (Nihai Durum). Sipariş tamamlandığı veya iptal edildiği için durumu artık değiştirilemez."
+                    });
+                }
+
+                string requestedStatus = !string.IsNullOrWhiteSpace(input.OrderStatus) ? input.OrderStatus.Trim() : "";
+                bool isCancelRequest = requestedStatus.Equals("İptal", StringComparison.OrdinalIgnoreCase) ||
+                                       requestedStatus.Equals("İptal Edildi", StringComparison.OrdinalIgnoreCase) ||
+                                       requestedStatus.ToLowerInvariant().Contains("iptal");
+
+                // 2. SATICI İPTAL MEKANİZMASI (Olumsuz durumlarda gerekçeli iptal - Yalnızca Onaylandı veya Hazırlanıyor iken)
+                if (isCancelRequest)
+                {
+                    // Kargoya verilmiş veya daha ileri durumdaysa ASLA İPTAL EDİLEMEZ!
+                    if (currentLevel >= 3)
+                    {
+                        return Json(new
+                        {
+                            success = false,
+                            message = $"Bu sipariş '{currentStatus}' aşamasındadır. Kargonuz yola çıktığı için sipariş artık iptal edilemez! Teslimat sürecinin tamamlanması gerekmektedir."
+                        });
+                    }
+
+                    string reason = !string.IsNullOrWhiteSpace(input.CancellationReason)
+                        ? input.CancellationReason.Trim()
+                        : (!string.IsNullOrWhiteSpace(input.Notes) ? input.Notes.Trim() : "");
+
+                    if (string.IsNullOrWhiteSpace(reason))
+                    {
+                        return Json(new
+                        {
+                            success = false,
+                            message = "Siparişi iptal edebilmek için lütfen alıcı firmaya iletilecek geçerli bir iptal gerekçesi belirtiniz."
+                        });
+                    }
+
+                    var cancelTimestamp = DateTime.UtcNow.AddHours(3).ToString("dd.MM.yyyy HH:mm");
+                    string cancelLog = $"[Satıcı İptal Gerekçesi ({cancelTimestamp})]: {reason}";
+
+                    order.OrderStatus = "İptal Edildi";
+                    order.Notes = string.IsNullOrWhiteSpace(order.Notes) ? cancelLog : $"{order.Notes}\n{cancelLog}";
+                    order.DisputeReason = reason;
+
+                    // Kalemlerin durumunu da İptal Edildi olarak güncelle
+                    foreach (var oi in order.OrderItems)
+                    {
+                        bool isMyItem = (currentCompanyId <= 0) ||
+                                        (oi.SupplierCompanyID == currentCompanyId) ||
+                                        (order.SupplierCompanyID == currentCompanyId) ||
+                                        (!string.IsNullOrWhiteSpace(currentCompanyName) && oi.SupplierCompanyName != null && string.Equals(oi.SupplierCompanyName.Trim(), currentCompanyName.Trim(), StringComparison.OrdinalIgnoreCase));
+                        if (isMyItem)
+                        {
+                            oi.ItemStatus = "İptal Edildi";
+                        }
+                    }
+
+                    // Escrow (Havuz) Durumu: İade sürecini başlat
+                    if (order.EscrowStatus == "InEscrow" || order.EscrowStatus == "PendingPayment")
+                    {
+                        order.EscrowStatus = "Refunded";
+                        order.PaymentStatus = "İade Edilecek";
+                    }
+
+                    await _context.SaveChangesAsync();
+
+                    // SignalR Bildirimleri
+                    try
+                    {
+                        if (order.BuyerCompanyID.HasValue && order.BuyerCompanyID.Value > 0)
+                        {
+                            await _hubContext.Clients.Group($"company_{order.BuyerCompanyID.Value}").SendAsync("OnOrderStatusUpdatedNotification", new
+                            {
+                                orderId = order.OrderID,
+                                orderNumber = order.OrderNumber,
+                                status = "İptal Edildi",
+                                trackingNumber = "",
+                                message = $"⚠️ #{order.OrderNumber} numaralı siparişiniz satıcı tarafından iptal edildi. Gerekçe: {reason}"
+                            });
+                        }
+
+                        await _hubContext.Clients.All.SendAsync("OnOrderStatusChanged", new
+                        {
+                            orderId = order.OrderID,
+                            orderNumber = order.OrderNumber,
+                            status = "İptal Edildi",
+                            trackingNumber = "",
+                            shippingCarrier = "",
+                            notes = order.Notes ?? ""
+                        });
+                    }
+                    catch (Exception hubEx)
+                    {
+                        Console.WriteLine($"SignalR Cancel Order error: {hubEx.Message}");
+                    }
+
+                    // Alıcıya Bilgilendirme E-postası Gönder (Async Arka Plan)
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            if (_emailService != null && !string.IsNullOrWhiteSpace(order.BuyerEmail))
+                            {
+                                var emailItems = order.OrderItems.Select((oi, idx) => new SoldProductItemEmailDto
+                                {
+                                    ItemOrder = idx + 1,
+                                    ProductName = oi.ProductName,
+                                    Quantity = oi.Quantity,
+                                    Unit = "Adet",
+                                    UnitPrice = oi.UnitPrice,
+                                    LineTotal = oi.LineTotal
+                                }).ToList();
+
+                                await _emailService.SendOrderCancelledBySupplierEmailAsync(
+                                    toEmail: order.BuyerEmail,
+                                    buyerCompanyName: order.BuyerCompanyName,
+                                    supplierCompanyName: order.SupplierCompanyName ?? (!string.IsNullOrWhiteSpace(currentCompanyName) ? currentCompanyName : "Tedarikçi Firma"),
+                                    orderNumber: order.OrderNumber,
+                                    orderDate: order.OrderDate,
+                                    grandTotal: order.GrandTotal,
+                                    cancellationReason: reason,
+                                    items: emailItems,
+                                    buyerOrdersUrl: $"{Request.Scheme}://{Request.Host}/Dashboard/Orders"
+                                );
+                            }
+                        }
+                        catch (Exception emailEx)
+                        {
+                            Console.WriteLine($"İptal bildirim e-posta gönderim hatası: {emailEx.Message}");
+                        }
+                    });
+
+                    return Json(new
+                    {
+                        success = true,
+                        message = $"#{order.OrderNumber} numaralı sipariş satıcı gerekçesiyle başarıyla iptal edildi ve alıcıya bildirildi.",
+                        orderId = order.OrderID,
+                        status = "İptal Edildi"
+                    });
+                }
+
+                // 3. KADEMELİ İLERLEME KONTROLÜ (Geriye Alınamaz)
+                int targetLevel = GetOrderStatusLevel(requestedStatus);
+                if (targetLevel == 0)
+                {
+                    return Json(new { success = false, message = $"Geçersiz sipariş durumu: '{requestedStatus}'." });
+                }
+
+                // Geriye dönük durum değişikliği engeli
+                if (targetLevel < currentLevel)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = $"Sipariş durumu geriye alınamaz! Sipariş şu anda '{currentStatus}' aşamasındadır ve geriye dönük olarak '{requestedStatus}' durumuna döndürülemez."
+                    });
+                }
+
+                // Sıralı Aşama Atlama Engeli (Adım adım ilerleme kuralı)
+                if (targetLevel > currentLevel + 1)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = $"Sipariş durumları sırasıyla teker teker aktif edilmelidir! '{currentStatus}' aşamasından doğrudan '{requestedStatus}' aşamasına atlanamaz."
+                    });
+                }
+
+                // Kargoya Verildi seçildiğinde kargo firması ve takip numarası ZORUNLUDUR
+                if (targetLevel == 3)
+                {
+                    string effectiveCarrier = !string.IsNullOrWhiteSpace(input.ShippingCarrier) ? input.ShippingCarrier.Trim() : (order.ShippingCarrier ?? "");
+                    string effectiveTracking = !string.IsNullOrWhiteSpace(input.TrackingNumber) ? input.TrackingNumber.Trim() : (order.TrackingNumber ?? "");
+
+                    if (string.IsNullOrWhiteSpace(effectiveCarrier))
+                    {
+                        return Json(new { success = false, message = "Siparişi 'Kargoya Verildi' durumuna geçirmek için lütfen kargo firması seçiniz." });
+                    }
+                    if (string.IsNullOrWhiteSpace(effectiveTracking))
+                    {
+                        return Json(new { success = false, message = "Siparişi 'Kargoya Verildi' durumuna geçirmek için lütfen geçerli bir kargo takip numarası giriniz." });
+                    }
+                }
+
+                // Standartlaştırılmış durum ismi
+                string standardizedStatus = targetLevel switch
+                {
+                    1 => "Onaylandı",
+                    2 => "Hazırlanıyor",
+                    3 => "Kargoya Verildi",
+                    4 => "Teslim Edildi",
+                    5 => "Tamamlandı",
+                    _ => requestedStatus
+                };
+
+                // Sipariş kalemlerini güncelle
                 if (order.OrderItems != null && order.OrderItems.Any())
                 {
                     foreach (var oi in order.OrderItems)
                     {
-                        bool isMyItem = (currentCompanyId > 0 && oi.SupplierCompanyID == currentCompanyId) ||
+                        bool isMyItem = (currentCompanyId <= 0) ||
+                                        (oi.SupplierCompanyID == currentCompanyId) ||
+                                        (order.SupplierCompanyID == currentCompanyId) ||
                                         (!string.IsNullOrWhiteSpace(currentCompanyName) && oi.SupplierCompanyName != null && string.Equals(oi.SupplierCompanyName.Trim(), currentCompanyName.Trim(), StringComparison.OrdinalIgnoreCase));
 
-                        if (isMyItem || currentCompanyId <= 0 || order.SupplierCompanyID == currentCompanyId)
+                        if (isMyItem)
                         {
-                            if (!string.IsNullOrWhiteSpace(input.OrderStatus)) oi.ItemStatus = input.OrderStatus.Trim();
+                            bool wasNotCancelled = (oi.ItemStatus != "İptal" && oi.ItemStatus != "İptal Edildi");
+                            oi.ItemStatus = standardizedStatus;
                             if (!string.IsNullOrWhiteSpace(input.TrackingNumber)) oi.TrackingNumber = input.TrackingNumber.Trim();
                             if (!string.IsNullOrWhiteSpace(input.ShippingCarrier)) oi.ShippingCarrier = input.ShippingCarrier.Trim();
+
+                            // İptal durumunda stok iadesi
+                            if ((targetLevel == -1 || standardizedStatus == "İptal" || standardizedStatus == "İptal Edildi") && wasNotCancelled)
+                            {
+                                if (oi.ItemID.HasValue && oi.ItemID.Value > 0)
+                                {
+                                    var dbItem = await _context.Items.FirstOrDefaultAsync(i => i.ItemID == oi.ItemID.Value);
+                                    if (dbItem != null && dbItem.Quantity.HasValue)
+                                    {
+                                        dbItem.Quantity += oi.Quantity;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
 
-                if (!string.IsNullOrWhiteSpace(input.OrderStatus))
+                // ==================== ÇOK SATICILI SİPARİŞ DURUM BELİRLEME ====================
+                var activeOrderItems = (order.OrderItems ?? new List<OrderItem>())
+                    .Where(oi => oi.ItemStatus != "İptal" && oi.ItemStatus != "İptal Edildi")
+                    .ToList();
+
+                if (activeOrderItems.Any())
                 {
-                    order.OrderStatus = input.OrderStatus.Trim();
+                    bool allItemsDelivered = activeOrderItems.All(oi => oi.ItemStatus == "Teslim Edildi" || oi.ItemStatus == "Tamamlandı");
+                    bool anyItemDelivered = activeOrderItems.Any(oi => oi.ItemStatus == "Teslim Edildi");
+                    bool anyItemShipped = activeOrderItems.Any(oi => oi.ItemStatus == "Kargoya Verildi");
+                    bool anyItemPreparing = activeOrderItems.Any(oi => oi.ItemStatus == "Hazırlanıyor");
+
+                    if (allItemsDelivered)
+                    {
+                        // TÜM SATICILAR teslimatı tamamladı -> Ana sipariş Teslim Edildi!
+                        order.OrderStatus = "Teslim Edildi";
+                        order.DeliveryDate = DateTime.UtcNow;
+                    }
+                    else if (anyItemDelivered || anyItemShipped)
+                    {
+                        // En az bir satıcı teslim etti veya kargoladı ama henüz tüm satıcılar teslim etmedi -> Kargoya Verildi
+                        order.OrderStatus = "Kargoya Verildi";
+                    }
+                    else if (anyItemPreparing)
+                    {
+                        order.OrderStatus = "Hazırlanıyor";
+                    }
+                    else
+                    {
+                        order.OrderStatus = standardizedStatus;
+                    }
+                }
+                else
+                {
+                    order.OrderStatus = standardizedStatus;
                 }
 
                 if (!string.IsNullOrWhiteSpace(input.TrackingNumber))
                 {
-                    order.TrackingNumber = input.TrackingNumber.Trim();
+                    order.TrackingNumber = string.IsNullOrWhiteSpace(order.TrackingNumber) 
+                        ? input.TrackingNumber.Trim() 
+                        : (order.TrackingNumber.Contains(input.TrackingNumber.Trim()) ? order.TrackingNumber : $"{order.TrackingNumber}, {input.TrackingNumber.Trim()}");
                 }
 
                 if (!string.IsNullOrWhiteSpace(input.ShippingCarrier))
                 {
-                    order.ShippingCarrier = input.ShippingCarrier.Trim();
+                    order.ShippingCarrier = string.IsNullOrWhiteSpace(order.ShippingCarrier) 
+                        ? input.ShippingCarrier.Trim() 
+                        : (order.ShippingCarrier.Contains(input.ShippingCarrier.Trim()) ? order.ShippingCarrier : $"{order.ShippingCarrier}, {input.ShippingCarrier.Trim()}");
+                }
+
+                if (order.OrderStatus == "Teslim Edildi" && !order.DeliveryDate.HasValue)
+                {
+                    order.DeliveryDate = DateTime.UtcNow;
                 }
 
                 if (!string.IsNullOrWhiteSpace(input.Notes))
                 {
-                    order.Notes = input.Notes.Trim();
+                    order.Notes = string.IsNullOrWhiteSpace(order.Notes) ? input.Notes.Trim() : $"{order.Notes}\n{input.Notes.Trim()}";
                 }
 
                 await _context.SaveChangesAsync();
@@ -620,7 +942,9 @@ namespace satinalmaportali2.Controllers
                             orderNumber = order.OrderNumber,
                             status = order.OrderStatus,
                             trackingNumber = order.TrackingNumber,
-                            message = $"📦 {order.OrderNumber} numaralı siparişinizin durumu '{order.OrderStatus}' olarak güncellendi."
+                            message = targetLevel == 4
+                                ? $"✅ #{order.OrderNumber} numaralı siparişiniz teslim edildi! Lütfen siparişinizi kontrol edip teslim alma ve havuz onayını veriniz."
+                                : $"📦 #{order.OrderNumber} numaralı siparişinizin durumu '{order.OrderStatus}' olarak güncellendi."
                         });
                     }
 
@@ -631,10 +955,95 @@ namespace satinalmaportali2.Controllers
                     Console.WriteLine($"SignalR UpdateOrderStatus error: {hubEx.Message}");
                 }
 
+                // ==================== KADEMELİ DURUM E-POSTA BİLDİRİMLERİ ====================
+                if (_emailService != null)
+                {
+                    try
+                    {
+                        string buyerEmail = "";
+                        string buyerCompanyName = order.BuyerCompanyName ?? "";
+
+                        if (order.BuyerCompanyID.HasValue && order.BuyerCompanyID.Value > 0)
+                        {
+                            var buyerComp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == order.BuyerCompanyID.Value);
+                            if (buyerComp != null)
+                            {
+                                buyerEmail = buyerComp.CompanyMail ?? "";
+                                if (string.IsNullOrWhiteSpace(buyerCompanyName))
+                                {
+                                    buyerCompanyName = buyerComp.CompanyName ?? buyerComp.CompanyOfficial ?? "";
+                                }
+                            }
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(buyerEmail))
+                        {
+                            var emailItems = (order.OrderItems ?? new List<OrderItem>()).Select((oi, idx) => new SoldProductItemEmailDto
+                            {
+                                ItemOrder = idx + 1,
+                                ProductName = oi.ProductName,
+                                Sku = oi.Sku,
+                                CategoryName = oi.CategoryName,
+                                Quantity = oi.Quantity,
+                                Unit = "Adet",
+                                UnitPrice = oi.UnitPrice,
+                                LineTotal = oi.LineTotal
+                            }).ToList();
+
+                            string supplierName = !string.IsNullOrWhiteSpace(order.SupplierCompanyName) ? order.SupplierCompanyName : currentCompanyName;
+
+                            if (targetLevel == 2)
+                            {
+                                // 1. Ürün Hazırlanıyor E-postası
+                                await _emailService.SendOrderPreparingEmailAsync(
+                                    toEmail: buyerEmail,
+                                    buyerCompanyName: buyerCompanyName,
+                                    supplierCompanyName: supplierName,
+                                    orderNumber: order.OrderNumber,
+                                    orderDate: order.OrderDate,
+                                    grandTotal: order.GrandTotal,
+                                    items: emailItems);
+                            }
+                            else if (targetLevel == 3)
+                            {
+                                // 2. Paket Kargolandı E-postası
+                                await _emailService.SendOrderShippedEmailAsync(
+                                    toEmail: buyerEmail,
+                                    buyerCompanyName: buyerCompanyName,
+                                    supplierCompanyName: supplierName,
+                                    orderNumber: order.OrderNumber,
+                                    orderDate: order.OrderDate,
+                                    grandTotal: order.GrandTotal,
+                                    shippingCarrier: order.ShippingCarrier ?? input.ShippingCarrier ?? "Kargo / Lojistik",
+                                    trackingNumber: order.TrackingNumber ?? input.TrackingNumber ?? "",
+                                    items: emailItems);
+                            }
+                            else if (targetLevel == 4)
+                            {
+                                // 3. Ürün Teslim Edildi E-postası
+                                await _emailService.SendOrderDeliveredEmailAsync(
+                                    toEmail: buyerEmail,
+                                    buyerCompanyName: buyerCompanyName,
+                                    supplierCompanyName: supplierName,
+                                    orderNumber: order.OrderNumber,
+                                    orderDate: order.OrderDate,
+                                    grandTotal: order.GrandTotal,
+                                    shippingCarrier: order.ShippingCarrier,
+                                    trackingNumber: order.TrackingNumber,
+                                    items: emailItems);
+                            }
+                        }
+                    }
+                    catch (Exception emailEx)
+                    {
+                        Console.WriteLine($"Kademeli sipariş e-posta gönderim hatası: {emailEx.Message}");
+                    }
+                }
+
                 return Json(new
                 {
                     success = true,
-                    message = $"{order.OrderNumber} numaralı sipariş durumu '{order.OrderStatus}' olarak güncellendi.",
+                    message = $"#{order.OrderNumber} numaralı sipariş durumu '{order.OrderStatus}' olarak başarıyla güncellendi.",
                     orderId = order.OrderID,
                     status = order.OrderStatus,
                     trackingNumber = order.TrackingNumber,
@@ -645,6 +1054,133 @@ namespace satinalmaportali2.Controllers
             {
                 var detail = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
                 return Json(new { success = false, message = "Sipariş güncellenirken hata oluştu: " + detail });
+            }
+        }
+
+        /// <summary>
+        /// Alıcı firmanın siparişi gerekçe belirterek iptal etmesi.
+        /// Yalnızca sipariş 'Onaylandı' veya 'Hazırlanıyor' aşamasında iken mümkündür.
+        /// Kargoya Verildi veya sonraki aşamalarda iptal KESİNLİKLE ENGELLENİR.
+        /// </summary>
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> CancelOrderByBuyer([FromBody] CancelOrderByBuyerInputModel input)
+        {
+            if (input == null || input.OrderID <= 0)
+            {
+                return Json(new { success = false, message = "Geçersiz sipariş ID." });
+            }
+
+            if (string.IsNullOrWhiteSpace(input.Reason))
+            {
+                return Json(new { success = false, message = "Lütfen siparişi iptal etme gerekçenizi belirtiniz." });
+            }
+
+            try
+            {
+                var order = await _context.Orders
+                    .Include(o => o.OrderItems)
+                    .FirstOrDefaultAsync(o => o.OrderID == input.OrderID);
+
+                if (order == null)
+                {
+                    return Json(new { success = false, message = "Sipariş veritabanında bulunamadı." });
+                }
+
+                int currentCompanyId = GetCurrentCompanyId();
+                string currentEmail = GetCurrentEmail();
+
+                bool isBuyer = (currentCompanyId > 0 && order.BuyerCompanyID == currentCompanyId) ||
+                               (!string.IsNullOrWhiteSpace(currentEmail) && !string.IsNullOrWhiteSpace(order.BuyerEmail) && string.Equals(order.BuyerEmail.Trim(), currentEmail.Trim(), StringComparison.OrdinalIgnoreCase)) ||
+                               IsSuperAdmin();
+
+                if (!isBuyer)
+                {
+                    return Json(new { success = false, message = "Bu siparişi yalnızca siparişi veren alıcı firma iptal edebilir." });
+                }
+
+                string currentStatus = !string.IsNullOrWhiteSpace(order.OrderStatus) ? order.OrderStatus.Trim() : "Onaylandı";
+                int currentLevel = GetOrderStatusLevel(currentStatus);
+
+                // Kargoya Verildi veya sonraki aşamalarda ALICI İPTAL EDEMEZ!
+                if (currentLevel >= 3)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = $"Siparişiniz '{currentStatus}' aşamasındadır. Kargonuz yola çıktığı veya teslimat başladığı için siparişinizi iptal edemezsiniz. Ürün size ulaştığında teslim alma aşamasında itiraz/iade bildiriminde bulunabilirsiniz."
+                    });
+                }
+
+                var cancelTimestamp = DateTime.UtcNow.AddHours(3).ToString("dd.MM.yyyy HH:mm");
+                string cancelLog = $"[Alıcı İptal Gerekçesi ({cancelTimestamp})]: {input.Reason.Trim()}";
+
+                order.OrderStatus = "İptal Edildi";
+                order.Notes = string.IsNullOrWhiteSpace(order.Notes) ? cancelLog : $"{order.Notes}\n{cancelLog}";
+                order.DisputeReason = input.Reason.Trim();
+
+                foreach (var oi in order.OrderItems)
+                {
+                    oi.ItemStatus = "İptal Edildi";
+                    if (oi.ItemID.HasValue && oi.ItemID.Value > 0)
+                    {
+                        var dbItem = await _context.Items.FirstOrDefaultAsync(i => i.ItemID == oi.ItemID.Value);
+                        if (dbItem != null && dbItem.Quantity.HasValue)
+                        {
+                            dbItem.Quantity += oi.Quantity;
+                        }
+                    }
+                }
+
+                if (order.EscrowStatus == "InEscrow" || order.EscrowStatus == "PendingPayment")
+                {
+                    order.EscrowStatus = "Refunded";
+                    order.PaymentStatus = "İade Edilecek";
+                }
+
+                await _context.SaveChangesAsync();
+
+                // SignalR Bildirimleri
+                try
+                {
+                    if (order.SupplierCompanyID.HasValue && order.SupplierCompanyID.Value > 0)
+                    {
+                        await _hubContext.Clients.Group($"company_{order.SupplierCompanyID.Value}").SendAsync("OnOrderStatusUpdatedNotification", new
+                        {
+                            orderId = order.OrderID,
+                            orderNumber = order.OrderNumber,
+                            status = "İptal Edildi",
+                            trackingNumber = "",
+                            message = $"⚠️ #{order.OrderNumber} numaralı sipariş alıcı firma tarafından iptal edildi. Gerekçe: {input.Reason.Trim()}"
+                        });
+                    }
+
+                    await _hubContext.Clients.All.SendAsync("OnOrderStatusChanged", new
+                    {
+                        orderId = order.OrderID,
+                        orderNumber = order.OrderNumber,
+                        status = "İptal Edildi",
+                        trackingNumber = "",
+                        shippingCarrier = "",
+                        notes = order.Notes ?? ""
+                    });
+                }
+                catch (Exception hubEx)
+                {
+                    Console.WriteLine($"SignalR Buyer Cancel error: {hubEx.Message}");
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    message = $"#{order.OrderNumber} numaralı siparişiniz başarıyla iptal edildi. Havuzdaki ödemeniz kartınıza kesintisiz iade edilecektir.",
+                    orderId = order.OrderID,
+                    status = "İptal Edildi"
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Sipariş iptal edilirken hata oluştu: " + ex.Message });
             }
         }
 
