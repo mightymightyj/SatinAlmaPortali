@@ -1040,10 +1040,27 @@ function renderCorporateVitrin() {
                 </div>
 
                 <!-- Görsel ve Kategori Rozeti -->
-                <div class="b2b-img-container">
-                    <a href="/Product/${item.id}" style="display:block; width:100%; height:100%; text-decoration:none;">
-                        <img src="${item.image || '/images/default-product.svg'}" alt="${item.title}" loading="lazy" class="b2b-img" onerror="this.src='/images/default-product.svg'" />
-                    </a>
+                <div class="b2b-img-container" id="card-img-container-${item.id}" data-item-id="${item.id}" data-current-index="0" data-total-images="${(Array.isArray(item.images) && item.images.length > 0) ? item.images.length : 1}">
+                    ${(Array.isArray(item.images) && item.images.length > 1) ? `
+                        <div class="b2b-card-slides-track" id="card-slides-${item.id}">
+                            ${item.images.map((imgUrl, idx) => `
+                                <a href="/Product/${item.id}" class="b2b-card-slide" data-index="${idx}" style="display: ${idx === 0 ? 'block' : 'none'}; opacity: ${idx === 0 ? '1' : '0'};">
+                                    <img src="${imgUrl}" alt="${item.title} - ${idx + 1}" loading="lazy" class="b2b-img" onerror="this.src='/images/default-product.svg'" />
+                                </a>
+                            `).join('')}
+                        </div>
+                        <button type="button" class="b2b-card-carousel-arrow b2b-card-prev" onclick="b2bCardCarouselPrev(event, ${item.id})" title="Önceki Görsel" aria-label="Önceki">‹</button>
+                        <button type="button" class="b2b-card-carousel-arrow b2b-card-next" onclick="b2bCardCarouselNext(event, ${item.id})" title="Sonraki Görsel" aria-label="Sonraki">›</button>
+                        <div class="b2b-card-carousel-dots" id="card-dots-${item.id}">
+                            ${item.images.map((_, idx) => `
+                                <span class="b2b-card-dot ${idx === 0 ? 'is-active' : ''}" onclick="b2bCardCarouselGo(event, ${item.id}, ${idx})" title="${idx + 1}. Görsel"></span>
+                            `).join('')}
+                        </div>
+                    ` : `
+                        <a href="/Product/${item.id}" style="display:block; width:100%; height:100%; text-decoration:none;">
+                            <img src="${item.image || '/images/default-product.svg'}" alt="${item.title}" loading="lazy" class="b2b-img" onerror="this.src='/images/default-product.svg'" />
+                        </a>
+                    `}
                     
                     <div class="b2b-badges-stack">
                         ${isOutOfStock ? `<span class="b2b-badge" style="background: #dc2626; color: #ffffff; font-weight: 800;">Tükendi</span>` : ''}
@@ -1356,6 +1373,15 @@ function openSellerOfferModal(productId) {
         clearCatTreeSelection();
     }
 
+    (window.homeUploadedImages || []).forEach(item => {
+        if (item.previewUrl && item.previewUrl.startsWith('blob:')) {
+            try { URL.revokeObjectURL(item.previewUrl); } catch(e) {}
+        }
+    });
+    window.homeUploadedImages = [];
+    if (typeof window.renderHomeUploadedImages === 'function') window.renderHomeUploadedImages();
+    if (typeof window.setupHomeProductImageDropzone === 'function') window.setupHomeProductImageDropzone();
+
     modal.style.display = 'flex';
     modal.style.pointerEvents = 'auto';
     requestAnimationFrame(() => {
@@ -1622,23 +1648,32 @@ async function submitSellerOffer(e) {
     const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
     if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span>⏳ Kaydediliyor ve Yayına Alınıyor...</span>';
+        submitBtn.innerHTML = '<span>⏳ Görseller yükleniyor ve ilan oluşturuluyor...</span>';
     }
 
     try {
+        const formData = new FormData();
+        formData.append('ProductName', productName.trim());
+        if (categoryId) formData.append('CategoryID', categoryId);
+        formData.append('CategoryName', category);
+        formData.append('UnitPrice', price);
+        formData.append('StockQuantity', stock);
+        formData.append('ItemDescription', desc);
+
+        let mainIdx = 0;
+        (window.homeUploadedImages || []).forEach((item, idx) => {
+            if (item.file) {
+                formData.append('ImageFiles', item.file);
+            }
+            if (item.isMain) {
+                mainIdx = idx;
+            }
+        });
+        formData.append('MainImageIndex', mainIdx);
+
         const response = await fetch('/Home/SubmitSellerOffer', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                productName: productName.trim(),
-                categoryID: categoryId ? parseInt(categoryId, 10) : null,
-                categoryName: category,
-                unitPrice: price,
-                stockQuantity: stock,
-                itemDescription: desc
-            })
+            body: formData
         });
 
         const result = await response.json();
@@ -1646,8 +1681,15 @@ async function submitSellerOffer(e) {
             closeTyModal('tySellerOfferModal');
             showB2BToast(result.message + " İlanınızı 'Satıştaki Ürünlerim' panelinden yönetebilirsiniz.", "success");
 
-            // Formu sıfırla
+            // Formu ve görselleri sıfırla
             if (formEl && typeof formEl.reset === 'function') formEl.reset();
+            (window.homeUploadedImages || []).forEach(item => {
+                if (item.previewUrl && item.previewUrl.startsWith('blob:')) {
+                    try { URL.revokeObjectURL(item.previewUrl); } catch(e) {}
+                }
+            });
+            window.homeUploadedImages = [];
+            renderHomeUploadedImages();
             clearCatTreeSelection();
         } else if (result.requireLogin) {
             showB2BToast("🔒 " + (result.message || "Lütfen kurumsal satıcı hesabınızla giriş yapınız."), "warning");
@@ -1673,6 +1715,176 @@ async function submitSellerOffer(e) {
     }
 
     return false;
+}
+
+// ==================== B2B ANASAYFA ÇOKLU GÖRSEL YÜKLEME YARDIMCILARI ====================
+// Görseller hemen Cloudinary'ye GÖNDERİLMEZ. Yerel önizleme oluşturulur, sadece ilan kaydedildiğinde yüklenir.
+window.homeUploadedImages = [];
+
+window.handleHomeProductImageFiles = function(files) {
+    if (!files || files.length === 0) return;
+    const validExts = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/jpg'];
+    const maxBytes = 10 * 1024 * 1024; // 10 MB
+
+    let addedCount = 0;
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.size > maxBytes) {
+            showB2BToast(`"${file.name}" 10MB boyut sınırını aşıyor.`, 'danger');
+            continue;
+        }
+        if (file.type && !validExts.includes(file.type.toLowerCase())) {
+            showB2BToast(`"${file.name}" geçerli bir görsel formatı değil (JPG, PNG, WEBP, GIF desteklenir).`, 'danger');
+            continue;
+        }
+
+        const isFirst = window.homeUploadedImages.length === 0;
+        const previewUrl = URL.createObjectURL(file);
+        window.homeUploadedImages.push({
+            file: file,
+            previewUrl: previewUrl,
+            isMain: isFirst
+        });
+        addedCount++;
+    }
+
+    renderHomeUploadedImages();
+    if (addedCount > 0) {
+        showB2BToast(`${addedCount} görsel eklendi. İlanı kaydettiğinizde Cloudinary'ye yüklenecektir.`, 'info');
+    }
+};
+
+window.renderHomeUploadedImages = function() {
+    const grid = document.getElementById('homeUploadedImagesGrid');
+    if (!grid) return;
+    if (!window.homeUploadedImages || window.homeUploadedImages.length === 0) {
+        grid.innerHTML = '';
+        return;
+    }
+
+    grid.innerHTML = window.homeUploadedImages.map((img, idx) => `
+        <div class="b2b-img-thumb-card ${img.isMain ? 'is-main' : ''}" data-index="${idx}">
+            <img src="${img.previewUrl || img.imageUrl}" alt="Görsel ${idx + 1}" />
+            <button type="button" class="btn-make-main ${img.isMain ? 'active' : ''}" onclick="setHomeMainImage(${idx})" title="${img.isMain ? 'Bu görsel ana resimdir' : 'Ana resim yap'}">
+                ${img.isMain ? '★ Ana Resim' : 'Ana Yap'}
+            </button>
+            <button type="button" class="btn-remove-img" onclick="removeHomeProductImage(${idx})" title="Görseli Kaldır">✕</button>
+        </div>
+    `).join('');
+};
+
+window.setHomeMainImage = function(index) {
+    if (!window.homeUploadedImages) return;
+    window.homeUploadedImages.forEach((img, idx) => {
+        img.isMain = (idx === index);
+    });
+    renderHomeUploadedImages();
+};
+
+window.removeHomeProductImage = function(index) {
+    if (!window.homeUploadedImages) return;
+    const item = window.homeUploadedImages[index];
+    if (item && item.previewUrl && item.previewUrl.startsWith('blob:')) {
+        try { URL.revokeObjectURL(item.previewUrl); } catch(e) {}
+    }
+    const wasMain = item?.isMain;
+    window.homeUploadedImages.splice(index, 1);
+    if (wasMain && window.homeUploadedImages.length > 0) {
+        window.homeUploadedImages[0].isMain = true;
+    }
+    renderHomeUploadedImages();
+};
+
+window.setupHomeProductImageDropzone = function() {
+    const dropzone = document.getElementById('homeProductImageDropzone');
+    if (!dropzone || dropzone.dataset.dndInit === 'true') return;
+    dropzone.dataset.dndInit = 'true';
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.add('is-dragover');
+        }, false);
+    });
+
+    ['dragleave', 'dragend'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.remove('is-dragover');
+        }, false);
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove('is-dragover');
+        const dt = e.dataTransfer;
+        if (dt && dt.files && dt.files.length > 0) {
+            window.handleHomeProductImageFiles(dt.files);
+        }
+    }, false);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', window.setupHomeProductImageDropzone);
+} else {
+    window.setupHomeProductImageDropzone();
+}
+
+// ==================== B2B KART CAROUSEL ETKİLEŞİM FONKSİYONLARI ====================
+window.b2bCardCarouselPrev = function(e, itemId) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    b2bCardCarouselShift(itemId, -1);
+};
+
+window.b2bCardCarouselNext = function(e, itemId) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    b2bCardCarouselShift(itemId, 1);
+};
+
+window.b2bCardCarouselGo = function(e, itemId, index) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    b2bCardCarouselSet(itemId, index);
+};
+
+window.b2bCardCarouselShift = function(itemId, dir) {
+    const container = document.getElementById('card-img-container-' + itemId);
+    if (!container) return;
+    const total = parseInt(container.getAttribute('data-total-images') || '1', 10);
+    let curr = parseInt(container.getAttribute('data-current-index') || '0', 10);
+    curr = (curr + dir + total) % total;
+    b2bCardCarouselSet(itemId, curr);
+};
+
+window.b2bCardCarouselSet = function(itemId, targetIndex) {
+    const container = document.getElementById('card-img-container-' + itemId);
+    if (!container) return;
+    container.setAttribute('data-current-index', targetIndex);
+    
+    // Slaytları güncelle
+    const slides = container.querySelectorAll('.b2b-card-slide');
+    slides.forEach((sl, idx) => {
+        if (idx === targetIndex) {
+            sl.style.display = 'block';
+            setTimeout(() => { sl.style.opacity = '1'; }, 10);
+        } else {
+            sl.style.opacity = '0';
+            setTimeout(() => { 
+                if (parseInt(container.getAttribute('data-current-index') || '0', 10) !== idx) {
+                    sl.style.display = 'none'; 
+                }
+            }, 250);
+        }
+    });
+
+    // Noktaları güncelle
+    const dots = container.querySelectorAll('.b2b-card-dot');
+    dots.forEach((dot, idx) => {
+        if (idx === targetIndex) dot.classList.add('is-active');
+        else dot.classList.remove('is-active');
+    });
 }
 
 /**

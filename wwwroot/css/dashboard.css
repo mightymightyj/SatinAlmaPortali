@@ -2373,3 +2373,258 @@ body.app-body {
     50% { transform: scale(1.15); filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.6)); }
     100% { transform: scale(1); }
 }
+
+/* ==================== B2B GÖRSEL YÜKLEME & KÜÇÜK RESİM KARTLARI ==================== */
+.b2b-upload-dropzone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 14px 18px;
+    background: #f8fafc;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.b2b-upload-dropzone:hover {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+.b2b-upload-dropzone.is-dragover {
+    border-color: #2563eb;
+    background: #dbeafe;
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.18);
+    transform: scale(1.01);
+}
+.b2b-dropzone-inner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    pointer-events: none;
+}
+.b2b-dropzone-icon {
+    font-size: 1.6rem;
+    flex-shrink: 0;
+}
+.b2b-dropzone-text {
+    text-align: left;
+}
+.b2b-dropzone-text strong {
+    display: block;
+    font-size: 0.82rem;
+    color: #1e293b;
+}
+.b2b-dropzone-text span {
+    display: block;
+    font-size: 0.72rem;
+    color: #64748b;
+    margin-top: 1px;
+}
+
+/* Görsel Listesi / Izgara */
+.b2b-uploaded-images-grid,
+.b2b-uploaded-thumbnails-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+    align-items: center;
+}
+
+/* Küçük Resim Kartı - Tamamen sabit kompakt boyut (80x80px) */
+.b2b-img-thumb-card,
+.b2b-upload-thumb-card {
+    position: relative;
+    width: 80px !important;
+    height: 80px !important;
+    min-width: 80px !important;
+    max-width: 80px !important;
+    min-height: 80px !important;
+    max-height: 80px !important;
+    border-radius: 10px;
+    border: 2px solid #e2e8f0;
+    background: #f1f5f9;
+    overflow: hidden !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+.b2b-img-thumb-card:hover,
+.b2b-upload-thumb-card:hover {
+    border-color: #94a3b8;
+    box-shadow: 0 4px 10px -2px rgba(0,0,0,0.12);
+}
+
+.b2b-img-thumb-card.is-main,
+.b2b-upload-thumb-card.is-main {
+    border-color: #10b981 !important;
+    box-shadow: 0 0 0 2.5px rgba(16, 185, 129, 0.35) !important;
+}
+
+/* Resim Elementi - Asla taşma yapamaz, her zaman 80x80px kutunun içine tam oturur */
+.b2b-img-thumb-card img,
+.b2b-upload-thumb-card img {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
+    border-radius: 8px;
+    pointer-events: none;
+}
+
+/* Rozetler (Sol Üst) */
+.b2b-thumb-badge-main {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    background: #059669;
+    color: #ffffff;
+    font-size: 0.58rem;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 3px;
+    line-height: 1.2;
+    z-index: 3;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    pointer-events: none;
+}
+
+.b2b-thumb-badge-new {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    background: #0284c7;
+    color: #ffffff;
+    font-size: 0.58rem;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 3px;
+    line-height: 1.2;
+    z-index: 3;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    pointer-events: none;
+}
+
+/* Silme Butonu (Sağ Üst Dairesel Buton) */
+.b2b-img-thumb-card .btn-remove-img,
+.b2b-upload-thumb-card .b2b-btn-remove-thumb,
+.btn-remove-img {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.95);
+    color: #ffffff;
+    border: 1.5px solid #ffffff;
+    font-size: 0.68rem;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    z-index: 5;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.b2b-img-thumb-card .btn-remove-img:hover,
+.b2b-upload-thumb-card .b2b-btn-remove-thumb:hover,
+.btn-remove-img:hover {
+    transform: scale(1.18);
+    background: #dc2626;
+}
+
+/* Alt Buton: Ana Yap / Ana Görsel */
+.b2b-img-thumb-card .btn-make-main,
+.b2b-upload-thumb-card .b2b-btn-set-main,
+.btn-make-main {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(2px);
+    color: #ffffff;
+    border: none;
+    font-size: 0.60rem;
+    font-weight: 700;
+    padding: 3px 2px;
+    cursor: pointer;
+    text-align: center;
+    z-index: 4;
+    transition: background 0.15s ease;
+    line-height: 1.2;
+}
+
+.b2b-img-thumb-card .btn-make-main:hover,
+.b2b-upload-thumb-card .b2b-btn-set-main:hover,
+.btn-make-main:hover {
+    background: #2563eb;
+}
+
+.b2b-img-thumb-card.is-main .btn-make-main,
+.b2b-upload-thumb-card.is-main .b2b-btn-set-main,
+.btn-make-main.active {
+    background: #059669 !important;
+    cursor: default;
+}
+
+/* + Ekle Kutucuğu */
+.b2b-thumb-add-btn {
+    width: 80px;
+    height: 80px;
+    min-width: 80px;
+    max-width: 80px;
+    min-height: 80px;
+    max-height: 80px;
+    border-radius: 10px;
+    border: 2px dashed #cbd5e1;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #64748b;
+    transition: all 0.2s ease;
+    font-size: 0.68rem;
+    font-weight: 700;
+    gap: 1px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.b2b-thumb-add-btn:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+    background: #eff6ff;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(37, 99, 235, 0.15);
+}
+
+/* Boş Durum Bilgilendirmesi */
+.b2b-thumbs-empty-notice {
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    color: #64748b;
+    font-size: 0.78rem;
+    text-align: center;
+    margin-top: 8px;
+    width: 100%;
+}
+

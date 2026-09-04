@@ -408,6 +408,7 @@ namespace satinalmaportali2.Controllers {
                 ReviewID = r.ReviewID,
                 ReviewScore = r.ReviewScore ?? 10.0,
                 DeliveryScore = r.DeliveryScore,
+                QualityScore = r.QualityScore,
                 CommunicationScore = r.CommunicationScore,
                 ReviewText = r.ReviewText,
                 ReviewDate = r.ReviewDate,

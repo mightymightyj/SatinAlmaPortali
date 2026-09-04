@@ -145,7 +145,7 @@
             <div class="profile-card-body">
                 <div class="avatar-mgmt-panel">
                     <div class="avatar-mgmt-preview-col">
-                        <div class="avatar-mgmt-current-circle" id="cardAvatarDisplay">
+                        <div class="avatar-mgmt-current-circle" id="cardAvatarDisplay" onclick="triggerSinglePhotoSelect()" style="cursor: pointer;" title="Fotoğraf değiştirmek için tıklayın veya yeni fotoğrafı buraya sürükleyin">
                             @if (!string.IsNullOrWhiteSpace(Model.CompanyLogo))
                             {
                                 <img src="@Model.CompanyLogo" alt="Profil Fotoğrafı" class="avatar-mgmt-img" id="cardAvatarImg" />
@@ -182,6 +182,23 @@
                                 <li><strong>Desteklenen Formatlar:</strong> JPG, JPEG, PNG, WEBP, GIF.</li>
                                 <li><strong>Maksimum Boyut:</strong> 5 MB.</li>
                             </ul>
+                        </div>
+
+                        <!-- Sürükle & Bırak Profil Fotoğrafı Dropzone -->
+                        <div class="profile-photo-dropzone" id="profilePhotoDropzone" onclick="triggerSinglePhotoSelect()" title="Fotoğraf seçmek veya sürükleyip bırakmak için tıklayın">
+                            <div class="photo-dropzone-inner">
+                                <div class="photo-dropzone-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="17 8 12 3 7 8"></polyline>
+                                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                                    </svg>
+                                </div>
+                                <div class="photo-dropzone-content">
+                                    <strong>Fotoğrafınızı buraya sürükleyip bırakın</strong>
+                                    <span>veya dosya seçmek için tıklayın (Maks 5 MB - JPG, PNG, WEBP, GIF)</span>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="avatar-mgmt-buttons">
@@ -1067,14 +1084,20 @@
     }
 
     function handleSingleFileSelected(input) {
-        if (!input.files || input.files.length === 0) {
+        if (!input || !input.files || input.files.length === 0) {
             return;
         }
 
+        const resetInput = () => {
+            try { if (input.value !== undefined) input.value = ''; } catch(e) {}
+            const realInput = document.getElementById('profilePhotoInput');
+            if (realInput) realInput.value = '';
+        };
+
         // Strict Single File Check
         if (input.files.length > 1) {
-            showDynamicAlert('Lütfen sadece tek bir görsel dosyası seçiniz!', 'error');
-            input.value = '';
+            showDynamicAlert('Lütfen sadece tek bir görsel dosyası seçiniz veya bırakınız!', 'error');
+            resetInput();
             return;
         }
 
@@ -1084,7 +1107,7 @@
         const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/jpg'];
         if (!validTypes.includes(file.type)) {
             showDynamicAlert('Geçersiz dosya formatı! Sadece JPG, PNG, WEBP veya GIF formatında tek bir görsel seçebilirsiniz.', 'error');
-            input.value = '';
+            resetInput();
             return;
         }
 
@@ -1093,7 +1116,7 @@
         if (file.size > maxBytes) {
             const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
             showDynamicAlert(`Dosya boyutu çok büyük (${sizeMb} MB). Maksimum izin verilen boyut 5 MB'dir.`, 'error');
-            input.value = '';
+            resetInput();
             return;
         }
 
@@ -1823,7 +1846,52 @@
             window.addEventListener('resize', updateTabScrollButtons);
             setTimeout(updateTabScrollButtons, 100);
         }
+
+        setupProfileDropzones();
     });
+
+    // ==================== PROFİL FOTOĞRAFI SÜRÜKLE-BIRAK BAĞLANTISI ====================
+    function setupProfileDropzones() {
+        const dropTargets = ['profilePhotoDropzone', 'cardAvatarDisplay', 'profileAvatarDisplay'];
+
+        dropTargets.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el || el.dataset.dndInit === 'true') return;
+            el.dataset.dndInit = 'true';
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                el.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    el.classList.add('is-dragover');
+                }, false);
+            });
+
+            ['dragleave', 'dragend'].forEach(eventName => {
+                el.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    el.classList.remove('is-dragover');
+                }, false);
+            });
+
+            el.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                el.classList.remove('is-dragover');
+                const dt = e.dataTransfer;
+                if (dt && dt.files && dt.files.length > 0) {
+                    handleSingleFileSelected({ files: dt.files });
+                }
+            }, false);
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupProfileDropzones);
+    } else {
+        setupProfileDropzones();
+    }
 </script>
 }
 
@@ -2161,5 +2229,85 @@
     .empty-icon {
         font-size: 2.8rem;
         margin-bottom: 12px;
+    }
+
+    /* ==================== PROFİL FOTOĞRAFI SÜRÜKLE-BIRAK (DROPZONE) ==================== */
+    .profile-photo-dropzone {
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 14px 18px;
+        background: #f8fafc;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        margin-bottom: 14px;
+        user-select: none;
+    }
+    .profile-photo-dropzone:hover,
+    .profile-photo-dropzone.is-dragover {
+        border-color: #2563eb;
+        background: #eff6ff;
+        box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+        transform: translateY(-1px);
+    }
+    .photo-dropzone-inner {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    .photo-dropzone-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: #e0e7ff;
+        color: #2563eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+    }
+    .profile-photo-dropzone:hover .photo-dropzone-icon,
+    .profile-photo-dropzone.is-dragover .photo-dropzone-icon {
+        transform: scale(1.1);
+        background: #2563eb;
+        color: #ffffff;
+    }
+    .photo-dropzone-content {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .photo-dropzone-content strong {
+        font-size: 0.88rem;
+        color: #0f172a;
+        font-weight: 700;
+    }
+    .photo-dropzone-content span {
+        font-size: 0.76rem;
+        color: #64748b;
+    }
+
+    /* Avatar Daireleri Sürükle-Bırak Efekti */
+    .profile-avatar-circle.is-dragover {
+        outline: 4px dashed #38bdf8 !important;
+        outline-offset: 4px;
+        transform: scale(1.08) !important;
+        box-shadow: 0 0 25px rgba(56, 189, 248, 0.6) !important;
+    }
+    .profile-avatar-circle.is-dragover .avatar-hover-overlay {
+        opacity: 1 !important;
+    }
+    .avatar-mgmt-current-circle {
+        transition: transform 0.25s ease, box-shadow 0.25s ease, outline 0.2s ease;
+    }
+    .avatar-mgmt-current-circle:hover {
+        transform: scale(1.03);
+        box-shadow: 0 10px 28px rgba(37, 99, 235, 0.35);
+    }
+    .avatar-mgmt-current-circle.is-dragover {
+        outline: 4px dashed #2563eb !important;
+        outline-offset: 4px;
+        transform: scale(1.08) !important;
+        box-shadow: 0 0 25px rgba(37, 99, 235, 0.5) !important;
     }
 </style>

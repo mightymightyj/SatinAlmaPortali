@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -23,16 +24,19 @@ namespace satinalmaportali2.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IHubContext<PortalHub> _hubContext;
         private readonly EmailService? _emailService;
+        private readonly ICloudinaryService _cloudinaryService;
 
         public DashboardController(
             IDashboardService dashboardService, 
             ApplicationDbContext context, 
             IHubContext<PortalHub> hubContext,
+            ICloudinaryService cloudinaryService,
             EmailService? emailService = null)
         {
             _dashboardService = dashboardService;
             _context = context;
             _hubContext = hubContext;
+            _cloudinaryService = cloudinaryService;
             _emailService = emailService;
         }
 
@@ -183,6 +187,471 @@ namespace satinalmaportali2.Controllers
         }
 
         /// <summary>
+        /// Tedarikçi paneli için Cloudinary ürün görseli yükleme endpoint'i (AJAX).
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> UploadProductImage(IFormFile file, CancellationToken cancellationToken)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return Json(new { success = false, message = "Lütfen geçerli bir görsel dosyası seçiniz." });
+            }
+
+            try
+            {
+                var uploadResult = await _cloudinaryService.UploadImageAsync(
+                    file,
+                    folder: "satinalmaportali/products",
+                    width: 1200,
+                    cancellationToken: cancellationToken
+                );
+
+                if (!uploadResult.Success || string.IsNullOrWhiteSpace(uploadResult.SecureUrl))
+                {
+                    return Json(new { success = false, message = uploadResult.Error ?? "Görsel Cloudinary sunucusuna yüklenemedi." });
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    imageUrl = uploadResult.SecureUrl,
+                    publicId = uploadResult.PublicId,
+                    message = "Görsel başarıyla Cloudinary'ye yüklendi."
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Yükleme hatası: " + ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Cloudinary ve veritabanından ürün görseli silme endpoint'i (AJAX).
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> DeleteProductImage(string? publicIdOrUrl, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(publicIdOrUrl))
+            {
+                return Json(new { success = false, message = "Görsel bilgisi belirtilmedi." });
+            }
+
+            try
+            {
+                await _cloudinaryService.DeleteImageAsync(publicIdOrUrl, cancellationToken);
+
+                var dbImg = await _context.ItemImages.FirstOrDefaultAsync(img => img.ImageUrl == publicIdOrUrl || img.PublicId == publicIdOrUrl, cancellationToken);
+                if (dbImg != null)
+                {
+                    _context.ItemImages.Remove(dbImg);
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+
+                return Json(new { success = true, message = "Görsel başarıyla silindi." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Görsel silinirken hata: " + ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Ürünün mevcut bilgilerini ve kayıtlı tüm görsellerini döner (Düzenleme modalı için AJAX).
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetProductDetails(int id, CancellationToken cancellationToken)
+        {
+            if (id <= 0) return Json(new { success = false, message = "Geçersiz ürün." });
+
+            try
+            {
+                var item = await _context.Items
+                    .Include(i => i.Images)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(i => i.ItemID == id, cancellationToken);
+
+                if (item == null)
+                {
+                    return Json(new { success = false, message = "Ürün bulunamadı." });
+                }
+
+                var imageDtos = new List<ProductImageDto>();
+
+                // 1. Veritabanındaki ItemImages tablosu kayıtları
+                if (item.Images != null && item.Images.Any())
+                {
+                    var sorted = item.Images.OrderByDescending(x => x.IsMain).ThenBy(x => x.DisplayOrder).ToList();
+                    foreach (var img in sorted)
+                    {
+                        if (!string.IsNullOrWhiteSpace(img.ImageUrl))
+                        {
+                            imageDtos.Add(new ProductImageDto
+                            {
+                                ImageID = img.ImageID,
+                                ImageUrl = img.ImageUrl.Trim(),
+                                PublicId = img.PublicId,
+                                IsMain = img.IsMain,
+                                DisplayOrder = img.DisplayOrder
+                            });
+                        }
+                    }
+                }
+
+                // 2. Properties alanından görselleri çıkar (Geriye dönük uyumluluk ve legacy ürünler)
+                if (!string.IsNullOrWhiteSpace(item.Properties))
+                {
+                    var matches = System.Text.RegularExpressions.Regex.Matches(
+                        item.Properties,
+                        @"(?:Resim|Image|ImageUrl|Gorsel|Görsel)\s*:\s*(https?://[^\s\|;,]+|/[^\s\|;,]+)",
+                        System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+                    foreach (System.Text.RegularExpressions.Match m in matches)
+                    {
+                        if (m.Success)
+                        {
+                            string foundUrl = m.Groups[1].Value.Trim();
+                            if (!string.IsNullOrWhiteSpace(foundUrl) && 
+                                foundUrl != "/images/default-product.svg" && 
+                                !imageDtos.Any(x => string.Equals(x.ImageUrl, foundUrl, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                imageDtos.Add(new ProductImageDto
+                                {
+                                    ImageID = 0,
+                                    ImageUrl = foundUrl,
+                                    PublicId = null,
+                                    IsMain = !imageDtos.Any(),
+                                    DisplayOrder = imageDtos.Count
+                                });
+                            }
+                        }
+                    }
+
+                    // Eğer hala hiç görsel bulunamadıysa, Properties içindeki doğrudan Cloudinary veya resim dosya URL'lerini ara
+                    if (!imageDtos.Any())
+                    {
+                        var directMatches = System.Text.RegularExpressions.Regex.Matches(
+                            item.Properties,
+                            @"(https?://[^\s\|;,]+(?:cloudinary|[^\s\|;,]+\.(?:png|jpg|jpeg|webp|gif|svg)))",
+                            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+                        foreach (System.Text.RegularExpressions.Match dm in directMatches)
+                        {
+                            if (dm.Success)
+                            {
+                                string directUrl = dm.Groups[1].Value.Trim();
+                                if (!string.IsNullOrWhiteSpace(directUrl) && 
+                                    directUrl != "/images/default-product.svg" && 
+                                    !imageDtos.Any(x => string.Equals(x.ImageUrl, directUrl, StringComparison.OrdinalIgnoreCase)))
+                                {
+                                    imageDtos.Add(new ProductImageDto
+                                    {
+                                        ImageID = 0,
+                                        ImageUrl = directUrl,
+                                        PublicId = null,
+                                        IsMain = !imageDtos.Any(),
+                                        DisplayOrder = imageDtos.Count
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (imageDtos.Any() && !imageDtos.Any(x => x.IsMain))
+                {
+                    imageDtos[0].IsMain = true;
+                }
+
+                string mainImageUrl = imageDtos.FirstOrDefault(x => x.IsMain)?.ImageUrl 
+                    ?? imageDtos.FirstOrDefault()?.ImageUrl 
+                    ?? "/images/default-product.svg";
+
+                return Json(new
+                {
+                    success = true,
+                    product = new
+                    {
+                        itemId = item.ItemID,
+                        itemName = item.ItemName ?? "",
+                        productName = item.ItemName ?? "",
+                        unitPrice = item.ItemPrice ?? 0,
+                        price = item.ItemPrice ?? 0,
+                        stockQuantity = item.Quantity ?? 0,
+                        stock = item.Quantity ?? 0,
+                        categoryId = item.CategoryID,
+                        description = item.ItemDescryption ?? "",
+                        itemDescription = item.ItemDescryption ?? "",
+                        properties = item.Properties ?? "",
+                        brand = item.Brand ?? "",
+                        mainImageUrl = mainImageUrl,
+                        images = imageDtos
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GetProductDetails error: {ex}");
+                return Json(new
+                {
+                    success = false,
+                    message = "Ürün detayları alınırken bir hata oluştu: " + ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Satıcının ürün bilgilerini ve görsellerini tam olarak güncelleyen endpoint (AJAX).
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> UpdateProductListing([FromForm] UpdateProductListingInputModel input, CancellationToken cancellationToken)
+        {
+            if (input == null || input.ItemID <= 0 || string.IsNullOrWhiteSpace(input.ProductName) || input.UnitPrice <= 0)
+            {
+                return Json(new { success = false, message = "Lütfen geçerli ürün adı ve birim fiyat giriniz." });
+            }
+
+            try
+            {
+                var item = await _context.Items
+                    .Include(i => i.Images)
+                    .FirstOrDefaultAsync(i => i.ItemID == input.ItemID, cancellationToken);
+
+                if (item == null)
+                {
+                    return Json(new { success = false, message = "Güncellenecek ürün veritabanında bulunamadı." });
+                }
+
+                int companyId = GetCurrentCompanyId();
+                string currentCompanyName = await GetCurrentCompanyNameAsync();
+                string userType = GetCurrentUserType();
+                bool isAdmin = userType == "SuperAdmin" || userType == "Admin";
+
+                bool isOwner = !string.IsNullOrWhiteSpace(currentCompanyName) &&
+                               !string.IsNullOrWhiteSpace(item.Brand) &&
+                               string.Equals(item.Brand.Trim(), currentCompanyName, StringComparison.OrdinalIgnoreCase);
+
+                if (!isOwner && !isAdmin)
+                {
+                    return Json(new { success = false, message = "Yalnızca kendi firmanıza ait ürünleri düzenleyebilirsiniz." });
+                }
+
+                item.ItemName = input.ProductName.Trim();
+                item.ItemPrice = (double)input.UnitPrice;
+                if (input.StockQuantity.HasValue && input.StockQuantity.Value >= 0)
+                {
+                    item.Quantity = input.StockQuantity.Value;
+                }
+                if (input.CategoryID.HasValue && input.CategoryID.Value > 0)
+                {
+                    item.CategoryID = input.CategoryID.Value;
+                }
+                if (input.ItemDescription != null)
+                {
+                    item.ItemDescryption = input.ItemDescription.Trim();
+                }
+
+                // Görselleri senkronize et
+                var allImageUrls = new List<string>();
+                string mainImageUrl = "/images/default-product.svg";
+
+                // 1. Mevcut korunan görselleri çözümle
+                List<ProductImageDto> keptExistingList = new();
+                if (!string.IsNullOrWhiteSpace(input.ExistingImagesJson))
+                {
+                    try
+                    {
+                        keptExistingList = JsonSerializer.Deserialize<List<ProductImageDto>>(input.ExistingImagesJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"ExistingImagesJson parse error: {ex.Message}");
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(input.ExistingImagesJson) || (input.NewImageFiles != null && input.NewImageFiles.Any()))
+                {
+                    // Satıcının sildiği mevcut veritabanı görsellerini kaldır
+                    var dbImages = item.Images.ToList();
+                    foreach (var dbImg in dbImages)
+                    {
+                        var kept = keptExistingList.FirstOrDefault(k => k.ImageID == dbImg.ImageID);
+                        if (kept != null)
+                        {
+                            dbImg.IsMain = kept.IsMain && !input.MainImageIsNew;
+                            dbImg.DisplayOrder = kept.DisplayOrder;
+                            if (dbImg.IsMain) mainImageUrl = dbImg.ImageUrl;
+                            allImageUrls.Add(dbImg.ImageUrl);
+                        }
+                        else
+                        {
+                            _context.ItemImages.Remove(dbImg);
+                        }
+                    }
+
+                    // KRİTİK: Eğer keptExistingList içinde ImageID == 0 olan (Properties veya vitrinden gelen eski görseller) varsa,
+                    // onları artık kalıcı olarak ItemImages tablosuna ekle!
+                    foreach (var keptLegacy in keptExistingList.Where(k => (k.ImageID == 0 || !dbImages.Any(d => d.ImageID == k.ImageID)) && !string.IsNullOrWhiteSpace(k.ImageUrl) && k.ImageUrl != "/images/default-product.svg"))
+                    {
+                        bool isMain = keptLegacy.IsMain && !input.MainImageIsNew;
+                        if (isMain) mainImageUrl = keptLegacy.ImageUrl;
+
+                        var newImg = new ItemImage
+                        {
+                            ItemID = item.ItemID,
+                            ImageUrl = keptLegacy.ImageUrl.Trim(),
+                            PublicId = keptLegacy.PublicId,
+                            IsMain = isMain,
+                            DisplayOrder = keptLegacy.DisplayOrder,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        _context.ItemImages.Add(newImg);
+                        allImageUrls.Add(keptLegacy.ImageUrl.Trim());
+                    }
+
+                    // Yeni eklenen dosyaları sadece ve sadece şimdi Cloudinary'ye yükle
+                    if (input.NewImageFiles != null && input.NewImageFiles.Any())
+                    {
+                        var filesToProcess = input.NewImageFiles.Take(10).ToList();
+                        for (int i = 0; i < filesToProcess.Count; i++)
+                        {
+                            var file = filesToProcess[i];
+                            if (file.Length == 0 || file.Length > 10 * 1024 * 1024) continue;
+
+                            var ext = Path.GetExtension(file.FileName)?.ToLowerInvariant();
+                            var allowedExts = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+                            if (!allowedExts.Contains(ext)) continue;
+
+                            try
+                            {
+                                var uploadResult = await _cloudinaryService.UploadImageAsync(
+                                    file,
+                                    folder: "satinalmaportali/products",
+                                    width: 1200,
+                                    cancellationToken: cancellationToken
+                                );
+
+                                if (uploadResult.Success && !string.IsNullOrWhiteSpace(uploadResult.SecureUrl))
+                                {
+                                    bool isMain = (input.MainImageIsNew && i == input.MainImageIndex);
+                                    if (isMain)
+                                    {
+                                        mainImageUrl = uploadResult.SecureUrl;
+                                        // Mevcut görsellerin isMain'ini false yap
+                                        foreach (var dbImg in item.Images) dbImg.IsMain = false;
+                                    }
+
+                                    var newImg = new ItemImage
+                                    {
+                                        ItemID = item.ItemID,
+                                        ImageUrl = uploadResult.SecureUrl,
+                                        PublicId = uploadResult.PublicId,
+                                        IsMain = isMain,
+                                        DisplayOrder = 100 + i,
+                                        CreatedAt = DateTime.UtcNow
+                                    };
+                                    _context.ItemImages.Add(newImg);
+                                    allImageUrls.Add(uploadResult.SecureUrl);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Cloudinary upload error in UpdateProductListing: {ex.Message}");
+                            }
+                        }
+                    }
+
+                    // Eğer görseller varsa ve hiçbiri ana görsel seçilmediyse ilkini ana görsel yap
+                    var allActiveImages = item.Images.ToList();
+                    if (allActiveImages.Any() && !allActiveImages.Any(x => x.IsMain))
+                    {
+                        allActiveImages[0].IsMain = true;
+                        mainImageUrl = allActiveImages[0].ImageUrl;
+                    }
+                }
+                else if (input.Images != null)
+                {
+                    var existingDbImages = item.Images.ToList();
+                    _context.ItemImages.RemoveRange(existingDbImages);
+
+                    bool hasMainFlag = input.Images.Any(img => img.IsMain);
+                    for (int i = 0; i < input.Images.Count; i++)
+                    {
+                        var imgInput = input.Images[i];
+                        bool isMain = hasMainFlag ? imgInput.IsMain : (i == 0);
+                        if (isMain) mainImageUrl = imgInput.ImageUrl;
+
+                        var newImg = new ItemImage
+                        {
+                            ItemID = item.ItemID,
+                            ImageUrl = imgInput.ImageUrl,
+                            PublicId = imgInput.PublicId,
+                            IsMain = isMain,
+                            DisplayOrder = imgInput.DisplayOrder > 0 ? imgInput.DisplayOrder : i,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        _context.ItemImages.Add(newImg);
+                        allImageUrls.Add(imgInput.ImageUrl);
+                    }
+                }
+
+                // Properties alanını da geriye dönük uyumluluk için güncelle
+                if (mainImageUrl != "/images/default-product.svg")
+                {
+                    var prop = item.Properties ?? "";
+                    if (System.Text.RegularExpressions.Regex.IsMatch(prop, @"(?:Resim|Image|ImageUrl|Gorsel)\s*:\s*(https?://[^\s\|;,]+|/[^\s\|;,]+)"))
+                    {
+                        prop = System.Text.RegularExpressions.Regex.Replace(prop, @"(?:Resim|Image|ImageUrl|Gorsel)\s*:\s*(https?://[^\s\|;,]+|/[^\s\|;,]+)", $"Resim: {mainImageUrl}");
+                    }
+                    else
+                    {
+                        prop = string.IsNullOrWhiteSpace(prop) ? $"Resim: {mainImageUrl}" : $"{prop} | Resim: {mainImageUrl}";
+                    }
+                    item.Properties = prop;
+                }
+
+                await _context.SaveChangesAsync(cancellationToken);
+
+                // SignalR canlı duyuru
+                try
+                {
+                    await _hubContext.Clients.All.SendAsync("OnProductPriceChanged", new
+                    {
+                        itemId = item.ItemID,
+                        itemName = item.ItemName ?? "Ürün",
+                        newUnitPrice = input.UnitPrice,
+                        newUnitPriceFormatted = input.UnitPrice.ToString("N0") + " ₺",
+                        newStock = item.Quantity ?? 0,
+                        status = (item.Quantity ?? 0) <= 0 ? "Tükendi" : ((item.Quantity ?? 0) < 50 ? "Kritik" : "Stokta"),
+                        brand = item.Brand ?? "",
+                        image = mainImageUrl,
+                        images = allImageUrls
+                    }, cancellationToken);
+                }
+                catch (Exception hubEx)
+                {
+                    Console.WriteLine($"SignalR UpdateProductListing error: {hubEx.Message}");
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    message = $"'{item.ItemName}' ürün bilgileri ve görselleri başarıyla güncellendi.",
+                    itemId = item.ItemID,
+                    itemName = item.ItemName,
+                    newPrice = input.UnitPrice,
+                    newStock = item.Quantity,
+                    mainImageUrl = mainImageUrl,
+                    images = allImageUrls
+                });
+            }
+            catch (Exception ex)
+            {
+                var detail = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                return Json(new { success = false, message = "Ürün güncellenirken hata oluştu: " + detail });
+            }
+        }
+
+        /// <summary>
         /// Sistem genel analitik görünümü.
         /// </summary>
         public async Task<IActionResult> Analytics(int? yil, CancellationToken cancellationToken)
@@ -213,7 +682,10 @@ namespace satinalmaportali2.Controllers
             bool isAdmin = userType == "SuperAdmin" || userType == "Admin";
 
             // Veritabanındaki ürünleri sorgula
-            var query = _context.Items.AsNoTracking().AsQueryable();
+            var query = _context.Items
+                .Include(i => i.Images)
+                .AsNoTracking()
+                .AsQueryable();
 
             if (!isAdmin)
             {
@@ -259,6 +731,44 @@ namespace satinalmaportali2.Controllers
                 int stock = item.Quantity ?? 0;
                 string itemStatus = stock <= 0 ? "Tükendi" : (stock < 50 ? "Kritik" : "Stokta");
 
+                var imagesList = item.Images != null && item.Images.Any()
+                    ? item.Images.OrderByDescending(x => x.IsMain).ThenBy(x => x.DisplayOrder).Select(x => new ProductImageDto
+                    {
+                        ImageID = x.ImageID,
+                        ImageUrl = x.ImageUrl,
+                        PublicId = x.PublicId,
+                        IsMain = x.IsMain,
+                        DisplayOrder = x.DisplayOrder
+                    }).ToList()
+                    : new List<ProductImageDto>();
+
+                string? mainImg = imagesList.FirstOrDefault(x => x.IsMain)?.ImageUrl ?? imagesList.FirstOrDefault()?.ImageUrl;
+                if (string.IsNullOrEmpty(mainImg) && !string.IsNullOrWhiteSpace(item.Properties))
+                {
+                    var m = System.Text.RegularExpressions.Regex.Match(item.Properties, @"(?:Resim|Image|ImageUrl|Gorsel|Görsel)\s*:\s*(https?://[^\s\|;,]+|/[^\s\|;,]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                    if (m.Success)
+                    {
+                        mainImg = m.Groups[1].Value.Trim();
+                    }
+                    else
+                    {
+                        var directM = System.Text.RegularExpressions.Regex.Match(item.Properties, @"(https?://[^\s\|;,]+(?:cloudinary|[^\s\|;,]+\.(?:png|jpg|jpeg|webp|gif|svg)))", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                        if (directM.Success) mainImg = directM.Groups[1].Value.Trim();
+                    }
+                }
+
+                if (!imagesList.Any() && !string.IsNullOrEmpty(mainImg) && mainImg != "/images/default-product.svg")
+                {
+                    imagesList.Add(new ProductImageDto
+                    {
+                        ImageID = 0,
+                        ImageUrl = mainImg,
+                        PublicId = null,
+                        IsMain = true,
+                        DisplayOrder = 0
+                    });
+                }
+
                 return new SupplierListingDetailDto
                 {
                     ItemId = item.ItemID,
@@ -272,7 +782,9 @@ namespace satinalmaportali2.Controllers
                     Description = item.ItemDescryption,
                     Properties = item.Properties,
                     Status = itemStatus,
-                    IsLiveOnVitrin = true
+                    IsLiveOnVitrin = true,
+                    MainImageUrl = mainImg,
+                    Images = imagesList
                 };
             }).ToList();
 

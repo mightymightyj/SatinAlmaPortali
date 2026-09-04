@@ -6,6 +6,179 @@
     ViewBag.DashboardRole = "Supplier";
 }
 
+<style>
+/* Dashboard Ürün Görselleri Modalı Stilleri (Kesin Taşma Koruması) */
+.b2b-upload-dropzone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 12px 16px;
+    background: #f8fafc;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.b2b-upload-dropzone:hover {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+.b2b-upload-dropzone.is-dragover {
+    border-color: #2563eb;
+    background: #dbeafe;
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.18);
+}
+.b2b-uploaded-images-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+    align-items: center;
+}
+.b2b-img-thumb-card {
+    position: relative;
+    width: 80px !important;
+    height: 80px !important;
+    min-width: 80px !important;
+    max-width: 80px !important;
+    min-height: 80px !important;
+    max-height: 80px !important;
+    border-radius: 10px;
+    border: 2px solid #e2e8f0;
+    background: #f1f5f9;
+    overflow: hidden !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+.b2b-img-thumb-card img {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
+}
+.b2b-img-thumb-card.is-main {
+    border-color: #10b981 !important;
+    box-shadow: 0 0 0 2.5px rgba(16, 185, 129, 0.35) !important;
+}
+.b2b-thumb-badge-main {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    background: #059669;
+    color: #ffffff;
+    font-size: 0.58rem;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 3px;
+    z-index: 3;
+    pointer-events: none;
+}
+.b2b-thumb-badge-new {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    background: #0284c7;
+    color: #ffffff;
+    font-size: 0.58rem;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 3px;
+    z-index: 3;
+    pointer-events: none;
+}
+.btn-remove-img {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.95);
+    color: #ffffff;
+    border: 1.5px solid #ffffff;
+    font-size: 0.68rem;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 5;
+    padding: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+    transition: transform 0.15s, background 0.15s;
+}
+.btn-remove-img:hover {
+    transform: scale(1.18);
+    background: #dc2626;
+}
+.btn-make-main {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(15, 23, 42, 0.85);
+    color: #ffffff;
+    border: none;
+    font-size: 0.60rem;
+    font-weight: 700;
+    padding: 3px 2px;
+    cursor: pointer;
+    text-align: center;
+    z-index: 4;
+}
+.btn-make-main:hover {
+    background: #2563eb;
+}
+.btn-make-main.active {
+    background: #059669 !important;
+    cursor: default;
+}
+.b2b-thumb-add-btn {
+    width: 80px;
+    height: 80px;
+    min-width: 80px;
+    max-width: 80px;
+    min-height: 80px;
+    max-height: 80px;
+    border-radius: 10px;
+    border: 2px dashed #cbd5e1;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #64748b;
+    font-size: 0.68rem;
+    font-weight: 700;
+    gap: 1px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+.b2b-thumb-add-btn:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+    background: #eff6ff;
+}
+.b2b-thumbs-empty-notice {
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    color: #64748b;
+    font-size: 0.78rem;
+    text-align: center;
+    margin-top: 8px;
+    width: 100%;
+}
+</style>
+
 <!-- ==================== SAYFA BAŞLIĞI VE AKSİYONLAR ==================== -->
 <div class="page-head">
     <div>
@@ -253,13 +426,24 @@
                         var isOut = item.Status == "Tükendi";
                         <tr id="listing-row-@item.ItemId" data-status="@item.Status" data-category="@item.CategoryName">
                             <td>
-                                <div class="req-title-cell">
-                                    <strong style="font-size: 0.92rem;">@item.ItemName</strong>
-                                    <div style="display: flex; gap: 6px; align-items: center; margin-top: 3px;">
-                                        <small class="req-code">@item.Sku</small>
-                                        <small style="background: rgba(100,116,139,0.12); padding: 1px 6px; border-radius: 4px; font-size: 0.72rem; color: var(--muted);">
-                                            @item.Brand
-                                        </small>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div style="width: 48px; height: 48px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; position: relative;">
+                                        <img src="@(string.IsNullOrEmpty(item.MainImageUrl) ? "/images/default-product.svg" : item.MainImageUrl)" alt="@item.ItemName" style="max-width: 100%; max-height: 100%; object-fit: contain;" onerror="this.src='/images/default-product.svg'" />
+                                        @if (item.Images != null && item.Images.Count > 1)
+                                        {
+                                            <span style="position: absolute; bottom: 1px; right: 1px; background: rgba(15,23,42,0.85); color: #fff; font-size: 0.62rem; font-weight: 800; padding: 1px 4px; border-radius: 3px; line-height: 1;">
+                                                +@item.Images.Count
+                                            </span>
+                                        }
+                                    </div>
+                                    <div class="req-title-cell">
+                                        <strong style="font-size: 0.92rem;">@item.ItemName</strong>
+                                        <div style="display: flex; gap: 6px; align-items: center; margin-top: 3px;">
+                                            <small class="req-code">@item.Sku</small>
+                                            <small style="background: rgba(100,116,139,0.12); padding: 1px 6px; border-radius: 4px; font-size: 0.72rem; color: var(--muted);">
+                                                @item.Brand
+                                            </small>
+                                        </div>
                                     </div>
                                 </div>
                             </td>
@@ -295,7 +479,7 @@
                             </td>
                             <td class="text-right">
                                 <div style="display: flex; gap: 6px; justify-content: flex-end;">
-                                    <button type="button" class="btn-table-action" onclick="openPriceModal(@item.ItemId, '@Html.Raw(item.ItemName.Replace("'", "\\'"))', @item.UnitPrice, @item.Stock)" title="Fiyat ve Stok Düzenle">
+                                    <button type="button" class="btn-table-action" onclick="openEditListingModal(@item.ItemId)" title="Ürünü ve Görselleri Düzenle">
                                         Düzenle
                                     </button>
                                     <button type="button" class="btn-cancel" onclick="deleteListing(@item.ItemId, '@Html.Raw(item.ItemName.Replace("'", "\\'"))')" style="padding: 5px 9px; font-size: 0.78rem; color: #ef4444; border-color: rgba(239,68,68,0.3);" title="İlanı Sil">
@@ -313,7 +497,7 @@
 
 <!-- ==================== MODAL: YENİ ÜRÜN İLANI VERME (DASHBOARD) ==================== -->
 <div id="dashCreateListingModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this)closeCreateListingModal()">
-    <div class="ty-modal-box" style="background: var(--card-bg, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 12px; width: 100%; max-width: 560px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;">
+    <div class="ty-modal-box" style="background: var(--card-bg, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 12px; width: 100%; max-width: 580px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;">
         
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
             <div>
@@ -378,15 +562,112 @@
                 </div>
             </div>
 
-            <div class="form-group" style="margin-bottom: 16px;">
+            <div class="form-group" style="margin-bottom: 14px;">
                 <label class="form-label" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Tedarik & Sevkiyat Şartları / Açıklama</label>
                 <textarea id="dashListingDesc" class="form-control" rows="2" placeholder="Minimum sipariş (MOQ), termin süresi, teslimat yöntemleri..." style="border-radius: 6px; font-size: 0.82rem;"></textarea>
+            </div>
+
+            <!-- ÇOKLU GÖRSEL YÜKLEME (CLOUDINARY) -->
+            <div class="form-group" style="margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <label class="form-label" style="font-size: 0.8rem; font-weight: 700; margin: 0;">
+                        Ürün Görselleri (<span id="dashCreateImagesCount">0</span>/10)
+                    </label>
+                    <span style="font-size: 0.72rem; color: var(--muted);">(★ Yeşil çerçeveli görsel ana görseldir)</span>
+                </div>
+                
+                <div class="b2b-upload-dropzone" id="dashCreateDropzone" onclick="if(event.target!==document.getElementById('dashCreateImageInput'))document.getElementById('dashCreateImageInput').click()">
+                    <div class="b2b-dropzone-inner">
+                        <div class="b2b-dropzone-icon">📷</div>
+                        <div class="b2b-dropzone-text">
+                            <strong>Resimleri seçmek veya buraya sürüklemek için tıklayın</strong>
+                            <span>JPG, PNG, WEBP veya GIF formatları desteklenir (Maks 10MB)</span>
+                        </div>
+                    </div>
+                </div>
+                <input type="file" id="dashCreateImageInput" accept="image/*" multiple style="display: none;" onchange="handleDashCreateImageFiles(this.files)" />
+
+                <div class="b2b-uploaded-images-grid" id="dashCreateThumbsGrid" style="display: none;">
+                    <!-- Yüklenen görseller JavaScript ile buraya kart olarak eklenir -->
+                </div>
             </div>
 
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button type="button" class="btn-cancel" onclick="closeCreateListingModal()">Vazgeç</button>
                 <button type="submit" class="btn-primary" style="padding: 10px 20px; font-size: 0.88rem; font-weight: 700;">
                     İlanı Yayına Al
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== MODAL: ÜRÜN & GÖRSEL DÜZENLEME (DASHBOARD) ==================== -->
+<div id="dashEditListingModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this)closeEditListingModal()">
+    <div class="ty-modal-box" style="background: var(--card-bg, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 14px; width: 100%; max-width: 580px; padding: 24px; box-shadow: 0 20px 30px -5px rgba(0,0,0,0.25); max-height: 90vh; overflow-y: auto; overflow-x: hidden; box-sizing: border-box;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+            <div>
+                <span class="status-badge badge-blue" style="font-size: 0.72rem; padding: 2px 8px;">ÜRÜN VE GÖRSEL YÖNETİMİ</span>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text, #0f172a); margin-top: 6px; margin-bottom: 4px;">Ürün İlanını Düzenle</h3>
+                <p style="font-size: 0.82rem; color: var(--muted, #64748b); margin: 0;">Fiyat, stok ve Cloudinary ürün görsellerini güncelleyebilirsiniz.</p>
+            </div>
+            <button type="button" class="modal-close-btn" onclick="closeEditListingModal()" style="border: none; background: transparent; font-size: 1.3rem; cursor: pointer; color: var(--muted);">✕</button>
+        </div>
+
+        <form id="dashEditListingForm" onsubmit="saveEditListing(event); return false;">
+            <input type="hidden" id="dashEditItemId" />
+
+            <div class="form-group" style="margin-bottom: 12px;">
+                <label class="form-label" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Ürün İsmi / Başlığı <span class="req-star" style="color: #ef4444;">*</span></label>
+                <input type="text" id="dashEditProductName" class="form-control" required style="border-radius: 6px; font-size: 0.85rem;" />
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div class="form-group">
+                    <label class="form-label" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Toptan Birim Fiyat (₺ + KDV) <span class="req-star" style="color: #ef4444;">*</span></label>
+                    <input type="number" id="dashEditPrice" class="form-control" step="0.01" min="0.01" required style="border-radius: 6px; font-size: 0.85rem;" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Hazır Stok Miktarı <span class="req-star" style="color: #ef4444;">*</span></label>
+                    <input type="number" id="dashEditStock" class="form-control" min="0" required style="border-radius: 6px; font-size: 0.85rem;" />
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label class="form-label" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Ürün Açıklaması / Sevkiyat Notu</label>
+                <textarea id="dashEditDesc" class="form-control" rows="2" placeholder="Termin süresi, ambalaj, teknik standartlar..." style="border-radius: 6px; font-size: 0.82rem;"></textarea>
+            </div>
+
+            <!-- ÇOKLU GÖRSEL YÖNETİMİ -->
+            <div class="form-group" style="margin-bottom: 18px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label class="form-label" style="font-size: 0.82rem; font-weight: 800; margin: 0; color: #0f172a;">
+                        Ürün Görselleri & Carousel (<span id="dashEditImagesCount">0</span>/10)
+                    </label>
+                    <span style="font-size: 0.72rem; color: var(--muted);">(★ Yeşil çerçeveli görsel ana görseldir)</span>
+                </div>
+
+                <div class="b2b-upload-dropzone" id="dashEditDropzone" onclick="if(event.target!==document.getElementById('dashEditImageInput'))document.getElementById('dashEditImageInput').click()" style="border: 2px dashed #cbd5e1; border-radius: 10px; padding: 12px 16px; background: #f8fafc; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center;">
+                    <div class="b2b-dropzone-inner" style="display: flex; align-items: center; gap: 12px; pointer-events: none;">
+                        <div class="b2b-dropzone-icon" style="font-size: 1.5rem; flex-shrink: 0;">📷</div>
+                        <div class="b2b-dropzone-text" style="text-align: left;">
+                            <strong style="display: block; font-size: 0.82rem; color: #1e293b;">Yeni görsel eklemek için tıklayın veya sürükleyin</strong>
+                            <span style="display: block; font-size: 0.72rem; color: #64748b; margin-top: 1px;">JPG, PNG, WEBP veya GIF (Maks. 10MB) • Değişiklikleri kaydettiğinizde yüklenecektir</span>
+                        </div>
+                    </div>
+                </div>
+                <input type="file" id="dashEditImageInput" accept="image/*" multiple style="display: none;" onchange="handleDashEditImageFiles(this.files)" />
+
+                <div class="b2b-uploaded-images-grid" id="dashEditThumbsGrid" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; align-items: center;">
+                    <!-- Mevcut ve yeni yüklenen resimler burada listelenir -->
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid #f1f5f9; padding-top: 14px;">
+                <button type="button" class="btn-cancel" onclick="closeEditListingModal()">Vazgeç</button>
+                <button type="submit" id="dashEditSubmitBtn" class="btn-primary" style="padding: 10px 22px; font-size: 0.88rem; font-weight: 700;">
+                    Değişiklikleri Kaydet
                 </button>
             </div>
         </form>
@@ -562,7 +843,123 @@
             }
         };
 
-        // Modal Fonksiyonları
+        // =========================================================================
+        // GÖRSEL YÖNETİMİ & MODAL FONKSİYONLARI (CLOUDINARY ENTEGRASYONU)
+        // =========================================================================
+        let dashCreateUploadedImages = [];
+        let dashEditUploadedImages = [];
+
+        // Yeni İlan Modalı Görsel Seçimi (Yerel önizleme; Cloudinary'ye ilan kaydedildiğinde yüklenir)
+        function handleDashCreateImageFiles(files) {
+            if (!files || files.length === 0) return;
+            const validExts = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/jpg'];
+            const validFileExts = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+
+            if (dashCreateUploadedImages.length >= 10) {
+                if (typeof showRealtimeToast === 'function') showRealtimeToast("Bir ürün için en fazla 10 görsel ekleyebilirsiniz.", "warning");
+                return;
+            }
+
+            let addedCount = 0;
+            for (let i = 0; i < files.length; i++) {
+                if (dashCreateUploadedImages.length >= 10) {
+                    if (typeof showRealtimeToast === 'function') showRealtimeToast("En fazla 10 görsel sınırına ulaşıldı. Kalan dosyalar eklenmedi.", "warning");
+                    break;
+                }
+
+                const file = files[i];
+                if (file.size > 10 * 1024 * 1024) {
+                    if (typeof showRealtimeToast === 'function') showRealtimeToast(`"${file.name}" 10MB sınırını aşıyor.`, 'error');
+                    continue;
+                }
+                const ext = file.name ? file.name.substring(file.name.lastIndexOf('.')).toLowerCase() : '';
+                if ((file.type && !validExts.includes(file.type.toLowerCase())) && !validFileExts.includes(ext)) {
+                    if (typeof showRealtimeToast === 'function') showRealtimeToast(`"${file.name}" geçerli bir görsel formatı değil (JPG, PNG, WEBP, GIF desteklenir).`, 'error');
+                    continue;
+                }
+
+                dashCreateUploadedImages.push({
+                    file: file,
+                    previewUrl: URL.createObjectURL(file),
+                    isMain: dashCreateUploadedImages.length === 0,
+                    displayOrder: dashCreateUploadedImages.length
+                });
+                addedCount++;
+            }
+
+            renderDashCreateImages();
+            const fileInput = document.getElementById('dashCreateImageInput');
+            if (fileInput) fileInput.value = '';
+
+            if (addedCount > 0 && typeof showRealtimeToast === 'function') {
+                showRealtimeToast(`${addedCount} yeni görsel eklendi. İlanı yayına aldığınızda yüklenecektir.`, 'info');
+            }
+        }
+
+        function renderDashCreateImages() {
+            const grid = document.getElementById('dashCreateThumbsGrid');
+            const countEl = document.getElementById('dashCreateImagesCount');
+            if (countEl) countEl.textContent = dashCreateUploadedImages.length;
+            if (!grid) return;
+
+            if (dashCreateUploadedImages.length === 0) {
+                grid.style.display = 'none';
+                grid.innerHTML = '';
+                return;
+            }
+
+            grid.style.display = 'flex';
+            let cardsHtml = dashCreateUploadedImages.map((img, idx) => `
+                <div class="b2b-img-thumb-card ${img.isMain ? 'is-main' : ''}" data-index="${idx}" style="width: 76px !important; height: 76px !important; min-width: 76px !important; max-width: 76px !important; min-height: 76px !important; max-height: 76px !important; position: relative !important; border-radius: 8px !important; overflow: hidden !important; flex-shrink: 0 !important; background: #f1f5f9; border: 2px solid ${img.isMain ? '#10b981' : '#cbd5e1'} !important; box-shadow: ${img.isMain ? '0 0 0 2px rgba(16,185,129,0.35)' : '0 1px 2px rgba(0,0,0,0.05)'}; box-sizing: border-box !important;">
+                    <img src="${img.previewUrl || img.imageUrl}" alt="Ürün Resmi ${idx+1}" style="width: 100% !important; height: 100% !important; max-width: 100% !important; max-height: 100% !important; min-width: 100% !important; min-height: 100% !important; object-fit: cover !important; display: block !important; border-radius: 6px;" onerror="this.src='/images/default-product.svg'" />
+                    ${img.isMain ? '<span class="b2b-thumb-badge-main" style="position: absolute; top: 2px; left: 2px; background: #059669; color: #fff; font-size: 0.55rem; font-weight: 800; padding: 1px 4px; border-radius: 3px; z-index: 3; line-height: 1.1; pointer-events: none;">★ Ana</span>' : ''}
+                    <button type="button" class="btn-remove-img" onclick="removeDashCreateImage(${idx})" title="Bu görseli kaldır" style="position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; background: rgba(239,68,68,0.95); color: #fff; border: 1.5px solid #fff; font-size: 0.65rem; font-weight: 900; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 5; padding: 0; line-height: 1;">✕</button>
+                    ${img.isMain ? 
+                        '<div class="btn-make-main active" title="Vitrin ve kartlarda ilk gösterilen ana görseldir" style="position: absolute; bottom: 0; left: 0; right: 0; background: #059669; color: #fff; font-size: 0.55rem; font-weight: 700; padding: 2px 1px; text-align: center; z-index: 4; cursor: default; line-height: 1.1;">★ Ana Görsel</div>' : 
+                        `<button type="button" class="btn-make-main" onclick="setDashCreateMainImage(${idx})" title="Ana görsel olarak belirle" style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(15,23,42,0.85); color: #fff; border: none; font-size: 0.55rem; font-weight: 700; padding: 2px 1px; text-align: center; z-index: 4; cursor: pointer; line-height: 1.1;">Ana Yap</button>`
+                    }
+                </div>
+            `).join('');
+
+            if (dashCreateUploadedImages.length < 10) {
+                cardsHtml += `
+                    <div class="b2b-thumb-add-btn" onclick="document.getElementById('dashCreateImageInput').click()" title="Yeni görsel ekle" style="width: 76px !important; height: 76px !important; min-width: 76px !important; max-width: 76px !important; min-height: 76px !important; max-height: 76px !important; border-radius: 8px; border: 2px dashed #cbd5e1; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #64748b; font-size: 0.65rem; font-weight: 700; gap: 1px; flex-shrink: 0; box-sizing: border-box !important;">
+                        <span style="font-size: 1.2rem; line-height: 1;">+</span>
+                        <span>Ekle</span>
+                    </div>
+                `;
+            }
+
+            grid.innerHTML = cardsHtml;
+        }
+
+        function setDashCreateMainImage(idx) {
+            if (idx < 0 || idx >= dashCreateUploadedImages.length) return;
+            dashCreateUploadedImages.forEach((img, i) => {
+                img.isMain = (i === idx);
+            });
+            renderDashCreateImages();
+            if (typeof showRealtimeToast === 'function') {
+                showRealtimeToast("Ana görsel güncellendi.", "info");
+            }
+        }
+
+        function removeDashCreateImage(idx) {
+            if (idx < 0 || idx >= dashCreateUploadedImages.length) return;
+            const removed = dashCreateUploadedImages.splice(idx, 1)[0];
+            if (removed && removed.previewUrl && removed.previewUrl.startsWith('blob:')) {
+                try { URL.revokeObjectURL(removed.previewUrl); } catch(e) {}
+            }
+            if (removed && removed.isMain && dashCreateUploadedImages.length > 0) {
+                dashCreateUploadedImages[0].isMain = true;
+            }
+            renderDashCreateImages();
+            if (typeof showRealtimeToast === 'function') {
+                showRealtimeToast("Görsel kaldırıldı.", "info");
+            }
+        }
+
+        // Yeni İlan Modalı Aç / Kapa
         function openCreateListingModal() {
             var isIyzicoApproved = @(Model.IsIyzicoApproved ? "true" : "false");
             if (!isIyzicoApproved) {
@@ -577,6 +974,15 @@
                 return;
             }
 
+            (dashCreateUploadedImages || []).forEach(img => {
+                if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
+                    try { URL.revokeObjectURL(img.previewUrl); } catch(e) {}
+                }
+            });
+            dashCreateUploadedImages = [];
+            renderDashCreateImages();
+            setupDashboardDropzones();
+
             var modal = document.getElementById('dashCreateListingModal');
             if (modal) {
                 modal.style.display = 'flex';
@@ -587,6 +993,13 @@
         function closeCreateListingModal() {
             var modal = document.getElementById('dashCreateListingModal');
             if (modal) modal.style.display = 'none';
+            (dashCreateUploadedImages || []).forEach(img => {
+                if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
+                    try { URL.revokeObjectURL(img.previewUrl); } catch(e) {}
+                }
+            });
+            dashCreateUploadedImages = [];
+            renderDashCreateImages();
         }
 
         function selectDashCategory(id, name) {
@@ -661,21 +1074,32 @@
             const origHtml = submitBtn ? submitBtn.innerHTML : '';
             if (submitBtn) {
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span>Kaydediliyor...</span>';
+                submitBtn.innerHTML = '<span>⏳ Görseller yükleniyor ve ilan oluşturuluyor...</span>';
             }
 
             try {
+                const formData = new FormData();
+                formData.append('ProductName', productName.trim());
+                if (categoryId) formData.append('CategoryID', categoryId);
+                formData.append('CategoryName', category);
+                formData.append('UnitPrice', price);
+                formData.append('StockQuantity', stockQty + " Adet");
+                formData.append('ItemDescription', desc);
+
+                let mainIdx = 0;
+                dashCreateUploadedImages.forEach((item, i) => {
+                    if (item.file) {
+                        formData.append('ImageFiles', item.file);
+                    }
+                    if (item.isMain) {
+                        mainIdx = i;
+                    }
+                });
+                formData.append('MainImageIndex', mainIdx);
+
                 const response = await fetch('/Home/SubmitSellerOffer', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        productName: productName.trim(),
-                        categoryID: categoryId ? parseInt(categoryId, 10) : null,
-                        categoryName: category,
-                        unitPrice: price,
-                        stockQuantity: stockQty + " Adet",
-                        itemDescription: desc
-                    })
+                    body: formData
                 });
 
                 const result = await response.json();
@@ -690,6 +1114,7 @@
                     const itemPrice = (item && item.price) ? item.price : price;
                     const itemStock = stockQty;
                     const itemDesc = desc.trim();
+                    const rowImg = (item && item.image) ? item.image : '/images/default-product.svg';
 
                     const tbody = document.getElementById('listingsTableBody');
                     if (tbody) {
@@ -705,30 +1130,61 @@
                         const newRowHtml = `
                             <tr id="listing-row-${itemId}" data-status="${statusText}" data-category="${catName}" class="realtime-updated">
                                 <td>
-                                    <div class="req-title-cell">
-                                        <strong style="font-size: 0.92rem;">${typeof escapeHtml === 'function' ? escapeHtml(productName.trim()) : productName.trim()}</strong>
-                                        <div style="display: flex; gap: 6px; align-items: center; margin-top: 3px;">
-                                            <small class="req-code">${typeof escapeHtml === 'function' ? escapeHtml(sku) : sku}</small>
-                                            <small style="background: rgba(100,116,139,0.12); padding: 1px 6px; border-radius: 4px; font-size: 0.72rem; color: var(--muted);">
-                                                ${typeof escapeHtml === 'function' ? escapeHtml(brand) : brand}
-                                            </small>
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="width: 48px; height: 48px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; position: relative;">
+                                            <img src="${rowImg}" alt="${typeof escapeHtml === 'function' ? escapeHtml(productName.trim()) : productName.trim()}" style="max-width: 100%; max-height: 100%; object-fit: contain;" onerror="this.src='/images/default-product.svg'" />
+                                            ${dashCreateUploadedImages.length > 1 ? `<span style="position: absolute; bottom: 1px; right: 1px; background: rgba(15,23,42,0.85); color: #fff; font-size: 0.62rem; font-weight: 800; padding: 1px 4px; border-radius: 3px; line-height: 1;">+${dashCreateUploadedImages.length}</span>` : ''}
+                                        </div>
+                                        <div class="req-title-cell">
+                                            <strong style="font-size: 0.92rem;">${typeof escapeHtml === 'function' ? escapeHtml(productName.trim()) : productName.trim()}</strong>
+                                            <div style="display: flex; gap: 6px; align-items: center; margin-top: 3px;">
+                                                <small class="req-code">${typeof escapeHtml === 'function' ? escapeHtml(sku) : sku}</small>
+                                                <small style="background: rgba(100,116,139,0.12); padding: 1px 6px; border-radius: 4px; font-size: 0.72rem; color: var(--muted);">
+                                                    ${typeof escapeHtml === 'function' ? escapeHtml(brand) : brand}
+                                                </small>
+                                            </div>
                                         </div>
                                     </div>
                                 </td>
-                                <td><span class="badge-dept">${typeof escapeHtml === 'function' ? escapeHtml(catName) : catName}</span></td>
-                                <td><strong>${typeof formatCurrency === 'function' ? formatCurrency(itemPrice) : (itemPrice.toLocaleString('tr-TR') + ' ₺')}</strong></td>
-                                <td><strong>${itemStock} Adet</strong></td>
-                                <td><span class="status-badge ${statusCls}"><span class="status-dot"></span>${statusText}</span></td>
-                                <td><span class="badge-blue" style="font-size: 0.75rem;">Canlı Vitrinde</span></td>
+                                <td><span class="category-tag">${typeof escapeHtml === 'function' ? escapeHtml(catName) : catName}</span></td>
                                 <td>
-                                    <div style="display: flex; gap: 4px;">
-                                        <button type="button" class="btn-cancel" style="padding: 5px 10px; font-size: 0.78rem;" onclick="openEditListingModal(${itemId}, '${safeName}', ${itemPrice}, ${itemStock}, '${catName}')">Düzenle</button>
-                                        <button type="button" class="btn-cancel" style="padding: 5px 8px; font-size: 0.78rem; color: var(--coral);" onclick="deleteListing(${itemId})">Sil</button>
+                                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                                        <strong class="${isOut ? "text-danger" : (isCrit ? "text-warning" : "")}" style="font-size: 0.9rem;">
+                                            ${itemStock} Adet
+                                        </strong>
+                                        <span class="status-badge ${statusCls}" style="font-size: 0.68rem; padding: 2px 6px; width: fit-content;">
+                                            <span class="status-dot"></span>
+                                            ${statusText}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong style="font-size: 0.95rem; color: var(--text);">
+                                        ${typeof formatCurrency === 'function' ? formatCurrency(itemPrice) : (itemPrice.toLocaleString('tr-TR') + ' ₺')}
+                                    </strong>
+                                    <div style="font-size: 0.72rem; color: var(--muted);">+ %20 KDV</div>
+                                </td>
+                                <td><span class="status-badge badge-emerald" style="font-size: 0.75rem; padding: 3px 8px;"><span class="status-dot"></span> Vitrinde Yayında</span></td>
+                                <td>
+                                    <span style="font-size: 0.8rem; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 220px;" title="${typeof escapeHtml === 'function' ? escapeHtml(itemDesc) : itemDesc}">
+                                        ${itemDesc ? (typeof escapeHtml === 'function' ? escapeHtml(itemDesc) : itemDesc) : '-'}
+                                    </span>
+                                </td>
+                                <td class="text-right">
+                                    <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                                        <button type="button" class="btn-table-action" onclick="openEditListingModal(${itemId})" title="Ürünü ve Görselleri Düzenle">Düzenle</button>
+                                        <button type="button" class="btn-cancel" style="padding: 5px 9px; font-size: 0.78rem; color: #ef4444; border-color: rgba(239,68,68,0.3);" onclick="deleteListing(${itemId}, '${safeName}')" title="İlanı Sil">Sil</button>
                                     </div>
                                 </td>
                             </tr>
                         `;
                         tbody.insertAdjacentHTML('afterbegin', newRowHtml);
+                    }
+
+                    const kpiCount = document.getElementById('kpiTotalListings');
+                    if (kpiCount) {
+                        const cur = parseInt(kpiCount.textContent.replace(/\D/g, '') || '0', 10);
+                        kpiCount.textContent = (cur + 1).toString();
                     }
 
                     if (typeof showRealtimeToast === 'function') {
@@ -753,6 +1209,351 @@
             } catch (err) {
                 console.error('Create listing error:', err);
                 if (typeof showRealtimeToast === 'function') showRealtimeToast("Sunucu iletişim hatası oluştu.", "error");
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = origHtml;
+                }
+            }
+
+            return false;
+        }
+
+        // =========================================================================
+        // ÜRÜN & GÖRSEL DÜZENLEME MODALI FONKSİYONLARI
+        // =========================================================================
+        async function openEditListingModal(itemId) {
+            if (!itemId) return;
+            try {
+                const res = await fetch('/Dashboard/GetProductDetails?id=' + itemId);
+                if (!res.ok) {
+                    const errText = await res.text();
+                    console.error('GetProductDetails HTTP error:', res.status, errText);
+                    throw new Error(`Sunucu hatası (${res.status})`);
+                }
+                const data = await res.json();
+                if (!data.success || !data.product) {
+                    if (typeof showRealtimeToast === 'function') showRealtimeToast(data.message || 'Ürün bilgileri alınamadı.', 'error');
+                    else alert(data.message || 'Ürün bilgileri alınamadı.');
+                    return;
+                }
+
+                const p = data.product;
+                document.getElementById('dashEditItemId').value = p.itemId || itemId;
+                document.getElementById('dashEditProductName').value = p.productName || p.itemName || '';
+                document.getElementById('dashEditPrice').value = p.unitPrice ?? p.price ?? 0;
+                document.getElementById('dashEditStock').value = p.stockQuantity ?? p.stock ?? 0;
+                document.getElementById('dashEditDesc').value = p.itemDescription || p.description || '';
+
+                (dashEditUploadedImages || []).forEach(img => {
+                    if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
+                        try { URL.revokeObjectURL(img.previewUrl); } catch(e) {}
+                    }
+                });
+
+                // Görselleri tüm olası format ve isimlendirmeleri destekleyerek çözümle
+                dashEditUploadedImages = (p.images || []).map((img, i) => {
+                    const url = typeof img === 'string' ? img : (img.imageUrl || img.ImageUrl || img.url || img.Url || '');
+                    const imgId = typeof img === 'object' ? (img.imageID ?? img.imageId ?? 0) : 0;
+                    const pubId = typeof img === 'object' ? (img.publicId || img.PublicId || '') : '';
+                    const isMain = typeof img === 'object' ? Boolean(img.isMain || img.IsMain) : (i === 0);
+                    const order = typeof img === 'object' ? (img.displayOrder ?? img.DisplayOrder ?? i) : i;
+
+                    return {
+                        isExisting: true,
+                        imageID: imgId,
+                        imageUrl: url,
+                        publicId: pubId,
+                        isMain: isMain,
+                        displayOrder: order
+                    };
+                }).filter(img => img.imageUrl && img.imageUrl !== '/images/default-product.svg');
+
+                // Fallback 1: Eğer p.images boş geldiyse fakat p.mainImageUrl tanımlıysa
+                if (dashEditUploadedImages.length === 0 && p.mainImageUrl && p.mainImageUrl !== '/images/default-product.svg') {
+                    dashEditUploadedImages.push({
+                        isExisting: true,
+                        imageID: 0,
+                        imageUrl: p.mainImageUrl,
+                        publicId: '',
+                        isMain: true,
+                        displayOrder: 0
+                    });
+                }
+
+                // Fallback 2: Eğer hala boşsa, tablodaki satırın görselinden çek
+                if (dashEditUploadedImages.length === 0) {
+                    const rowImg = document.querySelector(`#listing-row-${itemId} td:first-child img`);
+                    if (rowImg && rowImg.src && !rowImg.src.includes('default-product.svg')) {
+                        dashEditUploadedImages.push({
+                            isExisting: true,
+                            imageID: 0,
+                            imageUrl: rowImg.src,
+                            publicId: '',
+                            isMain: true,
+                            displayOrder: 0
+                        });
+                    }
+                }
+
+                if (dashEditUploadedImages.length > 0 && !dashEditUploadedImages.some(x => x.isMain)) {
+                    dashEditUploadedImages[0].isMain = true;
+                }
+
+                renderDashEditImages();
+                setupDashboardDropzones();
+
+                const modal = document.getElementById('dashEditListingModal');
+                if (modal) modal.style.display = 'flex';
+            } catch(err) {
+                console.error('GetProductDetails error:', err);
+                if (typeof showRealtimeToast === 'function') showRealtimeToast('Bağlantı hatası: ' + err.message, 'error');
+            }
+        }
+
+        function closeEditListingModal() {
+            const modal = document.getElementById('dashEditListingModal');
+            if (modal) modal.style.display = 'none';
+            (dashEditUploadedImages || []).forEach(img => {
+                if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
+                    try { URL.revokeObjectURL(img.previewUrl); } catch(e) {}
+                }
+            });
+            dashEditUploadedImages = [];
+            renderDashEditImages();
+        }
+
+        function handleDashEditImageFiles(files) {
+            if (!files || files.length === 0) return;
+            const validExts = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/jpg'];
+            const validFileExts = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+
+            if (dashEditUploadedImages.length >= 10) {
+                if (typeof showRealtimeToast === 'function') showRealtimeToast("Bir ürün için en fazla 10 görsel ekleyebilirsiniz.", "warning");
+                return;
+            }
+
+            let addedCount = 0;
+            for (let i = 0; i < files.length; i++) {
+                if (dashEditUploadedImages.length >= 10) {
+                    if (typeof showRealtimeToast === 'function') showRealtimeToast("En fazla 10 görsel sınırına ulaşıldı. Kalan dosyalar eklenmedi.", "warning");
+                    break;
+                }
+
+                const file = files[i];
+                if (file.size > 10 * 1024 * 1024) {
+                    if (typeof showRealtimeToast === 'function') showRealtimeToast(`"${file.name}" 10MB sınırını aşıyor.`, 'error');
+                    continue;
+                }
+                const ext = file.name ? file.name.substring(file.name.lastIndexOf('.')).toLowerCase() : '';
+                if ((file.type && !validExts.includes(file.type.toLowerCase())) && !validFileExts.includes(ext)) {
+                    if (typeof showRealtimeToast === 'function') showRealtimeToast(`"${file.name}" geçerli bir görsel formatı değil.`, 'error');
+                    continue;
+                }
+
+                dashEditUploadedImages.push({
+                    isExisting: false,
+                    file: file,
+                    previewUrl: URL.createObjectURL(file),
+                    isMain: dashEditUploadedImages.length === 0,
+                    displayOrder: dashEditUploadedImages.length
+                });
+                addedCount++;
+            }
+
+            renderDashEditImages();
+            const fileInput = document.getElementById('dashEditImageInput');
+            if (fileInput) fileInput.value = '';
+
+            if (addedCount > 0 && typeof showRealtimeToast === 'function') {
+                showRealtimeToast(`${addedCount} yeni görsel eklendi. 'Değişiklikleri Kaydet' dediğinizde yüklenecektir.`, 'info');
+            }
+        }
+
+        function renderDashEditImages() {
+            const grid = document.getElementById('dashEditThumbsGrid');
+            const countEl = document.getElementById('dashEditImagesCount');
+            if (countEl) countEl.textContent = dashEditUploadedImages.length;
+            if (!grid) return;
+
+            if (dashEditUploadedImages.length === 0) {
+                grid.style.display = 'block';
+                grid.innerHTML = `
+                    <div class="b2b-thumbs-empty-notice">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="margin: 0 auto 6px; display: block; color: #94a3b8;">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        Henüz ürün görseli bulunmuyor. Yukarıdaki alana tıklayarak veya sürükleyerek görsel ekleyebilirsiniz.
+                    </div>
+                `;
+                return;
+            }
+
+            grid.style.display = 'flex';
+            let cardsHtml = dashEditUploadedImages.map((img, idx) => `
+                <div class="b2b-img-thumb-card ${img.isMain ? 'is-main' : ''}" data-index="${idx}" style="width: 76px !important; height: 76px !important; min-width: 76px !important; max-width: 76px !important; min-height: 76px !important; max-height: 76px !important; position: relative !important; border-radius: 8px !important; overflow: hidden !important; flex-shrink: 0 !important; background: #f1f5f9; border: 2px solid ${img.isMain ? '#10b981' : '#cbd5e1'} !important; box-shadow: ${img.isMain ? '0 0 0 2px rgba(16,185,129,0.35)' : '0 1px 2px rgba(0,0,0,0.05)'}; box-sizing: border-box !important;">
+                    <img src="${img.previewUrl || img.imageUrl}" alt="Ürün Görseli ${idx+1}" style="width: 100% !important; height: 100% !important; max-width: 100% !important; max-height: 100% !important; min-width: 100% !important; min-height: 100% !important; object-fit: cover !important; display: block !important; border-radius: 6px;" onerror="this.src='/images/default-product.svg'" />
+                    ${img.isMain ? '<span class="b2b-thumb-badge-main" style="position: absolute; top: 2px; left: 2px; background: #059669; color: #fff; font-size: 0.55rem; font-weight: 800; padding: 1px 4px; border-radius: 3px; z-index: 3; line-height: 1.1; pointer-events: none;">★ Ana</span>' : (!img.isExisting ? '<span class="b2b-thumb-badge-new" style="position: absolute; top: 2px; left: 2px; background: #0284c7; color: #fff; font-size: 0.55rem; font-weight: 800; padding: 1px 4px; border-radius: 3px; z-index: 3; line-height: 1.1; pointer-events: none;">Yeni</span>' : '')}
+                    <button type="button" class="btn-remove-img" onclick="removeDashEditImage(${idx})" title="Bu görseli kaldır" style="position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; background: rgba(239,68,68,0.95); color: #fff; border: 1.5px solid #fff; font-size: 0.65rem; font-weight: 900; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 5; padding: 0; line-height: 1;">✕</button>
+                    ${img.isMain ? 
+                        '<div class="btn-make-main active" title="Vitrin ve kartlarda ilk gösterilen ana görseldir" style="position: absolute; bottom: 0; left: 0; right: 0; background: #059669; color: #fff; font-size: 0.55rem; font-weight: 700; padding: 2px 1px; text-align: center; z-index: 4; cursor: default; line-height: 1.1;">★ Ana Görsel</div>' : 
+                        `<button type="button" class="btn-make-main" onclick="setDashEditMainImage(${idx})" title="Ana görsel olarak belirle" style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(15,23,42,0.85); color: #fff; border: none; font-size: 0.55rem; font-weight: 700; padding: 2px 1px; text-align: center; z-index: 4; cursor: pointer; line-height: 1.1;">Ana Yap</button>`
+                    }
+                </div>
+            `).join('');
+
+            if (dashEditUploadedImages.length < 10) {
+                cardsHtml += `
+                    <div class="b2b-thumb-add-btn" onclick="document.getElementById('dashEditImageInput').click()" title="Yeni görsel ekle" style="width: 76px !important; height: 76px !important; min-width: 76px !important; max-width: 76px !important; min-height: 76px !important; max-height: 76px !important; border-radius: 8px; border: 2px dashed #cbd5e1; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #64748b; font-size: 0.65rem; font-weight: 700; gap: 1px; flex-shrink: 0; box-sizing: border-box !important;">
+                        <span style="font-size: 1.2rem; line-height: 1;">+</span>
+                        <span>Ekle</span>
+                    </div>
+                `;
+            }
+
+            grid.innerHTML = cardsHtml;
+        }
+
+        function setDashEditMainImage(idx) {
+            if (idx < 0 || idx >= dashEditUploadedImages.length) return;
+            dashEditUploadedImages.forEach((img, i) => {
+                img.isMain = (i === idx);
+            });
+            renderDashEditImages();
+            if (typeof showRealtimeToast === 'function') {
+                showRealtimeToast("Ana görsel güncellendi.", "info");
+            }
+        }
+
+        function removeDashEditImage(idx) {
+            if (idx < 0 || idx >= dashEditUploadedImages.length) return;
+            const removed = dashEditUploadedImages.splice(idx, 1)[0];
+            if (removed && removed.previewUrl && removed.previewUrl.startsWith('blob:')) {
+                try { URL.revokeObjectURL(removed.previewUrl); } catch(e) {}
+            }
+            if (removed && removed.isMain && dashEditUploadedImages.length > 0) {
+                dashEditUploadedImages[0].isMain = true;
+            }
+            renderDashEditImages();
+            if (typeof showRealtimeToast === 'function') {
+                showRealtimeToast(removed.isExisting ? "Kayıtlı görsel kaldırıldı. 'Değişiklikleri Kaydet' dediğinizde silinecektir." : "Seçilen görsel listeden kaldırıldı.", "info");
+            }
+        }
+
+        async function saveEditListing(e) {
+            if (e && typeof e.preventDefault === 'function') e.preventDefault();
+
+            const itemId = parseInt(document.getElementById('dashEditItemId')?.value || '0', 10);
+            const productName = document.getElementById('dashEditProductName')?.value || '';
+            const price = parseFloat(document.getElementById('dashEditPrice')?.value || '0');
+            const stock = parseInt(document.getElementById('dashEditStock')?.value || '0', 10);
+            const desc = document.getElementById('dashEditDesc')?.value || '';
+
+            if (!itemId || !productName.trim() || isNaN(price) || price <= 0) {
+                if (typeof showRealtimeToast === 'function') showRealtimeToast("Lütfen tüm zorunlu alanları doğru doldurunuz.", "error");
+                else alert("Lütfen tüm zorunlu alanları doğru doldurunuz.");
+                return false;
+            }
+
+            const submitBtn = document.getElementById('dashEditSubmitBtn');
+            const origHtml = submitBtn ? submitBtn.innerHTML : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span>⏳ Görseller yükleniyor ve güncelleniyor...</span>';
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('ItemID', itemId);
+                formData.append('ProductName', productName.trim());
+                formData.append('UnitPrice', price);
+                formData.append('StockQuantity', stock);
+                formData.append('ItemDescription', desc);
+
+                // 1. Mevcut korunan görseller
+                const existingKept = dashEditUploadedImages.filter(x => x.isExisting).map((img, i) => ({
+                    imageID: img.imageID,
+                    imageUrl: img.imageUrl,
+                    publicId: img.publicId,
+                    isMain: img.isMain,
+                    displayOrder: i
+                }));
+                formData.append('ExistingImagesJson', JSON.stringify(existingKept));
+
+                // 2. Yeni eklenen dosyalar
+                const newItems = dashEditUploadedImages.filter(x => !x.isExisting);
+                let mainIsNew = false;
+                let mainNewIdx = 0;
+                newItems.forEach((item, i) => {
+                    if (item.file) {
+                        formData.append('NewImageFiles', item.file);
+                    }
+                    if (item.isMain) {
+                        mainIsNew = true;
+                        mainNewIdx = i;
+                    }
+                });
+                formData.append('MainImageIsNew', mainIsNew);
+                formData.append('MainImageIndex', mainNewIdx);
+
+                const response = await fetch('/Dashboard/UpdateProductListing', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    closeEditListingModal();
+                    if (typeof showRealtimeToast === 'function') {
+                        showRealtimeToast(result.message || "Ürün ve görselleri güncellendi!", "success");
+                    }
+
+                    // Tablodaki satırı anlık güncelle
+                    const row = document.getElementById('listing-row-' + itemId);
+                    if (row) {
+                        const mainImg = result.mainImageUrl || (dashEditUploadedImages.find(x => x.isMain) || dashEditUploadedImages[0])?.imageUrl || '/images/default-product.svg';
+                        const imgEl = row.querySelector('td:first-child img');
+                        if (imgEl) imgEl.src = mainImg;
+
+                        const nameEl = row.querySelector('.req-title-cell strong');
+                        if (nameEl) nameEl.textContent = productName.trim();
+
+                        const priceEl = row.querySelector('td:nth-child(4) strong');
+                        if (priceEl) priceEl.textContent = (price.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })) + ' ₺';
+
+                        const stockEl = row.querySelector('td:nth-child(3) strong');
+                        if (stockEl) {
+                            stockEl.textContent = stock + ' Adet';
+                            const isCrit = stock > 0 && stock <= 10;
+                            const isOut = stock <= 0;
+                            stockEl.className = isOut ? 'text-danger' : (isCrit ? 'text-warning' : '');
+                            const badgeEl = row.querySelector('td:nth-child(3) .status-badge');
+                            if (badgeEl) {
+                                badgeEl.className = 'status-badge ' + (isOut ? 'badge-coral' : (isCrit ? 'badge-amber' : 'badge-emerald'));
+                                badgeEl.innerHTML = '<span class="status-dot"></span>' + (isOut ? 'Tükendi' : (isCrit ? 'Kritik' : 'Stokta'));
+                            }
+                            row.setAttribute('data-status', isOut ? 'Tükendi' : (isCrit ? 'Kritik' : 'Stokta'));
+                        }
+
+                        const descEl = row.querySelector('td:nth-child(6) span');
+                        if (descEl) {
+                            descEl.textContent = desc.trim() || '-';
+                            descEl.title = desc.trim();
+                        }
+
+                        row.classList.add('realtime-updated');
+                        setTimeout(() => row.classList.remove('realtime-updated'), 2000);
+                    }
+                } else {
+                    if (typeof showRealtimeToast === 'function') showRealtimeToast("Hata: " + (result.message || "Güncelleme başarısız."), "error");
+                    else alert("Hata: " + (result.message || "Güncelleme başarısız."));
+                }
+            } catch (err) {
+                console.error(err);
+                if (typeof showRealtimeToast === 'function') showRealtimeToast("Bir hata oluştu: " + err.message, "error");
+                else alert("Bir hata oluştu: " + err.message);
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;
@@ -808,6 +1609,52 @@
                     alert("Bağlantı hatası: " + err.message);
                 }
             }
+        }
+
+        // =========================================================================
+        // SÜRÜKLE-BIRAK (DRAG & DROP) OLAY YÖNETİCİSİ
+        // =========================================================================
+        function setupDashboardDropzones() {
+            setupSingleDropzone('dashCreateDropzone', handleDashCreateImageFiles);
+            setupSingleDropzone('dashEditDropzone', handleDashEditImageFiles);
+        }
+
+        function setupSingleDropzone(elementId, fileHandler) {
+            const dropzone = document.getElementById(elementId);
+            if (!dropzone || dropzone.dataset.dndInit === 'true') return;
+            dropzone.dataset.dndInit = 'true';
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.classList.add('is-dragover');
+                }, false);
+            });
+
+            ['dragleave', 'dragend'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.classList.remove('is-dragover');
+                }, false);
+            });
+
+            dropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.remove('is-dragover');
+                const dt = e.dataTransfer;
+                if (dt && dt.files && dt.files.length > 0) {
+                    fileHandler(dt.files);
+                }
+            }, false);
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupDashboardDropzones);
+        } else {
+            setupDashboardDropzones();
         }
     </script>
 }

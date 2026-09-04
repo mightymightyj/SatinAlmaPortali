@@ -375,6 +375,14 @@
                                             ✕ İptal Et
                                         </button>
                                     }
+                                    @if ((allDelivered || isCompleted) && !isCancelled)
+                                    {
+                                        var primarySellerName = o.SupplierCompanyName ?? (o.OrderItems.FirstOrDefault()?.SupplierCompanyName ?? "Satıcı Firma");
+                                        var primarySellerId = o.SupplierCompanyID ?? o.OrderItems.FirstOrDefault(oi => oi.SupplierCompanyID.HasValue)?.SupplierCompanyID;
+                                        <button type="button" class="btn-primary" style="font-size: 0.76rem; padding: 5px 10px; border-radius: 6px; font-weight: 700; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none; cursor: pointer; color: #fff; box-shadow: 0 2px 5px rgba(245,158,11,0.25);" onclick="openBuyerReviewModalForOrder(@o.OrderID, '@Html.Raw(primarySellerName?.Replace("'", "\\'"))', @(primarySellerId.HasValue ? primarySellerId.Value.ToString() : "null"))">
+                                            ★ Satıcıyı Değerlendir
+                                        </button>
+                                    }
                                     <button type="button" class="btn-table-action" style="font-size: 0.8rem; padding: 5px 12px; border-radius: 7px; font-weight: 600;" onclick="showOrderDetailsModal(@o.OrderID)">
                                         Detay Gör
                                     </button>

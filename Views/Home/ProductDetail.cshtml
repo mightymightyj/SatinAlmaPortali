@@ -23,21 +23,61 @@
     <!-- ANA ÜRÜN KARTI (2 KOLONLU GRID) -->
     <div class="b2b-detail-card" style="background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(0,0,0,0.04); padding: 32px; display: grid; grid-template-columns: 520px 1fr; gap: 40px; margin-bottom: 32px;">
         
-        <!-- SOL KOLON: GÖRSEL -->
+        <!-- SOL KOLON: GÖRSEL CAROUSEL & THUMBNAILS -->
         <div class="b2b-detail-media-col">
-            <div class="b2b-detail-image-box" style="width: 100%; height: 500px; border-radius: 14px; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;">
-                <img id="detailMainImage" src="@Model.ImageUrl" alt="@Model.Title" style="max-width: 95%; max-height: 95%; object-fit: contain; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'" />
-                
-                @if (Model.IsOutOfStock)
+            <div class="b2b-detail-carousel-wrapper">
+                <div class="b2b-detail-image-box" id="pdpImageBox" style="width: 100%; height: 500px; border-radius: 14px; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+                    
+                    @for (int i = 0; i < Model.Images.Count; i++)
+                    {
+                        var img = Model.Images[i];
+                        <div class="b2b-pdp-slide @(i == 0 ? "active" : "")" id="pdpSlide-@i" style="display: @(i == 0 ? "flex" : "none"); width: 100%; height: 100%; align-items: center; justify-content: center;">
+                            <img src="@img.ImageUrl" alt="@Model.Title - Görsel @(i+1)" style="max-width: 95%; max-height: 95%; object-fit: contain; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'" />
+                        </div>
+                    }
+
+                    @if (Model.Images.Count > 1)
+                    {
+                        <button type="button" class="b2b-pdp-nav-btn b2b-pdp-prev" onclick="changePdpSlide(-1)" title="Önceki Görsel" aria-label="Önceki">‹</button>
+                        <button type="button" class="b2b-pdp-nav-btn b2b-pdp-next" onclick="changePdpSlide(1)" title="Sonraki Görsel" aria-label="Sonraki">›</button>
+                        <div class="b2b-pdp-counter" id="pdpCounter">1 / @Model.Images.Count</div>
+                    }
+
+                    @if (Model.Images.Any(x => x.IsMain))
+                    {
+                        <div class="b2b-pdp-main-badge" id="pdpMainBadge" style="display: @(Model.Images[0].IsMain ? "flex" : "none");">
+                            <span>★</span> Ana Görsel
+                        </div>
+                    }
+                    
+                    @if (Model.IsOutOfStock)
+                    {
+                        <div style="position: absolute; top: 16px; left: 16px; background: #ef4444; color: #ffffff; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35); z-index: 5;">
+                            Tükendi (Stokta Yok)
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="position: absolute; top: 16px; left: 16px; background: #10b981; color: #ffffff; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); z-index: 5;">
+                            <span>●</span> @Model.StockQuantity Adet Hazır Stok
+                        </div>
+                    }
+                </div>
+
+                @if (Model.Images.Count > 1)
                 {
-                    <div style="position: absolute; top: 16px; left: 16px; background: #ef4444; color: #ffffff; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);">
-                        Tükendi (Stokta Yok)
-                    </div>
-                }
-                else
-                {
-                    <div style="position: absolute; top: 16px; left: 16px; background: #10b981; color: #ffffff; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
-                        <span>●</span> @Model.StockQuantity Adet Hazır Stok
+                    <div class="b2b-detail-thumbnails-strip" id="pdpThumbnailsStrip">
+                        @for (int i = 0; i < Model.Images.Count; i++)
+                        {
+                            var img = Model.Images[i];
+                            <button type="button" class="b2b-thumb-btn @(i == 0 ? "is-active" : "")" id="pdpThumb-@i" onclick="goToPdpSlide(@i)" title="@(img.IsMain ? "Ana Görsel - " : "")Görsel @(i+1)">
+                                <img src="@img.ImageUrl" alt="Küçük resim @(i+1)" />
+                                @if (img.IsMain)
+                                {
+                                    <span class="b2b-thumb-main-indicator" title="Ana Resim">★ Ana</span>
+                                }
+                            </button>
+                        }
                     </div>
                 }
             </div>
@@ -281,6 +321,83 @@
 @section Scripts {
     <script src="~/js/trendyol-vitrin.js" asp-append-version="true"></script>
     <script>
+        // PDP Görsel Carousel Kontrolleri
+        const pdpImagesCount = @Model.Images.Count;
+        const pdpImagesMeta = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Images.Select(img => new { isMain = img.IsMain })));
+        let currentPdpIndex = 0;
+
+        function goToPdpSlide(index) {
+            if (pdpImagesCount <= 1) return;
+            if (index < 0) index = pdpImagesCount - 1;
+            if (index >= pdpImagesCount) index = 0;
+            currentPdpIndex = index;
+
+            for (let i = 0; i < pdpImagesCount; i++) {
+                const slide = document.getElementById('pdpSlide-' + i);
+                const thumb = document.getElementById('pdpThumb-' + i);
+                if (slide) {
+                    if (i === index) {
+                        slide.style.display = 'flex';
+                        slide.classList.add('active');
+                    } else {
+                        slide.style.display = 'none';
+                        slide.classList.remove('active');
+                    }
+                }
+                if (thumb) {
+                    if (i === index) {
+                        thumb.classList.add('is-active');
+                        try {
+                            thumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                        } catch(e) {}
+                    } else {
+                        thumb.classList.remove('is-active');
+                    }
+                }
+            }
+
+            const counter = document.getElementById('pdpCounter');
+            if (counter) {
+                counter.textContent = `${index + 1} / ${pdpImagesCount}`;
+            }
+
+            const mainBadge = document.getElementById('pdpMainBadge');
+            if (mainBadge && pdpImagesMeta && pdpImagesMeta[index]) {
+                mainBadge.style.display = pdpImagesMeta[index].isMain ? 'flex' : 'none';
+            }
+        }
+
+        function changePdpSlide(delta) {
+            goToPdpSlide(currentPdpIndex + delta);
+        }
+
+        // Klavye ok tuşları ile gezinti
+        document.addEventListener('keydown', (e) => {
+            if (pdpImagesCount <= 1) return;
+            if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+            if (e.key === 'ArrowLeft') changePdpSlide(-1);
+            if (e.key === 'ArrowRight') changePdpSlide(1);
+        });
+
+        // Dokunmatik kaydırma (Swipe)
+        (function setupPdpTouchSwipe() {
+            const box = document.getElementById('pdpImageBox');
+            if (!box || pdpImagesCount <= 1) return;
+            let touchStartX = 0;
+            let touchEndX = 0;
+            box.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+            }, { passive: true });
+            box.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                const diff = touchEndX - touchStartX;
+                if (Math.abs(diff) > 45) {
+                    if (diff > 0) changePdpSlide(-1);
+                    else changePdpSlide(1);
+                }
+            }, { passive: true });
+        })();
+
         // Sekme Değiştirici
         function switchDetailTab(tabId, btn) {
             document.querySelectorAll('.detail-tab-pane').forEach(p => p.style.display = 'none');

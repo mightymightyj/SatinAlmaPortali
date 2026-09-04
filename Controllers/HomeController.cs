@@ -13,11 +13,56 @@ namespace satinalmaportali2.Controllers {
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
         private readonly IHubContext<PortalHub> _hubContext;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public HomeController(ApplicationDbContext context, EmailService emailService, IHubContext<PortalHub> hubContext) {
+        public HomeController(
+            ApplicationDbContext context, 
+            EmailService emailService, 
+            IHubContext<PortalHub> hubContext,
+            ICloudinaryService cloudinaryService) {
             _context = context;
             _emailService = emailService;
             _hubContext = hubContext;
+            _cloudinaryService = cloudinaryService;
+        }
+
+        /// <summary>
+        /// Cloudinary üzerinden ürün görseli yükleme endpoint'i (AJAX).
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> UploadProductImage(IFormFile file, CancellationToken cancellationToken)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return Json(new { success = false, message = "Lütfen geçerli bir görsel dosyası seçiniz." });
+            }
+
+            try
+            {
+                var uploadResult = await _cloudinaryService.UploadImageAsync(
+                    file,
+                    folder: "satinalmaportali/products",
+                    width: 1200,
+                    cancellationToken: cancellationToken
+                );
+
+                if (!uploadResult.Success || string.IsNullOrWhiteSpace(uploadResult.SecureUrl))
+                {
+                    return Json(new { success = false, message = uploadResult.Error ?? "Görsel Cloudinary sunucusuna yüklenemedi." });
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    imageUrl = uploadResult.SecureUrl,
+                    publicId = uploadResult.PublicId,
+                    message = "Görsel başarıyla Cloudinary'ye yüklendi."
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Yükleme hatası: " + ex.Message });
+            }
         }
 
         public async Task<IActionResult> Index() {
@@ -294,7 +339,7 @@ namespace satinalmaportali2.Controllers {
         /// Tedarikçinin vitrine doğrudan ürün/portföy ilanı eklemesini sağlayan AJAX endpoint'i
         /// </summary>
         [HttpPost]
-        public async Task<IActionResult> SubmitSellerOffer([FromBody] CreateProductListingInputModel input)
+        public async Task<IActionResult> SubmitSellerOffer([FromForm] CreateProductListingInputModel input, CancellationToken cancellationToken)
         {
             if (input == null || string.IsNullOrWhiteSpace(input.ProductName) || input.UnitPrice <= 0)
             {
@@ -403,7 +448,131 @@ namespace satinalmaportali2.Controllers {
                 };
 
                 _context.Items.Add(newItem);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
+
+                // 5. Görselleri Cloudinary'ye yükle ve itemimages tablosuna kaydet
+                var allImageUrls = new List<string>();
+                string mainImageUrl = "/images/default-product.svg";
+
+                if (input.ImageFiles != null && input.ImageFiles.Any())
+                {
+                    // Kötüye kullanım önleme: maks 10 görsel sınırı
+                    var filesToProcess = input.ImageFiles.Take(10).ToList();
+                    var uploadedCloudinaryList = new List<ItemImage>();
+
+                    for (int i = 0; i < filesToProcess.Count; i++)
+                    {
+                        var file = filesToProcess[i];
+                        if (file.Length == 0 || file.Length > 10 * 1024 * 1024) continue;
+
+                        var ext = Path.GetExtension(file.FileName)?.ToLowerInvariant();
+                        var allowedExts = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+                        if (!allowedExts.Contains(ext)) continue;
+
+                        try
+                        {
+                            var uploadResult = await _cloudinaryService.UploadImageAsync(
+                                file,
+                                folder: "satinalmaportali/products",
+                                width: 1200,
+                                cancellationToken: cancellationToken
+                            );
+
+                            if (uploadResult.Success && !string.IsNullOrWhiteSpace(uploadResult.SecureUrl))
+                            {
+                                bool isMain = (i == input.MainImageIndex);
+                                if (isMain) mainImageUrl = uploadResult.SecureUrl;
+
+                                var itemImg = new ItemImage
+                                {
+                                    ItemID = newItem.ItemID,
+                                    ImageUrl = uploadResult.SecureUrl,
+                                    PublicId = uploadResult.PublicId,
+                                    IsMain = isMain,
+                                    DisplayOrder = i,
+                                    CreatedAt = DateTime.UtcNow
+                                };
+                                uploadedCloudinaryList.Add(itemImg);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Cloudinary upload error on SubmitSellerOffer: {ex.Message}");
+                        }
+                    }
+
+                    if (uploadedCloudinaryList.Any())
+                    {
+                        if (!uploadedCloudinaryList.Any(x => x.IsMain))
+                        {
+                            uploadedCloudinaryList[0].IsMain = true;
+                            mainImageUrl = uploadedCloudinaryList[0].ImageUrl;
+                        }
+
+                        _context.ItemImages.AddRange(uploadedCloudinaryList);
+                        await _context.SaveChangesAsync(cancellationToken);
+
+                        allImageUrls = uploadedCloudinaryList
+                            .OrderByDescending(img => img.IsMain)
+                            .ThenBy(img => img.DisplayOrder)
+                            .Select(img => img.ImageUrl)
+                            .ToList();
+                    }
+                }
+                else if (input.Images != null && input.Images.Any())
+                {
+                    bool hasMainFlag = input.Images.Any(img => img.IsMain);
+                    for (int i = 0; i < input.Images.Count; i++)
+                    {
+                        var imgInput = input.Images[i];
+                        bool isMain = hasMainFlag ? imgInput.IsMain : (i == 0);
+                        if (isMain) mainImageUrl = imgInput.ImageUrl;
+
+                        var itemImg = new ItemImage
+                        {
+                            ItemID = newItem.ItemID,
+                            ImageUrl = imgInput.ImageUrl,
+                            PublicId = imgInput.PublicId,
+                            IsMain = isMain,
+                            DisplayOrder = imgInput.DisplayOrder > 0 ? imgInput.DisplayOrder : i,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        _context.ItemImages.Add(itemImg);
+                    }
+                    await _context.SaveChangesAsync(cancellationToken);
+
+                    allImageUrls = input.Images
+                        .OrderByDescending(img => img.IsMain)
+                        .ThenBy(img => img.DisplayOrder)
+                        .Select(img => img.ImageUrl)
+                        .ToList();
+                }
+                else if (!string.IsNullOrWhiteSpace(input.ImageUrl))
+                {
+                    mainImageUrl = input.ImageUrl.Trim();
+                    allImageUrls.Add(mainImageUrl);
+
+                    _context.ItemImages.Add(new ItemImage
+                    {
+                        ItemID = newItem.ItemID,
+                        ImageUrl = mainImageUrl,
+                        IsMain = true,
+                        DisplayOrder = 0,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+                else
+                {
+                    allImageUrls.Add(mainImageUrl);
+                }
+
+                // Geriye dönük uyumluluk için Properties alanına ana resmi de iliştir
+                if (!newItem.Properties.Contains("Resim:") && mainImageUrl != "/images/default-product.svg")
+                {
+                    newItem.Properties = $"{newItem.Properties} | Resim: {mainImageUrl}";
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
 
                 string formattedSku = $"SKU-B2B-{newItem.ItemID:D4}";
 
@@ -440,9 +609,8 @@ namespace satinalmaportali2.Controllers {
                     stockStatus = $"{newItem.Quantity ?? 100} Adet Hazır Stok",
                     leadTime = "1-2 İş Günü",
                     tierPricing = $"1-4 Adet: {(decimal)(newItem.ItemPrice ?? 0):N0} ₺ | 5+ Adet: {Math.Round((decimal)(newItem.ItemPrice ?? 0) * 0.92m, 0):N0} ₺",
-                    image = !string.IsNullOrWhiteSpace(input.ImageUrl) 
-                        ? input.ImageUrl 
-                        : "/images/default-product.svg",
+                    image = mainImageUrl,
+                    images = allImageUrls,
                     badge = "Doğrudan Üreticiden",
                     badgeType = "manufacturer",
                     sellerCompanyId = currentCompanyId,
@@ -632,6 +800,7 @@ namespace satinalmaportali2.Controllers {
                 var (currentCompanyId, currentCompanyName, comp) = await GetCurrentCompanyContextAsync();
 
                 var allItems = await _context.Items
+                    .Include(i => i.Images)
                     .AsNoTracking()
                     .OrderByDescending(i => i.ItemID)
                     .Take(100)
@@ -767,16 +936,26 @@ namespace satinalmaportali2.Controllers {
                     bool isOutOfStock = rawStock <= 0;
                     string stockText = isOutOfStock ? "Tükendi (Stokta Yok)" : $"{rawStock} Adet Hazır Stok";
 
-                    // Ürünün özel görsel URL'i varsa Properties'ten çek, yoksa varsayılan görseli kullan
-                    string itemImage = "/images/default-product.svg";
-                    if (!string.IsNullOrWhiteSpace(it.Properties))
+                    // Ürünün özel görsel URL'lerini çek (ItemImages tablosu veya Properties)
+                    var itemImages = it.Images != null && it.Images.Any()
+                        ? it.Images.OrderByDescending(x => x.IsMain).ThenBy(x => x.DisplayOrder).Select(x => x.ImageUrl).ToList()
+                        : new List<string>();
+
+                    if (!itemImages.Any() && !string.IsNullOrWhiteSpace(it.Properties))
                     {
                         var imgMatch = System.Text.RegularExpressions.Regex.Match(it.Properties, @"(?:Resim|Image|ImageUrl|Gorsel)\s*:\s*(https?://[^\s\|;,]+|/[^\s\|;,]+)");
                         if (imgMatch.Success)
                         {
-                            itemImage = imgMatch.Groups[1].Value.Trim();
+                            itemImages.Add(imgMatch.Groups[1].Value.Trim());
                         }
                     }
+
+                    if (!itemImages.Any())
+                    {
+                        itemImages.Add("/images/default-product.svg");
+                    }
+
+                    string itemImage = itemImages.First();
 
                     return new
                     {
@@ -808,6 +987,7 @@ namespace satinalmaportali2.Controllers {
                         leadTime = "1-2 İş Günü",
                         tierPricing = $"1-4 Adet: {price:N0} ₺ | 5+ Adet: {Math.Round(price * 0.92m, 0):N0} ₺",
                         image = itemImage,
+                        images = itemImages,
                         badge = "Doğrudan Üreticiden",
                         badgeType = "manufacturer"
                     };
@@ -831,7 +1011,10 @@ namespace satinalmaportali2.Controllers {
         {
             if (id <= 0) return RedirectToAction("Index", "Home");
 
-            var item = await _context.Items.AsNoTracking().FirstOrDefaultAsync(i => i.ItemID == id);
+            var item = await _context.Items
+                .Include(i => i.Images)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(i => i.ItemID == id);
             if (item == null)
             {
                 TempData["ErrorMessage"] = "Aradığınız ürün bulunamadı veya satıştan kaldırılmış olabilir.";
@@ -990,6 +1173,29 @@ namespace satinalmaportali2.Controllers {
                 };
             }).ToList();
 
+            var pdpImages = item.Images != null && item.Images.Any()
+                ? item.Images.OrderByDescending(x => x.IsMain).ThenBy(x => x.DisplayOrder).Select(x => new ProductImageDto
+                {
+                    ImageID = x.ImageID,
+                    ImageUrl = x.ImageUrl,
+                    PublicId = x.PublicId,
+                    IsMain = x.IsMain,
+                    DisplayOrder = x.DisplayOrder
+                }).ToList()
+                : new List<ProductImageDto>();
+
+            if (!pdpImages.Any())
+            {
+                pdpImages.Add(new ProductImageDto
+                {
+                    ImageUrl = !string.IsNullOrWhiteSpace(imageUrl) ? imageUrl : "/images/default-product.svg",
+                    IsMain = true,
+                    DisplayOrder = 0
+                });
+            }
+
+            string mainPdpImg = pdpImages.FirstOrDefault(x => x.IsMain)?.ImageUrl ?? pdpImages.First().ImageUrl;
+
             var viewModel = new ProductDetailPageViewModel
             {
                 ItemID = item.ItemID,
@@ -1000,7 +1206,8 @@ namespace satinalmaportali2.Controllers {
                 StockQuantity = item.Quantity ?? 0,
                 CategoryName = categoryName,
                 Description = item.ItemDescryption ?? $"{item.ItemName} endüstriyel standartlara ve fabrika normlarına uygun olarak üretilmiş olup kurumsal satınalma ve tedarik süreçleriniz için kullanıma hazırdır.",
-                ImageUrl = imageUrl,
+                ImageUrl = mainPdpImg,
+                Images = pdpImages,
                 Specifications = specs,
                 SupplierCompanyID = supplierCompanyId,
                 SupplierCompanyName = supplierName,
@@ -1044,6 +1251,16 @@ namespace satinalmaportali2.Controllers {
         public string? Brand { get; set; }
         public string? Properties { get; set; }
         public string? ImageUrl { get; set; }
+        public List<IFormFile>? ImageFiles { get; set; }
+        public int MainImageIndex { get; set; } = 0;
+        public List<ProductImageInputModel>? Images { get; set; }
+    }
+
+    public class ProductImageInputModel {
+        public string ImageUrl { get; set; } = string.Empty;
+        public string? PublicId { get; set; }
+        public bool IsMain { get; set; }
+        public int DisplayOrder { get; set; }
     }
 
     public class SubmitVitrinQuoteInputModel {

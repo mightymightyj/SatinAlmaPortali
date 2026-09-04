@@ -766,15 +766,15 @@
                             <div style="display: flex; gap: 12px;">
                                 @if (r.DeliveryScore.HasValue)
                                 {
-                                    <span>Hız: <strong>@r.DeliveryScore:0.#/10</strong></span>
+                                    <span>Hız: <strong>@(r.DeliveryScore.Value.ToString("0.0")) / 10</strong></span>
                                 }
                                 @if (r.QualityScore.HasValue)
                                 {
-                                    <span>Kalite: <strong>@r.QualityScore:0.#/10</strong></span>
+                                    <span>Kalite: <strong>@(r.QualityScore.Value.ToString("0.0")) / 10</strong></span>
                                 }
                                 @if (r.CommunicationScore.HasValue)
                                 {
-                                    <span>İletişim: <strong>@r.CommunicationScore:0.#/10</strong></span>
+                                    <span>İletişim: <strong>@(r.CommunicationScore.Value.ToString("0.0")) / 10</strong></span>
                                 }
                             </div>
                         </div>
@@ -955,6 +955,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         orderID: orderId,
+                        targetSupplierCompanyID: @Model.CompanyID,
+                        targetSupplierCompanyName: '@Html.Raw(Model.CompanyName.Replace("'", "\\'"))',
                         reviewScore: score,
                         deliveryScore: delivery,
                         qualityScore: quality,

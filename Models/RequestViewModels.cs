@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using Microsoft.AspNetCore.Http;
 
 namespace satinalmaportali2.Models
 {
@@ -332,6 +333,8 @@ namespace satinalmaportali2.Models
         public string? Brand { get; set; }
         public string? Properties { get; set; }
         public string? ImageUrl { get; set; }
+        public List<IFormFile>? ImageFiles { get; set; }
+        public int MainImageIndex { get; set; } = 0;
     }
 
     /// <summary>

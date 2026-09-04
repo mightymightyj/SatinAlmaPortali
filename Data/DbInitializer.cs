@@ -188,6 +188,20 @@ namespace satinalmaportali2.Data
                             createdat TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                             resolvedat TIMESTAMP WITH TIME ZONE
                         );
+
+                        -- Ürün Görselleri Tablosu (Cloudinary Çoklu Görsel Desteği)
+                        CREATE TABLE IF NOT EXISTS itemimages (
+                            imageid SERIAL PRIMARY KEY,
+                            itemid INT NOT NULL,
+                            imageurl TEXT NOT NULL,
+                            publicid VARCHAR(255),
+                            ismain BOOLEAN DEFAULT FALSE,
+                            displayorder INT DEFAULT 0,
+                            createdat TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                        );
+
+                        CREATE INDEX IF NOT EXISTS idx_itemimages_itemid ON itemimages(itemid);
+                        CREATE INDEX IF NOT EXISTS idx_itemimages_ismain ON itemimages(ismain);
                         
                         -- Temizlik: Ödemesi tamamlanmamış / askıda kalmış eski taslak kayıtları temizle
                         DELETE FROM orderitems WHERE orderid IN (SELECT orderid FROM orders WHERE orderstatus = 'Ödeme Bekleniyor' OR paymentstatus = 'Beklemede (3D)');
@@ -196,7 +210,49 @@ namespace satinalmaportali2.Data
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Orders/CartItems/RequestItems/Reviews/Escrow table check/create note: " + ex.Message);
+                    Console.WriteLine("Orders/CartItems/RequestItems/Reviews/Escrow/ItemImages table check/create note: " + ex.Message);
+                }
+
+                // ====================================================
+                // STEP: Seed/Migrate existing item images into itemimages table
+                // ====================================================
+                try
+                {
+                    if (!await context.ItemImages.AnyAsync())
+                    {
+                        var itemsWithProps = await context.Items
+                            .Where(i => i.Properties != null && i.Properties != "")
+                            .ToListAsync();
+
+                        var imagesToAdd = new List<ItemImage>();
+                        foreach (var item in itemsWithProps)
+                        {
+                            var match = System.Text.RegularExpressions.Regex.Match(
+                                item.Properties!, 
+                                @"(?:Resim|Image|ImageUrl|Gorsel)\s*:\s*(https?://[^\s\|;,]+|/[^\s\|;,]+)");
+                            if (match.Success)
+                            {
+                                imagesToAdd.Add(new ItemImage
+                                {
+                                    ItemID = item.ItemID,
+                                    ImageUrl = match.Groups[1].Value.Trim(),
+                                    IsMain = true,
+                                    DisplayOrder = 0,
+                                    CreatedAt = DateTime.UtcNow
+                                });
+                            }
+                        }
+
+                        if (imagesToAdd.Any())
+                        {
+                            await context.ItemImages.AddRangeAsync(imagesToAdd);
+                            await context.SaveChangesAsync();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("ItemImages initial migration note: " + ex.Message);
                 }
 
                 // ====================================================
@@ -753,10 +809,13 @@ namespace satinalmaportali2.Data
                     await context.Reviews.AddRangeAsync(sampleBuyerReviews);
                     await context.SaveChangesAsync();
                 }
+
+                // Kategori Ağacı Tohumlama (Category Tree Seeding)
+                await CategoryDataSeeder.SeedCategoriesAsync(context);
             }
             catch (Exception ex)
             {
-                Console.WriteLine("SeedSampleVerifiedReviews error: " + ex.Message);
+                Console.WriteLine("DbInitializer error: " + ex.Message);
             }
         }
     }

@@ -124,9 +124,10 @@ namespace satinalmaportali2.Controllers
 
                 if (!targetSupplierId.HasValue && !string.IsNullOrWhiteSpace(targetSupplierName))
                 {
+                    var cleanTargetName = targetSupplierName.Trim().ToLower();
                     var matchedSupplier = await _context.Companies
                         .AsNoTracking()
-                        .FirstOrDefaultAsync(c => c.CompanyName != null && c.CompanyName.ToLower() == targetSupplierName.ToLower());
+                        .FirstOrDefaultAsync(c => c.CompanyName != null && c.CompanyName.Trim().ToLower() == cleanTargetName);
                     if (matchedSupplier != null)
                     {
                         targetSupplierId = matchedSupplier.CompanyID;
@@ -140,9 +141,10 @@ namespace satinalmaportali2.Controllers
 
                 if (!targetSupplierId.HasValue && !string.IsNullOrWhiteSpace(order.SupplierCompanyName))
                 {
+                    var cleanOrderSuppName = order.SupplierCompanyName.Trim().ToLower();
                     var matchedSupplier = await _context.Companies
                         .AsNoTracking()
-                        .FirstOrDefaultAsync(c => c.CompanyName != null && c.CompanyName.ToLower() == order.SupplierCompanyName.Trim().ToLower());
+                        .FirstOrDefaultAsync(c => c.CompanyName != null && c.CompanyName.Trim().ToLower() == cleanOrderSuppName);
                     if (matchedSupplier != null)
                     {
                         targetSupplierId = matchedSupplier.CompanyID;
@@ -254,6 +256,20 @@ namespace satinalmaportali2.Controllers
                     });
                 }
 
+                // Görüntülenecek Satıcı Ünvanı
+                string displaySellerName = !string.IsNullOrWhiteSpace(targetSupplierName)
+                    ? targetSupplierName
+                    : (!string.IsNullOrWhiteSpace(order.SupplierCompanyName) ? order.SupplierCompanyName : "Satıcı Firma");
+
+                if (displaySellerName == "Satıcı Firma" && targetSupplierId.HasValue)
+                {
+                    var comp = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == targetSupplierId.Value);
+                    if (comp != null && !string.IsNullOrWhiteSpace(comp.CompanyName))
+                    {
+                        displaySellerName = comp.CompanyName;
+                    }
+                }
+
                 // 3. Alıcıya Sipariş Değerlendirildi Bildirimi Gönder
                 if (order.BuyerCompanyID.HasValue)
                 {
@@ -261,14 +277,14 @@ namespace satinalmaportali2.Controllers
                     {
                         orderId = order.OrderID,
                         score = input.ReviewScore,
-                        sellerName = order.SupplierCompanyName
+                        sellerName = displaySellerName
                     });
                 }
 
                 return Json(new
                 {
                     success = true,
-                    message = $"🎉 Teşekkürler! {order.SupplierCompanyName} için verdiğiniz ★ {input.ReviewScore:0.#} / 10 puan ve değerlendirmeniz başarıyla satıcı sayfasına eklendi.",
+                    message = $"🎉 Teşekkürler! {displaySellerName} için verdiğiniz ★ {input.ReviewScore:0.#} / 10 puan ve değerlendirmeniz başarıyla satıcı sayfasına eklendi.",
                     score = input.ReviewScore,
                     orderId = order.OrderID,
                     newAverageScore = newAverage,
@@ -310,10 +326,17 @@ namespace satinalmaportali2.Controllers
                     return Json(new { success = false, message = "Alıcıyı değerlendirmek için tedarikçi hesabınızla oturum açmış olmanız gerekmektedir." });
                 }
 
-                var order = await _context.Orders.FirstOrDefaultAsync(o => o.OrderID == input.OrderID);
+                var order = await _context.Orders
+                    .Include(o => o.OrderItems)
+                    .FirstOrDefaultAsync(o => o.OrderID == input.OrderID);
                 if (order == null)
                 {
                     return Json(new { success = false, message = "Sipariş sistemde bulunamadı." });
+                }
+
+                if (order.OrderStatus == "İptal" || order.OrderStatus == "İptal Edildi")
+                {
+                    return Json(new { success = false, message = "İptal edilmiş siparişler için değerlendirme yapılamaz." });
                 }
 
                 // Satıcı Doğrulaması: Oturum açan firma bu siparişin tedarikçisi mi?
@@ -324,6 +347,14 @@ namespace satinalmaportali2.Controllers
                 }
                 else if (!string.IsNullOrWhiteSpace(order.SupplierCompanyName) && !string.IsNullOrWhiteSpace(currentCompanyName) &&
                          string.Equals(order.SupplierCompanyName.Trim(), currentCompanyName.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    isSupplier = true;
+                }
+                else if (order.OrderItems.Any(oi => oi.SupplierCompanyID.HasValue && oi.SupplierCompanyID.Value == currentCompanyId))
+                {
+                    isSupplier = true;
+                }
+                else if (!string.IsNullOrWhiteSpace(currentCompanyName) && order.OrderItems.Any(oi => !string.IsNullOrWhiteSpace(oi.SupplierCompanyName) && string.Equals(oi.SupplierCompanyName.Trim(), currentCompanyName.Trim(), StringComparison.OrdinalIgnoreCase)))
                 {
                     isSupplier = true;
                 }
@@ -341,9 +372,10 @@ namespace satinalmaportali2.Controllers
                 int? targetBuyerId = order.BuyerCompanyID;
                 if (!targetBuyerId.HasValue && !string.IsNullOrWhiteSpace(order.BuyerCompanyName))
                 {
+                    var cleanBuyerName = order.BuyerCompanyName.Trim().ToLower();
                     var matchedBuyer = await _context.Companies
                         .AsNoTracking()
-                        .FirstOrDefaultAsync(c => c.CompanyName != null && c.CompanyName.ToLower() == order.BuyerCompanyName.Trim().ToLower());
+                        .FirstOrDefaultAsync(c => c.CompanyName != null && c.CompanyName.Trim().ToLower() == cleanBuyerName);
                     if (matchedBuyer != null)
                     {
                         targetBuyerId = matchedBuyer.CompanyID;

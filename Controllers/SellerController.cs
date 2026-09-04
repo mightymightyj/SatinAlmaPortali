@@ -119,6 +119,7 @@ namespace satinalmaportali2.Controllers
             // Satıcıya Verilen 10 Yıldızlı Değerlendirmeleri Yükle
             var reviewsQuery = _context.Reviews
                 .Include(r => r.Order)
+                    .ThenInclude(o => o!.OrderItems)
                 .AsNoTracking()
                 .Where(r => r.CompanyID == company.CompanyID && r.ReviewType == "BuyerToSeller" && r.ReviewScore.HasValue)
                 .OrderByDescending(r => r.ReviewDate);
@@ -202,7 +203,10 @@ namespace satinalmaportali2.Controllers
 
             // Satıcının Vitrindeki Ürünlerini Yükle
             var compName = company.CompanyName ?? "";
-            var productsQuery = _context.Items.AsNoTracking().AsQueryable();
+            var productsQuery = _context.Items
+                .Include(i => i.Images)
+                .AsNoTracking()
+                .AsQueryable();
             if (!string.IsNullOrWhiteSpace(compName))
             {
                 productsQuery = productsQuery.Where(i => i.Brand == compName);
@@ -210,20 +214,31 @@ namespace satinalmaportali2.Controllers
 
             var dbProducts = await productsQuery.Take(24).ToListAsync();
 
-            var productItems = dbProducts.Select(p => new SellerProductItemDto
+            var productItems = dbProducts.Select(p =>
             {
-                ItemID = p.ItemID,
-                ItemName = p.ItemName ?? "Endüstriyel Ürün",
-                Sku = $"SKU-B2B-{p.ItemID:D4}",
-                CategoryName = !string.IsNullOrWhiteSpace(p.Properties) && p.Properties.StartsWith("Kategori: ")
-                    ? p.Properties.Substring("Kategori: ".Length)
-                    : "Endüstriyel Ürünler",
-                UnitPrice = (decimal)(p.ItemPrice ?? 0),
-                Stock = p.Quantity ?? 50,
-                Properties = p.Properties,
-                ImageUrl = (!string.IsNullOrWhiteSpace(p.Properties) && System.Text.RegularExpressions.Regex.IsMatch(p.Properties, @"(?:Resim|Image|ImageUrl|Gorsel)\s*:\s*(https?://[^\s\|;,]+|/[^\s\|;,]+)"))
-                    ? System.Text.RegularExpressions.Regex.Match(p.Properties, @"(?:Resim|Image|ImageUrl|Gorsel)\s*:\s*(https?://[^\s\|;,]+|/[^\s\|;,]+)").Groups[1].Value.Trim()
-                    : "/images/default-product.svg"
+                string pImg = "/images/default-product.svg";
+                if (p.Images != null && p.Images.Any())
+                {
+                    pImg = p.Images.OrderByDescending(x => x.IsMain).ThenBy(x => x.DisplayOrder).Select(x => x.ImageUrl).FirstOrDefault() ?? pImg;
+                }
+                else if (!string.IsNullOrWhiteSpace(p.Properties) && System.Text.RegularExpressions.Regex.IsMatch(p.Properties, @"(?:Resim|Image|ImageUrl|Gorsel)\s*:\s*(https?://[^\s\|;,]+|/[^\s\|;,]+)"))
+                {
+                    pImg = System.Text.RegularExpressions.Regex.Match(p.Properties, @"(?:Resim|Image|ImageUrl|Gorsel)\s*:\s*(https?://[^\s\|;,]+|/[^\s\|;,]+)").Groups[1].Value.Trim();
+                }
+
+                return new SellerProductItemDto
+                {
+                    ItemID = p.ItemID,
+                    ItemName = p.ItemName ?? "Endüstriyel Ürün",
+                    Sku = $"SKU-B2B-{p.ItemID:D4}",
+                    CategoryName = !string.IsNullOrWhiteSpace(p.Properties) && p.Properties.StartsWith("Kategori: ")
+                        ? p.Properties.Substring("Kategori: ".Length)
+                        : "Endüstriyel Ürünler",
+                    UnitPrice = (decimal)(p.ItemPrice ?? 0),
+                    Stock = p.Quantity ?? 50,
+                    Properties = p.Properties,
+                    ImageUrl = pImg
+                };
             }).ToList();
 
             // Giriş yapmış kullanıcının bu satıcıdan siparişi var mı kontrol et
@@ -234,10 +249,13 @@ namespace satinalmaportali2.Controllers
             if (currentCompanyId > 0)
             {
                 var eligibleOrder = await _context.Orders
+                    .Include(o => o.OrderItems)
                     .AsNoTracking()
                     .Where(o => o.BuyerCompanyID == currentCompanyId &&
-                               (o.SupplierCompanyID == company.CompanyID || (o.SupplierCompanyName != null && o.SupplierCompanyName == compName)) &&
-                               o.OrderStatus != "İptal")
+                               (o.SupplierCompanyID == company.CompanyID ||
+                                (!string.IsNullOrWhiteSpace(o.SupplierCompanyName) && o.SupplierCompanyName == compName) ||
+                                o.OrderItems.Any(oi => oi.SupplierCompanyID == company.CompanyID || (!string.IsNullOrWhiteSpace(oi.SupplierCompanyName) && oi.SupplierCompanyName == compName))) &&
+                               o.OrderStatus != "İptal" && o.OrderStatus != "İptal Edildi")
                     .OrderByDescending(o => o.OrderID)
                     .FirstOrDefaultAsync();
 

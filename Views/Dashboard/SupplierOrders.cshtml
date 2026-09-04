@@ -321,9 +321,12 @@
                                              </button>
                                          </div>
                                     }
-                                    <button type="button" class="btn-primary" style="padding: 5px 11px; font-size: 0.76rem; font-weight: 700; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border: none; border-radius: 6px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3); cursor: pointer;" id="btn-rate-buyer-@o.OrderID" onclick="openSellerRateBuyerModal(@o.OrderID, '@Html.Raw(o.BuyerCompanyName?.Replace("'", "\\'"))')">
-                                        ★ Alıcıyı Değerlendir
-                                    </button>
+                                    @if (!isCancelled)
+                                    {
+                                        <button type="button" class="btn-primary" style="padding: 5px 11px; font-size: 0.76rem; font-weight: 700; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border: none; border-radius: 6px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3); cursor: pointer;" id="btn-rate-buyer-@o.OrderID" onclick="openSellerRateBuyerModal(@o.OrderID, '@Html.Raw(o.BuyerCompanyName?.Replace("'", "\\'"))')">
+                                            ★ Alıcıyı Değerlendir
+                                        </button>
+                                    }
                                 </div>
                             </td>
                         </tr>

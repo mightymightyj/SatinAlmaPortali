@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http;
+
 namespace satinalmaportali2.Models {
 
     /// <summary>
@@ -305,6 +307,8 @@ namespace satinalmaportali2.Models {
         public string? Properties { get; set; }
         public string Status { get; set; } = "Stokta";
         public bool IsLiveOnVitrin { get; set; } = true;
+        public string? MainImageUrl { get; set; }
+        public List<ProductImageDto> Images { get; set; } = new();
     }
 
     public class BuyerOrdersViewModel {
@@ -388,6 +392,7 @@ namespace satinalmaportali2.Models {
         public string CategoryName { get; set; } = "Endüstriyel Ürünler";
         public string Description { get; set; } = string.Empty;
         public string ImageUrl { get; set; } = "/images/default-product.svg";
+        public List<ProductImageDto> Images { get; set; } = new();
         public Dictionary<string, string> Specifications { get; set; } = new();
 
         // Tedarikçi Firma Bilgileri
@@ -401,6 +406,32 @@ namespace satinalmaportali2.Models {
 
         // Benzer / İlgili Ürünler
         public List<RelatedProductCardDto> RelatedProducts { get; set; } = new();
+    }
+
+    public class ProductImageDto
+    {
+        public int ImageID { get; set; }
+        public string ImageUrl { get; set; } = string.Empty;
+        public string? PublicId { get; set; }
+        public bool IsMain { get; set; }
+        public int DisplayOrder { get; set; }
+    }
+
+    public class UpdateProductListingInputModel
+    {
+        public int ItemID { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public decimal UnitPrice { get; set; }
+        public int? StockQuantity { get; set; }
+        public int? CategoryID { get; set; }
+        public string? CategoryName { get; set; }
+        public string? ItemDescription { get; set; }
+        public string? ExistingImagesJson { get; set; }
+        public List<IFormFile>? NewImageFiles { get; set; }
+        public int MainImageIndex { get; set; } = 0;
+        public bool MainImageIsNew { get; set; } = false;
+        public int? MainImageExistingId { get; set; }
+        public List<ProductImageDto>? Images { get; set; }
     }
 
     public class RelatedProductCardDto

@@ -20,6 +20,7 @@ namespace satinalmaportali2.Data
         public DbSet<RequestOfferItem> RequestOfferItems { get; set; }
         public DbSet<Reviews> Reviews { get; set; }
         public DbSet<ItemsModel> Items { get; set; }
+        public DbSet<ItemImage> ItemImages { get; set; }
         public DbSet<Forms> Forms { get; set; }
         public DbSet<Category> Category { get; set; }
         public DbSet<Countries> Countries { get; set; }
@@ -189,6 +190,17 @@ namespace satinalmaportali2.Data
                 entity.ToTable("items");
                 entity.HasKey(e => e.ItemID);
                 entity.Property(e => e.ItemID).ValueGeneratedOnAdd();
+                entity.HasMany(e => e.Images)
+                      .WithOne(e => e.Item)
+                      .HasForeignKey(e => e.ItemID)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<ItemImage>(entity =>
+            {
+                entity.ToTable("itemimages");
+                entity.HasKey(e => e.ImageID);
+                entity.Property(e => e.ImageID).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<Forms>(entity =>
