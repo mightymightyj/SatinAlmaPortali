@@ -1,654 +1,1215 @@
 @using satinalmaportali2.Helpers
+@using System.Text.Json
 @model DashboardViewModel
 @{
-    ViewData["Title"] = "Sistem Analitiği & Raporlama";
+    ViewData["Title"] = "Sistem Analitiği & İş Zekası (BI)";
     Layout = "~/Views/Dashboard/_DashboardLayout.cshtml";
 
-    // Seri renkleri: doğrulanmış referans paletin slotları. Durum renkleri
-    // (yeşil/kırmızı) asla seri rengi olarak kullanılmaz.
-    var series = new[] { "#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#8a94a3" };
-    var sliceInks = new[] { "#ffffff", "#ffffff", "#ffffff", "#0b0b0b", "#ffffff" };
+    // Ciddi kurumsal renk paleti
+    var palette = new[] { "#2563EB", "#059669", "#D97706", "#7C3AED", "#DB2777", "#0891B2", "#475569" };
+
+    var periods = Model.TrendPeriods;
+    var trendSeries = Model.TrendSeriesList;
+    var types = Model.RequestTypes;
+    var categories = Model.Categories;
+    var vendors = Model.Vendors;
+    var brands = Model.Brands;
+    var regions = Model.Regions;
+    var companyMix = Model.CompanyMix;
+    var compTypes = Model.CompanyTypeNames;
+    var memberships = Model.MembershipNames;
+
+    var typeTotal = types.Sum(t => t.RequestCount);
 }
 
 <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<div class="page-head">
-    <div>
-        <h1>Satın Alma ve Talep Analitiği</h1>
-        <p>
-            @if (Model.State == DataState.Ok) {
-                <span>@Model.SelectedYear dönemi · veriler doğrudan veritabanından okunur</span>
-            } else {
-                <span>Veri kaynağı bağlı değil</span>
-            }
-        </p>
-    </div>
-
-    @if (Model.State == DataState.Ok && Model.AvailableYears.Count > 0) {
-        <nav class="year-filter" aria-label="Dönem seçimi">
-            @foreach (var year in Model.AvailableYears) {
-                <a class="year-pill @(year == Model.SelectedYear ? "is-active" : "")"
-                   asp-action="Analytics" asp-route-yil="@year"
-                   onclick="switchDashboardYear('@year', event)"
-                   aria-current="@(year == Model.SelectedYear ? "page" : null)">@year</a>
-            }
-        </nav>
+<style>
+    /* =========================================================================
+       SİSTEM ANALİTİĞİ & BI RAPORLAMA STİLLERİ (CİDDİ VE EMOJİSİZ KURUMSAL ARAYÜZ)
+       ========================================================================= */
+    .analytics-container {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+        color: #0F172A;
     }
-</div>
 
-@if (Model.State != DataState.Ok) {
-    <section class="card state-card is-@(Model.State == DataState.NotConfigured ? "setup" : "error")">
-        <h2>@(Model.State == DataState.NotConfigured ? "Veritabanı bağlantısı tanımlı değil" : "Veriye ulaşılamadı")</h2>
-        <p>@Model.StateMessage</p>
+    /* Üst Başlık & Eylem Çubuğu */
+    .bi-header {
+        background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+        border-radius: 14px;
+        padding: 22px 26px;
+        color: #FFFFFF;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        box-shadow: 0 4px 15px -3px rgba(15, 23, 42, 0.15);
+    }
+    .bi-header-info h1 {
+        font-size: 1.45rem;
+        font-weight: 700;
+        margin: 0 0 6px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        letter-spacing: -0.01em;
+    }
+    .bi-header-info p {
+        margin: 0;
+        font-size: 0.84rem;
+        color: #94A3B8;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .bi-status-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #10B981;
+    }
 
-        @if (Model.State == DataState.NotConfigured) {
-            <div class="code-block">
-<pre>"ConnectionStrings": {
-  "@satinalmaportali2.Controllers.DashboardController.ConnectionName":
-    "Host=SUNUCU;Port=5432;Database=VERITABANI;Username=KULLANICI;Password=PAROLA;"
-}</pre>
-            </div>
-            <p class="state-note">
-                Panel PostgreSQL veritabanına bağlanır ve verileri güvenli şekilde görüntüler.
-            </p>
+    .bi-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .bi-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 13px;
+        border-radius: 8px;
+        font-size: 0.81rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.08);
+        color: #FFFFFF;
+        text-decoration: none;
+    }
+    .bi-btn:hover {
+        background: rgba(255, 255, 255, 0.18);
+        color: #FFFFFF;
+    }
+    .bi-btn.is-active {
+        background: #2563EB;
+        border-color: #2563EB;
+        color: #FFFFFF;
+    }
+    .bi-btn-export {
+        background: #059669;
+        border-color: #059669;
+    }
+    .bi-btn-export:hover {
+        background: #047857;
+    }
+
+    /* Hızlı Gezinti Sekmeleri */
+    .bi-nav-tabs {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 2px;
+        scrollbar-width: none;
+    }
+    .bi-nav-tabs::-webkit-scrollbar { display: none; }
+    .bi-tab-btn {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #475569;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.15s ease;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+    }
+    .bi-tab-btn svg {
+        width: 15px;
+        height: 15px;
+        stroke: currentColor;
+    }
+    .bi-tab-btn:hover {
+        background: #F8FAFC;
+        color: #2563EB;
+        border-color: #CBD5E1;
+    }
+    .bi-tab-btn.is-active {
+        background: #2563EB;
+        color: #FFFFFF;
+        border-color: #2563EB;
+    }
+    .bi-tab-btn.is-active svg {
+        stroke: #FFFFFF;
+    }
+
+    /* KPI Kartları Grid */
+    .bi-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+    }
+    .bi-kpi-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 18px 20px;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .bi-kpi-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+    .bi-kpi-title {
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #64748B;
+    }
+    .bi-kpi-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .bi-kpi-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+    .bi-kpi-icon.blue { background: #EFF6FF; color: #2563EB; }
+    .bi-kpi-icon.emerald { background: #ECFDF5; color: #059669; }
+    .bi-kpi-icon.amber { background: #FFFBEB; color: #D97706; }
+    .bi-kpi-icon.purple { background: #FAF5FF; color: #7C3AED; }
+
+    .bi-kpi-num {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #0F172A;
+        line-height: 1.1;
+        margin: 0 0 6px 0;
+        letter-spacing: -0.02em;
+    }
+    .bi-kpi-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.74rem;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 6px;
+    }
+    .bi-badge-good { background: #ECFDF5; color: #059669; }
+    .bi-badge-bad { background: #FEF2F2; color: #DC2626; }
+    .bi-badge-neutral { background: #F1F5F9; color: #475569; }
+
+    /* Kart & Grid Tasarımı */
+    .bi-section-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 20px;
+    }
+    .bi-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .bi-card-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #0F172A;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .bi-card-title svg {
+        width: 18px;
+        height: 18px;
+        color: #2563EB;
+    }
+    .bi-card-desc {
+        font-size: 0.79rem;
+        color: #64748B;
+        margin: 2px 0 0 0;
+    }
+
+    .bi-grid-2 {
+        display: grid;
+        grid-template-columns: 2fr 1.2fr;
+        gap: 18px;
+    }
+    .bi-grid-equal {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+    }
+    @@media (max-width: 992px) {
+        .bi-grid-2, .bi-grid-equal {
+            grid-template-columns: 1fr;
         }
+    }
 
-        @if (!string.IsNullOrEmpty(Model.StateDetail)) {
-            <div class="code-block"><pre>@Model.StateDetail</pre></div>
+    /* Donut & Dağılım Çubukları */
+    .donut-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        align-items: center;
+    }
+    .donut-canvas-wrap {
+        position: relative;
+        width: 210px;
+        height: 210px;
+    }
+    .donut-center-stat {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        pointer-events: none;
+    }
+    .donut-stat-num {
+        font-size: 1.55rem;
+        font-weight: 800;
+        color: #0F172A;
+        display: block;
+        line-height: 1;
+    }
+    .donut-stat-label {
+        font-size: 0.70rem;
+        font-weight: 600;
+        color: #64748B;
+        text-transform: uppercase;
+        margin-top: 2px;
+    }
+
+    .type-breakdown-list {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .type-row-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 0.81rem;
+    }
+    .type-row-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .type-row-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        color: #1E293B;
+    }
+    .type-row-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 2px;
+    }
+    .type-progress-bg {
+        width: 100%;
+        height: 5px;
+        background: #F1F5F9;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .type-progress-bar {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.6s ease;
+    }
+
+    /* Tedarikçi Karnesi Tablosu */
+    .scorecard-search-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #F8FAFC;
+        border: 1px solid #CBD5E1;
+        border-radius: 8px;
+        padding: 6px 12px;
+        width: 250px;
+    }
+    .scorecard-search-input {
+        border: none;
+        background: transparent;
+        font-size: 0.81rem;
+        width: 100%;
+        outline: none;
+        color: #0F172A;
+    }
+    .score-badge {
+        font-weight: 700;
+        color: #0F172A;
+        font-size: 0.85rem;
+    }
+
+    /* Marka Sıralama Rozetleri */
+    .rank-badge {
+        font-weight: 700;
+        font-size: 0.76rem;
+        color: #475569;
+        background: #E2E8F0;
+        padding: 2px 7px;
+        border-radius: 5px;
+        display: inline-block;
+        min-width: 24px;
+        text-align: center;
+    }
+    .rank-badge.top-1 { background: #FEF3C7; color: #B45309; }
+    .rank-badge.top-2 { background: #E2E8F0; color: #334155; }
+    .rank-badge.top-3 { background: #FFEDD5; color: #C2410C; }
+
+    /* Baskı Ayarları */
+    @@media print {
+        .app-sidebar, .app-topbar, .bi-actions, .bi-nav-tabs, .year-filter, .scorecard-search-box {
+            display: none !important;
         }
-    </section>
-} else if (Model.IsEmpty) {
-    <section class="card state-card is-setup">
-        <h2>Bağlantı çalışıyor, ancak gösterilecek kayıt yok</h2>
-        <p>
-            Veritabanına ulaşıldı fakat @Model.SelectedYear yılı için talep, ürün veya
-            değerlendirme kaydı bulunamadı. Kayıtlar girildikçe kartlar ve grafikler
-            kendiliğinden dolacak.
-        </p>
-    </section>
-} else {
+        .app-main { padding: 0 !important; }
+        .analytics-container { gap: 14px; }
+        .bi-header { background: #0F172A !important; color: #FFFFFF !important; }
+        .bi-section-card { box-shadow: none !important; border: 1px solid #CBD5E1 !important; page-break-inside: avoid; }
+    }
+</style>
 
-    <!-- ============ GÖSTERGE KARTLARI ============ -->
-    <section class="kpi-row" aria-label="Özet göstergeler">
+<div class="analytics-container">
 
-        <article class="card kpi-card">
-            <div class="kpi-top">
-                <span class="kpi-label">Toplam Talep</span>
-                <span class="kpi-icon accent">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                    </svg>
-                </span>
-            </div>
-            <p class="kpi-value">@Model.Summary.CurrentRequests.ToString("N0", ChartHelper.Tr)</p>
-            @if (Model.Summary.RequestChangePercent is decimal change) {
-                var cls = change > 0 ? "is-good" : change < 0 ? "is-bad" : "is-flat";
-                <p class="kpi-delta @cls">
-                    <span aria-hidden="true">@(change > 0 ? "▲" : change < 0 ? "▼" : "■")</span>
-                    @ChartHelper.SignedPercent(change)
-                    <span class="kpi-delta-note">önceki eşit döneme göre</span>
-                </p>
-            } else {
-                <p class="kpi-delta is-flat"><span class="kpi-delta-note">karşılaştırılacak önceki dönem yok</span></p>
-            }
-        </article>
-
-        <article class="card kpi-card">
-            <div class="kpi-top">
-                <span class="kpi-label">Ortalama Tedarikçi Puanı</span>
-                <span class="kpi-icon good">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                    </svg>
-                </span>
-            </div>
-            <p class="kpi-value">@(Model.Summary.AvgScore is decimal s ? ChartHelper.Score((double)s) : "—")</p>
-            <p class="kpi-delta is-flat">
-                <span class="kpi-delta-note">
-                    @Model.Summary.ReviewCount.ToString("N0", ChartHelper.Tr) değerlendirmeye dayanıyor
-                </span>
+    <!-- 1. ÜST BAŞLIK & İŞ ZEKASI KONTROL ÇUBUĞU -->
+    <header class="bi-header">
+        <div class="bi-header-info">
+            <h1>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                Sistem Analitiği &amp; İş Zekası (BI) Raporu
+            </h1>
+            <p>
+                <span class="bi-status-dot"></span>
+                @if (Model.State == DataState.Ok) {
+                    <span>@Model.SelectedYear Dönemi Raporu · Veritabanı ile Gerçek Zamanlı Senkronize</span>
+                } else {
+                    <span>Veri kaynağı bağlı değil</span>
+                }
             </p>
-        </article>
+        </div>
 
-        <article class="card kpi-card">
-            <div class="kpi-top">
-                <span class="kpi-label">Katalog Stok Değeri</span>
-                <span class="kpi-icon accent">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                    </svg>
-                </span>
-            </div>
-            <p class="kpi-value">@(Model.Summary.StockValue is decimal v ? ChartHelper.Compact(v) : "—")</p>
-            @* Bu bir harcama değil: elde duran katalogun ItemPrice x Quantity toplamı. *@
-            <p class="kpi-delta is-flat">
-                <span class="kpi-delta-note">
-                    @Model.Summary.ItemCount.ToString("N0", ChartHelper.Tr) ürün · harcama değil, katalog değeri
-                </span>
-            </p>
-        </article>
-
-        <article class="card kpi-card">
-            <div class="kpi-top">
-                <span class="kpi-label">Kayıtlı Firma</span>
-                <span class="kpi-icon accent">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                    </svg>
-                </span>
-            </div>
-            <p class="kpi-value">@Model.Summary.CompanyCount.ToString("N0", ChartHelper.Tr)</p>
-            <p class="kpi-delta is-flat">
-                <span class="kpi-delta-note">
-                    @if (!string.IsNullOrEmpty(Model.Summary.TopMembershipName)) {
-                        <span>en yaygın üyelik: @Model.Summary.TopMembershipName (@Model.Summary.TopMembershipCount)</span>
-                    } else {
-                        <span>üyelik kırılımı yok</span>
+        <div class="bi-actions">
+            <!-- Yıl Seçimi -->
+            @if (Model.State == DataState.Ok && Model.AvailableYears.Count > 0) {
+                <div style="display: flex; gap: 4px; background: rgba(0,0,0,0.25); padding: 3px; border-radius: 8px;">
+                    @foreach (var year in Model.AvailableYears) {
+                        <a class="bi-btn @(year == Model.SelectedYear ? "is-active" : "")"
+                           asp-action="Analytics" asp-route-yil="@year"
+                           style="padding: 5px 12px; font-size: 0.80rem;">@year</a>
                     }
-                </span>
-            </p>
-        </article>
-    </section>
-
-    <!-- ============ TALEP TRENDİ + TÜR DAĞILIMI ============ -->
-    <section class="grid-wide-narrow">
-
-        <article class="card chart-card">
-            <div class="card-head">
-                <div>
-                    <h2>Talep Trendi</h2>
-                    <p class="card-sub">@Model.SelectedYear · aylık adet, talep türüne göre</p>
                 </div>
-                @if (Model.TrendSeriesList.Count > 1) {
-                    <div class="legend">
-                        @for (var i = 0; i < Model.TrendSeriesList.Count; i++) {
-                            <span class="legend-item">
-                                <span class="legend-dot" style="background:@series[i % series.Length]"></span>
-                                @Model.TrendSeriesList[i].Name
-                            </span>
+            }
+
+            <!-- CSV / Excel Dışa Aktar -->
+            <button type="button" class="bi-btn bi-btn-export" onclick="exportAnalyticsCsv()" title="Tedarikçi ve Kategori Verilerini CSV Olarak İndir">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>CSV İndir</span>
+            </button>
+
+            <!-- Yazdır / PDF -->
+            <button type="button" class="bi-btn" onclick="window.print()" title="Bu Raporu Yazdır veya PDF Kaydet">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                    <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+                <span>Yazdır / PDF</span>
+            </button>
+
+            <!-- Yenile -->
+            <a href="javascript:window.location.reload()" class="bi-btn" title="Verileri Yenile">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+            </a>
+        </div>
+    </header>
+
+    @if (Model.State != DataState.Ok) {
+        <section class="card state-card is-@(Model.State == DataState.NotConfigured ? "setup" : "error")">
+            <h2>@(Model.State == DataState.NotConfigured ? "Veritabanı bağlantısı tanımlı değil" : "Veriye ulaşılamadı")</h2>
+            <p>@Model.StateMessage</p>
+            @if (!string.IsNullOrEmpty(Model.StateDetail)) {
+                <div class="code-block"><pre>@Model.StateDetail</pre></div>
+            }
+        </section>
+    } else if (Model.IsEmpty) {
+        <section class="card state-card is-setup">
+            <h2>Bağlantı aktif, ancak gösterilecek kayıt bulunamadı</h2>
+            <p>
+                Veritabanına erişildi fakat @Model.SelectedYear yılı için sistemde henüz talep, ürün veya
+                değerlendirme kaydı bulunmuyor. Yeni talepler açıldıkça bu ekran otomatik olarak güncellenecektir.
+            </p>
+        </section>
+    } else {
+
+        <!-- 2. HIZLI BÖLÜM GEZİNTİ ÇUBUĞU (SEKMELER) -->
+        <nav class="bi-nav-tabs" aria-label="Analitik Bölümleri">
+            <button type="button" class="bi-tab-btn is-active" onclick="filterSection('all', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                Tüm Rapor (Genel Bakış)
+            </button>
+            <button type="button" class="bi-tab-btn" onclick="filterSection('sec-trend', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                Talep &amp; Trend Analitiği
+            </button>
+            <button type="button" class="bi-tab-btn" onclick="filterSection('sec-catalog', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                Katalog, Kategori &amp; Markalar
+            </button>
+            <button type="button" class="bi-tab-btn" onclick="filterSection('sec-vendors', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+                Tedarikçi Karnesi
+            </button>
+            <button type="button" class="bi-tab-btn" onclick="filterSection('sec-corporate', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+                Kurumsal &amp; Bölgesel Dağılım
+            </button>
+        </nav>
+
+        <!-- 3. STRATEJİK KPI KARTLARI (EMOJİSİZ & VEKTÖREL SİMGELİ) -->
+        <section class="bi-kpi-grid bi-section-el" id="sec-kpis">
+            <!-- Toplam Talep -->
+            <article class="bi-kpi-card">
+                <div>
+                    <div class="bi-kpi-top">
+                        <span class="bi-kpi-title">Toplam Satın Alma Talebi</span>
+                        <div class="bi-kpi-icon blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="bi-kpi-num">@Model.Summary.CurrentRequests.ToString("N0", ChartHelper.Tr)</div>
+                </div>
+                <div>
+                    @if (Model.Summary.RequestChangePercent is decimal change) {
+                        var cls = change > 0 ? "bi-badge-good" : change < 0 ? "bi-badge-bad" : "bi-badge-neutral";
+                        var icon = change > 0 ? "▲" : change < 0 ? "▼" : "■";
+                        <span class="bi-kpi-badge @cls">
+                            <span>@icon</span>
+                            <span>@ChartHelper.SignedPercent(change)</span>
+                            <span style="font-weight: 400; opacity: 0.85;">önceki döneme kıyasla</span>
+                        </span>
+                    } else {
+                        <span class="bi-kpi-badge bi-badge-neutral">Karşılaştırma verisi yok</span>
+                    }
+                </div>
+            </article>
+
+            <!-- Tedarikçi Memnuniyeti -->
+            <article class="bi-kpi-card">
+                <div>
+                    <div class="bi-kpi-top">
+                        <span class="bi-kpi-title">Tedarikçi Memnuniyet Skoru</span>
+                        <div class="bi-kpi-icon emerald">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="bi-kpi-num">
+                        @(Model.Summary.AvgScore is decimal s ? ChartHelper.Score((double)s) : "—")
+                        <span style="font-size: 1rem; color: #94A3B8; font-weight: 500;">/ 5.0</span>
+                    </div>
+                </div>
+                <div>
+                    <span class="bi-kpi-badge bi-badge-good">
+                        <span>@Model.Summary.ReviewCount.ToString("N0", ChartHelper.Tr) Değerlendirme</span>
+                    </span>
+                </div>
+            </article>
+
+            <!-- Katalog Stok Portföy Değeri -->
+            <article class="bi-kpi-card">
+                <div>
+                    <div class="bi-kpi-top">
+                        <span class="bi-kpi-title">Katalog &amp; Stok Hacmi</span>
+                        <div class="bi-kpi-icon amber">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="bi-kpi-num">@(Model.Summary.StockValue is decimal v ? ChartHelper.Compact(v) : "—")</div>
+                </div>
+                <div>
+                    <span class="bi-kpi-badge bi-badge-neutral">
+                        <span>@Model.Summary.ItemCount.ToString("N0", ChartHelper.Tr) Aktif Ürün</span>
+                    </span>
+                </div>
+            </article>
+
+            <!-- Kayıtlı Kurumsal Firma -->
+            <article class="bi-kpi-card">
+                <div>
+                    <div class="bi-kpi-top">
+                        <span class="bi-kpi-title">Kayıtlı Kurumsal Firma</span>
+                        <div class="bi-kpi-icon purple">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="bi-kpi-num">@Model.Summary.CompanyCount.ToString("N0", ChartHelper.Tr)</div>
+                </div>
+                <div>
+                    <span class="bi-kpi-badge bi-badge-neutral">
+                        <span>Paket Dağılımı: @(Model.Summary.TopMembershipName ?? "Bedava") (@Model.Summary.TopMembershipCount)</span>
+                    </span>
+                </div>
+            </article>
+        </section>
+
+        <!-- 4. TALEP & TREND ANALİTİĞİ (ÇİZGİ GRAFİK + DOUGHNUT) -->
+        <section class="bi-grid-2 bi-section-el" id="sec-trend">
+
+            <!-- SOL: AYLIK TALEP TRENDİ (CHART.JS) -->
+            <article class="bi-section-card">
+                <div class="bi-card-head">
+                    <div>
+                        <h2 class="bi-card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                            Aylık Talep ve İhale Dinamikleri
+                        </h2>
+                        <p class="bi-card-desc">@Model.SelectedYear dönemi aylık talep yoğunluğu ve talep türlerine göre hacim dağılımı</p>
+                    </div>
+                </div>
+
+                <div style="position: relative; width: 100%; height: 310px;">
+                    <canvas id="trendChartCanvas"></canvas>
+                </div>
+
+                <!-- Detaylı Veri Tablosu (Açılır/Kapanır) -->
+                <details class="table-view" style="margin-top: 14px;">
+                    <summary style="font-weight: 600; color: #2563EB; cursor: pointer; font-size: 0.82rem;">
+                        Sayısal Tablo Görünümünü Aç / Kapat
+                    </summary>
+                    <div class="table-scroll" style="margin-top: 8px;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Dönem</th>
+                                    @foreach (var line in trendSeries) {
+                                        <th class="num">@line.Name</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (var i = 0; i < periods.Count; i++) {
+                                    <tr>
+                                        <td><strong>@ChartHelper.MonthYear(DateOnly.FromDateTime(periods[i]))</strong></td>
+                                        @foreach (var line in trendSeries) {
+                                            <td class="num">@(i < line.Values.Count ? line.Values[i] : 0)</td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+            </article>
+
+            <!-- SAĞ: TALEP TÜRÜ DAĞILIMI (DOUGHNUT) -->
+            <article class="bi-section-card">
+                <div class="bi-card-head">
+                    <div>
+                        <h2 class="bi-card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 1 10 10h-10z"></path></svg>
+                            Talep Türü &amp; Metot Dağılımı
+                        </h2>
+                        <p class="bi-card-desc">Taleplerin satın alma ve ihale yöntemlerine göre oransal ağırlığı</p>
+                    </div>
+                </div>
+
+                <div class="donut-layout">
+                    <div class="donut-canvas-wrap">
+                        <canvas id="typeDonutCanvas"></canvas>
+                        <div class="donut-center-stat">
+                            <span class="donut-stat-num">@typeTotal.ToString("N0", ChartHelper.Tr)</span>
+                            <span class="donut-stat-label">Toplam Talep</span>
+                        </div>
+                    </div>
+
+                    <div class="type-breakdown-list">
+                        @for (var i = 0; i < types.Count; i++) {
+                            var row = types[i];
+                            var color = palette[i % palette.Length];
+                            var label = string.IsNullOrWhiteSpace(row.RequestType) ? "Belirtilmemiş" : row.RequestType;
+
+                            <div class="type-row-item">
+                                <div class="type-row-header">
+                                    <div class="type-row-left">
+                                        <span class="type-row-dot" style="background: @color;"></span>
+                                        <span>@label</span>
+                                    </div>
+                                    <div style="font-weight: 700; color: #0F172A;">
+                                        @row.RequestCount.ToString("N0", ChartHelper.Tr)
+                                        <span style="font-size: 0.74rem; color: #64748B; font-weight: 500; margin-left: 4px;">
+                                            (@ChartHelper.Percent((double)row.SharePercent, 1))
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="type-progress-bg">
+                                    <div class="type-progress-bar" style="width: @((double)row.SharePercent)%; background: @color;"></div>
+                                </div>
+                            </div>
                         }
                     </div>
-                }
+                </div>
+            </article>
+        </section>
+
+        <!-- 5. KATALOG, KATEGORİ & MARKA ANALİZİ -->
+        <section class="bi-grid-2 bi-section-el" id="sec-catalog">
+
+            <!-- SOL: KATEGORİ KIRILIMI & FİYAT ANALİZİ -->
+            <article class="bi-section-card">
+                <div class="bi-card-head">
+                    <div>
+                        <h2 class="bi-card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                            Kategori Bazında Portföy &amp; Fiyat İstatistikleri
+                        </h2>
+                        <p class="bi-card-desc">Kategorilerin stok değerleri, listelenen ürün sayıları ve birim fiyat aralıkları</p>
+                    </div>
+                </div>
+
+                <div class="table-scroll">
+                    <table class="data-table" id="categoriesAnalyticsTable">
+                        <thead>
+                            <tr>
+                                <th>Kategori</th>
+                                <th class="num">Ürün Çeşidi</th>
+                                <th class="num">Stok Hacmi</th>
+                                <th class="num">Ortalama Fiyat</th>
+                                <th class="num">Portföy Değeri</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cat in categories) {
+                                <tr>
+                                    <td>
+                                        <strong style="color: #1E293B;">@cat.CategoryName</strong>
+                                    </td>
+                                    <td class="num">
+                                        <span class="status-chip is-neutral" style="font-weight: 700;">
+                                            @cat.ItemCount.ToString("N0", ChartHelper.Tr) Ürün
+                                        </span>
+                                    </td>
+                                    <td class="num">@((cat.TotalQuantity ?? 0).ToString("N0", ChartHelper.Tr)) Adet</td>
+                                    <td class="num" style="color: #2563EB; font-weight: 600;">@ChartHelper.Money(cat.AvgPrice ?? 0)</td>
+                                    <td class="num" style="font-weight: 700; color: #059669;">@ChartHelper.Money(cat.StockValue ?? 0)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <!-- SAĞ: EN POPÜLER MARKALAR -->
+            <article class="bi-section-card">
+                <div class="bi-card-head">
+                    <div>
+                        <h2 class="bi-card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                            Marka Dağılımı &amp; Lider Üreticiler
+                        </h2>
+                        <p class="bi-card-desc">Katalogdaki en yüksek ürün adedine sahip ilk @brands.Count marka</p>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    @{
+                        var maxBrandItems = brands.Count > 0 ? brands.Max(b => b.ItemCount) : 1;
+                        if (maxBrandItems <= 0) maxBrandItems = 1;
+                    }
+                    @for (var i = 0; i < brands.Count; i++) {
+                        var b = brands[i];
+                        var pct = Math.Round((double)b.ItemCount / maxBrandItems * 100);
+                        var rankClass = i == 0 ? "top-1" : i == 1 ? "top-2" : i == 2 ? "top-3" : "";
+
+                        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 14px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="rank-badge @rankClass">#@(i + 1)</span>
+                                    <strong style="color: #0F172A; font-size: 0.85rem;">@(string.IsNullOrWhiteSpace(b.Brand) ? "Markasız / Diğer" : b.Brand)</strong>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="font-weight: 700; color: #2563EB; font-size: 0.85rem;">@b.ItemCount Adet</span>
+                                    <span style="font-size: 0.74rem; color: #64748B; margin-left: 6px;">(@ChartHelper.Compact(b.StockValue ?? 0))</span>
+                                </div>
+                            </div>
+                            <div style="width: 100%; height: 5px; background: #E2E8F0; border-radius: 4px; overflow: hidden;">
+                                <div style="height: 100%; width: @pct%; background: #2563EB; border-radius: 4px;"></div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </article>
+        </section>
+
+        <!-- 6. TEDARİKÇİ KARNESİ -->
+        <section class="bi-section-card bi-section-el" id="sec-vendors">
+            <div class="bi-card-head">
+                <div>
+                    <h2 class="bi-card-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+                        Tedarikçi Başarı Karnesi &amp; Güvenilirlik Skoru
+                    </h2>
+                    <p class="bi-card-desc">
+                        Firmaların talep karşılama performansı, onaylı değerlendirme ortalamaları ve güvenilirlik durumu.
+                        En az @VendorScorecardRow.MinReviewsForRanking değerlendirmesi olmayanlar &quot;İnceleme Aşamasında&quot; olarak listelenir.
+                    </p>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <!-- Arama Çubuğu -->
+                    <div class="scorecard-search-box">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <input type="text" id="vendorScoreSearchInput" placeholder="Tedarikçi firma ara..." class="scorecard-search-input" oninput="filterVendorTable(this.value)" />
+                    </div>
+
+                    <!-- Güvenilirlik Filtresi -->
+                    <select id="vendorReliableFilter" onchange="filterVendorTable()" style="border: 1px solid #CBD5E1; border-radius: 8px; padding: 6px 10px; font-size: 0.81rem; font-weight: 600; background: #F8FAFC; color: #334155;">
+                        <option value="all">Tüm Durumlar</option>
+                        <option value="reliable">Yeterli Veri (Güvenilir)</option>
+                        <option value="insufficient">İnceleme Aşamasında</option>
+                    </select>
+                </div>
             </div>
 
-            @{
-                var periods = Model.TrendPeriods;
-                const double tW = 720, tH = 290, tPadL = 58, tPadR = 16, tPadT = 16, tPadB = 42;
-                var tPlotW = tW - tPadL - tPadR;
-                var tPlotH = tH - tPadT - tPadB;
-                var tMaxValue = Model.TrendSeriesList.Count == 0 || periods.Count == 0
-                    ? 0.0
-                    : Model.TrendSeriesList.Max(sr => sr.Values.Count == 0 ? 0 : sr.Values.Max());
-                var tTop = ChartHelper.NiceCeiling(tMaxValue);
-                var tStepX = periods.Count > 1 ? tPlotW / (periods.Count - 1) : 0;
-                Func<int, double> tX = i => tPadL + tStepX * i;
-                Func<double, double> tY = val => tPadT + tPlotH * (1 - val / tTop);
-            }
-
-            <div class="chart-frame">
-                <svg class="chart-svg" viewBox="0 0 @ChartHelper.N(tW) @ChartHelper.N(tH)"
-                     preserveAspectRatio="xMidYMid meet" role="img"
-                     aria-label="@Model.SelectedYear yılında aylık talep adedi">
-
-                    @foreach (var tick in ChartHelper.Ticks(tTop)) {
-                        <line class="grid-line" x1="@ChartHelper.N(tPadL)" x2="@ChartHelper.N(tPadL + tPlotW)"
-                              y1="@ChartHelper.N(tY(tick))" y2="@ChartHelper.N(tY(tick))" />
-                        @ChartHelper.SvgText(tPadL - 10, tY(tick) + 4, ((int)Math.Round(tick)).ToString("N0", ChartHelper.Tr), "axis-text", "end")
-                    }
-
-                    <line class="axis-line" x1="@ChartHelper.N(tPadL)" x2="@ChartHelper.N(tPadL + tPlotW)"
-                          y1="@ChartHelper.N(tY(0))" y2="@ChartHelper.N(tY(0))" />
-
-                    @for (var si = 0; si < Model.TrendSeriesList.Count; si++) {
-                        var line = Model.TrendSeriesList[si];
-                        var color = series[si % series.Length];
-                        var points = line.Values
-                            .Select((val, i) => (X: tX(i), Y: tY(val)))
-                            .ToList();
-
-                        <polyline points="@ChartHelper.PolylinePoints(points)" fill="none"
-                                  stroke="@color" stroke-width="2"
-                                  stroke-linecap="round" stroke-linejoin="round" />
-
-                        @if (points.Count > 0) {
-                            <circle cx="@ChartHelper.N(points[^1].X)" cy="@ChartHelper.N(points[^1].Y)" r="4"
-                                    fill="@color" stroke="var(--surface)" stroke-width="2" />
+            <div class="table-scroll">
+                <table class="data-table" id="vendorScorecardTable">
+                    <thead>
+                        <tr>
+                            <th>Firma Unvanı</th>
+                            <th>Kurumsal Tür</th>
+                            <th class="num">Alınan Talep</th>
+                            <th class="num">Puan Ortalaması</th>
+                            <th class="num">Değerlendirme</th>
+                            <th>Güvenilirlik Durumu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in vendors) {
+                            <tr class="vendor-data-row" data-name="@(row.CompanyName?.ToLowerInvariant() ?? "")" data-reliable="@(row.HasReliableScore ? "reliable" : "insufficient")">
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div style="width: 28px; height: 28px; border-radius: 6px; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.78rem;">
+                                            @((row.CompanyName?.Length > 0 ? row.CompanyName.Substring(0, 1).ToUpperInvariant() : "F"))
+                                        </div>
+                                        <strong style="color: #0F172A;">@row.CompanyName</strong>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span style="color: #64748B; font-size: 0.80rem;">@(row.CompanyTypeName ?? "—")</span>
+                                </td>
+                                <td class="num">
+                                    <span style="font-weight: 700; color: #2563EB;">@row.ReceivedRequests.ToString("N0", ChartHelper.Tr)</span>
+                                </td>
+                                <td class="num">
+                                    @if (row.AvgScore is decimal sc) {
+                                        <span class="score-badge">@ChartHelper.Score((double)sc) / 5.0</span>
+                                    } else {
+                                        <span style="color: #94A3B8;">—</span>
+                                    }
+                                </td>
+                                <td class="num">
+                                    @row.ReviewCount.ToString("N0", ChartHelper.Tr) Yorum
+                                </td>
+                                <td>
+                                    @if (row.HasReliableScore) {
+                                        <span class="status-chip is-approved" style="background: #ECFDF5; color: #059669; border-color: #A7F3D0;">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true" style="width: 12px; height: 12px;">
+                                                <polyline points="20 6 9 17 4 12"></polyline>
+                                            </svg>
+                                            Yeterli Veri (Güvenilir)
+                                        </span>
+                                    } else {
+                                        <span class="status-chip is-neutral" style="background: #F8FAFC; color: #64748B; border-color: #E2E8F0;">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true" style="width: 12px; height: 12px;">
+                                                <circle cx="12" cy="12" r="9"></circle>
+                                                <line x1="12" y1="8" x2="12" y2="13"></line>
+                                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                            </svg>
+                                            İnceleme Aşamasında
+                                        </span>
+                                    }
+                                </td>
+                            </tr>
                         }
-                    }
-
-                    @for (var i = 0; i < periods.Count; i++) {
-                        var bandW = periods.Count > 1 ? tStepX : tPlotW;
-                        var bandX = periods.Count > 1 ? tX(i) - bandW / 2 : tPadL;
-
-                        @ChartHelper.SvgText(tX(i), tPadT + tPlotH + 20, ChartHelper.MonthLabel(periods[i].Month), "axis-text")
-
-                        var tipRows = string.Join("|", Model.TrendSeriesList.Select((sr, si2) =>
-                            $"{series[si2 % series.Length]};{sr.Name};{(i < sr.Values.Count ? sr.Values[i] : 0)}"));
-
-                        <rect class="hit-area" x="@ChartHelper.N(Math.Max(bandX, tPadL))" y="@ChartHelper.N(tPadT)"
-                              width="@ChartHelper.N(bandW)" height="@ChartHelper.N(tPlotH)"
-                              data-tip-title="@ChartHelper.MonthYear(DateOnly.FromDateTime(periods[i]))"
-                              data-tip-rows="@tipRows" />
-                    }
-                </svg>
+                    </tbody>
+                </table>
             </div>
+        </section>
 
-            <details class="table-view">
-                <summary>Tablo görünümü</summary>
+        <!-- 7. KURUMSAL & BÖLGESEL DAĞILIM (ŞİRKET TİPİ X ÜYELİK VE BÖLGE DAĞILIMI) -->
+        <section class="bi-grid-equal bi-section-el" id="sec-corporate">
+
+            <!-- SOL: ŞİRKET TİPİ VE ÜYELİK DAĞILIMI -->
+            <article class="bi-section-card">
+                <div class="bi-card-head">
+                    <div>
+                        <h2 class="bi-card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+                            Şirket Tipi &amp; Üyelik Dağılım Matrisi
+                        </h2>
+                        <p class="bi-card-desc">Firma türlerinin Bedava, Pro ve Kurumsal paket tercihleri</p>
+                    </div>
+                </div>
+
                 <div class="table-scroll">
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>Ay</th>
-                                @foreach (var line in Model.TrendSeriesList) { <th class="num">@line.Name</th> }
+                                <th>Şirket Türü</th>
+                                @foreach (var m in memberships) {
+                                    <th class="num">@m</th>
+                                }
                             </tr>
                         </thead>
                         <tbody>
-                            @for (var i = 0; i < periods.Count; i++) {
+                            @foreach (var t in compTypes) {
                                 <tr>
-                                    <td>@ChartHelper.MonthYear(DateOnly.FromDateTime(periods[i]))</td>
-                                    @foreach (var line in Model.TrendSeriesList) {
-                                        <td class="num">@(i < line.Values.Count ? line.Values[i] : 0)</td>
+                                    <td><strong style="color: #1E293B;">@t</strong></td>
+                                    @foreach (var m in memberships) {
+                                        var count = companyMix.FirstOrDefault(x => (x.CompanyTypeName ?? "—") == t && (x.MembershipTypeName ?? "—") == m)?.CompanyCount ?? 0;
+                                        <td class="num">
+                                            @if (count > 0) {
+                                                <span class="status-chip is-approved" style="font-weight: 700; padding: 2px 8px;">@count</span>
+                                            } else {
+                                                <span style="color: #CBD5E1;">0</span>
+                                            }
+                                        </td>
                                     }
                                 </tr>
                             }
                         </tbody>
                     </table>
                 </div>
-            </details>
-        </article>
+            </article>
 
-        <article class="card chart-card">
-            <div class="card-head">
-                <div>
-                    <h2>Talep Türü Dağılımı</h2>
-                    <p class="card-sub">@Model.SelectedYear toplamının kırılımı</p>
+            <!-- SAĞ: BÖLGESEL / COĞRAFİ DAĞILIM -->
+            <article class="bi-section-card">
+                <div class="bi-card-head">
+                    <div>
+                        <h2 class="bi-card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            Bölgesel &amp; Coğrafi Firma Dağılımı
+                        </h2>
+                        <p class="bi-card-desc">Platformda kayıtlı alıcı ve satıcıların şehir ve ülke bazındaki yoğunluğu</p>
+                    </div>
                 </div>
-            </div>
 
-            @{
-                var types = Model.RequestTypes;
-                const double dSize = 250, dOuter = 104, dInner = 66, dGap = 1.6;
-                var dCenter = dSize / 2;
-                var typeTotal = types.Sum(t => t.RequestCount);
-                var sweepStart = 0.0;
-            }
-
-            <div class="donut-wrap">
-                <svg class="donut-svg" viewBox="0 0 @ChartHelper.N(dSize) @ChartHelper.N(dSize)"
-                     role="img" aria-label="Talep türlerinin dağılımı">
-
-                    @for (var i = 0; i < types.Count; i++) {
-                        var row = types[i];
-                        var share = typeTotal <= 0 ? 0 : (double)row.RequestCount / typeTotal;
-                        var sweep = share * 360.0;
-                        var color = series[i % series.Length];
-                        var arcStart = sweepStart + dGap / 2;
-                        var arcEnd = sweepStart + sweep - dGap / 2;
-                        var label = string.IsNullOrWhiteSpace(row.RequestType) ? "Belirtilmemiş" : row.RequestType!;
-
-                        if (arcEnd > arcStart) {
-                            <path fill="@color"
-                                  d="@ChartHelper.DonutArc(dCenter, dCenter, dOuter, dInner, arcStart, arcEnd)"
-                                  data-tip-title="@label"
-                                  data-tip-rows="@($"{color};Talep;{row.RequestCount.ToString("N0", ChartHelper.Tr)}|{color};Pay;{ChartHelper.Percent((double)row.SharePercent, 1)}")" />
-                        }
-
-                        if (sweep >= 28) {
-                            var mid = sweepStart + sweep / 2;
-                            var pt = ChartHelper.PointOnCircle(dCenter, dCenter, (dOuter + dInner) / 2, mid);
-                            <g class="slice-label" style="fill:@sliceInks[i % sliceInks.Length]">
-                                @ChartHelper.SvgText(pt.X, pt.Y + 4, ChartHelper.Percent((double)row.SharePercent, 0), "slice-label-text")
-                            </g>
-                        }
-
-                        sweepStart += sweep;
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    @{
+                        var topRegions = regions.Take(8).ToList();
+                        var maxRegCount = topRegions.Count > 0 ? topRegions.Max(r => r.CompanyCount) : 1;
+                        if (maxRegCount <= 0) maxRegCount = 1;
                     }
-
-                    @ChartHelper.SvgText(dCenter, dCenter - 4, typeTotal.ToString("N0", ChartHelper.Tr), "donut-center-value")
-                    @ChartHelper.SvgText(dCenter, dCenter + 16, "toplam talep", "donut-center-label")
-                </svg>
-
-                <ul class="donut-legend">
-                    @for (var i = 0; i < types.Count; i++) {
-                        var row = types[i];
-                        <li>
-                            <span class="legend-dot" style="background:@series[i % series.Length]"></span>
-                            <span class="legend-name">@(string.IsNullOrWhiteSpace(row.RequestType) ? "Belirtilmemiş" : row.RequestType)</span>
-                            <span class="legend-value">@row.RequestCount.ToString("N0", ChartHelper.Tr)</span>
-                            <span class="legend-share">@ChartHelper.Percent((double)row.SharePercent, 1)</span>
-                        </li>
-                    }
-                </ul>
-            </div>
-        </article>
-    </section>
-
-    <!-- ============ KATEGORİ + ŞİRKET KIRILIMI ============ -->
-    <section class="grid-equal">
-
-        <article class="card chart-card">
-            <div class="card-head">
-                <div>
-                    <h2>Kategoriye Göre Katalog</h2>
-                    <p class="card-sub">Kategori kırılımı · stok değeri sırasıyla</p>
-                </div>
-            </div>
-
-            @{
-                var cats = Model.Categories;
-                const double cW = 720, cRowH = 46, cNameW = 172, cValueW = 104, cBarH = 12;
-                var cTrackW = cW - cNameW - cValueW;
-                var cHeight = Math.Max(1, cats.Count) * cRowH;
-                var cMax = cats.Count == 0 ? 1.0 : Math.Max(1.0, cats.Max(x => (double)(x.StockValue ?? 0)));
-            }
-
-            <div class="chart-frame">
-                <svg class="chart-svg" viewBox="0 0 @ChartHelper.N(cW) @ChartHelper.N(cHeight)"
-                     preserveAspectRatio="xMidYMid meet" role="img"
-                     aria-label="Kategorilere göre katalog stok değeri">
-                    @for (var i = 0; i < cats.Count; i++) {
-                        var row = cats[i];
-                        var rowTop = i * cRowH;
-                        var barW = cTrackW * (double)(row.StockValue ?? 0) / cMax;
-
-                        @ChartHelper.SvgText(0, rowTop + 26, row.CategoryName ?? "—", "mark-name", "start")
-                        <path fill="@series[0]" d="@ChartHelper.BarPath(cNameW, rowTop + 15, Math.Max(barW, 0.5), cBarH, 3)" />
-                        @ChartHelper.SvgText(cW, rowTop + 26, ChartHelper.Compact(row.StockValue ?? 0), "mark-value", "end")
-
-                        <rect class="hit-area" x="0" y="@ChartHelper.N(rowTop)"
-                              width="@ChartHelper.N(cW)" height="@ChartHelper.N(cRowH)"
-                              data-tip-title="@row.CategoryName"
-                              data-tip-rows="@($"{series[0]};Stok değeri;{ChartHelper.Money(row.StockValue ?? 0)}|{series[0]};Ürün;{row.ItemCount.ToString("N0", ChartHelper.Tr)}")" />
-                    }
-                </svg>
-            </div>
-
-            <details class="table-view">
-                <summary>Fiyat istatistikleri</summary>
-                <div class="table-scroll">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Kategori</th>
-                                <th class="num">Ürün</th>
-                                <th class="num">Stok Adedi</th>
-                                <th class="num">En Düşük</th>
-                                <th class="num">Ortalama</th>
-                                <th class="num">En Yüksek</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var row in cats) {
-                                <tr>
-                                    <td>@row.CategoryName</td>
-                                    <td class="num">@row.ItemCount.ToString("N0", ChartHelper.Tr)</td>
-                                    <td class="num">@((row.TotalQuantity ?? 0).ToString("N0", ChartHelper.Tr))</td>
-                                    <td class="num">@ChartHelper.Money(row.MinPrice ?? 0)</td>
-                                    <td class="num">@ChartHelper.Money(row.AvgPrice ?? 0)</td>
-                                    <td class="num">@ChartHelper.Money(row.MaxPrice ?? 0)</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </details>
-        </article>
-
-        <article class="card chart-card">
-            <div class="card-head">
-                <div>
-                    <h2>Şirket Tipi ve Üyelik</h2>
-                    <p class="card-sub">Her şirket tipinde üyelik dağılımı</p>
-                </div>
-                <div class="legend">
-                    @{ var memberships = Model.MembershipNames; }
-                    @for (var i = 0; i < memberships.Count; i++) {
-                        <span class="legend-item">
-                            <span class="legend-dot" style="background:@series[i % series.Length]"></span>
-                            @memberships[i]
-                        </span>
-                    }
-                </div>
-            </div>
-
-            @{
-                var compTypes = Model.CompanyTypeNames;
-                const double gW = 720, gNameW = 172, gValueW = 60, gBarH = 10, gBarGap = 2;
-                var gTrackW = gW - gNameW - gValueW;
-                var gRowH = 22 + memberships.Count * (gBarH + gBarGap);
-                var gHeight = Math.Max(1, compTypes.Count) * gRowH;
-                var gMax = Model.CompanyMix.Count == 0 ? 1.0 : Math.Max(1.0, Model.CompanyMix.Max(m => (double)m.CompanyCount));
-            }
-
-            <div class="chart-frame">
-                <svg class="chart-svg" viewBox="0 0 @ChartHelper.N(gW) @ChartHelper.N(gHeight)"
-                     preserveAspectRatio="xMidYMid meet" role="img"
-                     aria-label="Şirket tipi ve üyelik tipine göre firma sayıları">
-                    @for (var ti = 0; ti < compTypes.Count; ti++) {
-                        var typeName = compTypes[ti];
-                        var rowTop = ti * gRowH;
-
-                        @ChartHelper.SvgText(0, rowTop + 16, typeName, "mark-name", "start")
-
-                        for (var mi = 0; mi < memberships.Count; mi++) {
-                            var cell = Model.CompanyMix.FirstOrDefault(m =>
-                                (m.CompanyTypeName ?? "—") == typeName && (m.MembershipTypeName ?? "—") == memberships[mi]);
-                            var count = cell?.CompanyCount ?? 0;
-                            var barY = rowTop + 8 + mi * (gBarH + gBarGap);
-                            var barW = gTrackW * count / gMax;
-
-                            <path fill="@series[mi % series.Length]"
-                                  d="@ChartHelper.BarPath(gNameW, barY, Math.Max(barW, 0.5), gBarH, 3)" />
-
-                            <rect class="hit-area" x="@ChartHelper.N(gNameW)" y="@ChartHelper.N(barY - 1)"
-                                  width="@ChartHelper.N(gTrackW + gValueW)" height="@ChartHelper.N(gBarH + 2)"
-                                  data-tip-title="@typeName"
-                                  data-tip-rows="@($"{series[mi % series.Length]};{memberships[mi]};{count.ToString("N0", ChartHelper.Tr)}")" />
+                    @if (topRegions.Count == 0) {
+                        <p style="color: #64748B; font-size: 0.85rem; text-align: center; padding: 20px;">Kayıtlı bölge verisi bulunamadı.</p>
+                    } else {
+                        @foreach (var reg in topRegions) {
+                            var pct = Math.Round((double)reg.CompanyCount / maxRegCount * 100);
+                            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 14px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                        <strong style="color: #1E293B; font-size: 0.84rem;">@(string.IsNullOrWhiteSpace(reg.TownName) ? "Belirtilmemiş Şehir" : reg.TownName) · @(reg.CountryName ?? "Türkiye")</strong>
+                                    </div>
+                                    <span style="font-weight: 700; color: #2563EB; font-size: 0.84rem;">@reg.CompanyCount.ToString("N0", ChartHelper.Tr) Firma</span>
+                                </div>
+                                <div style="width: 100%; height: 5px; background: #E2E8F0; border-radius: 4px; overflow: hidden;">
+                                    <div style="height: 100%; width: @pct%; background: #059669; border-radius: 4px;"></div>
+                                </div>
+                            </div>
                         }
                     }
-                </svg>
-            </div>
-        </article>
-    </section>
+                </div>
+            </article>
+        </section>
+    }
+</div>
 
-    <!-- ============ TEDARİKÇİ KARNESİ ============ -->
-    <section class="card">
-        <div class="card-head">
-            <div>
-                <h2>Tedarikçi Karnesi</h2>
-                <p class="card-sub">
-                    @Model.SelectedYear yılında aldığı talep sayısı ve tüm zamanların puan ortalaması.
-                    En az @VendorScorecardRow.MinReviewsForRanking değerlendirmesi olmayanlar
-                    &quot;yetersiz veri&quot; olarak işaretlenir.
-                </p>
-            </div>
-        </div>
+@section Scripts {
+    <script>
+        // =========================================================================
+        // CHART.JS GRAFİK BAŞLATMA
+        // =========================================================================
+        document.addEventListener('DOMContentLoaded', function () {
+            // 1. AYLIK TALEP TREND GRAFİĞİ
+            var trendCanvas = document.getElementById('trendChartCanvas');
+            if (trendCanvas) {
+                var periodLabels = @Html.Raw(JsonSerializer.Serialize(periods.Select(p => ChartHelper.MonthLabel(p.Month) + " " + p.Year)));
+                var seriesRaw = @Html.Raw(JsonSerializer.Serialize(trendSeries.Select(s => new { name = s.Name, values = s.Values })));
+                var colors = ['#2563EB', '#059669', '#D97706', '#7C3AED', '#DB2777'];
+                var bgColors = [
+                    'rgba(37, 99, 235, 0.08)',
+                    'rgba(5, 150, 105, 0.08)',
+                    'rgba(217, 119, 6, 0.08)',
+                    'rgba(124, 58, 237, 0.08)',
+                    'rgba(219, 39, 119, 0.08)'
+                ];
 
-        <div class="table-scroll">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Firma</th>
-                        <th>Tip</th>
-                        <th class="num">Alınan Talep</th>
-                        <th class="num">Puan</th>
-                        <th class="num">Değerlendirme</th>
-                        <th>Güvenilirlik</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in Model.Vendors) {
-                        <tr>
-                            <td><span class="req-id">@row.CompanyName</span></td>
-                            <td>@(row.CompanyTypeName ?? "—")</td>
-                            <td class="num">@row.ReceivedRequests.ToString("N0", ChartHelper.Tr)</td>
-                            <td class="num">@(row.AvgScore is decimal sc ? ChartHelper.Score((double)sc) : "—")</td>
-                            <td class="num">@row.ReviewCount.ToString("N0", ChartHelper.Tr)</td>
-                            <td>
-                                @if (row.HasReliableScore) {
-                                    <span class="status-chip is-approved">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
-                                            <polyline points="20 6 9 17 4 12"></polyline>
-                                        </svg>
-                                        Yeterli
-                                    </span>
-                                } else {
-                                    <span class="status-chip is-neutral">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
-                                            <circle cx="12" cy="12" r="9"></circle>
-                                            <line x1="12" y1="8" x2="12" y2="13"></line>
-                                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                                        </svg>
-                                        Yetersiz veri
-                                    </span>
+                var datasets = seriesRaw.map(function (sr, idx) {
+                    return {
+                        label: sr.name,
+                        data: sr.values,
+                        borderColor: colors[idx % colors.length],
+                        backgroundColor: bgColors[idx % bgColors.length],
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 2.2,
+                        pointRadius: 3,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: colors[idx % colors.length]
+                    };
+                });
+
+                new Chart(trendCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: periodLabels,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    boxWidth: 12,
+                                    font: { family: 'inherit', size: 12, weight: 600 },
+                                    color: '#475569'
                                 }
-                            </td>
-                        </tr>
+                            },
+                            tooltip: {
+                                backgroundColor: '#0F172A',
+                                titleFont: { family: 'inherit', size: 13, weight: 700 },
+                                bodyFont: { family: 'inherit', size: 12 },
+                                padding: 12,
+                                cornerRadius: 8
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#64748B', font: { family: 'inherit', size: 11 } }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#F1F5F9' },
+                                ticks: {
+                                    precision: 0,
+                                    color: '#64748B',
+                                    font: { family: 'inherit', size: 11 }
+                                }
+                            }
+                        }
                     }
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-    <!-- ============ MARKA + BÖLGE ============ -->
-    <section class="grid-equal">
-
-        <article class="card chart-card">
-            <div class="card-head">
-                <div>
-                    <h2>Marka Dağılımı</h2>
-                    <p class="card-sub">Ürün adedine göre ilk @Model.Brands.Count marka</p>
-                </div>
-            </div>
-
-            @{
-                var brands = Model.Brands;
-                const double bW = 720, bRowH = 40, bNameW = 190, bValueW = 90, bBarH = 11;
-                var bTrackW = bW - bNameW - bValueW;
-                var bHeight = Math.Max(1, brands.Count) * bRowH;
-                var bMax = brands.Count == 0 ? 1.0 : Math.Max(1.0, brands.Max(x => (double)x.ItemCount));
+                });
             }
 
-            <div class="chart-frame">
-                <svg class="chart-svg" viewBox="0 0 @ChartHelper.N(bW) @ChartHelper.N(bHeight)"
-                     preserveAspectRatio="xMidYMid meet" role="img" aria-label="Markalara göre ürün adedi">
-                    @for (var i = 0; i < brands.Count; i++) {
-                        var row = brands[i];
-                        var rowTop = i * bRowH;
-                        var barW = bTrackW * row.ItemCount / bMax;
+            // 2. TALEP TÜRÜ DOUGHNUT GRAFİĞİ
+            var donutCanvas = document.getElementById('typeDonutCanvas');
+            if (donutCanvas) {
+                var typeLabels = @Html.Raw(JsonSerializer.Serialize(types.Select(t => string.IsNullOrWhiteSpace(t.RequestType) ? "Belirtilmemiş" : t.RequestType)));
+                var typeCounts = @Html.Raw(JsonSerializer.Serialize(types.Select(t => t.RequestCount)));
+                var donutColors = ['#2563EB', '#059669', '#D97706', '#7C3AED', '#DB2777', '#0891B2', '#475569'];
 
-                        @ChartHelper.SvgText(0, rowTop + 24, row.Brand ?? "—", "mark-name", "start")
-                        <path fill="@series[0]" d="@ChartHelper.BarPath(bNameW, rowTop + 14, Math.Max(barW, 0.5), bBarH, 3)" />
-                        @ChartHelper.SvgText(bW, rowTop + 24, row.ItemCount.ToString("N0", ChartHelper.Tr), "mark-value", "end")
-
-                        <rect class="hit-area" x="0" y="@ChartHelper.N(rowTop)"
-                              width="@ChartHelper.N(bW)" height="@ChartHelper.N(bRowH)"
-                              data-tip-title="@row.Brand"
-                              data-tip-rows="@($"{series[0]};Ürün;{row.ItemCount.ToString("N0", ChartHelper.Tr)}|{series[0]};Stok değeri;{ChartHelper.Money(row.StockValue ?? 0)}")" />
+                new Chart(donutCanvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: typeLabels,
+                        datasets: [{
+                            data: typeCounts,
+                            backgroundColor: donutColors.slice(0, typeLabels.length),
+                            borderWidth: 2,
+                            borderColor: '#FFFFFF',
+                            hoverOffset: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '72%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#0F172A',
+                                padding: 10,
+                                cornerRadius: 8,
+                                callbacks: {
+                                    label: function (ctx) {
+                                        var total = ctx.dataset.data.reduce(function (a, b) { return a + b; }, 0);
+                                        var val = ctx.raw;
+                                        var pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+                                        return ctx.label + ': ' + val + ' Talep (%' + pct + ')';
+                                    }
+                                }
+                            }
+                        }
                     }
-                </svg>
-            </div>
-        </article>
-
-        <article class="card chart-card">
-            <div class="card-head">
-                <div>
-                    <h2>Bölgesel Dağılım</h2>
-                    <p class="card-sub">
-                        Adres kaydı olan firmalar · ülke ve şehir
-                        <span class="partial-flag">koordinat sütunu yok, harita çizilemiyor</span>
-                    </p>
-                </div>
-            </div>
-
-            @{
-                var regions = Model.Regions.Take(10).ToList();
-                const double rW = 720, rRowH = 40, rNameW = 220, rValueW = 70, rBarH = 11;
-                var rTrackW = rW - rNameW - rValueW;
-                var rHeight = Math.Max(1, regions.Count) * rRowH;
-                var rMax = regions.Count == 0 ? 1.0 : Math.Max(1.0, regions.Max(x => (double)x.CompanyCount));
+                });
             }
+        });
 
-            <div class="chart-frame">
-                <svg class="chart-svg" viewBox="0 0 @ChartHelper.N(rW) @ChartHelper.N(rHeight)"
-                     preserveAspectRatio="xMidYMid meet" role="img" aria-label="Bölgelere göre firma sayısı">
-                    @for (var i = 0; i < regions.Count; i++) {
-                        var row = regions[i];
-                        var rowTop = i * rRowH;
-                        var barW = rTrackW * row.CompanyCount / rMax;
-                        var placeName = $"{row.TownName} · {row.CountryName}";
+        // =========================================================================
+        // HIZLI BÖLÜM GEZİNTİSİ & FİLTRELEME
+        // =========================================================================
+        function filterSection(sectionId, btnEl) {
+            document.querySelectorAll('.bi-tab-btn').forEach(function (btn) {
+                btn.classList.remove('is-active');
+            });
+            if (btnEl) btnEl.classList.add('is-active');
 
-                        @ChartHelper.SvgText(0, rowTop + 24, placeName, "mark-name", "start")
-                        <path fill="@series[2]" d="@ChartHelper.BarPath(rNameW, rowTop + 14, Math.Max(barW, 0.5), rBarH, 3)" />
-                        @ChartHelper.SvgText(rW, rowTop + 24, row.CompanyCount.ToString("N0", ChartHelper.Tr), "mark-value", "end")
-
-                        <rect class="hit-area" x="0" y="@ChartHelper.N(rowTop)"
-                              width="@ChartHelper.N(rW)" height="@ChartHelper.N(rRowH)"
-                              data-tip-title="@placeName"
-                              data-tip-rows="@($"{series[2]};Firma;{row.CompanyCount.ToString("N0", ChartHelper.Tr)}")" />
+            var allSections = document.querySelectorAll('.bi-section-el');
+            if (sectionId === 'all') {
+                allSections.forEach(function (el) { el.style.display = ''; });
+            } else {
+                allSections.forEach(function (el) {
+                    if (el.id === sectionId || el.id === 'sec-kpis') {
+                        el.style.display = '';
+                    } else {
+                        el.style.display = 'none';
                     }
-                </svg>
-            </div>
-        </article>
-    </section>
+                });
+                var targetEl = document.getElementById(sectionId);
+                if (targetEl) {
+                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
+        }
 
-    <!-- ============ AKIŞ + FORMLAR ============ -->
-    <section class="grid-equal">
+        // =========================================================================
+        // TEDARİKÇİ KARNESİ CANLI ARAMA & GÜVENİLİRLİK FİLTRESİ
+        // =========================================================================
+        function filterVendorTable(searchTerm) {
+            var searchVal = (searchTerm !== undefined ? searchTerm : document.getElementById('vendorScoreSearchInput')?.value || '').toLowerCase().trim();
+            var reliableFilter = document.getElementById('vendorReliableFilter')?.value || 'all';
+            var rows = document.querySelectorAll('.vendor-data-row');
 
-        <article class="card">
-            <div class="card-head">
-                <div>
-                    <h2>Alıcı → Satıcı Akışı</h2>
-                    <p class="card-sub">@Model.SelectedYear yılında en çok talep trafiği olan firma çiftleri</p>
-                </div>
-            </div>
+            rows.forEach(function (row) {
+                var name = row.getAttribute('data-name') || '';
+                var rel = row.getAttribute('data-reliable') || '';
 
-            <div class="table-scroll">
-                <table class="data-table">
-                    <thead>
-                        <tr><th>Gönderen</th><th>Alan</th><th class="num">Talep</th></tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var row in Model.Flows) {
-                            <tr>
-                                <td>@row.SenderName</td>
-                                <td>@row.ReceiverName</td>
-                                <td class="num">@row.RequestCount.ToString("N0", ChartHelper.Tr)</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </article>
+                var matchName = !searchVal || name.includes(searchVal);
+                var matchRel = reliableFilter === 'all' || rel === reliableFilter;
 
-        <article class="card">
-            <div class="card-head">
-                <div>
-                    <h2>Gelen Formlar</h2>
-                    <p class="card-sub">@Model.SelectedYear · konuya göre</p>
-                </div>
-            </div>
+                if (matchName && matchRel) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
 
-            <div class="table-scroll">
-                <table class="data-table">
-                    <thead>
-                        <tr><th>Konu</th><th class="num">Adet</th><th>Son Gelen</th></tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var row in Model.FormTopics) {
-                            <tr>
-                                <td>@(string.IsNullOrWhiteSpace(row.Topic) ? "Belirtilmemiş" : row.Topic)</td>
-                                <td class="num">@row.FormCount.ToString("N0", ChartHelper.Tr)</td>
-                                <td>@(row.LastReceived is DateTime d ? ChartHelper.ShortDate(DateOnly.FromDateTime(d)) : "—")</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </article>
-    </section>
+        // =========================================================================
+        // CSV DIŞA AKTARMA (TEDARİKÇİ VE KATEGORİ VERİLERİ)
+        // =========================================================================
+        function exportAnalyticsCsv() {
+            var rows = [
+                ['--- TEDARIKCI BASARI KARNESI ---'],
+                ['Firma Unvani', 'Sirket Turu', 'Alinan Talep', 'Puan Ortalamasi', 'Degerlendirme Sayisi', 'Guvenilirlik']
+            ];
+
+            document.querySelectorAll('#vendorScorecardTable tbody tr.vendor-data-row').forEach(function (tr) {
+                var tds = tr.querySelectorAll('td');
+                if (tds.length >= 6) {
+                    rows.push([
+                        '"' + tds[0].innerText.trim().replace(/"/g, '""') + '"',
+                        '"' + tds[1].innerText.trim().replace(/"/g, '""') + '"',
+                        tds[2].innerText.trim().replace(/\D/g, ''),
+                        tds[3].innerText.trim(),
+                        tds[4].innerText.trim().replace(/\D/g, ''),
+                        '"' + tds[5].innerText.trim().replace(/"/g, '""') + '"'
+                    ]);
+                }
+            });
+
+            rows.push([]);
+            rows.push(['--- KATEGORI PORTFOY VE FIYAT ANALIZI ---']);
+            rows.push(['Kategori', 'Urun Cesidi', 'Stok Hacmi', 'Ortalama Fiyat', 'Portfoy Degeri']);
+
+            document.querySelectorAll('#categoriesAnalyticsTable tbody tr').forEach(function (tr) {
+                var tds = tr.querySelectorAll('td');
+                if (tds.length >= 5) {
+                    rows.push([
+                        '"' + tds[0].innerText.trim().replace(/"/g, '""') + '"',
+                        '"' + tds[1].innerText.trim().replace(/"/g, '""') + '"',
+                        '"' + tds[2].innerText.trim().replace(/"/g, '""') + '"',
+                        '"' + tds[3].innerText.trim().replace(/"/g, '""') + '"',
+                        '"' + tds[4].innerText.trim().replace(/"/g, '""') + '"'
+                    ]);
+                }
+            });
+
+            var csvContent = '\uFEFF' + rows.map(function (e) { return e.join(';'); }).join('\r\n');
+            var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            var link = document.createElement('a');
+            var url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'Sistem_Analitigi_Raporu_' + new Date().toISOString().slice(0, 10) + '.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
 }

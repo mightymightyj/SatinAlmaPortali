@@ -1,5 +1,7 @@
+@model satinalmaportali2.Models.PricingPageViewModel
 @{
-    ViewData["Title"] = "Fiyatlandırma";
+    ViewData["Title"] = "Üyelik Paketleri ve Fiyatlandırma";
+    var currentTier = Model?.CurrentMembershipTypeId ?? 1;
 }
 
 <!-- HERO SECTION -->
@@ -10,13 +12,21 @@
                 <line x1="12" y1="1" x2="12" y2="23"></line>
                 <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
             </svg>
-            <span>Fiyatlandırma</span>
+            <span>B2B Üyelik Seviyeleri</span>
         </div>
-        <h1 class="fiyat-hero-title">Fiyatlandırma <span class="highlight-dot">Planları</span></h1>
+        <h1 class="fiyat-hero-title">İşletmenize Uygun <span class="highlight-dot">Üyelik Planları</span></h1>
         <p class="fiyat-hero-desc">
-            İşletmenizin büyüklüğüne ve ihtiyaçlarına uygun esnek fiyatlandırma seçenekleri.
-            Tüm planlar 14 gün ücretsiz deneme ile başlar, kredi kartı gerekmez.
+            Tedarik ve satış hacminize göre dilediğiniz üyelik planını seçin.
+            Üyelik satın alımlarında fiziksel kargo veya <strong>adres bilgisi gerekmez</strong>; üyeliğiniz anında aktifleştirilir.
         </p>
+        @if (Model != null && Model.IsAuthenticated)
+        {
+            <div style="display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; background: rgba(2,132,199,0.12); border: 1px solid rgba(2,132,199,0.3); padding: 8px 18px; border-radius: 9999px; font-size: 0.88rem;">
+                <span style="color: #0284c7; font-weight: 700;">🏢 @Model.CurrentCompanyName</span>
+                <span style="color: #64748b;">— Aktif Planınız:</span>
+                <strong style="color: #0f172a; background: #fff; padding: 2px 10px; border-radius: 9999px; border: 1px solid #cbd5e1;">@Model.CurrentMembershipTypeName</strong>
+            </div>
+        }
     </div>
 </section>
 
@@ -25,107 +35,151 @@
     <div class="fiyat-container">
         <div class="fiyat-plans-grid">
 
-            <!-- Başlangıç -->
-            <div class="fiyat-plan-card">
+            <!-- 1. BEDAVA PLAN -->
+            <div class="fiyat-plan-card @(currentTier == 1 ? "current-tier-card" : "")">
+                @if (currentTier == 1)
+                {
+                    <div class="fiyat-recommended-badge" style="background: #64748b; color: #fff;">Mevcut Planınız</div>
+                }
                 <div class="fiyat-plan-header">
                     <div class="fiyat-plan-icon fiyat-icon-starter">
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                         </svg>
                     </div>
-                    <h3 class="fiyat-plan-name">Başlangıç</h3>
-                    <p class="fiyat-plan-desc">Küçük işletmeler ve yeni başlayanlar için temel satın alma araçları.</p>
+                    <h3 class="fiyat-plan-name">Bedava</h3>
+                    <p class="fiyat-plan-desc">Yeni başlayan işletmeler ve temel satın alma/satış operasyonları için.</p>
                 </div>
                 <div class="fiyat-price">
                     <span class="fiyat-currency">₺</span>
-                    <span class="fiyat-amount">499</span>
+                    <span class="fiyat-amount">0</span>
                     <span class="fiyat-period">/ ay</span>
                 </div>
                 <ul class="fiyat-features">
                     <li>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Aylık 50 talep oluşturma</span>
+                        <span><strong>Aynı anda 10 adet</strong> aktif talep</span>
                     </li>
                     <li>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Temel tedarikçi arama</span>
+                        <span><strong>Aynı anda 10 adet</strong> ürün satışı</span>
                     </li>
                     <li>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Teklif karşılaştırma</span>
+                        <span>Her ürün için <strong>en fazla 3 resim</strong></span>
+                    </li>
+                    <li>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span>Standart B2B tedarikçi vitrini</span>
+                    </li>
+                    <li>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span>Teklif alma &amp; verme</span>
                     </li>
                     <li>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         <span>E-posta desteği</span>
                     </li>
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>3 kullanıcı hesabı</span>
-                    </li>
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Standart raporlama</span>
-                    </li>
                 </ul>
-                <a href="#" class="fiyat-cta-btn fiyat-cta-btn-outline">Ücretsiz Deneyin</a>
+
+                @if (Model != null && Model.IsAuthenticated)
+                {
+                    if (currentTier == 1)
+                    {
+                        <button type="button" class="fiyat-cta-btn fiyat-cta-btn-outline" disabled style="opacity: 0.7; cursor: default;">
+                            ✓ Aktif Planınız
+                        </button>
+                    }
+                    else
+                    {
+                        <span class="fiyat-cta-btn fiyat-cta-btn-outline" style="opacity: 0.6; cursor: default; text-align: center;">
+                            Temel Seviye
+                        </span>
+                    }
+                }
+                else
+                {
+                    <a href="/Account/Register" class="fiyat-cta-btn fiyat-cta-btn-outline">Ücretsiz Kayıt Ol</a>
+                }
             </div>
 
-            <!-- Profesyonel (Önerilen) -->
-            <div class="fiyat-plan-card fiyat-recommended">
-                <div class="fiyat-recommended-badge">Önerilen</div>
+            <!-- 2. PRO PLAN (ÖNERİLEN) -->
+            <div class="fiyat-plan-card fiyat-recommended @(currentTier == 2 ? "current-tier-card" : "")">
+                <div class="fiyat-recommended-badge">
+                    @(currentTier == 2 ? "Mevcut Planınız" : "En Çok Tercih Edilen")
+                </div>
                 <div class="fiyat-plan-header">
                     <div class="fiyat-plan-icon fiyat-icon-pro">
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                         </svg>
                     </div>
-                    <h3 class="fiyat-plan-name">Profesyonel</h3>
-                    <p class="fiyat-plan-desc">Büyüyen işletmeler için gelişmiş tedarik zinciri yönetim araçları.</p>
+                    <h3 class="fiyat-plan-name">Pro</h3>
+                    <p class="fiyat-plan-desc">Büyüyen ve satış/tedarik hacmini hızlandırmak isteyen aktif firmalar için.</p>
                 </div>
                 <div class="fiyat-price">
                     <span class="fiyat-currency">₺</span>
-                    <span class="fiyat-amount">999</span>
+                    <span class="fiyat-amount">990</span>
                     <span class="fiyat-period">/ ay</span>
                 </div>
                 <ul class="fiyat-features">
                     <li>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Sınırsız talep oluşturma</span>
+                        <span><strong>Aynı anda 100 adet</strong> aktif talep</span>
                     </li>
                     <li>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Gelişmiş tedarikçi filtreleme</span>
+                        <span><strong>Aynı anda 100 adet</strong> ürün satışı</span>
                     </li>
                     <li>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Otomatik teklif değerlendirme</span>
+                        <span>Her ürün için <strong>20 resim hakkı</strong></span>
                     </li>
                     <li>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Öncelikli destek (7/24)</span>
+                        <span>B2B Vitrinde öne çıkarılan ürünler</span>
                     </li>
                     <li>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>10 kullanıcı hesabı</span>
+                        <span>Hızlı teklif verme &amp; anlık bildirimler</span>
                     </li>
                     <li>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Detaylı analitik paneli</span>
+                        <span>7/24 Öncelikli destek</span>
                     </li>
                     <li>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>API erişimi</span>
-                    </li>
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Sözleşme yönetimi</span>
+                        <span>Detaylı talep ve teklif analitiği</span>
                     </li>
                 </ul>
-                <a href="#" class="fiyat-cta-btn fiyat-cta-btn-primary">Hemen Başlayın</a>
+
+                @if (Model != null && Model.IsAuthenticated)
+                {
+                    if (currentTier == 2)
+                    {
+                        <button type="button" class="fiyat-cta-btn fiyat-cta-btn-primary" disabled style="opacity: 0.8; cursor: default;">
+                            ✓ Aktif Planınız
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" onclick="openMembershipCheckoutModal(2, 'Pro', 990)" class="fiyat-cta-btn fiyat-cta-btn-primary">
+                            Pro Plana Geç →
+                        </button>
+                    }
+                }
+                else
+                {
+                    <a href="/Account/Login?returnUrl=/Home/Fiyatlandirma" class="fiyat-cta-btn fiyat-cta-btn-primary">Giriş Yap &amp; Satın Al</a>
+                }
             </div>
 
-            <!-- Kurumsal -->
-            <div class="fiyat-plan-card">
+            <!-- 3. KURUMSAL PLAN -->
+            <div class="fiyat-plan-card @(currentTier == 3 ? "current-tier-card" : "")">
+                @if (currentTier == 3)
+                {
+                    <div class="fiyat-recommended-badge" style="background: #0284c7; color: #fff;">Mevcut Planınız</div>
+                }
                 <div class="fiyat-plan-header">
                     <div class="fiyat-plan-icon fiyat-icon-enterprise">
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -134,44 +188,63 @@
                         </svg>
                     </div>
                     <h3 class="fiyat-plan-name">Kurumsal</h3>
-                    <p class="fiyat-plan-desc">Büyük ölçekli kurumlar için özelleştirilebilir tam kapsamlı çözümler.</p>
+                    <p class="fiyat-plan-desc">Büyük ölçekli üretici, distribütör ve yüksek hacimli kurumlar için tam güç.</p>
                 </div>
                 <div class="fiyat-price">
                     <span class="fiyat-currency">₺</span>
-                    <span class="fiyat-amount">1.999</span>
+                    <span class="fiyat-amount">2.990</span>
                     <span class="fiyat-period">/ ay</span>
                 </div>
                 <ul class="fiyat-features">
                     <li>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Profesyonel'deki tüm özellikler</span>
+                        <span><strong>Sınırsız</strong> talep oluşturma</span>
                     </li>
                     <li>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Sınırsız kullanıcı hesabı</span>
+                        <span><strong>Sınırsız</strong> ürün satışı ilanı</span>
                     </li>
                     <li>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Özel entegrasyon desteği (ERP/SAP)</span>
+                        <span>Her ürün için <strong>sınırsız resim</strong></span>
                     </li>
                     <li>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Özel hesap yöneticisi</span>
+                        <span>🛡️ Onaylı Kurumsal Tedarikçi Rozeti</span>
                     </li>
                     <li>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>SLA garantili destek</span>
+                        <span>En üst sırada vitrin listelemesi</span>
                     </li>
                     <li>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Gelişmiş güvenlik & uyumluluk</span>
+                        <span>Özel B2B Müşteri Temsilcisi</span>
                     </li>
                     <li>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Özelleştirilmiş raporlama</span>
+                        <span>SLA garantili 7/24 VIP destek</span>
                     </li>
                 </ul>
-                <a href="#" class="fiyat-cta-btn fiyat-cta-btn-outline">İletişime Geçin</a>
+
+                @if (Model != null && Model.IsAuthenticated)
+                {
+                    if (currentTier == 3)
+                    {
+                        <button type="button" class="fiyat-cta-btn fiyat-cta-btn-outline" disabled style="opacity: 0.8; cursor: default;">
+                            ✓ Aktif Planınız
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" onclick="openMembershipCheckoutModal(3, 'Kurumsal', 2990)" class="fiyat-cta-btn fiyat-cta-btn-outline">
+                            Kurumsal Plana Geç →
+                        </button>
+                    }
+                }
+                else
+                {
+                    <a href="/Account/Login?returnUrl=/Home/Fiyatlandirma" class="fiyat-cta-btn fiyat-cta-btn-outline">Giriş Yap &amp; Satın Al</a>
+                }
             </div>
 
         </div>
@@ -192,8 +265,8 @@
                     </svg>
                 </div>
                 <div class="blur-card-title-group">
-                    <span class="blur-card-tag">Detaylı İnceleme</span>
-                    <h2 class="blur-card-title">Plan Karşılaştırması</h2>
+                    <span class="blur-card-tag">Limit &amp; Yetki Kıyaslaması</span>
+                    <h2 class="blur-card-title">Üyelik Planı Karşılaştırması</h2>
                 </div>
             </div>
 
@@ -202,53 +275,41 @@
                     <table class="fiyat-comparison-table">
                         <thead>
                             <tr>
-                                <th class="fiyat-feature-col">Özellik</th>
-                                <th class="fiyat-plan-col">Başlangıç</th>
-                                <th class="fiyat-plan-col fiyat-plan-col-highlight">Profesyonel</th>
+                                <th class="fiyat-feature-col">Özellik / Yetki</th>
+                                <th class="fiyat-plan-col">Bedava</th>
+                                <th class="fiyat-plan-col fiyat-plan-col-highlight">Pro (Önerilen)</th>
                                 <th class="fiyat-plan-col">Kurumsal</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td>Talep oluşturma</td>
-                                <td>50 / ay</td>
-                                <td>Sınırsız</td>
-                                <td>Sınırsız</td>
+                                <td>Aynı Anda Aktif Talep Limiti</td>
+                                <td><strong>10 Adet</strong></td>
+                                <td><strong>100 Adet</strong></td>
+                                <td><span style="color: #16a34a; font-weight: 800;">Sınırsız</span></td>
                             </tr>
                             <tr>
-                                <td>Kullanıcı hesabı</td>
-                                <td>3</td>
-                                <td>10</td>
-                                <td>Sınırsız</td>
+                                <td>Aynı Anda Ürün Satış İlanı</td>
+                                <td><strong>10 Adet</strong></td>
+                                <td><strong>100 Adet</strong></td>
+                                <td><span style="color: #16a34a; font-weight: 800;">Sınırsız</span></td>
                             </tr>
                             <tr>
-                                <td>Tedarikçi arama</td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                </td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                </td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                </td>
+                                <td>Ürün Başına Görsel Hakkı</td>
+                                <td><strong>3 Resim</strong></td>
+                                <td><strong>20 Resim</strong></td>
+                                <td><span style="color: #16a34a; font-weight: 800;">Sınırsız</span></td>
                             </tr>
                             <tr>
-                                <td>Teklif karşılaştırma</td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                </td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                </td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                </td>
+                                <td>B2B Vitrinde Öne Çıkarılma</td>
+                                <td>Standart</td>
+                                <td>Öncelikli</td>
+                                <td>En Üst Sıra</td>
                             </tr>
                             <tr>
-                                <td>Otomatik değerlendirme</td>
+                                <td>Teklif Karşılaştırma &amp; Değerlendirme</td>
                                 <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                 </td>
                                 <td>
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -258,82 +319,24 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td>Analitik panel</td>
+                                <td>Kurumsal Onaylı Tedarikçi Rozeti</td>
+                                <td>—</td>
+                                <td>—</td>
                                 <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                </td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                </td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <span style="color: #0284c7; font-weight: 700;">🛡️ Onaylı Rozet</span>
                                 </td>
                             </tr>
                             <tr>
-                                <td>API erişimi</td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                </td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                </td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                </td>
+                                <td>Fiziksel Kargo / Adres Gereksinimi</td>
+                                <td>Gerekmez (Dijital)</td>
+                                <td>Gerekmez (Dijital)</td>
+                                <td>Gerekmez (Dijital)</td>
                             </tr>
                             <tr>
-                                <td>Sözleşme yönetimi</td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                </td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                </td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>ERP/SAP entegrasyonu</td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                </td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                </td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Özel hesap yöneticisi</td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                </td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                </td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>SLA garantili destek</td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                </td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                </td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Destek</td>
-                                <td>E-posta</td>
-                                <td>7/24 Öncelikli</td>
-                                <td>SLA Garantili</td>
+                                <td>Destek Seviyesi</td>
+                                <td>E-posta Desteği</td>
+                                <td>7/24 Öncelikli Destek</td>
+                                <td>Özel Temsilci &amp; SLA</td>
                             </tr>
                         </tbody>
                     </table>
@@ -356,7 +359,7 @@
                     </svg>
                 </div>
                 <div class="blur-card-title-group">
-                    <span class="blur-card-tag">Yardım & Destek</span>
+                    <span class="blur-card-tag">Yardım &amp; Destek</span>
                     <h2 class="blur-card-title">Sıkça Sorulan Sorular</h2>
                 </div>
             </div>
@@ -365,60 +368,48 @@
                 <div class="fiyat-sss-list">
                     <details class="fiyat-sss-item">
                         <summary>
-                            <span>Ücretsiz deneme süresi nasıl çalışır?</span>
+                            <span>Üyelik satın alırken adres girmem gerekir mi?</span>
                             <svg class="fiyat-sss-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </summary>
                         <div class="fiyat-sss-answer">
                             <p>
-                                14 gün boyunca tüm özellikleri ücretsiz deneyebilirsiniz, kredi kartı bilgisi gerekmez. İstediğiniz an ek ücret ödemeden planınızı değiştirebilirsiniz.
+                                <strong>Hayır.</strong> Üyelik paketleri dijital abonelik statüsünde olduğu için kargo veya fiziksel adres bilgisi kesinlikle talep edilmez. Yalnızca kart bilgilerinizle ödemeyi tamamlayabilirsiniz; yeni planınız anında hesabınıza yansır.
                             </p>
                         </div>
                     </details>
 
                     <details class="fiyat-sss-item">
                         <summary>
-                            <span>Planlar arasında istediğim zaman geçiş yapabilir miyim?</span>
+                            <span>Talep ve ürün satışı sınırlarına ulaştığımda ne olur?</span>
                             <svg class="fiyat-sss-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </summary>
                         <div class="fiyat-sss-answer">
                             <p>
-                                Evet, dilediğiniz zaman planınızı yükseltebilir veya düşürebilirsiniz. Kalan süreniz oransal olarak hesabınıza yansıtılır.
+                                Bedava planda aynı anda 10 talep ve 10 ürün satışı, Pro planda ise 100 talep ve 100 ürün satış hakkınız vardır. Sınıra ulaştığınızda mevcut taleplerinizi tamamlayabilir veya doğrudan Pro / Kurumsal plana geçerek kapasitenizi anında artırabilirsiniz.
                             </p>
                         </div>
                     </details>
 
                     <details class="fiyat-sss-item">
                         <summary>
-                            <span>Yıllık ödeme yaparsam indirim var mı?</span>
+                            <span>Ürün başına görsel sınırı nasıl işler?</span>
                             <svg class="fiyat-sss-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </summary>
                         <div class="fiyat-sss-answer">
                             <p>
-                                Yıllık ödemelerde tüm planlarda %20 net indirim uygulanmaktadır. Detaylı bilgi için satış ekibimizle iletişime geçebilirsiniz.
+                                Bedava üyelikte her ürün ilanı için en fazla 3 görsel yüklenebilir. Pro üyeler ürün başına 20 görsel yükleyebilirken, Kurumsal üyelerimiz için herhangi bir görsel sınırı bulunmamaktadır.
                             </p>
                         </div>
                     </details>
 
                     <details class="fiyat-sss-item">
                         <summary>
-                            <span>Hangi ödeme yöntemlerini kabul ediyorsunuz?</span>
+                            <span>Ödeme yapıldıktan sonra üyeliğim ne zaman aktif olur?</span>
                             <svg class="fiyat-sss-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </summary>
                         <div class="fiyat-sss-answer">
                             <p>
-                                Kredi kartı, banka havalesi ve EFT ile ödeme kabul ediyoruz. Kurumsal planlarda fatura ile ödeme seçeneği de mevcuttur.
-                            </p>
-                        </div>
-                    </details>
-
-                    <details class="fiyat-sss-item">
-                        <summary>
-                            <span>İptal politikanız nedir?</span>
-                            <svg class="fiyat-sss-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                        </summary>
-                        <div class="fiyat-sss-answer">
-                            <p>
-                                Aboneliğinizi istediğiniz zaman iptal edebilirsiniz. Kalan süreniz boyunca hizmetleriniz aktif kalır, ek ücret talep edilmez.
+                                Kart onayının hemen ardından sistem veritabanınız anlık olarak güncellenir ve yeni yetkileriniz sayfa yenilenmeden geçerli hale gelir.
                             </p>
                         </div>
                     </details>
@@ -428,42 +419,396 @@
     </div>
 </section>
 
-<!-- CTA -->
-<section class="fiyat-cta-section">
-    <div class="fiyat-container">
-        <div class="blur-feature-card">
-            <div class="blur-card-header">
-                <div class="blur-icon-badge">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                    </svg>
+<!-- ==================== ADRESSİZ ÜYELİK SATIN ALMA MODALI ==================== -->
+<div id="membershipCheckoutModal" class="mem-modal-overlay" style="display: none;" onclick="if(event.target===this)closeMembershipCheckoutModal()">
+    <div class="mem-modal-dialog">
+        <div class="mem-modal-header">
+            <div>
+                <span class="mem-badge-pill">DİJİTAL ÜYELİK PAKETİ</span>
+                <h3 id="memModalPlanTitle" class="mem-modal-title">Pro Üyelik Satın Al</h3>
+                <p class="mem-modal-subtitle">Adres gerekmeksizin doğrudan kart bilgilerinizle anında plan yükseltin.</p>
+            </div>
+            <button type="button" class="mem-close-btn" onclick="closeMembershipCheckoutModal()" title="Kapat">&times;</button>
+        </div>
+
+        <form id="membershipPurchaseForm" onsubmit="submitMembershipPurchase(event); return false;">
+            <input type="hidden" id="memTargetTierId" value="2" />
+            <input type="hidden" id="memPlanPrice" value="990" />
+
+            <div class="mem-modal-body">
+                <!-- Paket Özet Şeridi -->
+                <div class="mem-plan-summary-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="font-size: 0.76rem; color: #64748b; display: block;">Seçilen Plan:</span>
+                            <strong id="memSummaryPlanName" style="font-size: 1.15rem; color: #0f172a;">Pro Plan</strong>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 0.76rem; color: #64748b; display: block;">Aylık Tutar:</span>
+                            <strong id="memSummaryPlanPrice" style="font-size: 1.25rem; color: #0284c7; font-weight: 900;">990 ₺</strong>
+                        </div>
+                    </div>
+                    <div id="memSummaryFeatures" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #cbd5e1; font-size: 0.8rem; color: #475569;">
+                        ✓ 100 Aktif Talep &bull; 100 Ürün Satışı &bull; Ürün Başı 20 Resim
+                    </div>
                 </div>
-                <div class="blur-card-title-group">
-                    <span class="blur-card-tag">Danışmanlık Hizmeti</span>
-                    <h2 class="blur-card-title">Doğru planı seçmekte kararsız mısınız?</h2>
+
+                <!-- Bilgilendirme Notu: Adres Sorulmaz -->
+                <div class="mem-info-banner">
+                    <span style="font-size: 1.2rem;">ℹ️</span>
+                    <div>
+                        <strong>Fiziksel Adres Bilgisi Gerekmez</strong><br />
+                        Bu üyelik dijital lisans paketidir. Kargo, ambar veya açık adres doldurmanız gerekmez.
+                    </div>
+                </div>
+
+                <!-- Kart Bilgileri Alanı -->
+                <div class="mem-card-fields-wrap">
+                    <div class="mem-field-group">
+                        <label class="mem-label" for="memCardHolder">Kart Üzerindeki İsim *</label>
+                        <input type="text" id="memCardHolder" class="mem-input" placeholder="AD SOYAD VEYA ŞİRKET ÜNVANI" required style="text-transform: uppercase;" />
+                    </div>
+
+                    <div class="mem-field-group">
+                        <label class="mem-label" for="memCardNumber">Kart Numarası (16 Hane) *</label>
+                        <input type="text" id="memCardNumber" class="mem-input" placeholder="5528 7900 0000 0008" maxlength="19" inputmode="numeric" oninput="formatCardNum(this)" required style="font-family: monospace; font-weight: 700; letter-spacing: 0.05em;" />
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="mem-field-group">
+                            <label class="mem-label" for="memCardExpiry">Son Kullanma (AA/YY) *</label>
+                            <input type="text" id="memCardExpiry" class="mem-input" placeholder="12/28" maxlength="5" inputmode="numeric" oninput="formatExp(this)" required style="font-family: monospace; text-align: center;" />
+                        </div>
+                        <div class="mem-field-group">
+                            <label class="mem-label" for="memCardCvv">CVC / CVV (3 Hane) *</label>
+                            <input type="password" id="memCardCvv" class="mem-input" placeholder="***" maxlength="3" inputmode="numeric" required style="font-family: monospace; text-align: center;" />
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="blur-card-content">
-                <p class="blur-card-desc">
-                    Uzman ekibimiz işletmeniz için en uygun çözümü birlikte belirlesin. Ücretsiz danışmanlık görüşmesi için hemen iletişime geçin.
-                </p>
-                <div class="blur-social-row">
-                    <a asp-controller="Home" asp-action="Iletisim" class="blur-cta-btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                        </svg>
-                        Satış Ekibiyle Görüşün
-                    </a>
-                    <a asp-controller="Home" asp-action="Iletisim" class="blur-social-pill">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                            <polyline points="22,6 12,13 2,6"></polyline>
-                        </svg>
-                        Demo Talep Edin
-                    </a>
-                </div>
+            <div class="mem-modal-footer">
+                <button type="button" class="mem-btn-cancel" onclick="closeMembershipCheckoutModal()">Vazgeç</button>
+                <button type="submit" id="btnSubmitMembership" class="mem-btn-confirm">
+                    <span>✓</span> <span id="memBtnSubmitText">990 ₺ Ödemeyi Tamamla ve Yükselt</span>
+                </button>
             </div>
-        </div>
+        </form>
     </div>
-</section>
+</div>
+
+<style>
+    .current-tier-card {
+        border: 2px solid #0284c7 !important;
+        box-shadow: 0 10px 25px rgba(2,132,199,0.15) !important;
+    }
+
+    /* MODAL STİLLERİ */
+    .mem-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.7);
+        backdrop-filter: blur(5px);
+        z-index: 100000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .mem-modal-dialog {
+        background: #ffffff;
+        border-radius: 16px;
+        max-width: 480px;
+        width: 100%;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+        overflow: hidden;
+        animation: memModalFadeIn 0.25s ease-out;
+    }
+
+    @@keyframes memModalFadeIn {
+        from { opacity: 0; transform: translateY(16px) scale(0.97); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .mem-modal-header {
+        padding: 20px 24px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .mem-badge-pill {
+        display: inline-block;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        background: #e0f2fe;
+        color: #0284c7;
+        padding: 2px 8px;
+        border-radius: 4px;
+        margin-bottom: 4px;
+    }
+
+    .mem-modal-title {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0;
+    }
+
+    .mem-modal-subtitle {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin: 3px 0 0 0;
+    }
+
+    .mem-close-btn {
+        background: transparent;
+        border: none;
+        font-size: 1.5rem;
+        line-height: 1;
+        color: #94a3b8;
+        cursor: pointer;
+        padding: 0 4px;
+    }
+
+    .mem-close-btn:hover { color: #0f172a; }
+
+    .mem-modal-body {
+        padding: 20px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .mem-plan-summary-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 14px 16px;
+    }
+
+    .mem-info-banner {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 8px;
+        padding: 10px 14px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        font-size: 0.78rem;
+        color: #1e40af;
+        line-height: 1.4;
+    }
+
+    .mem-card-fields-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .mem-field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .mem-label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #334155;
+    }
+
+    .mem-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        color: #0f172a;
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .mem-input:focus {
+        border-color: #0284c7;
+        box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+    }
+
+    .mem-modal-footer {
+        padding: 16px 24px;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .mem-btn-cancel {
+        padding: 10px 18px;
+        border: 1px solid #cbd5e1;
+        background: #fff;
+        color: #475569;
+        font-weight: 600;
+        font-size: 0.88rem;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .mem-btn-confirm {
+        padding: 10px 20px;
+        border: none;
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.88rem;
+        border-radius: 8px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 2px 8px rgba(2,132,199,0.3);
+    }
+
+    .mem-btn-confirm:hover {
+        background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+    }
+
+    .mem-btn-confirm:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        function openMembershipCheckoutModal(tierId, tierName, price) {
+            document.getElementById('memTargetTierId').value = tierId;
+            document.getElementById('memPlanPrice').value = price;
+            document.getElementById('memModalPlanTitle').textContent = `${tierName} Üyelik Satın Al`;
+            document.getElementById('memSummaryPlanName').textContent = `${tierName} Planı`;
+            document.getElementById('memSummaryPlanPrice').textContent = `${price.toLocaleString('tr-TR')} ₺ / ay`;
+            document.getElementById('memBtnSubmitText').textContent = `${price.toLocaleString('tr-TR')} ₺ Ödemeyi Tamamla ve Yükselt`;
+
+            const feats = document.getElementById('memSummaryFeatures');
+            if (tierId === 2) {
+                feats.innerHTML = '✓ 100 Aktif Talep &bull; 100 Ürün Satışı &bull; Ürün Başı 20 Resim &bull; 7/24 Destek';
+            } else if (tierId === 3) {
+                feats.innerHTML = '✓ Sınırsız Talep &bull; Sınırsız Ürün Satışı &bull; Sınırsız Resim &bull; Onaylı Rozet';
+            }
+
+            document.getElementById('membershipCheckoutModal').style.display = 'flex';
+        }
+
+        function closeMembershipCheckoutModal() {
+            document.getElementById('membershipCheckoutModal').style.display = 'none';
+        }
+
+        function formatCardNum(input) {
+            let val = input.value.replace(/\D/g, '').substring(0, 16);
+            let parts = [];
+            for (let i = 0; i < val.length; i += 4) {
+                parts.push(val.substring(i, i + 4));
+            }
+            input.value = parts.join(' ');
+        }
+
+        function formatExp(input) {
+            let val = input.value.replace(/\D/g, '').substring(0, 4);
+            if (val.length >= 2) {
+                input.value = val.substring(0, 2) + '/' + val.substring(2);
+            } else {
+                input.value = val;
+            }
+        }
+
+        async function submitMembershipPurchase(e) {
+            if (e) e.preventDefault();
+
+            const tierId = parseInt(document.getElementById('memTargetTierId').value, 10);
+            const cardHolder = (document.getElementById('memCardHolder').value || '').trim();
+            const rawCardNo = (document.getElementById('memCardNumber').value || '').replace(/\D/g, '');
+            const rawExp = (document.getElementById('memCardExpiry').value || '').trim();
+            const cvv = (document.getElementById('memCardCvv').value || '').replace(/\D/g, '');
+
+            if (!cardHolder) {
+                alert('Lütfen kart üzerindeki isim alanını doldurunuz.');
+                document.getElementById('memCardHolder').focus();
+                return;
+            }
+
+            if (rawCardNo.length !== 16) {
+                alert('Lütfen 16 haneli kart numaranızı eksiksiz giriniz.');
+                document.getElementById('memCardNumber').focus();
+                return;
+            }
+
+            if (rawExp.length < 5 || !rawExp.includes('/')) {
+                alert('Lütfen Son Kullanma Tarihini AA/YY formatında giriniz (Örn: 12/28).');
+                document.getElementById('memCardExpiry').focus();
+                return;
+            }
+
+            if (cvv.length < 3) {
+                alert('Lütfen 3 haneli CVV kodunu giriniz.');
+                document.getElementById('memCardCvv').focus();
+                return;
+            }
+
+            const expParts = rawExp.split('/');
+            const month = expParts[0].trim();
+            let year = expParts[1].trim();
+            if (year.length === 2) year = '20' + year;
+
+            const btn = document.getElementById('btnSubmitMembership');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳</span> İşlem Onaylanıyor...';
+
+            try {
+                const response = await fetch('/Payment/PurchaseMembership', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        targetMembershipTypeId: tierId,
+                        cardInfo: {
+                            cardHolderName: cardHolder,
+                            cardNumber: rawCardNo,
+                            expireMonth: month,
+                            expireYear: year,
+                            cvc: cvv
+                        }
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(data.message || 'Üyelik planınız başarıyla yükseltildi!');
+                    closeMembershipCheckoutModal();
+                    window.location.reload();
+                } else {
+                    if (data.requireLogin) {
+                        alert(data.message);
+                        window.location.href = '/Account/Login?returnUrl=/Home/Fiyatlandirma';
+                    } else {
+                        alert(data.message || 'Ödeme tamamlanamadı. Lütfen bilgilerinizi kontrol ediniz.');
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Bağlantı hatası oluştu. Lütfen tekrar deneyiniz.');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+    </script>
+}

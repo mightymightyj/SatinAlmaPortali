@@ -203,6 +203,9 @@ namespace satinalmaportali2.Data
                         CREATE INDEX IF NOT EXISTS idx_itemimages_itemid ON itemimages(itemid);
                         CREATE INDEX IF NOT EXISTS idx_itemimages_ismain ON itemimages(ismain);
                         
+                        -- Ürün Silme / Arşivleme Desteği (Soft Delete)
+                        ALTER TABLE items ADD COLUMN IF NOT EXISTS isdeleted BOOLEAN DEFAULT FALSE;
+
                         -- Temizlik: Ödemesi tamamlanmamış / askıda kalmış eski taslak kayıtları temizle
                         DELETE FROM orderitems WHERE orderid IN (SELECT orderid FROM orders WHERE orderstatus = 'Ödeme Bekleniyor' OR paymentstatus = 'Beklemede (3D)');
                         DELETE FROM orders WHERE orderstatus = 'Ödeme Bekleniyor' OR paymentstatus = 'Beklemede (3D)';
@@ -214,40 +217,60 @@ namespace satinalmaportali2.Data
                 }
 
                 // ====================================================
+                // STEP: Ensure Membership Types (1: Bedava, 2: Pro, 3: Kurumsal)
+                // ====================================================
+                try
+                {
+                    await context.Database.ExecuteSqlRawAsync(@"
+                        UPDATE membershiptypes SET membershiptypename = 'Bedava' WHERE membershiptypeid = 1;
+                        UPDATE membershiptypes SET membershiptypename = 'Pro' WHERE membershiptypeid = 2;
+                        INSERT INTO membershiptypes (membershiptypeid, membershiptypename)
+                        SELECT 3, 'Kurumsal'
+                        WHERE NOT EXISTS (SELECT 1 FROM membershiptypes WHERE membershiptypeid = 3);
+                    ");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("MembershipTypes seed note: " + ex.Message);
+                }
+
+                // ====================================================
                 // STEP: Seed/Migrate existing item images into itemimages table
                 // ====================================================
                 try
                 {
-                    if (!await context.ItemImages.AnyAsync())
-                    {
-                        var itemsWithProps = await context.Items
-                            .Where(i => i.Properties != null && i.Properties != "")
-                            .ToListAsync();
+                    var itemsWithProps = await context.Items
+                        .Where(i => i.Properties != null && i.Properties != "")
+                        .ToListAsync();
 
-                        var imagesToAdd = new List<ItemImage>();
-                        foreach (var item in itemsWithProps)
+                    var imagesToAdd = new List<ItemImage>();
+                    foreach (var item in itemsWithProps)
+                    {
+                        var match = System.Text.RegularExpressions.Regex.Match(
+                            item.Properties!, 
+                            @"(?:Resim|Image|ImageUrl|Gorsel)\s*:\s*(https?://[^\s\|;,]+|/[^\s\|;,]+)");
+                        if (match.Success)
                         {
-                            var match = System.Text.RegularExpressions.Regex.Match(
-                                item.Properties!, 
-                                @"(?:Resim|Image|ImageUrl|Gorsel)\s*:\s*(https?://[^\s\|;,]+|/[^\s\|;,]+)");
-                            if (match.Success)
+                            string matchedUrl = match.Groups[1].Value.Trim();
+                            bool alreadyExists = await context.ItemImages.AnyAsync(x => x.ItemID == item.ItemID && x.ImageUrl == matchedUrl);
+                            if (!alreadyExists)
                             {
                                 imagesToAdd.Add(new ItemImage
                                 {
                                     ItemID = item.ItemID,
-                                    ImageUrl = match.Groups[1].Value.Trim(),
+                                    ImageUrl = matchedUrl,
                                     IsMain = true,
                                     DisplayOrder = 0,
                                     CreatedAt = DateTime.UtcNow
                                 });
                             }
                         }
+                    }
 
-                        if (imagesToAdd.Any())
-                        {
-                            await context.ItemImages.AddRangeAsync(imagesToAdd);
-                            await context.SaveChangesAsync();
-                        }
+                    if (imagesToAdd.Any())
+                    {
+                        await context.ItemImages.AddRangeAsync(imagesToAdd);
+                        await context.SaveChangesAsync();
                     }
                 }
                 catch (Exception ex)
@@ -286,27 +309,30 @@ namespace satinalmaportali2.Data
                 }
 
                 // ====================================================
-                // STEP 1: Seed MembershipTypes
+                // STEP 1: Seed / Update MembershipTypes (Bedava, Pro, Kurumsal)
                 // ====================================================
                 try
                 {
-                    if (!await context.MembershipTypes.AnyAsync(mt => mt.MembershipTypeID == 1))
+                    var mTypes = new List<MembershipTypes>
                     {
-                        var mTypes = new List<MembershipTypes>
-                        {
-                            new MembershipTypes { MembershipTypeID = 1, MembershipTypeName = "Standart Üyelik" },
-                            new MembershipTypes { MembershipTypeID = 2, MembershipTypeName = "Premium Üyelik" }
-                        };
+                        new MembershipTypes { MembershipTypeID = 1, MembershipTypeName = "Bedava" },
+                        new MembershipTypes { MembershipTypeID = 2, MembershipTypeName = "Pro" },
+                        new MembershipTypes { MembershipTypeID = 3, MembershipTypeName = "Kurumsal" }
+                    };
 
-                        foreach (var mt in mTypes)
+                    foreach (var mt in mTypes)
+                    {
+                        var existing = await context.MembershipTypes.FirstOrDefaultAsync(m => m.MembershipTypeID == mt.MembershipTypeID);
+                        if (existing == null)
                         {
-                            if (!await context.MembershipTypes.AnyAsync(m => m.MembershipTypeID == mt.MembershipTypeID))
-                            {
-                                await context.MembershipTypes.AddAsync(mt);
-                            }
+                            await context.MembershipTypes.AddAsync(mt);
                         }
-                        await context.SaveChangesAsync();
+                        else
+                        {
+                            existing.MembershipTypeName = mt.MembershipTypeName;
+                        }
                     }
+                    await context.SaveChangesAsync();
                 }
                 catch (Exception ex)
                 {

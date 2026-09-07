@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using satinalmaportali2.Data;
 using satinalmaportali2.Models;
 using satinalmaportali2.Services;
+using satinalmaportali2.Helpers;
 
 namespace satinalmaportali2.Controllers
 {
@@ -505,6 +506,190 @@ namespace satinalmaportali2.Controllers
                 phone = comp.CompanyPhone ?? "",
                 email = comp.CompanyMail ?? ""
             });
+        }
+
+        /// <summary>
+        /// Üyelik Paketi Satın Alma (AJAX).
+        /// KULLANICIDAN KESİNLİKLE ADRES İSTEMEZ (dijital paket).
+        /// Doğrudan kart bilgileri ile ödeme alır, siparişi oluşturur ve firmanın MembershipTypeID'sini anında günceller.
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> PurchaseMembership([FromBody] PurchaseMembershipInputModel input)
+        {
+            if (input == null)
+            {
+                return Json(new { success = false, message = "Geçersiz üyelik satın alma isteği." });
+            }
+
+            int targetTier = input.TargetMembershipTypeId;
+            if (targetTier != MembershipConstants.TierPro && targetTier != MembershipConstants.TierKurumsal)
+            {
+                return Json(new { success = false, message = "Geçersiz üyelik planı seçildi. Yalnızca Pro veya Kurumsal plan satın alınabilir." });
+            }
+
+            int currentCompanyId = GetCurrentCompanyId();
+            if (currentCompanyId <= 0 || User?.Identity?.IsAuthenticated != true)
+            {
+                return Json(new
+                {
+                    success = false,
+                    requireLogin = true,
+                    message = "Üyelik satın alabilmek için lütfen firma hesabınızla giriş yapınız veya yeni bir firma hesabı oluşturunuz."
+                });
+            }
+
+            var company = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId);
+            if (company == null)
+            {
+                return Json(new { success = false, message = "Firma hesabı bulunamadı." });
+            }
+
+            int currentTier = company.MembershipTypeID ?? MembershipConstants.TierBedava;
+            if (currentTier == targetTier)
+            {
+                string currentPlanName = MembershipConstants.GetTierName(currentTier);
+                return Json(new { success = false, message = $"Firmanız zaten '{currentPlanName}' planına sahiptir." });
+            }
+
+            // Kart Bilgileri Doğrulama
+            if (input.CardInfo == null)
+            {
+                return Json(new { success = false, message = "Lütfen kredi veya şirket kartı bilgilerinizi eksiksiz giriniz." });
+            }
+
+            string cleanCardHolder = (input.CardInfo.CardHolderName ?? "").Trim();
+            string cleanCardNo = new string((input.CardInfo.CardNumber ?? "").Where(char.IsDigit).ToArray());
+            string cleanMonth = new string((input.CardInfo.ExpireMonth ?? "").Where(char.IsDigit).ToArray()).PadLeft(2, '0');
+            string cleanYear = new string((input.CardInfo.ExpireYear ?? "").Where(char.IsDigit).ToArray());
+            string cleanCvc = new string((input.CardInfo.Cvc ?? "").Where(char.IsDigit).ToArray());
+
+            if (string.IsNullOrWhiteSpace(cleanCardHolder))
+            {
+                return Json(new { success = false, message = "Lütfen kart üzerindeki isim alanını doldurunuz." });
+            }
+
+            if (cleanCardNo.Length < 15 || cleanCardNo.Length > 19)
+            {
+                return Json(new { success = false, message = "Geçersiz kart numarası. Kart numarası 16 haneli olmalıdır." });
+            }
+
+            if (string.IsNullOrWhiteSpace(cleanMonth) || cleanMonth.Length != 2 || int.Parse(cleanMonth) < 1 || int.Parse(cleanMonth) > 12)
+            {
+                return Json(new { success = false, message = "Geçersiz son kullanma ayı." });
+            }
+
+            if (cleanCvc.Length < 3 || cleanCvc.Length > 4)
+            {
+                return Json(new { success = false, message = "Geçersiz CVV / CVC güvenlik kodu." });
+            }
+
+            try
+            {
+                decimal planPrice = MembershipConstants.GetPrice(targetTier);
+                string targetTierName = MembershipConstants.GetTierName(targetTier);
+
+                // Sipariş Numarası Üret
+                int countToday = await _context.Orders.CountAsync(o => o.OrderDate.Date == DateTime.UtcNow.Date);
+                string orderNumber = $"MEM-{DateTime.UtcNow:yyyyMMdd}-{(countToday + 1):D4}";
+
+                // Sipariş Kaydı Oluştur - ADRES ALANI DİJİTAL TESLİMAT OLARAK DOLDURULUR, KULLANICIDAN ADRES İSTENMEZ
+                var order = new Order
+                {
+                    OrderNumber = orderNumber,
+                    BuyerCompanyID = company.CompanyID,
+                    BuyerCompanyName = company.CompanyName ?? company.CompanyOfficial ?? "Kurumsal Üye",
+                    BuyerTaxNumber = company.TCNO ?? company.IdentityNumber,
+                    BuyerTaxOffice = company.TaxOffice,
+                    BuyerEmail = company.CompanyMail ?? User.FindFirst(ClaimTypes.Email)?.Value ?? "",
+                    BuyerPhone = company.CompanyPhone ?? "",
+                    SupplierCompanyID = null,
+                    SupplierCompanyName = "Tedarik Portalı Dijital Hizmetler",
+                    OrderDate = DateTime.UtcNow,
+                    DeliveryDate = DateTime.UtcNow,
+                    TotalAmount = planPrice,
+                    TaxAmount = 0m,
+                    GrandTotal = planPrice,
+                    PaymentMethod = "Kredi / Banka Kartı",
+                    PaymentStatus = "Ödendi",
+                    OrderStatus = "Tamamlandı",
+                    DeliveryCity = "Dijital / Online",
+                    DeliveryAddress = "Dijital Hizmet / Üyelik Paketi (Fiziksel Teslimat & Adres Gerekmiyor)",
+                    ReceiverName = company.CompanyOfficial ?? company.CompanyName ?? "Yetkili",
+                    ReceiverPhone = company.CompanyPhone ?? "",
+                    Notes = $"Üyelik Paketi Yükseltme: {targetTierName} Planı (Aylık Abonelik)"
+                };
+
+                var orderItem = new OrderItem
+                {
+                    ProductName = $"{targetTierName} Üyelik Paketi (Aylık Abonelik)",
+                    Sku = $"SUB-{targetTierName.ToUpper()}",
+                    CategoryName = "Üyelik Paketleri",
+                    UnitPrice = planPrice,
+                    Quantity = 1,
+                    LineTotal = planPrice,
+                    SupplierCompanyName = "Tedarik Portalı Dijital Hizmetler",
+                    ItemStatus = "Aktif"
+                };
+
+                order.OrderItems = new List<OrderItem> { orderItem };
+                _context.Orders.Add(order);
+                await _context.SaveChangesAsync();
+
+                // Finansal İşlem Kaydı Ekle
+                var transaction = new PaymentTransaction
+                {
+                    OrderID = order.OrderID,
+                    ConversationId = $"CONV-{orderNumber}",
+                    TotalAmount = planPrice,
+                    MerchantPayoutAmount = planPrice,
+                    PlatformCommission = 0m,
+                    TransactionType = "MembershipSubscription",
+                    Status = "Success",
+                    RawResponse = $"Kart sahibi: {cleanCardHolder}, Son 4 hane: {(cleanCardNo.Length >= 4 ? cleanCardNo.Substring(cleanCardNo.Length - 4) : "0000")}"
+                };
+                _context.PaymentTransactions.Add(transaction);
+
+                // Firmanın Üyelik Seviyesini Anında Güncelle
+                company.MembershipTypeID = targetTier;
+                await _context.SaveChangesAsync();
+
+                // Bilgilendirme e-postası (Opsiyonel / Hata durumunda işlemi bozmaz)
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(company.CompanyMail))
+                    {
+                        await _emailService.SendEmailAsync(
+                            company.CompanyMail,
+                            $"🎉 Tebrikler! {targetTierName} Üyeliğiniz Aktifleştirildi",
+                            $@"<h3>Sayın {company.CompanyName ?? company.CompanyOfficial},</h3>
+                               <p>Firmanızın üyelik paketi başarıyla <strong>{targetTierName}</strong> seviyesine yükseltilmiştir.</p>
+                               <p><strong>Sipariş No:</strong> {orderNumber}<br/>
+                               <strong>Ödenen Tutar:</strong> {planPrice:N2} ₺<br/>
+                               <strong>Ödeme Yöntemi:</strong> Kredi Kartı (*{(cleanCardNo.Length >= 4 ? cleanCardNo.Substring(cleanCardNo.Length - 4) : "0000")})</p>
+                               <p>Artık genişletilmiş talep ve ürün satışı limitlerinizden anında yararlanabilirsiniz.</p>
+                               <p>İyi çalışmalar dileriz.<br/><strong>Tedarik Portalı Ekibi</strong></p>"
+                        );
+                    }
+                }
+                catch (Exception emailEx)
+                {
+                    Console.WriteLine($"Membership purchase email note: {emailEx.Message}");
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    orderNumber = order.OrderNumber,
+                    newTierId = targetTier,
+                    newTierName = targetTierName,
+                    message = $"🎉 Tebrikler! Üyeliğiniz başarıyla '{targetTierName}' planına yükseltildi. Yeni limitleriniz anında tanımlandı."
+                });
+            }
+            catch (Exception ex)
+            {
+                var detail = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                return Json(new { success = false, message = "Üyelik satın alma işlemi sırasında bir hata oluştu: " + detail });
+            }
         }
     }
 

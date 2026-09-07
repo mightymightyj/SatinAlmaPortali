@@ -8,6 +8,7 @@ using satinalmaportali2.Data;
 using satinalmaportali2.Hubs;
 using satinalmaportali2.Models;
 using satinalmaportali2.Services;
+using satinalmaportali2.Helpers;
 
 namespace satinalmaportali2.Controllers
 {
@@ -468,8 +469,24 @@ namespace satinalmaportali2.Controllers
                     }
                 }
 
+                var comp = companyId > 0 ? await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == companyId) : null;
+                int memTypeId = comp?.MembershipTypeID ?? MembershipConstants.TierBedava;
+                int maxImages = MembershipConstants.GetMaxImagesPerProduct(memTypeId);
+
                 if (!string.IsNullOrWhiteSpace(input.ExistingImagesJson) || (input.NewImageFiles != null && input.NewImageFiles.Any()))
                 {
+                    int keptCount = keptExistingList.Count;
+                    int newFilesCount = input.NewImageFiles?.Count ?? 0;
+                    if (maxImages < int.MaxValue && (keptCount + newFilesCount) > maxImages)
+                    {
+                        string tierName = MembershipConstants.GetTierName(memTypeId);
+                        return Json(new
+                        {
+                            success = false,
+                            message = $"{tierName} üyelik seviyenizde ürün başına en fazla {maxImages} görsel hakkınız bulunmaktadır. (Mevcut korunan: {keptCount}, yeni eklenen: {newFilesCount}). Lütfen görsel sayısını azaltınız veya üyeliğinizi yükseltiniz."
+                        });
+                    }
+
                     // Satıcının sildiği mevcut veritabanı görsellerini kaldır
                     var dbImages = item.Images.ToList();
                     foreach (var dbImg in dbImages)
@@ -511,7 +528,7 @@ namespace satinalmaportali2.Controllers
                     // Yeni eklenen dosyaları sadece ve sadece şimdi Cloudinary'ye yükle
                     if (input.NewImageFiles != null && input.NewImageFiles.Any())
                     {
-                        var filesToProcess = input.NewImageFiles.Take(10).ToList();
+                        var filesToProcess = input.NewImageFiles.Take(maxImages < int.MaxValue ? Math.Max(0, maxImages - keptExistingList.Count) : 50).ToList();
                         for (int i = 0; i < filesToProcess.Count; i++)
                         {
                             var file = filesToProcess[i];
@@ -681,10 +698,11 @@ namespace satinalmaportali2.Controllers
             string userType = GetCurrentUserType();
             bool isAdmin = userType == "SuperAdmin" || userType == "Admin";
 
-            // Veritabanındaki ürünleri sorgula
+            // Veritabanındaki ürünleri sorgula (Silinmiş / yayından kaldırılmış ürünleri hariç tut)
             var query = _context.Items
                 .Include(i => i.Images)
                 .AsNoTracking()
+                .Where(i => !i.IsDeleted)
                 .AsQueryable();
 
             if (!isAdmin)
@@ -807,7 +825,11 @@ namespace satinalmaportali2.Controllers
                 SelectedStatus = status,
                 CompanyName = !string.IsNullOrWhiteSpace(currentCompanyName) ? currentCompanyName : "Kurumsal Tedarikçi",
                 IsIyzicoApproved = currentComp != null && (currentComp.IsIyzicoApproved || !string.IsNullOrWhiteSpace(currentComp.IyzicoSubMerchantKey)),
-                IyzicoSubMerchantKey = currentComp?.IyzicoSubMerchantKey
+                IyzicoSubMerchantKey = currentComp?.IyzicoSubMerchantKey,
+                MembershipTypeId = currentComp?.MembershipTypeID ?? MembershipConstants.TierBedava,
+                MembershipTypeName = MembershipConstants.GetTierName(currentComp?.MembershipTypeID),
+                MaxProducts = MembershipConstants.GetMaxProducts(currentComp?.MembershipTypeID),
+                MaxImagesPerProduct = MembershipConstants.GetMaxImagesPerProduct(currentComp?.MembershipTypeID)
             };
 
             var allCats = await _context.Category.AsNoTracking().ToListAsync(cancellationToken);
@@ -850,19 +872,43 @@ namespace satinalmaportali2.Controllers
                     return Json(new { success = false, message = "Yalnızca kendi firmanıza ait ürün ilanlarını silebilirsiniz." });
                 }
 
-                _context.Items.Remove(item);
-                await _context.SaveChangesAsync();
+                // Alıcı veya satıcı mağduriyetini önlemek amacıyla:
+                // Eğer bu ürünü satın almış bir firma varsa (orderitems kaydı mevcutsa) fiziksel olarak silmeyip arşivle
+                bool hasPurchased = await _context.OrderItems.AnyAsync(oi => oi.ItemID == id);
 
-                try
+                if (hasPurchased)
                 {
-                    await _hubContext.Clients.All.SendAsync("OnProductDeleted", new { itemId = id });
-                }
-                catch (Exception hubEx)
-                {
-                    Console.WriteLine($"SignalR DeleteProductListing error: {hubEx.Message}");
-                }
+                    item.IsDeleted = true;
+                    item.Quantity = 0;
+                    await _context.SaveChangesAsync();
 
-                return Json(new { success = true, message = $"\"{item.ItemName}\" ilanı katalogdan ve vitrinden kaldırıldı." });
+                    try
+                    {
+                        await _hubContext.Clients.All.SendAsync("OnProductDeleted", new { itemId = id, isArchived = true });
+                    }
+                    catch (Exception hubEx)
+                    {
+                        Console.WriteLine($"SignalR DeleteProductListing error: {hubEx.Message}");
+                    }
+
+                    return Json(new { success = true, message = $"\"{item.ItemName}\" ürününe ait verilmiş sipariş(ler) bulunduğu için alıcı ve satıcı hakları ile sipariş geçmişini korumak adına ürün veritabanından tamamen silinmedi; yayından kaldırılarak arşivlendi.", isArchived = true });
+                }
+                else
+                {
+                    _context.Items.Remove(item);
+                    await _context.SaveChangesAsync();
+
+                    try
+                    {
+                        await _hubContext.Clients.All.SendAsync("OnProductDeleted", new { itemId = id, isArchived = false });
+                    }
+                    catch (Exception hubEx)
+                    {
+                        Console.WriteLine($"SignalR DeleteProductListing error: {hubEx.Message}");
+                    }
+
+                    return Json(new { success = true, message = $"\"{item.ItemName}\" ilanı katalogdan ve vitrinden kaldırıldı.", isArchived = false });
+                }
             }
             catch (Exception ex)
             {
@@ -1757,6 +1803,132 @@ namespace satinalmaportali2.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        // =========================================================================
+        // GERİ BİLDİRİM & DESTEK YÖNETİMİ
+        // =========================================================================
+
+        /// <summary>
+        /// Kullanıcının sisteme geri bildirim, öneri veya destek talebi göndermesini sağlayan görünüm.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> Feedback(CancellationToken cancellationToken)
+        {
+            ViewData["Title"] = "Geri Bildirim & Destek Talebi";
+            int companyId = GetCurrentCompanyId();
+            var company = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == companyId, cancellationToken);
+            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? company?.CompanyMail ?? "";
+
+            var myFeedbacks = await _context.Forms
+                .AsNoTracking()
+                .Where(f => !string.IsNullOrEmpty(f.Email) && f.Email.ToLower() == userEmail.ToLower())
+                .OrderByDescending(f => f.FormDate)
+                .ThenByDescending(f => f.FormId)
+                .Take(30)
+                .ToListAsync(cancellationToken);
+
+            var model = new UserFeedbackViewModel
+            {
+                CompanyName = company?.CompanyName ?? User.FindFirst("CompanyName")?.Value ?? "",
+                OfficialName = company?.CompanyOfficial ?? User.Identity?.Name ?? "",
+                Email = userEmail,
+                Phone = company?.CompanyPhone ?? "",
+                PastFeedbacks = myFeedbacks
+            };
+
+            return View(model);
+        }
+
+        /// <summary>
+        /// Kullanıcı geri bildirimini veritabanına kaydeder.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SubmitFeedback([FromForm] FeedbackInputDto input, CancellationToken cancellationToken)
+        {
+            bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
+                          (Request.Headers.Accept.ToString().Contains("application/json") && !Request.Headers.Accept.ToString().Contains("text/html"));
+
+            if (string.IsNullOrWhiteSpace(input.Message))
+            {
+                var err = "Lütfen geri bildirim veya talep mesajınızı yazın.";
+                if (isAjax) return Json(new { success = false, message = err });
+                TempData["FeedbackError"] = err;
+                return RedirectToAction(nameof(Feedback));
+            }
+
+            try
+            {
+                int companyId = GetCurrentCompanyId();
+                var company = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == companyId, cancellationToken);
+
+                // Firma bilgilerini kullanıcıdan istemeden doğrudan veritabanından alıyoruz
+                string senderName = company?.CompanyName ?? User.FindFirst("CompanyName")?.Value ?? "Kurumsal Kullanıcı";
+                string senderSurname = company?.CompanyOfficial ?? User.Identity?.Name ?? "-";
+                string senderEmail = company?.CompanyMail ?? User.FindFirst(ClaimTypes.Email)?.Value ?? "";
+                string senderPhone = company?.CompanyPhone ?? "";
+
+                string topicText = string.IsNullOrWhiteSpace(input.Category) ? "Genel Geri Bildirim" : input.Category.Trim();
+                if (!string.IsNullOrWhiteSpace(input.Subject))
+                {
+                    topicText += " - " + input.Subject.Trim();
+                }
+
+                if (senderName.Length > 140) senderName = senderName.Substring(0, 140);
+                if (senderSurname.Length > 90) senderSurname = senderSurname.Substring(0, 90);
+                if (senderEmail.Length > 140) senderEmail = senderEmail.Substring(0, 140);
+                if (senderPhone.Length > 40) senderPhone = senderPhone.Substring(0, 40);
+                if (topicText.Length > 140) topicText = topicText.Substring(0, 140);
+
+                string fullMessage = input.Message.Trim();
+                if (input.Rating.HasValue && input.Rating.Value > 0)
+                {
+                    fullMessage += $"\n[Memnuniyet / Puan: {input.Rating.Value}/5]";
+                }
+
+                var formRecord = new Forms
+                {
+                    CompanyId = companyId > 0 ? companyId : (company?.CompanyID),
+                    Name = senderName,
+                    Surname = senderSurname,
+                    Email = senderEmail,
+                    Phone = senderPhone,
+                    Topic = topicText,
+                    FormText = fullMessage,
+                    FormDate = DateTime.UtcNow.Date
+                };
+
+                _context.Forms.Add(formRecord);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                var successMsg = "Geri bildiriminiz başarıyla iletildi. Değerli katkınız için teşekkür ederiz.";
+                if (isAjax)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        message = successMsg,
+                        item = new
+                        {
+                            formId = formRecord.FormId,
+                            topic = formRecord.Topic,
+                            date = formRecord.FormDate?.ToString("dd.MM.yyyy HH:mm") ?? DateTime.UtcNow.ToString("dd.MM.yyyy HH:mm"),
+                            text = formRecord.FormText
+                        }
+                    });
+                }
+
+                TempData["FeedbackSuccess"] = successMsg;
+            }
+            catch (Exception ex)
+            {
+                var err = "Geri bildirim kaydedilirken bir hata oluştu: " + ex.Message;
+                if (isAjax) return Json(new { success = false, message = err });
+                TempData["FeedbackError"] = err;
+            }
+
+            return RedirectToAction(nameof(Feedback));
         }
     }
 }

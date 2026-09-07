@@ -121,6 +121,27 @@ namespace satinalmaportali2.Models {
         public decimal? StockValue { get; set; }
     }
 
+    /// <summary>Kullanıcı Geri Bildirim Ekranı View Modeli.</summary>
+    public class UserFeedbackViewModel {
+        public string CompanyName { get; set; } = "";
+        public string OfficialName { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Phone { get; set; } = "";
+        public List<Forms> PastFeedbacks { get; set; } = new();
+    }
+
+    /// <summary>Geri bildirim formu gönderim DTO'su.</summary>
+    public class FeedbackInputDto {
+        public string? Category { get; set; }
+        public string? Subject { get; set; }
+        public string Message { get; set; } = "";
+        public int? Rating { get; set; }
+        public string? CompanyName { get; set; }
+        public string? OfficialName { get; set; }
+        public string? Email { get; set; }
+        public string? Phone { get; set; }
+    }
+
     /// <summary>Kategori hiyerarşisi (Ana ve Alt Kategoriler).</summary>
     public class CategoryTreeItemDto {
         public int CategoryID { get; set; }
@@ -292,6 +313,10 @@ namespace satinalmaportali2.Models {
         public string CompanyName { get; set; } = "";
         public bool IsIyzicoApproved { get; set; }
         public string? IyzicoSubMerchantKey { get; set; }
+        public int MembershipTypeId { get; set; } = 1;
+        public string MembershipTypeName { get; set; } = "Bedava";
+        public int MaxProducts { get; set; } = 10;
+        public int MaxImagesPerProduct { get; set; } = 3;
     }
 
     public class SupplierListingDetailDto {

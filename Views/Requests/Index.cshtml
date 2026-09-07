@@ -1927,16 +1927,100 @@
                     </div>
 
                     <div class="modal-form-group">
-                        <label class="modal-form-label">Kategori / Talep Tipi</label>
-                        <select name="RequestType" class="modal-form-select">
-                            <option value="Satın Alma">Satın Alma</option>
-                            <option value="Hammadde & Malzeme">Hammadde & Malzeme</option>
-                            <option value="Makine & Yedek Parça">Makine & Yedek Parça</option>
-                            <option value="Otomasyon & Elektrik">Otomasyon & Elektrik</option>
-                            <option value="Lojistik & Ambalaj">Lojistik & Ambalaj</option>
-                            <option value="Hizmet Tedariği">Hizmet Tedariği</option>
-                            <option value="Bilişim & Donanım">Bilişim & Donanım</option>
-                        </select>
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                            <label class="modal-form-label" style="margin-bottom: 0;">Kategori / Talep Tipi</label>
+                            <button type="button" id="btnToggleCustomReqType" onclick="toggleCustomRequestType()" style="background: transparent; border: none; font-size: 0.73rem; color: #2563EB; font-weight: 600; cursor: pointer; text-decoration: underline; padding: 0;">
+                                ✏️ Kendi Türünü Yaz
+                            </button>
+                        </div>
+
+                        <!-- 1. Zenginleştirilmiş Talep Tipi Listesi -->
+                        <div id="reqTypeDropdownWrap">
+                            <select id="reqTypeSelectBox" class="modal-form-select" onchange="handleReqTypeSelect(this)">
+                                <optgroup label="Standart & Alım Türleri">
+                                    <option value="Satın Alma" selected>Satın Alma (Doğrudan Temin)</option>
+                                    <option value="Fiyat Araştırması (RFQ)">Fiyat Araştırması (RFQ / Teklif Toplama)</option>
+                                    <option value="Açık İhale / Kapalı Zarf İhale">Açık İhale / Kapalı Zarf İhale</option>
+                                </optgroup>
+                                <optgroup label="Hammadde, Malzeme & İmalat">
+                                    <option value="Hammadde & Yarı Mamul Tedariği">Hammadde & Yarı Mamul Tedariği</option>
+                                    <option value="Fason Üretim & Talaşlı İmalat">Fason Üretim & Talaşlı İmalat</option>
+                                    <option value="Sac İşleme, Lazer Kesim & Büküm">Sac İşleme, Lazer Kesim & Büküm</option>
+                                    <option value="Plastik Enjeksiyon & Kalıp İmalatı">Plastik Enjeksiyon & Kalıp İmalatı</option>
+                                    <option value="Kimyasal, Boya & Kaplama">Kimyasal, Boya & Kaplama</option>
+                                    <option value="Döküm, Dövme & Metalurji">Döküm, Dövme & Metalurji</option>
+                                    <option value="Tekstil, Kumaş & İş Kıyafetleri">Tekstil, Kumaş & İş Kıyafetleri</option>
+                                    <option value="Gıda, İkram & Kurumsal Tüketim">Gıda, İkram & Kurumsal Tüketim</option>
+                                </optgroup>
+                                <optgroup label="Makine, Ekipman & Teknik Donanım">
+                                    <option value="Makine & Endüstriyel Ekipman">Makine & Endüstriyel Ekipman</option>
+                                    <option value="Yedek Parça & Sarf Malzeme">Yedek Parça & Sarf Malzeme</option>
+                                    <option value="Otomasyon, Elektrik & Elektronik">Otomasyon, Elektrik & Elektronik</option>
+                                    <option value="Hırdavat, Rulman & Bağlantı Elemanları">Hırdavat, Rulman & Bağlantı Elemanları</option>
+                                    <option value="Hidrolik, Pnömatik & Vana Tesisatı">Hidrolik, Pnömatik & Vana Tesisatı</option>
+                                </optgroup>
+                                <optgroup label="Hizmet, Bakım, Lojistik & İnşaat">
+                                    <option value="Hizmet Alımı & Taşeronluk">Hizmet Alımı & Taşeronluk</option>
+                                    <option value="Bakım, Onarım & Teknik Servis">Bakım, Onarım & Teknik Servis</option>
+                                    <option value="İnşaat, Taahhüt & Mimari Proje">İnşaat, Taahhüt & Mimari Proje</option>
+                                    <option value="Lojistik, Nakliye & Depolama">Lojistik, Nakliye & Depolama</option>
+                                    <option value="Endüstriyel Temizlik & Atık Yönetimi">Endüstriyel Temizlik & Atık Yönetimi</option>
+                                </optgroup>
+                                <optgroup label="Bilişim, Kurumsal & Profesyonel">
+                                    <option value="Bilişim, Yazılım & Sunucu Donanımı">Bilişim, Yazılım & Sunucu Donanımı</option>
+                                    <option value="Danışmanlık, Denetim & Müşavirlik">Danışmanlık, Denetim & Müşavirlik</option>
+                                    <option value="Laboratuvar, Test & Kalibrasyon">Laboratuvar, Test & Kalibrasyon</option>
+                                    <option value="Ambalaj, Paketleme & Etiketleme">Ambalaj, Paketleme & Etiketleme</option>
+                                    <option value="Personel Temini, İSG & Eğitim">Personel Temini, İSG & Eğitim</option>
+                                    <option value="Kiralama & Filo / Vinç Hizmetleri">Kiralama & Filo / Vinç Hizmetleri</option>
+                                </optgroup>
+                                <optgroup label="Özel Giriş">
+                                    <option value="__custom__">✏️ Diğer / Kendi Talep Türünüzü Yazın...</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        <!-- 2. Serbest / Özel Tür Yazma Alanı (Kullanıcı dilediği türü yazabilir) -->
+                        <div id="reqTypeCustomWrap" style="display: none;">
+                            <div style="position: relative; display: flex; align-items: center;">
+                                <input type="text" id="reqTypeCustomInput" list="requestTypePresetsList" placeholder="Örn: 5 Eksen CNC İşleme, Çatı GES Kurulumu..." class="modal-form-input" style="border-color: #2563EB; background: #F8FAFC; padding-right: 28px;" oninput="syncCustomRequestType(this.value)" />
+                                <button type="button" onclick="cancelCustomRequestType()" title="Listeden Seçime Geri Dön" style="position: absolute; right: 8px; background: transparent; border: none; cursor: pointer; color: #94A3B8; font-size: 0.95rem; font-weight: 700;">✕</button>
+                            </div>
+                            <span style="font-size: 0.71rem; color: #2563EB; margin-top: 2px; display: block; font-weight: 500;">
+                                ✍️ İstediğiniz talep türünü serbestçe yazabilirsiniz.
+                            </span>
+                        </div>
+
+                        <!-- Formun sunucuya ileteceği nihai değer -->
+                        <input type="hidden" name="RequestType" id="createReqFinalType" value="Satın Alma" />
+
+                        <datalist id="requestTypePresetsList">
+                            <option value="Satın Alma"></option>
+                            <option value="Fiyat Araştırması (RFQ)"></option>
+                            <option value="Açık İhale / Kapalı Zarf İhale"></option>
+                            <option value="Hammadde & Yarı Mamul Tedariği"></option>
+                            <option value="Fason Üretim & Talaşlı İmalat"></option>
+                            <option value="Sac İşleme, Lazer Kesim & Büküm"></option>
+                            <option value="Plastik Enjeksiyon & Kalıp İmalatı"></option>
+                            <option value="Kimyasal, Boya & Kaplama"></option>
+                            <option value="Döküm, Dövme & Metalurji"></option>
+                            <option value="Makine & Endüstriyel Ekipman"></option>
+                            <option value="Yedek Parça & Sarf Malzeme"></option>
+                            <option value="Otomasyon, Elektrik & Elektronik"></option>
+                            <option value="Hırdavat, Rulman & Bağlantı Elemanları"></option>
+                            <option value="Hidrolik, Pnömatik & Vana Tesisatı"></option>
+                            <option value="Hizmet Alımı & Taşeronluk"></option>
+                            <option value="Bakım, Onarım & Teknik Servis"></option>
+                            <option value="İnşaat, Taahhüt & Mimari Proje"></option>
+                            <option value="Lojistik, Nakliye & Depolama"></option>
+                            <option value="Endüstriyel Temizlik & Atık Yönetimi"></option>
+                            <option value="Bilişim, Yazılım & Sunucu Donanımı"></option>
+                            <option value="Danışmanlık, Denetim & Müşavirlik"></option>
+                            <option value="Laboratuvar, Test & Kalibrasyon"></option>
+                            <option value="Ambalaj, Paketleme & Etiketleme"></option>
+                            <option value="Personel Temini, İSG & Eğitim"></option>
+                            <option value="Kiralama & Filo / Vinç Hizmetleri"></option>
+                        </datalist>
                     </div>
 
                     <div class="modal-form-group">
@@ -2688,6 +2772,54 @@
             }
         }
 
+        function handleReqTypeSelect(selectEl) {
+            if (selectEl.value === '__custom__') {
+                toggleCustomRequestType();
+            } else {
+                var finalInput = document.getElementById('createReqFinalType');
+                if (finalInput) finalInput.value = selectEl.value;
+            }
+        }
+
+        function toggleCustomRequestType() {
+            var dropWrap = document.getElementById('reqTypeDropdownWrap');
+            var customWrap = document.getElementById('reqTypeCustomWrap');
+            var customInput = document.getElementById('reqTypeCustomInput');
+            var toggleBtn = document.getElementById('btnToggleCustomReqType');
+            var finalInput = document.getElementById('createReqFinalType');
+            if (customWrap && customWrap.style.display === 'none') {
+                if (dropWrap) dropWrap.style.display = 'none';
+                customWrap.style.display = 'block';
+                if (toggleBtn) toggleBtn.textContent = '📋 Listeden Seç';
+                if (customInput) {
+                    customInput.focus();
+                    if (finalInput) finalInput.value = customInput.value.trim() || 'Özel Talep';
+                }
+            } else {
+                cancelCustomRequestType();
+            }
+        }
+
+        function cancelCustomRequestType() {
+            var dropWrap = document.getElementById('reqTypeDropdownWrap');
+            var customWrap = document.getElementById('reqTypeCustomWrap');
+            var selectBox = document.getElementById('reqTypeSelectBox');
+            var toggleBtn = document.getElementById('btnToggleCustomReqType');
+            var finalInput = document.getElementById('createReqFinalType');
+            if (customWrap) customWrap.style.display = 'none';
+            if (dropWrap) dropWrap.style.display = 'block';
+            if (toggleBtn) toggleBtn.textContent = '✏️ Kendi Türünü Yaz';
+            if (selectBox && selectBox.value === '__custom__') selectBox.value = 'Satın Alma';
+            if (finalInput && selectBox) finalInput.value = selectBox.value;
+        }
+
+        function syncCustomRequestType(val) {
+            var finalInput = document.getElementById('createReqFinalType');
+            if (finalInput) {
+                finalInput.value = (val && val.trim()) ? val.trim() : 'Özel Talep';
+            }
+        }
+
         function openCreateModal() {
             var modal = document.getElementById('createRequestModal');
             if (modal) {
@@ -2701,6 +2833,7 @@
             if (modal) {
                 modal.classList.remove('is-open');
             }
+            cancelCustomRequestType();
         }
 
         async function handleCreateRequestFormSubmit(event) {
@@ -2710,7 +2843,7 @@
             var originalText = submitBtn ? submitBtn.innerHTML : 'Talebi ve İstenilenler Listesini Yayınla';
 
             var productName = form.querySelector('[name="ProductName"]')?.value?.trim() || '';
-            var requestType = form.querySelector('[name="RequestType"]')?.value || 'Satın Alma';
+            var requestType = document.getElementById('createReqFinalType')?.value?.trim() || form.querySelector('[name="RequestType"]')?.value?.trim() || 'Satın Alma';
             var targetDeliveryDate = form.querySelector('[name="TargetDeliveryDate"]')?.value || null;
             var notes = form.querySelector('[name="Notes"]')?.value || '';
 

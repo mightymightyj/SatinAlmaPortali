@@ -124,6 +124,7 @@ namespace satinalmaportali2.Services
             decimal? avgScore = reviewCount > 0 ? Math.Round(reviews.Average(), 2) : null;
 
             var items = await _context.Items
+                .Where(i => !i.IsDeleted)
                 .Select(i => new { Price = (decimal)(i.ItemPrice ?? 0), Qty = (decimal)(i.Quantity ?? 0) })
                 .ToListAsync(cancellationToken);
 
@@ -398,7 +399,7 @@ namespace satinalmaportali2.Services
         private async Task<IReadOnlyList<BrandRow>> GetBrandsAsync(CancellationToken cancellationToken)
         {
             var items = await _context.Items
-                .Where(i => i.Brand != null && i.Brand.Trim() != "")
+                .Where(i => !i.IsDeleted && i.Brand != null && i.Brand.Trim() != "")
                 .Select(i => new { Brand = i.Brand!.Trim(), Price = (decimal)(i.ItemPrice ?? 0), Qty = (decimal)(i.Quantity ?? 0) })
                 .ToListAsync(cancellationToken);
 
@@ -747,7 +748,7 @@ namespace satinalmaportali2.Services
                 int totalPurchasedCount = purchasedItemsList.Count;
 
                 // KPI Özeti (Tamamen gerçek veritabanı talepleri ve siparişlerinden hesaplanır)
-                var activeCount = recentRequests.Count(r => r.Status != "İptal Edildi" && r.Status != "Reddedildi" && r.Status != "Tamamlandı");
+                var activeCount = recentRequests.Count(r => r.Status != "İptal Edildi" && r.Status != "Reddedildi" && r.Status != "Tamamlandı" && r.Status != "Kaldırıldı");
                 var pendingCount = recentRequests.Count(r => r.Status == "Beklemede" || r.Status == "Açık");
                 var thisWeekCount = recentRequests.Count(r => r.RequestDate >= DateTime.Today.AddDays(-7));
                 var totalSpend = dbRequests.Where(r => r.Status == "Onaylandı" || r.Status == "Kabul Edildi" || r.Status == "Tamamlandı").Sum(r => r.EstimatedBudget ?? 0) + totalPurchasedSpend;
@@ -898,6 +899,7 @@ namespace satinalmaportali2.Services
                 var catalogItems = new List<SupplierCatalogItemDto>();
                 var dbItems = await _context.Items
                     .AsNoTracking()
+                    .Where(i => !i.IsDeleted)
                     .Take(10)
                     .ToListAsync(cancellationToken);
 

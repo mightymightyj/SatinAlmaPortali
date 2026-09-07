@@ -50,648 +50,9 @@ function getSellerCompanyId(item) {
     return (item.id ? ((Math.abs(item.id) % 10) + 1) : 1);
 }
 
-// Zengin B2B Endüstriyel Ürün Kataloğu (Kurumsal Şirket Odaklı)
-const B2B_PRODUCT_CATALOG = [
-    // Bilişim & IT Altyapı
-    {
-        id: 101,
-        sku: "SRV-DELL-R750",
-        title: "Dell PowerEdge R750xs Rack Sunucu (2x Xeon Silver 4314, 128GB ECC RAM, 2x 960GB SAS SSD)",
-        category: "it",
-        categoryName: "Bilişim & IT",
-        brand: "Dell Technologies",
-        seller: "Nova Elektronik & Sunucu Sistemleri A.Ş.",
-        sellerScore: 9.9,
-        sellerBadge: "Yetkili Distribütör",
-        sellerLocation: "İstanbul (Ümraniye)",
-        moq: "1 Adet",
-        unit: "Adet",
-        taxText: "+ %20 KDV",
-        oldPrice: 198000,
-        price: 168500,
-        discount: 15,
-        rating: 4.9,
-        reviewsCount: 148,
-        badge: "ISO 9001 Belgeli",
-        badgeType: "corporate",
-        stockStatus: "8 Adet (Merkez Depo)",
-        leadTime: "1-2 İş Günü",
-        tierPricing: "1-2 Adet: 168.500 ₺ | 3+ Adet: 159.000 ₺",
-        image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=500&auto=format&fit=crop&q=80"
-    },
-    {
-        id: 102,
-        sku: "NET-CS-9200L-48P",
-        title: "Cisco Catalyst 9200L 48-Port PoE+ Gigabit Yönetilebilir Layer-3 Ağ Anahtarı",
-        category: "it",
-        categoryName: "Bilişim & IT",
-        brand: "Cisco Enterprise",
-        seller: "Ağ & Altyapı Çözümleri San. Tic. A.Ş.",
-        sellerScore: 9.8,
-        sellerBadge: "Platin Çözüm Ortağı",
-        sellerLocation: "Ankara (ODTÜ Teknokent)",
-        moq: "1 Adet",
-        unit: "Adet",
-        taxText: "+ %20 KDV",
-        oldPrice: 94000,
-        price: 79900,
-        discount: 15,
-        rating: 4.9,
-        reviewsCount: 92,
-        badge: "Kurumsal Faturalı",
-        badgeType: "certified",
-        stockStatus: "18 Adet Hazır Stok",
-        leadTime: "Aynı Gün Sevk",
-        tierPricing: "1-4 Adet: 79.900 ₺ | 5+ Adet: 74.500 ₺",
-        image: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=500&auto=format&fit=crop&q=80"
-    },
-    {
-        id: 103,
-        sku: "UPS-APC-5000RT",
-        title: "Schneider APC Smart-UPS RT 5000VA 230V Kesintisiz Güç Kaynağı (Online Çift Çevrim)",
-        category: "it",
-        categoryName: "Bilişim & IT",
-        brand: "APC by Schneider",
-        seller: "Enerji & Güç Donanımları A.Ş.",
-        sellerScore: 9.9,
-        sellerBadge: "Yetkili Servis & Satış",
-        sellerLocation: "Kocaeli (Gebze OSB)",
-        moq: "1 Adet",
-        unit: "Adet",
-        taxText: "+ %20 KDV",
-        oldPrice: 118000,
-        price: 99500,
-        discount: 16,
-        rating: 4.9,
-        reviewsCount: 54,
-        badge: "TSE & CE Belgeli",
-        badgeType: "corporate",
-        stockStatus: "12 Adet Stokta",
-        leadTime: "24 Saat İçinde Sevk",
-        tierPricing: "1-2 Adet: 99.500 ₺ | 3+ Adet: 92.000 ₺",
-        image: "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=500&auto=format&fit=crop&q=80"
-    },
-    {
-        id: 104,
-        sku: "PRN-ZBR-ZT411",
-        title: "Zebra ZT411 203 DPI Endüstriyel Barkod & Termal Transfer Etiket Yazıcı",
-        category: "it",
-        categoryName: "Bilişim & IT",
-        brand: "Zebra Technologies",
-        seller: "Barkod & Otomasyon Sistemleri Ltd.",
-        sellerScore: 9.8,
-        sellerBadge: "Onaylı B2B Tedarikçi",
-        sellerLocation: "İzmir (Bornova)",
-        moq: "1 Adet",
-        unit: "Adet",
-        taxText: "+ %20 KDV",
-        oldPrice: 49500,
-        price: 42800,
-        discount: 14,
-        rating: 4.8,
-        reviewsCount: 110,
-        badge: "Sanayi Tipi",
-        badgeType: "industrial",
-        stockStatus: "24 Adet Stok",
-        leadTime: "Hızlı Gönderi",
-        tierPricing: "1-3 Adet: 42.800 ₺ | 4+ Adet: 39.500 ₺",
-        image: "https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?w=500&auto=format&fit=crop&q=80"
-    },
-    {
-        id: 105,
-        sku: "WIFI-UB-U6PRO",
-        title: "Ubiquiti UniFi 6 Pro WiFi-6 AX5400 Kurumsal Tavan Tipi Access Point (10'lu Pro Paket)",
-        category: "it",
-        categoryName: "Bilişim & IT",
-        brand: "Ubiquiti Networks",
-        seller: "Ağ & Altyapı Çözümleri San. Tic. A.Ş.",
-        sellerScore: 9.8,
-        sellerBadge: "Platin Dağıtıcı",
-        sellerLocation: "İstanbul (Kartal)",
-        moq: "1 Paket",
-        unit: "Paket (10 Adet)",
-        taxText: "+ %20 KDV",
-        oldPrice: 78000,
-        price: 66500,
-        discount: 15,
-        rating: 4.9,
-        reviewsCount: 76,
-        badge: "Toplu Paket Avantajı",
-        badgeType: "wholesale",
-        stockStatus: "15 Paket Stokta",
-        leadTime: "Aynı Gün Kargo",
-        tierPricing: "1-2 Pk: 66.500 ₺ | 3+ Pk: 62.000 ₺",
-        image: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=500&auto=format&fit=crop&q=80"
-    },
+// B2B Kurumsal Ürün Kataloğu (Yalnızca veritabanındaki gerçek ürünlerle beslenir)
+const B2B_PRODUCT_CATALOG = [];
 
-    // Makine, Sac & Metal Sanayi
-    {
-        id: 201,
-        sku: "MTL-DKP-ST37-2MM",
-        title: "Erdemir Kalite ST37 DKP Sac Plaka 2.00mm x 1250mm x 2500mm (Lazer Kesim Uyumlu)",
-        category: "metal",
-        categoryName: "Makine & Metal",
-        brand: "Erdemir / Atlas Çelik",
-        seller: "Atlas Metal & Sac Sanayi A.Ş.",
-        sellerScore: 9.9,
-        sellerBadge: "Üretici & Fabrika Satış",
-        sellerLocation: "Kocaeli (Dilovası İMES OSB)",
-        moq: "10 Plaka",
-        unit: "Plaka (~49 Kg)",
-        taxText: "+ %20 KDV",
-        oldPrice: 2850,
-        price: 2390,
-        discount: 16,
-        rating: 4.9,
-        reviewsCount: 340,
-        badge: "Doğrudan Üreticiden",
-        badgeType: "manufacturer",
-        stockStatus: "1.400 Plaka Stok",
-        leadTime: "Fabrikadan Sevkiyat",
-        tierPricing: "10-49 Plaka: 2.390 ₺ | 50+ Plaka: 2.180 ₺",
-        image: "https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?w=500&auto=format&fit=crop&q=80"
-    },
-    {
-        id: 202,
-        sku: "BORU-INOX-304-42",
-        title: "Paslanmaz Krom 304 Kalite Dikişsiz Sanayi Borusu Ø42.4 x 2.0mm (6 Metre Boy)",
-        category: "metal",
-        categoryName: "Makine & Metal",
-        brand: "Vizyon Paslanmaz",
-        seller: "Vizyon Endüstriyel Çelik Ltd. Şti.",
-        sellerScore: 9.8,
-        sellerBadge: "ISO 9001 Onaylı",
-        sellerLocation: "Bursa (NOSAB)",
-        moq: "5 Boy",
-        unit: "Boy (6 Metre)",
-        taxText: "+ %20 KDV",
-        oldPrice: 2400,
-        price: 1980,
-        discount: 17,
-        rating: 4.9,
-        reviewsCount: 185,
-        badge: "Test Sertifikalı (EN 10204)",
-        badgeType: "certified",
-        stockStatus: "650 Boy Stokta",
-        leadTime: "1-2 İş Günü",
-        tierPricing: "5-19 Boy: 1.980 ₺ | 20+ Boy: 1.820 ₺",
-        image: "https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?w=500&auto=format&fit=crop&q=80"
-    },
-    {
-        id: 203,
-        sku: "PRF-ALU-4040-K8",
-        title: "Eloksallı Alüminyum Sigma Profil 40x40mm Kanal 8 Ağır Tip (6063 T6 / 6 Metre Boy)",
-        category: "metal",
-        categoryName: "Makine & Metal",
-        brand: "SigmaTech Makine",
-        seller: "Atlas Metal & Sac Sanayi A.Ş.",
-        sellerScore: 9.9,
-        sellerBadge: "Entegre İmalatçı",
-        sellerLocation: "İstanbul (Dudullu OSB)",
-        moq: "10 Boy",
-        unit: "Boy (6 Metre)",
-        taxText: "+ %20 KDV",
-        oldPrice: 1450,
-        price: 1180,
-        discount: 19,
-        rating: 5.0,
-        reviewsCount: 420,
-        badge: "Hassas Ekstrüzyon",
-        badgeType: "corporate",
-        stockStatus: "850 Boy Hazır",
-        leadTime: "24 Saatte Kargo / Ambar",
-        tierPricing: "10-49 Boy: 1.180 ₺ | 50+ Boy: 1.050 ₺",
-        image: "https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?w=500&auto=format&fit=crop&q=80"
-    },
-    {
-        id: 204,
-        sku: "MIL-TRN-1040-30",
-        title: "Ç1040 Transmisyon Mili Taşlanmış h9 Tolerans Ø30mm x 3000mm (İmalat Çeliği)",
-        category: "metal",
-        categoryName: "Makine & Metal",
-        brand: "Vizyon Çelik",
-        seller: "Vizyon Endüstriyel Çelik Ltd. Şti.",
-        sellerScore: 9.8,
-        sellerBadge: "Toptan Dağıtım",
-        sellerLocation: "Kocaeli (Gebze)",
-        moq: "5 Adet",
-        unit: "Adet (3 Metre)",
-        taxText: "+ %20 KDV",
-        oldPrice: 1750,
-        price: 1420,
-        discount: 19,
-        rating: 4.8,
-        reviewsCount: 130,
-        badge: "h9 Hassas Taşlama",
-        badgeType: "industrial",
-        stockStatus: "400 Adet Stok",
-        leadTime: "Aynı Gün Sevk",
-        tierPricing: "5-19 Adet: 1.420 ₺ | 20+ Adet: 1.290 ₺",
-        image: "https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?w=500&auto=format&fit=crop&q=80"
-    },
-
-    // Endüstriyel Donanım & Hırdavat & Bağlantı Elemanları
-    {
-        id: 301,
-        sku: "RLM-SKF-6205-2RSH",
-        title: "SKF 6205-2RSH Derin Oluklu Bilyalı Rulman Çift Kauçuk Kapaklı (Koli İçi 50 Adet)",
-        category: "hardware",
-        categoryName: "Endüstriyel & Hırdavat",
-        brand: "SKF Bearings",
-        seller: "Birlik Rulman & Endüstriyel Tedarik Ltd.",
-        sellerScore: 9.9,
-        sellerBadge: "Yetkili Ana Distribütör",
-        sellerLocation: "İstanbul (Karaköy Perpa)",
-        moq: "1 Koli",
-        unit: "Koli (50 Adet)",
-        taxText: "+ %20 KDV",
-        oldPrice: 8500,
-        price: 6850,
-        discount: 19,
-        rating: 5.0,
-        reviewsCount: 510,
-        badge: "%100 Orijinal SKF",
-        badgeType: "certified",
-        stockStatus: "120 Koli Stokta",
-        leadTime: "Hızlı Sevkiyat",
-        tierPricing: "1-4 Koli: 6.850 ₺ | 5+ Koli: 6.200 ₺",
-        image: "https://images.unsplash.com/photo-1537462715879-360eeb61a0ad?w=500&auto=format&fit=crop&q=80"
-    },
-    {
-        id: 302,
-        sku: "CVT-DIN933-A2-M8",
-        title: "DIN 933 Paslanmaz Çelik A2-70 İnox Tam Diş Altıköşe Başlı Cıvata M8x30 (2.500 Adet Koli)",
-        category: "hardware",
-        categoryName: "Endüstriyel & Hırdavat",
-        brand: "Başak Bağlantı",
-        seller: "Başak Cıvata & Bağlantı Elemanları A.Ş.",
-        sellerScore: 9.8,
-        sellerBadge: "Üretici Tedarikçi",
-        sellerLocation: "Konya (Büsan Sanayi)",
-        moq: "1 Koli",
-        unit: "Koli (2.500 Adet)",
-        taxText: "+ %20 KDV",
-        oldPrice: 3800,
-        price: 2950,
-        discount: 22,
-        rating: 4.9,
-        reviewsCount: 380,
-        badge: "TSE & DIN Normu",
-        badgeType: "manufacturer",
-        stockStatus: "350 Koli Stok",
-        leadTime: "Aynı Gün Kargoda",
-        tierPricing: "1-4 Koli: 2.950 ₺ | 5+ Koli: 2.650 ₺",
-        image: "https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?w=500&auto=format&fit=crop&q=80"
-    },
-    {
-        id: 303,
-        sku: "ELK-MGW-ESR13-325",
-        title: "Magmaweld ESR 13 Rutil Kaynak Elektrodu 3.25x350mm (Koli İçi 3 Paket / 15 Kg)",
-        category: "hardware",
-        categoryName: "Endüstriyel & Hırdavat",
-        brand: "Magmaweld",
-        seller: "Atlas Metal & Sac Sanayi A.Ş.",
-        sellerScore: 9.9,
-        sellerBadge: "Ana Bayi",
-        sellerLocation: "Manisa (MOSB)",
-        moq: "2 Koli",
-        unit: "Koli (15 Kg)",
-        taxText: "+ %20 KDV",
-        oldPrice: 2600,
-        price: 2150,
-        discount: 17,
-        rating: 4.9,
-        reviewsCount: 720,
-        badge: "TSE / Lloyd Onaylı",
-        badgeType: "certified",
-        stockStatus: "500 Koli Stokta",
-        leadTime: "Hemen Sevk",
-        tierPricing: "2-9 Koli: 2.150 ₺ | 10+ Koli: 1.940 ₺",
-        image: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500&auto=format&fit=crop&q=80"
-    },
-    {
-        id: 304,
-        sku: "TAKIM-IZL-110P",
-        title: "İzeltaş 110 Parça Endüstriyel Dolu Takım Çantası & Lokma Kombine Anahtar Seti",
-        category: "hardware",
-        categoryName: "Endüstriyel & Hırdavat",
-        brand: "İzeltaş",
-        seller: "Sanayi Takımları ve Donanım A.Ş.",
-        sellerScore: 9.9,
-        sellerBadge: "Yetkili Endüstriyel Bayi",
-        sellerLocation: "İzmir (Işıkkent)",
-        moq: "1 Set",
-        unit: "Set",
-        taxText: "+ %20 KDV",
-        oldPrice: 15800,
-        price: 12900,
-        discount: 18,
-        rating: 5.0,
-        reviewsCount: 640,
-        badge: "Ömür Boyu Garanti",
-        badgeType: "corporate",
-        stockStatus: "45 Set Stokta",
-        leadTime: "24 Saatte Teslimat",
-        tierPricing: "1-4 Set: 12.900 ₺ | 5+ Set: 11.800 ₺",
-        image: "https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=500&auto=format&fit=crop&q=80"
-    },
-
-    // Elektrik, Enerji & Otomasyon
-    {
-        id: 401,
-        sku: "KBL-OZN-NYY-4X6",
-        title: "Öznur NYY 0.6/1kV 4x6mm² Ağır Sanayi Yeraltı Enerji Kablosu (500 Metre Makara)",
-        category: "energy",
-        categoryName: "Elektrik & Enerji",
-        brand: "Öznur Kablo",
-        seller: "Tekno Enerji & Kablo Sanayi A.Ş.",
-        sellerScore: 9.9,
-        sellerBadge: "Fabrika Distribütörü",
-        sellerLocation: "Gaziantep (4. OSB)",
-        moq: "1 Makara",
-        unit: "Makara (500m)",
-        taxText: "+ %20 KDV",
-        oldPrice: 48500,
-        price: 39800,
-        discount: 18,
-        rating: 4.9,
-        reviewsCount: 290,
-        badge: "TSE / CE / VDE Belgeli",
-        badgeType: "certified",
-        stockStatus: "85 Makara Stok",
-        leadTime: "Özel Sevk & Ambar",
-        tierPricing: "1-2 Makara: 39.800 ₺ | 3+ Makara: 36.500 ₺",
-        image: "https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?w=500&auto=format&fit=crop&q=80"
-    },
-    {
-        id: 402,
-        sku: "OTM-SMS-3RT2026",
-        title: "Siemens SIRIUS 3RT2026-1BB40 24V DC 25A 11kW 3-Kutuplu Güç Kontaktörü",
-        category: "energy",
-        categoryName: "Elektrik & Enerji",
-        brand: "Siemens Automation",
-        seller: "Nova Elektronik & Otomasyon A.Ş.",
-        sellerScore: 9.9,
-        sellerBadge: "Siemens Çözüm Ortağı",
-        sellerLocation: "İstanbul (Kadıköy)",
-        moq: "5 Adet",
-        unit: "Adet",
-        taxText: "+ %20 KDV",
-        oldPrice: 2800,
-        price: 2280,
-        discount: 19,
-        rating: 5.0,
-        reviewsCount: 310,
-        badge: "Alman Endüstri Standartı",
-        badgeType: "industrial",
-        stockStatus: "220 Adet Stok",
-        leadTime: "Aynı Gün Kargo",
-        tierPricing: "5-19 Adet: 2.280 ₺ | 20+ Adet: 2.050 ₺",
-        image: "https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?w=500&auto=format&fit=crop&q=80"
-    },
-    {
-        id: 403,
-        sku: "AYD-PHL-HB-150W",
-        title: "Philips CoreLine HighBay 150W 20.000 Lümen IP65 Sanayi Fabrika Tavan LED Armatür",
-        category: "energy",
-        categoryName: "Elektrik & Enerji",
-        brand: "Philips Lighting",
-        seller: "Aydınlatma & Enerji Sistemleri A.Ş.",
-        sellerScore: 9.8,
-        sellerBadge: "Kurumsal Proje Bayi",
-        sellerLocation: "Ankara (İvedik OSB)",
-        moq: "4 Adet",
-        unit: "Adet",
-        taxText: "+ %20 KDV",
-        oldPrice: 4200,
-        price: 3450,
-        discount: 18,
-        rating: 4.9,
-        reviewsCount: 220,
-        badge: "5 Yıl Proje Garantisi",
-        badgeType: "corporate",
-        stockStatus: "350 Adet Stokta",
-        leadTime: "Hızlı Gönderi",
-        tierPricing: "4-19 Adet: 3.450 ₺ | 20+ Adet: 3.100 ₺",
-        image: "https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?w=500&auto=format&fit=crop&q=80"
-    },
-
-    // Ambalaj, Palet & Endüstriyel Depolama
-    {
-        id: 501,
-        sku: "AMB-STR-50CM-17M",
-        title: "Endüstriyel Otomatik / Manuel Palet Streç Film 50cm 17 Mikron 2.3 Kg (Koli İçi 6 Rulo)",
-        category: "packaging",
-        categoryName: "Ambalaj & Lojistik",
-        brand: "Ege Pack Sanayi",
-        seller: "Ege Plastik & Ambalaj Ltd. Şti.",
-        sellerScore: 9.9,
-        sellerBadge: "Üretici Fabrika",
-        sellerLocation: "İzmir (Kemalpaşa OSB)",
-        moq: "10 Koli",
-        unit: "Koli (6 Rulo)",
-        taxText: "+ %20 KDV",
-        oldPrice: 1350,
-        price: 1040,
-        discount: 23,
-        rating: 4.9,
-        reviewsCount: 1100,
-        badge: "Yüksek Esneklik (%300)",
-        badgeType: "manufacturer",
-        stockStatus: "2.500 Koli Stok",
-        leadTime: "Tır / Kamyon / Ambar Sevk",
-        tierPricing: "10-49 Koli: 1.040 ₺ | 50+ Koli: 920 ₺",
-        image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=500&auto=format&fit=crop&q=80"
-    },
-    {
-        id: 502,
-        sku: "PLT-EPAL-EURO-80120",
-        title: "EPAL Euro Ahşap Palet 80x120cm ISPM 15 Isıl İşlemli (İhracat ve Ağır Yük Uyumlu)",
-        category: "packaging",
-        categoryName: "Ambalaj & Lojistik",
-        brand: "Karadeniz Palet",
-        seller: "Karadeniz Kereste & Ahşap San. A.Ş.",
-        sellerScore: 9.8,
-        sellerBadge: "EPAL Lisanslı İmalatçı",
-        sellerLocation: "Trabzon (Arsin OSB)",
-        moq: "20 Adet",
-        unit: "Adet (Palet)",
-        taxText: "+ %20 KDV",
-        oldPrice: 480,
-        price: 390,
-        discount: 19,
-        rating: 4.8,
-        reviewsCount: 430,
-        badge: "ISPM-15 Lisanslı",
-        badgeType: "certified",
-        stockStatus: "4.000 Adet Stok",
-        leadTime: "Paletli Kamyon Sevkiyat",
-        tierPricing: "20-99 Adet: 390 ₺ | 100+ Adet: 345 ₺",
-        image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=500&auto=format&fit=crop&q=80"
-    },
-    {
-        id: 503,
-        sku: "BNT-TSA-4024-36LI",
-        title: "Tesa 4024 Sessiz Açılan Endüstriyel Ağır Koli Bandı 45mm x 100m Şeffaf (36'lı Koli)",
-        category: "packaging",
-        categoryName: "Ambalaj & Lojistik",
-        brand: "Tesa Tape",
-        seller: "Bant & Yapıştırıcı Sanayi Ltd.",
-        sellerScore: 9.9,
-        sellerBadge: "Toptan Dağıtıcı",
-        sellerLocation: "İstanbul (İkitelli OSB)",
-        moq: "2 Koli",
-        unit: "Koli (36 Rulo)",
-        taxText: "+ %20 KDV",
-        oldPrice: 1950,
-        price: 1540,
-        discount: 21,
-        rating: 5.0,
-        reviewsCount: 1800,
-        badge: "Yüksek Yapışma Gücü",
-        badgeType: "corporate",
-        stockStatus: "800 Koli Stok",
-        leadTime: "Aynı Gün Sevk",
-        tierPricing: "2-9 Koli: 1.540 ₺ | 10+ Koli: 1.380 ₺",
-        image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=500&auto=format&fit=crop&q=80"
-    },
-    {
-        id: 504,
-        sku: "LIFT-TRP-2500KG",
-        title: "Manuel Hidrolik Transpalet 2.5 Ton Kapasiteli (Ağır Hizmet Poliüretan Çift Tekerlek)",
-        category: "packaging",
-        categoryName: "Ambalaj & Lojistik",
-        brand: "Toros Makine",
-        seller: "Yıldız Lojistik & Depo Ekipmanları",
-        sellerScore: 9.8,
-        sellerBadge: "2 Yıl Garantili",
-        sellerLocation: "Mersin (Akdeniz)",
-        moq: "1 Adet",
-        unit: "Adet",
-        taxText: "+ %20 KDV",
-        oldPrice: 18500,
-        price: 14900,
-        discount: 19,
-        rating: 4.9,
-        reviewsCount: 310,
-        badge: "CE & TÜV Belgeli",
-        badgeType: "industrial",
-        stockStatus: "60 Adet Stok",
-        leadTime: "Özel Ambar Gönderi",
-        tierPricing: "1-2 Adet: 14.900 ₺ | 3+ Adet: 13.600 ₺",
-        image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=500&auto=format&fit=crop&q=80"
-    },
-
-    // Kimya, Hammadde & Sanayi Sarfı
-    {
-        id: 601,
-        sku: "KMY-IPA-999-20L",
-        title: "İzopropil Alkol (IPA) %99.9 Saf Teknik & Sanayi Sınıfı Çözücü (20 Litre Mühürlü Bidon)",
-        category: "chemical",
-        categoryName: "Kimya & Hammadde",
-        brand: "Zirve Kimya",
-        seller: "Zirve Kimya & Hammadde San. Tic. A.Ş.",
-        sellerScore: 9.9,
-        sellerBadge: "T.C. Bakanlık Onaylı",
-        sellerLocation: "Kocaeli (Tuzla / Dilovası)",
-        moq: "2 Bidon",
-        unit: "Bidon (20L)",
-        taxText: "+ %20 KDV",
-        oldPrice: 2550,
-        price: 1980,
-        discount: 22,
-        rating: 4.9,
-        reviewsCount: 750,
-        badge: "MSDS & Analiz Sertifikalı",
-        badgeType: "certified",
-        stockStatus: "600 Bidon Stok",
-        leadTime: "ADR'li Tehlikeli Madde Sevk",
-        tierPricing: "2-9 Bidon: 1.980 ₺ | 10+ Bidon: 1.760 ₺",
-        image: "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=500&auto=format&fit=crop&q=80"
-    },
-    {
-        id: 602,
-        sku: "KMY-EPX-ZMN-20KG",
-        title: "Endüstriyel Self-Leveling Epoksi Zemin Kaplama Reçine Seti 20 Kg (A+B Komponent)",
-        category: "chemical",
-        categoryName: "Kimya & Hammadde",
-        brand: "EpoxyTech Pro",
-        seller: "Zirve Kimya & Hammadde San. Tic. A.Ş.",
-        sellerScore: 9.9,
-        sellerBadge: "Üretici Tedarikçi",
-        sellerLocation: "İstanbul (Tuzla Kimyacılar OSB)",
-        moq: "2 Set",
-        unit: "Set (20 Kg)",
-        taxText: "+ %20 KDV",
-        oldPrice: 6200,
-        price: 4950,
-        discount: 20,
-        rating: 4.9,
-        reviewsCount: 160,
-        badge: "Yüksek Aşınma Direnci",
-        badgeType: "industrial",
-        stockStatus: "180 Set Stok",
-        leadTime: "24 Saatte Teslimat",
-        tierPricing: "2-5 Set: 4.950 ₺ | 6+ Set: 4.400 ₺",
-        image: "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=500&auto=format&fit=crop&q=80"
-    },
-
-    // Kurumsal Ofis & Kağıtçılık
-    {
-        id: 701,
-        sku: "KGT-CPB-A4-80GR-PALET",
-        title: "Copier Bond A4 80gr 1. Hamur Fotokopi Kağıdı (1 Palet / 40 Koli / 200 Paket)",
-        category: "office",
-        categoryName: "Ofis & Kırtasiye",
-        brand: "Copier Bond / Vege",
-        seller: "Merkez Ofis & Kağıtçılık Sanayi Ltd.",
-        sellerScore: 9.9,
-        sellerBadge: "Kurumsal Ana Dağıtıcı",
-        sellerLocation: "İstanbul (Topkapı Matbaacılar)",
-        moq: "1 Palet",
-        unit: "Palet (40 Koli)",
-        taxText: "+ %20 KDV",
-        oldPrice: 32000,
-        price: 24800,
-        discount: 22,
-        rating: 4.9,
-        reviewsCount: 2900,
-        badge: "Palet Bazlı Toptan Fiyat",
-        badgeType: "wholesale",
-        stockStatus: "140 Palet Stok",
-        leadTime: "Aynı Gün Sevk",
-        tierPricing: "1-2 Palet: 24.800 ₺ | 3+ Palet: 22.900 ₺",
-        image: "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=500&auto=format&fit=crop&q=80"
-    },
-    {
-        id: 702,
-        sku: "KLT-SDN-THUNDER-PRO",
-        title: "Seduna Thunder Pro Ergonomik Fileli Kurumsal Ofis & Personel Çalışma Koltuğu",
-        category: "office",
-        categoryName: "Ofis & Kırtasiye",
-        brand: "Seduna Mobilya",
-        seller: "Ofis Mobilya & Tasarım A.Ş.",
-        sellerScore: 9.7,
-        sellerBadge: "Doğrudan İmalat",
-        sellerLocation: "Bursa (İnegöl Mobilya OSB)",
-        moq: "5 Adet",
-        unit: "Adet",
-        taxText: "+ %20 KDV",
-        oldPrice: 5800,
-        price: 4650,
-        discount: 20,
-        rating: 4.8,
-        reviewsCount: 940,
-        badge: "TSE / 3 Yıl Garanti",
-        badgeType: "corporate",
-        stockStatus: "200 Adet Stokta",
-        leadTime: "2-3 İş Günü",
-        tierPricing: "5-19 Adet: 4.650 ₺ | 20+ Adet: 4.150 ₺",
-        image: "https://images.unsplash.com/photo-1580481077195-730da4b8705a?w=500&auto=format&fit=crop&q=80"
-    }
-];
-
-// Doğrulanmış Kurumsal Tedarikçi Havuzu
 const CORPORATE_VERIFIED_SUPPLIERS = [
     { name: "Atlas Metal & Sac Sanayi A.Ş.", score: 9.9, badge: "Entegre Üretici Fabrika", location: "Kocaeli (Dilovası İMES OSB)", iso: "ISO 9001 / ISO 14001" },
     { name: "Nova Elektronik & Sunucu Sistemleri A.Ş.", score: 9.9, badge: "Yetkili Distribütör", location: "İstanbul (Ümraniye)", iso: "ISO 27001 / TSE Belgeli" },
@@ -748,9 +109,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const container = document.getElementById('trendyolProductGrid');
     if (!container) return;
 
-    // Sahte verileri sıfırla ve veritabanındaki gerçek ürünleri yükle
-    B2B_PRODUCT_CATALOG.length = 0;
-    activeProducts = [];
     setupCorporateEvents();
     loadDbVitrinProducts();
 });
@@ -759,7 +117,6 @@ document.addEventListener('DOMContentLoaded', function () {
  * Veritabanında (items tablosunda) kayıtlı gerçek ürünleri vitrine dahil et
  */
 async function loadDbVitrinProducts() {
-    const grid = document.getElementById('trendyolProductGrid');
     try {
         const response = await fetch('/Home/GetVitrinProductsJson');
         const data = await response.json();
@@ -999,7 +356,11 @@ function renderCorporateVitrin() {
     if (filtered.length === 0) {
         grid.innerHTML = `
             <div class="b2b-empty-state" style="grid-column: 1 / -1; text-align: center; padding: 48px 20px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 16px;">
-                <div class="empty-icon" style="font-size: 2.8rem; margin-bottom: 12px;">📁</div>
+                <div class="empty-icon" style="margin-bottom: 14px; display: flex; justify-content: center;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </div>
                 <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin-bottom: 6px;">Seçili kategori veya aramaya uygun kurumsal ürün bulunamadı</h3>
                 <p style="color: #64748b; font-size: 0.85rem; max-width: 420px; margin: 0 auto 16px auto;">
                     Farklı bir kategori seçebilir veya tüm kurumsal kataloğu görüntülemek için filtreyi temizleyebilirsiniz.
@@ -1018,7 +379,7 @@ function renderCorporateVitrin() {
         const sellerId = getSellerCompanyId(item);
         const scoreNum = typeof item.sellerScore === 'number' ? item.sellerScore.toFixed(1) : (item.sellerScore || '10.0');
         const isOutOfStock = (typeof item.stock === 'number' && item.stock <= 0) || item.isOutOfStock || (item.stockStatus && item.stockStatus.toLowerCase().includes('tükendi'));
-        const cleanStock = isOutOfStock ? 'Stok Tükenmiştir' : (item.stockStatus || 'Hazır Stok').replace(/📦|📦|📦/g, '').trim();
+        const cleanStock = isOutOfStock ? 'Stok Tükenmiştir' : (item.stockStatus || 'Hazır Stok').replace(/📦/g, '').trim();
         const cleanCategory = (item.categoryName || '').replace(/[^\w\sğüşıöçĞÜŞİÖÇ\/-]/gi, '').trim();
 
         html += `
@@ -1032,10 +393,10 @@ function renderCorporateVitrin() {
                         </svg>
                         <span class="supplier-name-text">${item.seller}</span>
                     </a>
-                    <a href="/Seller/${sellerId}" target="_blank" class="b2b-score-badge" title="${item.seller} - ${item.sellerReviewCount || 0} Adet Kurumsal Değerlendirme" style="text-decoration: none; display: inline-flex; align-items: center; gap: 2px; background: rgba(245,158,11,0.12); color: #b45309; border: 1px solid rgba(245,158,11,0.25); padding: 1px 6px; border-radius: 4px; font-weight: 800; font-size: 0.72rem;">
-                        <span style="color: #d97706; font-size: 0.76rem;">★</span>
+                    <a href="/Seller/${sellerId}" target="_blank" class="b2b-score-badge" title="${item.seller} - ${item.sellerReviewCount || 0} Adet Kurumsal Değerlendirme" style="text-decoration: none; display: inline-flex; align-items: center; gap: 3px; background: rgba(245,158,11,0.12); color: #b45309; border: 1px solid rgba(245,158,11,0.25); padding: 1.5px 6px; border-radius: 4px; font-weight: 800; font-size: 0.70rem;">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="#d97706" stroke="#d97706" stroke-width="1" style="flex-shrink: 0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                         <span>${scoreNum}</span>
-                        ${item.sellerReviewCount ? `<span style="font-weight: 600; opacity: 0.85; margin-left: 2px;">(${item.sellerReviewCount})</span>` : ''}
+                        ${item.sellerReviewCount ? `<span style="font-weight: 600; opacity: 0.85; margin-left: 1px;">(${item.sellerReviewCount})</span>` : ''}
                     </a>
                 </div>
 
@@ -1063,6 +424,7 @@ function renderCorporateVitrin() {
                     `}
                     
                     <div class="b2b-badges-stack">
+                        ${item.isOwnProduct ? `<span class="b2b-badge" style="background: #0284c7; color: #ffffff; font-weight: 700;">Kendi İlanınız</span>` : ''}
                         ${isOutOfStock ? `<span class="b2b-badge" style="background: #dc2626; color: #ffffff; font-weight: 800;">Tükendi</span>` : ''}
                         ${cleanCategory ? `<span class="b2b-badge badge-corp" style="background: rgba(15,23,42,0.85); color: #ffffff;">${cleanCategory}</span>` : ''}
                     </div>
@@ -1128,15 +490,25 @@ function renderCorporateVitrin() {
                             <button type="button" class="b2b-btn-cart" disabled style="background: #f1f5f9; color: #94a3b8; cursor: not-allowed; opacity: 0.6;" title="Stok tükenmiştir">
                                 ✕
                             </button>
+                        ` : item.isOwnProduct ? `
+                            <button type="button" class="b2b-btn-buy" onclick="showB2BToast('Kendi satışa sunduğunuz ürünü satın alamazsınız.', 'info')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;" title="Bu sizin kendi satış ilanınızdır">
+                                <span>Kendi İlanınız</span>
+                            </button>
+                            <a href="/Dashboard/Listings" class="b2b-btn-cart" title="İlanı Yönet" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </a>
                         ` : `
                             <button type="button" class="b2b-btn-buy" onclick="directBuy(${item.id})" title="Bu ürünü doğrudan kurumsal siparişle satın alın">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink: 0;">
                                     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                                 </svg>
-                                ⚡ Hemen Al
+                                <span>Hemen Al</span>
                             </button>
                             <button type="button" class="b2b-btn-cart" onclick="addToCart(${item.id})" title="Sepete Ekle">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
                                     <circle cx="9" cy="21" r="1"></circle>
                                     <circle cx="20" cy="21" r="1"></circle>
                                     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
@@ -1144,7 +516,7 @@ function renderCorporateVitrin() {
                             </button>
                         `}
                         <a href="/Product/${item.id}" class="b2b-btn-contact" title="Ürün Detay Sayfası ve Şartnameleri Gör" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none;">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <line x1="12" y1="16" x2="12" y2="12"></line>
                                 <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -1190,7 +562,7 @@ function setupCorporateEvents() {
 
             generateCorporate48Products();
             renderCorporateVitrin();
-            showB2BToast("🏢 48 yeni doğrulanmış kurumsal ürün ve fabrika ilanı yüklendi.", "info");
+            showB2BToast("48 yeni doğrulanmış kurumsal ürün ve fabrika ilanı yüklendi.", "info");
         });
     }
 }
@@ -1239,7 +611,7 @@ function toggleB2BFavorite(e, id) {
             svg.setAttribute('fill', '#e11d48');
             svg.setAttribute('stroke', '#e11d48');
         }
-        showB2BToast("📌 Ürün kurumsal satınalma listenize eklendi.", "success");
+        showB2BToast("Ürün kurumsal satınalma listenize eklendi.", "success");
     }
 
     try {
@@ -1268,7 +640,7 @@ function _legacyOpenProductQuickView(productId) {
     if (discountEl) discountEl.textContent = '';
 
     document.getElementById('qvModalCategory').textContent = (product.categoryName || '').replace(/[^\w\sğüşıöçĞÜŞİÖÇ\/-]/gi, '').trim();
-    document.getElementById('qvModalStock').textContent = (product.stockStatus || 'Hazır Stok').replace(/📦|📦|📦/g, '').trim();
+    document.getElementById('qvModalStock').textContent = (product.stockStatus || 'Hazır Stok').replace(/📦/g, '').trim();
     
     const moqEl = document.getElementById('qvModalMoq');
     if (moqEl) moqEl.textContent = '';
@@ -1280,10 +652,10 @@ function _legacyOpenProductQuickView(productId) {
     const modalQuoteBtn = document.getElementById('qvModalQuoteBtn');
     if (modalQuoteBtn) {
         modalQuoteBtn.innerHTML = `
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="inline-block mr-1">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
             </svg>
-            ⚡ Hemen Al
+            Hemen Al
         `;
         modalQuoteBtn.onclick = function() {
             closeTyModal('tyQuickViewModal');
@@ -1599,10 +971,10 @@ async function submitQuoteRequest(e) {
             showB2BToast(result.message, "success");
             e.target.reset();
         } else {
-            showB2BToast("⚠️ " + (result.message || "Teklif talebi iletilemedi."), "danger");
+            showB2BToast(result.message || "Teklif talebi iletilemedi.", "danger");
         }
     } catch (err) {
-        showB2BToast("⚠️ Sunucu bağlantı hatası: " + err.message, "danger");
+        showB2BToast("Sunucu bağlantı hatası: " + err.message, "danger");
     } finally {
         if (submitBtn) {
             submitBtn.disabled = false;
@@ -1626,19 +998,19 @@ async function submitSellerOffer(e) {
     const desc = document.getElementById('sellerOfferDesc')?.value || '';
 
     if (!productName.trim()) {
-        showB2BToast("⚠️ Lütfen ürün adını giriniz.", "danger");
+        showB2BToast("Lütfen ürün adını giriniz.", "danger");
         document.getElementById('sellerOfferProductName')?.focus();
         return false;
     }
 
     if (!category) {
-        showB2BToast("⚠️ Lütfen ürünün dahil olduğu kategoriyi kategori ağacından seçiniz.", "info");
+        showB2BToast("Lütfen ürünün dahil olduğu kategoriyi kategori ağacından seçiniz.", "info");
         document.getElementById('catTreePickerSearch')?.focus();
         return false;
     }
 
     if (isNaN(price) || price <= 0) {
-        showB2BToast("⚠️ Lütfen geçerli bir birim fiyat giriniz.", "danger");
+        showB2BToast("Lütfen geçerli bir birim fiyat giriniz.", "danger");
         document.getElementById('sellerOfferPrice')?.focus();
         return false;
     }
@@ -1648,7 +1020,7 @@ async function submitSellerOffer(e) {
     const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
     if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span>⏳ Görseller yükleniyor ve ilan oluşturuluyor...</span>';
+        submitBtn.innerHTML = '<span>Görseller yükleniyor ve ilan oluşturuluyor...</span>';
     }
 
     try {
@@ -1691,22 +1063,23 @@ async function submitSellerOffer(e) {
             window.homeUploadedImages = [];
             renderHomeUploadedImages();
             clearCatTreeSelection();
+            loadDbVitrinProducts();
         } else if (result.requireLogin) {
-            showB2BToast("🔒 " + (result.message || "Lütfen kurumsal satıcı hesabınızla giriş yapınız."), "warning");
+            showB2BToast(result.message || "Lütfen kurumsal satıcı hesabınızla giriş yapınız.", "warning");
             setTimeout(() => {
                 window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname + window.location.search);
             }, 1500);
         } else if (result.requireIyzico) {
             closeTyModal('tySellerOfferModal');
-            showB2BToast("🛡️ " + (result.message || "Satış yapabilmek için iyzico satıcı kaydınızı tamamlayınız."), "warning");
+            showB2BToast(result.message || "Satış yapabilmek için iyzico satıcı kaydınızı tamamlayınız.", "warning");
             setTimeout(() => {
                 window.location.href = '/Dashboard/SupplierOrders';
             }, 1800);
         } else {
-            showB2BToast("⚠️ " + (result.message || "İlan kaydedilemedi."), "danger");
+            showB2BToast(result.message || "İlan kaydedilemedi.", "danger");
         }
     } catch (err) {
-        showB2BToast("⚠️ Sunucu bağlantı hatası: " + err.message, "danger");
+        showB2BToast("Sunucu bağlantı hatası: " + err.message, "danger");
     } finally {
         if (submitBtn) {
             submitBtn.disabled = false;
@@ -1766,7 +1139,7 @@ window.renderHomeUploadedImages = function() {
         <div class="b2b-img-thumb-card ${img.isMain ? 'is-main' : ''}" data-index="${idx}">
             <img src="${img.previewUrl || img.imageUrl}" alt="Görsel ${idx + 1}" />
             <button type="button" class="btn-make-main ${img.isMain ? 'active' : ''}" onclick="setHomeMainImage(${idx})" title="${img.isMain ? 'Bu görsel ana resimdir' : 'Ana resim yap'}">
-                ${img.isMain ? '★ Ana Resim' : 'Ana Yap'}
+                ${img.isMain ? 'Ana Resim' : 'Ana Yap'}
             </button>
             <button type="button" class="btn-remove-img" onclick="removeHomeProductImage(${idx})" title="Görseli Kaldır">✕</button>
         </div>
@@ -2000,13 +1373,13 @@ async function initB2BCartSync() {
 async function addToCart(productId, qty = 1, showDrawer = false) {
     const product = activeProducts.find(p => p.id === productId) || (typeof B2B_PRODUCT_CATALOG !== 'undefined' ? B2B_PRODUCT_CATALOG.find(p => p.id === productId) : null);
     if (!product) {
-        showB2BToast("⚠️ Ürün bilgisi bulunamadı.", "danger");
+        showB2BToast("Ürün bilgisi bulunamadı.", "danger");
         return false;
     }
 
     const availableStock = typeof product.stock === 'number' ? product.stock : (product.isOutOfStock ? 0 : 9999);
     if (availableStock <= 0 || product.isOutOfStock || (product.stockStatus && product.stockStatus.toLowerCase().includes('tükendi'))) {
-        showB2BToast(`⚠️ "${product.title}" ürününün stoğu tükenmiştir, sepete eklenemez.`, "danger");
+        showB2BToast(`"${product.title}" ürününün stoğu tükenmiştir, sepete eklenemez.`, "danger");
         return false;
     }
 
@@ -2016,7 +1389,7 @@ async function addToCart(productId, qty = 1, showDrawer = false) {
     const requestedTotal = currentInCart + qty;
 
     if (requestedTotal > availableStock) {
-        showB2BToast(`⚠️ Yetersiz stok! Bu üründen en fazla ${availableStock} adet alabilirsiniz (Sepetinizde: ${currentInCart} adet).`, "danger");
+        showB2BToast(`Yetersiz stok! Bu üründen en fazla ${availableStock} adet alabilirsiniz (Sepetinizde: ${currentInCart} adet).`, "danger");
         return false;
     }
 
@@ -2051,7 +1424,7 @@ async function addToCart(productId, qty = 1, showDrawer = false) {
 
         const data = await response.json();
         if (data && data.requireLogin) {
-            showB2BToast("🔒 " + (data.message || "Sepete ürün eklemek için lütfen kurumsal hesabınızla giriş yapınız."), "warning");
+            showB2BToast(data.message || "Sepete ürün eklemek için lütfen kurumsal hesabınızla giriş yapınız.", "warning");
             setTimeout(() => {
                 window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname + window.location.search);
             }, 1200);
@@ -2059,7 +1432,7 @@ async function addToCart(productId, qty = 1, showDrawer = false) {
         }
 
         if (data && data.success === false) {
-            showB2BToast("⚠️ " + (data.message || "Bu ürünü sepete ekleyemezsiniz."), "danger");
+            showB2BToast(data.message || "Bu ürünü sepete ekleyemezsiniz.", "danger");
             return false;
         }
 
@@ -2091,7 +1464,7 @@ async function directBuy(productId) {
     if (product) {
         const availableStock = typeof product.stock === 'number' ? product.stock : (product.isOutOfStock ? 0 : 9999);
         if (availableStock <= 0 || product.isOutOfStock || (product.stockStatus && product.stockStatus.toLowerCase().includes('tükendi'))) {
-            showB2BToast(`⚠️ "${product.title}" ürününün stoğu tükenmiştir, satın alınamaz.`, "danger");
+            showB2BToast(`"${product.title}" ürününün stoğu tükenmiştir, satın alınamaz.`, "danger");
             return;
         }
     }
@@ -2135,13 +1508,13 @@ async function updateCartQty(productId, newQty) {
         const maxStock = (product && typeof product.stock === 'number') ? product.stock : (item.maxStock || 9999);
 
         if (maxStock <= 0) {
-            showB2BToast(`⚠️ "${item.title}" ürününün stoğu tükenmiştir.`, "danger");
+            showB2BToast(`"${item.title}" ürününün stoğu tükenmiştir.`, "danger");
             removeFromCart(productId);
             return;
         }
 
         if (newQty > maxStock) {
-            showB2BToast(`⚠️ Yetersiz stok! Bu ürün için mevcut maksimum stok ${maxStock} adettir.`, "danger");
+            showB2BToast(`Yetersiz stok! Bu ürün için mevcut maksimum stok ${maxStock} adettir.`, "danger");
             item.quantity = maxStock;
             saveB2BCart(cart);
             renderCartDrawer();
@@ -2156,7 +1529,7 @@ async function updateCartQty(productId, newQty) {
             });
             const data = await res.json();
             if (data && data.success === false) {
-                showB2BToast("⚠️ " + (data.message || "Stok yetersiz."), "danger");
+                showB2BToast(data.message || "Stok yetersiz.", "danger");
                 if (typeof data.availableStock === 'number') {
                     if (data.availableStock <= 0) {
                         removeFromCart(productId);
@@ -2253,6 +1626,13 @@ function updateCartUi() {
         vitrinBadge.style.display = totals.uniqueItemCount > 0 ? 'inline-block' : 'none';
     }
 
+    // Mobil alt bar rozeti
+    const bottomBadge = document.getElementById('bottomNavCartBadge');
+    if (bottomBadge) {
+        bottomBadge.textContent = totals.uniqueItemCount;
+        bottomBadge.style.display = totals.uniqueItemCount > 0 ? 'inline-block' : 'none';
+    }
+
     // Drawer öğelerini güncelle
     const drawerCount = document.getElementById('cartDrawerItemCountText');
     if (drawerCount) {
@@ -2270,10 +1650,17 @@ function updateCartUi() {
  */
 function openCartDrawer() {
     const drawerOverlay = document.getElementById('b2bCartDrawerOverlay');
-    if (!drawerOverlay) return;
+    if (!drawerOverlay) {
+        window.location.href = '/Cart';
+        return;
+    }
 
     renderCartDrawer();
     drawerOverlay.style.display = 'flex';
+    drawerOverlay.style.opacity = '1';
+    drawerOverlay.style.pointerEvents = 'auto';
+    drawerOverlay.classList.add('show', 'is-open');
+    document.body.classList.add('mobile-nav-locked');
 }
 
 /**
@@ -2283,7 +1670,11 @@ function closeCartDrawer() {
     const drawerOverlay = document.getElementById('b2bCartDrawerOverlay');
     if (drawerOverlay) {
         drawerOverlay.style.display = 'none';
+        drawerOverlay.style.opacity = '0';
+        drawerOverlay.style.pointerEvents = 'none';
+        drawerOverlay.classList.remove('show', 'is-open');
     }
+    document.body.classList.remove('mobile-nav-locked');
 }
 
 /**
@@ -2309,7 +1700,13 @@ function renderCartDrawer() {
     if (cart.length === 0) {
         listContainer.innerHTML = `
             <div style="text-align: center; padding: 48px 16px; color: #64748b;">
-                <div style="font-size: 3rem; margin-bottom: 12px;">🛒</div>
+                <div style="margin-bottom: 12px; display: flex; justify-content: center;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                </div>
                 <h4 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: 6px;">Sepetiniz Boş</h4>
                 <p style="font-size: 0.82rem; margin-bottom: 16px;">Vitrinden ihtiyacınız olan endüstriyel ürünleri doğrudan sepetinize ekleyebilirsiniz.</p>
                 <button type="button" class="btn-primary" onclick="closeCartDrawer()" style="display: inline-flex; margin: 0 auto; padding: 8px 16px; font-size: 0.85rem;">
@@ -2339,8 +1736,11 @@ function renderCartDrawer() {
                 </div>
 
                 <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
-                    <button type="button" onclick="removeFromCart(${item.productId})" style="background: transparent; border: none; color: #ef4444; font-size: 0.82rem; cursor: pointer; padding: 2px;" title="Sil">
-                        🗑️
+                    <button type="button" onclick="removeFromCart(${item.productId})" style="background: transparent; border: none; color: #ef4444; font-size: 0.82rem; cursor: pointer; padding: 2px; display: inline-flex; align-items: center; justify-content: center;" title="Sil">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
                     </button>
                     
                     <div style="display: flex; align-items: center; border: 1px solid #cbd5e1; border-radius: 4px; overflow: hidden;">
@@ -2418,16 +1818,16 @@ function formatCardNumberInput(input) {
     const badge = document.getElementById('cardTypeBadge');
     if (badge) {
         if (val.startsWith('4')) {
-            badge.textContent = '💳 VISA';
+            badge.textContent = 'VISA';
             badge.style.background = '#1e40af';
         } else if (val.startsWith('51') || val.startsWith('52') || val.startsWith('53') || val.startsWith('54') || val.startsWith('55')) {
-            badge.textContent = '💳 MASTERCARD';
+            badge.textContent = 'MASTERCARD';
             badge.style.background = '#dc2626';
         } else if (val.startsWith('9792')) {
-            badge.textContent = '💳 TROY';
+            badge.textContent = 'TROY';
             badge.style.background = '#0284c7';
         } else {
-            badge.textContent = '💳 KURUMSAL KART';
+            badge.textContent = 'KURUMSAL KART';
             badge.style.background = '#0f172a';
         }
     }
@@ -2492,10 +1892,10 @@ function copyOrderNumber(btn, code) {
         navigator.clipboard.writeText(code).then(() => {
             if (btn) {
                 const orig = btn.innerHTML;
-                btn.innerHTML = '✓ Kopyalandı';
+                btn.innerHTML = 'Kopyalandı';
                 setTimeout(() => { btn.innerHTML = orig; }, 2000);
             }
-            showB2BToast('✓ Sipariş numarası panoya kopyalandı.', 'success');
+            showB2BToast('Sipariş numarası panoya kopyalandı.', 'success');
         }).catch(() => {
             showB2BToast('Sipariş No: ' + code, 'info');
         });
@@ -2510,7 +1910,7 @@ function copyOrderNumber(btn, code) {
 async function openCheckoutModal() {
     const cart = getB2BCart();
     if (cart.length === 0) {
-        showB2BToast("⚠️ Sepetinizde satın alınacak ürün bulunmamaktadır.", "danger");
+        showB2BToast("Sepetinizde satın alınacak ürün bulunmamaktadır.", "danger");
         openCartDrawer();
         return;
     }
@@ -2529,7 +1929,7 @@ async function openCheckoutModal() {
     }
 
     if (!isAuthenticated) {
-        showB2BToast("🔒 Satın alma işlemi yapabilmek için lütfen kurumsal hesabınızla giriş yapınız veya yeni bir firma hesabı oluşturunuz.", "warning");
+        showB2BToast("Satın alma işlemi yapabilmek için lütfen kurumsal hesabınızla giriş yapınız veya yeni bir firma hesabı oluşturunuz.", "warning");
         setTimeout(() => {
             window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname === '/Cart' ? '/Cart' : window.location.pathname);
         }, 1200);
@@ -2617,7 +2017,7 @@ async function submitCorporateOrder(e) {
 
     const cart = getB2BCart();
     if (cart.length === 0) {
-        showB2BToast("⚠️ Sepetiniz boş.", "danger");
+        showB2BToast("Sepetiniz boş.", "danger");
         return false;
     }
 
@@ -2631,34 +2031,34 @@ async function submitCorporateOrder(e) {
 
     // 1. Temel Zorunlu Alan Kontrolleri
     if (!company) {
-        showB2BToast("⚠️ Lütfen 'Satınalma Yapan Firma Ünvanı' alanını doldurunuz.", "danger");
+        showB2BToast("Lütfen 'Satınalma Yapan Firma Ünvanı' alanını doldurunuz.", "danger");
         document.getElementById('checkoutBuyerCompany')?.focus();
         return false;
     }
 
     // 2. TC Kimlik / VKN Kontrolü (10 hane VKN veya 11 hane TC)
     if (taxNo && taxNo.length !== 10 && taxNo.length !== 11) {
-        showB2BToast("⚠️ Vergi Kimlik Numarası 10 hane veya TC Kimlik Numarası 11 hane olmalıdır.", "danger");
+        showB2BToast("Vergi Kimlik Numarası 10 hane veya TC Kimlik Numarası 11 hane olmalıdır.", "danger");
         document.getElementById('checkoutBuyerTaxNo')?.focus();
         return false;
     }
 
     // 3. Telefon Kontrolü (Başında 0 olmadan 10 hane)
     if (phone && phone.length !== 10) {
-        showB2BToast("⚠️ Telefon numarası başında 0 olmadan 10 haneli olmalıdır (Örn: 5321234567).", "danger");
+        showB2BToast("Telefon numarası başında 0 olmadan 10 haneli olmalıdır (Örn: 5321234567).", "danger");
         document.getElementById('checkoutReceiverPhone')?.focus();
         return false;
     }
 
     // 4. Teslimat Şehri ve Adresi
     if (!city) {
-        showB2BToast("⚠️ Lütfen 'Teslimat İli / İlçe' alanını doldurunuz.", "danger");
+        showB2BToast("Lütfen 'Teslimat İli / İlçe' alanını doldurunuz.", "danger");
         document.getElementById('checkoutDeliveryCity')?.focus();
         return false;
     }
 
     if (!address) {
-        showB2BToast("⚠️ Lütfen 'Fabrika / Depo Açık Adresi' alanını doldurunuz.", "danger");
+        showB2BToast("Lütfen 'Fabrika / Depo Açık Adresi' alanını doldurunuz.", "danger");
         document.getElementById('checkoutDeliveryAddress')?.focus();
         return false;
     }
@@ -2671,25 +2071,25 @@ async function submitCorporateOrder(e) {
         const cardCvv = (document.getElementById('checkoutCardCvv')?.value || '').replace(/\D/g, '');
 
         if (!cardHolder) {
-            showB2BToast("⚠️ Lütfen Kart Üzerindeki İsim alanını doldurunuz.", "danger");
+            showB2BToast("Lütfen Kart Üzerindeki İsim alanını doldurunuz.", "danger");
             document.getElementById('checkoutCardHolder')?.focus();
             return false;
         }
 
         if (cardNumber.length !== 16) {
-            showB2BToast("⚠️ Lütfen 16 haneli kredi kartı numaranızı eksiksiz giriniz.", "danger");
+            showB2BToast("Lütfen 16 haneli kredi kartı numaranızı eksiksiz giriniz.", "danger");
             document.getElementById('checkoutCardNumber')?.focus();
             return false;
         }
 
         if (cardExpiry.length < 5 || !cardExpiry.includes('/')) {
-            showB2BToast("⚠️ Lütfen Son Kullanma Tarihini (AA/YY) formatında giriniz.", "danger");
+            showB2BToast("Lütfen Son Kullanma Tarihini (AA/YY) formatında giriniz.", "danger");
             document.getElementById('checkoutCardExpiry')?.focus();
             return false;
         }
 
         if (cardCvv.length < 3) {
-            showB2BToast("⚠️ Lütfen 3 haneli CVV güvenlik kodunu giriniz.", "danger");
+            showB2BToast("Lütfen 3 haneli CVV güvenlik kodunu giriniz.", "danger");
             document.getElementById('checkoutCardCvv')?.focus();
             return false;
         }
@@ -2699,7 +2099,7 @@ async function submitCorporateOrder(e) {
     const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
     if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span>⏳ Sipariş Onaylanıyor...</span>';
+        submitBtn.innerHTML = '<span>Sipariş Onaylanıyor...</span>';
     }
 
     try {
@@ -2752,7 +2152,7 @@ async function submitCorporateOrder(e) {
 
             const result = await response.json();
             if (result.requireLogin) {
-                showB2BToast("🔒 " + (result.message || "Satın alma işlemi için lütfen kurumsal hesabınızla giriş yapınız."), "warning");
+                showB2BToast(result.message || "Satın alma işlemi için lütfen kurumsal hesabınızla giriş yapınız.", "warning");
                 setTimeout(() => {
                     window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname === '/Cart' ? '/Cart' : window.location.pathname);
                 }, 1200);
@@ -2765,7 +2165,7 @@ async function submitCorporateOrder(e) {
                 openIyzico3DModal(result.htmlContent);
                 return;
             } else if (!result.success) {
-                showB2BToast("❌ Ödeme Başarısız: " + (result.message || "Banka işlemi onaylamadı."), "danger");
+                showB2BToast("Ödeme Başarısız: " + (result.message || "Banka işlemi onaylamadı."), "danger");
                 if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = originalBtnHtml;
@@ -2784,7 +2184,7 @@ async function submitCorporateOrder(e) {
 
         const result = await response.json();
         if (result.requireLogin) {
-            showB2BToast("🔒 " + (result.message || "Satın alma işlemi için lütfen kurumsal hesabınızla giriş yapınız."), "warning");
+            showB2BToast(result.message || "Satın alma işlemi için lütfen kurumsal hesabınızla giriş yapınız.", "warning");
             setTimeout(() => {
                 window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname === '/Cart' ? '/Cart' : window.location.pathname);
             }, 1200);
@@ -2823,14 +2223,14 @@ async function submitCorporateOrder(e) {
             if (result.sellerCount === 1) {
                 if (btnSingle) {
                     btnSingle.style.display = 'flex';
-                    btnSingle.textContent = `★ ${result.singleSellerName || 'Satıcıyı'} Değerlendir`;
+                    btnSingle.textContent = `${result.singleSellerName || 'Satıcıyı'} Değerlendir`;
                 }
                 if (btnMultiple) btnMultiple.style.display = 'none';
             } else {
                 if (btnSingle) btnSingle.style.display = 'none';
                 if (btnMultiple) {
                     btnMultiple.style.display = 'flex';
-                    btnMultiple.textContent = `★ ${result.sellerCount || 'Çoklu'} Satıcıyı Değerlendir (Siparişlerim) →`;
+                    btnMultiple.textContent = `${result.sellerCount || 'Çoklu'} Satıcıyı Değerlendir (Siparişlerim) →`;
                 }
             }
 
@@ -2841,12 +2241,12 @@ async function submitCorporateOrder(e) {
                 successModal.classList.add('is-open');
             }
 
-            showB2BToast(result.message || "✓ Kurumsal siparişiniz başarıyla oluşturuldu.", "success");
+            showB2BToast(result.message || "Kurumsal siparişiniz başarıyla oluşturuldu.", "success");
         } else {
-            showB2BToast("⚠️ " + (result.message || "Sipariş oluşturulamadı."), "danger");
+            showB2BToast(result.message || "Sipariş oluşturulamadı.", "danger");
         }
     } catch (err) {
-        showB2BToast("⚠️ Sunucu bağlantı hatası: " + err.message, "danger");
+        showB2BToast("Sunucu bağlantı hatası: " + err.message, "danger");
     } finally {
         if (submitBtn) {
             submitBtn.disabled = false;
@@ -2875,7 +2275,7 @@ window.openSuccessSellerReviewModal = function() {
 
     const title = document.getElementById('successRateModalSellerTitle');
     if (title) {
-        title.textContent = `★ ${data.singleSellerName || 'Satıcıyı'} Değerlendir`;
+        title.textContent = `${data.singleSellerName || 'Satıcıyı'} Değerlendir`;
     }
 
     window.pickSuccessScore(10);
@@ -2924,19 +2324,19 @@ window.updateSuccessStarsDisplay = function(val) {
     });
 
     const labels = {
-        1: "★ 1.0 / 10 - Çok Zayıf",
-        2: "★ 2.0 / 10 - Yetersiz",
-        3: "★ 3.0 / 10 - Zayıf",
-        4: "★ 4.0 / 10 - Geliştirilmeli",
-        5: "★ 5.0 / 10 - Orta Seviye",
-        6: "★ 6.0 / 10 - Ortalama",
-        7: "★ 7.0 / 10 - Başarılı",
-        8: "★ 8.0 / 10 - İyi",
-        9: "★ 9.0 / 10 - Çok İyi",
-        10: "★ 10.0 / 10 - Mükemmel"
+        1: "1.0 / 10 - Çok Zayıf",
+        2: "2.0 / 10 - Yetersiz",
+        3: "3.0 / 10 - Zayıf",
+        4: "4.0 / 10 - Geliştirilmeli",
+        5: "5.0 / 10 - Orta Seviye",
+        6: "6.0 / 10 - Ortalama",
+        7: "7.0 / 10 - Başarılı",
+        8: "8.0 / 10 - İyi",
+        9: "9.0 / 10 - Çok İyi",
+        10: "10.0 / 10 - Mükemmel"
     };
     const txt = document.getElementById('successScoreText');
-    if (txt) txt.textContent = labels[val] || `★ ${val} / 10`;
+    if (txt) txt.textContent = labels[val] || `${val} / 10`;
 };
 
 window.submitSuccessSellerReview = async function(e) {
@@ -2953,7 +2353,7 @@ window.submitSuccessSellerReview = async function(e) {
     const btn = document.getElementById('btnSubmitSuccessReview');
     if (btn) {
         btn.disabled = true;
-        btn.textContent = '⏳ Gönderiliyor...';
+        btn.textContent = 'Gönderiliyor...';
     }
 
     try {
@@ -2975,18 +2375,18 @@ window.submitSuccessSellerReview = async function(e) {
         const data = await res.json();
         if (data.success) {
             window.closeSuccessSellerReviewModal();
-            showB2BToast("✓ " + (data.message || "Değerlendirmeniz başarıyla kaydedildi."), "success");
+            showB2BToast(data.message || "Değerlendirmeniz başarıyla kaydedildi.", "success");
             const btnSingle = document.getElementById('btnSuccessReviewSingle');
             if (btnSingle) {
-                btnSingle.textContent = '✓ Satıcı Değerlendirildi';
+                btnSingle.textContent = 'Satıcı Değerlendirildi';
                 btnSingle.disabled = true;
                 btnSingle.style.opacity = '0.7';
             }
         } else {
-            showB2BToast("⚠️ " + (data.message || "Değerlendirme kaydedilemedi."), "danger");
+            showB2BToast(data.message || "Değerlendirme kaydedilemedi.", "danger");
         }
     } catch (err) {
-        showB2BToast("⚠️ Bağlantı hatası: " + err.message, "danger");
+        showB2BToast("Bağlantı hatası: " + err.message, "danger");
     } finally {
         if (btn) {
             btn.disabled = false;
@@ -3036,7 +2436,6 @@ let iyzicoListenerAttached = false;
 function setupIyzicoMessageListener() {
     if (iyzicoListenerAttached) return;
     iyzicoListenerAttached = true;
-
     window.addEventListener('message', function(event) {
         if (event && event.data && event.data.type === 'IYZICO_3D_RESULT') {
             closeIyzico3DModal();
@@ -3053,11 +2452,11 @@ function setupIyzicoMessageListener() {
                 } catch(e) {}
 
                 if (typeof showB2BToast === 'function') {
-                    showB2BToast("🎉 Ödeme başarıyla tamamlandı! Siparişiniz havuz korumasında oluşturuldu.", "success");
+                    showB2BToast("Ödeme başarıyla tamamlandı! Siparişiniz havuz korumasında oluşturuldu.", "success");
                 }
             } else {
                 if (typeof showB2BToast === 'function') {
-                    showB2BToast("⚠️ Ödeme doğrulanamadı veya işlem iptal edildi.", "warning");
+                    showB2BToast("Ödeme doğrulanamadı veya işlem iptal edildi.", "warning");
                 }
             }
 
@@ -3157,8 +2556,10 @@ function openIyzico3DModal(htmlContent) {
 
     container.innerHTML = `
         <div style="padding: 40px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 480px;">
-            <div style="width: 72px; height: 72px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; font-size: 34px; margin-bottom: 20px; border: 2px solid #bfdbfe; box-shadow: 0 4px 14px rgba(37,99,235,0.18);">
-                🛡️
+            <div style="width: 72px; height: 72px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; border: 2px solid #bfdbfe; box-shadow: 0 4px 14px rgba(37,99,235,0.18);">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
             </div>
             <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-bottom: 8px;">
                 Banka 3D Secure Doğrulama Penceresi
@@ -3176,7 +2577,12 @@ function openIyzico3DModal(htmlContent) {
 
             <div style="display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 320px;">
                 <button type="button" onclick="launchIyzico3DPopup()" class="btn-primary" style="padding: 13px 24px; font-weight: 750; font-size: 0.95rem; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); border: none; border-radius: 10px; box-shadow: 0 4px 14px rgba(37,99,235,0.35); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <span>🔗</span> ${popupOpened ? 'Pencereyi Tekrar Aç / Öne Getir' : 'Banka Onay Ekranını Aç'}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                    ${popupOpened ? 'Pencereyi Tekrar Aç / Öne Getir' : 'Banka Onay Ekranını Aç'}
                 </button>
                 <button type="button" onclick="loadIyzicoInIframeDirectly()" style="background: transparent; border: 1px dashed #cbd5e1; color: #64748b; padding: 8px 16px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; font-weight: 600;">
                     Modal içinde açmayı dene (Yerel Iframe)

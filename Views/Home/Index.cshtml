@@ -2,18 +2,118 @@
     ViewData["Title"] = "Ana Sayfa - B2B Kurumsal Tedarik Portalı";
 }
 
+@section Styles {
+    <!-- Tailwind CSS (Play CDN) & Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                            950: '#082f49',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        /* Vitrin Kategori Ağacı Stilleri (Tailwind ile Uyumlu) */
+        .cat-tree-node { position: relative; margin-top: 3px; margin-bottom: 3px; }
+        .cat-node-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 6px 12px; background: #ffffff; border: 1px solid #e2e8f0;
+            border-radius: 8px; font-size: 0.84rem; cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .cat-node-row:hover { background: #f0f9ff; border-color: #38bdf8; }
+        .cat-node-row.is-root { font-weight: 700; border-left: 3px solid #0284c7; }
+        .cat-node-row.is-selected { background: #e0f2fe; border-color: #0284c7; color: #0369a1; font-weight: 700; }
+        .cat-node-left { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; flex: 1; min-width: 0; }
+        .cat-toggle-btn {
+            background: transparent; border: none; cursor: pointer; padding: 2px 4px;
+            display: inline-flex; align-items: center; justify-content: center;
+            color: #64748b; border-radius: 4px; line-height: 1;
+        }
+        .cat-toggle-btn:hover { background: #e2e8f0; color: #0f172a; }
+        .cat-toggle-btn.is-collapsed .toggle-icon { transform: rotate(-90deg); }
+        .toggle-icon { transition: transform 0.15s ease; }
+        .cat-tree-bullet { color: #94a3b8; font-size: 0.85rem; width: 14px; text-align: center; }
+        .cat-node-title { color: #1e293b; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cat-children-wrap.is-hidden { display: none !important; }
+
+        /* Slide-over Drawer Animasyonu */
+        @@keyframes slideDrawerLeft {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        /* Modal ve Overlay Stilleri */
+        .ty-modal-overlay, .b2b-checkout-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(6px);
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        .ty-modal-overlay.show, .ty-modal-overlay.is-open,
+        .b2b-checkout-overlay.show, .b2b-checkout-overlay.is-open {
+            display: flex !important;
+        }
+
+        /* Mobil Duyarlı Kurallar */
+        @@media (max-width: 640px) {
+            .cat-tree-node {
+                margin-left: calc(var(--tree-level, 0) * 8px) !important;
+            }
+            .cat-node-row {
+                padding: 6px 8px;
+                font-size: 0.80rem;
+            }
+            .cat-node-title {
+                font-size: 0.80rem;
+            }
+            .ty-modal-overlay, .b2b-checkout-overlay {
+                padding: 0.5rem;
+            }
+        }
+    </style>
+}
+
 @functions {
     public static Microsoft.AspNetCore.Html.IHtmlContent RenderVitrinCategoryTree(satinalmaportali2.Controllers.HierarchicalCategoryItem node, int level)
     {
         var hasChildren = node.Children != null && node.Children.Count > 0;
-        var indent = level * 18;
+        var indent = level * 16;
         var encodedName = System.Net.WebUtility.HtmlEncode(node.CategoryName ?? "");
         var encodedPath = System.Net.WebUtility.HtmlEncode(node.BreadcrumbPath ?? "");
         var safeJsName = (node.CategoryName ?? "").Replace("'", "\\'");
         var safeJsPath = (node.BreadcrumbPath ?? "").Replace("'", "\\'");
 
         var sb = new System.Text.StringBuilder();
-        sb.Append($"<div class=\"cat-tree-node level-{Math.Min(level, 3)}\" data-cat-id=\"{node.CategoryID}\" data-cat-name=\"{encodedName.ToLowerInvariant()}\" data-cat-path=\"{encodedPath}\" style=\"margin-left: {indent}px;\">");
+        sb.Append($"<div class=\"cat-tree-node level-{Math.Min(level, 3)}\" data-cat-id=\"{node.CategoryID}\" data-cat-name=\"{encodedName.ToLowerInvariant()}\" data-cat-path=\"{encodedPath}\" style=\"--tree-level: {level}; margin-left: {indent}px;\">");
         sb.Append($"<div class=\"cat-node-row {(level == 0 ? "is-root" : "")}\" id=\"vitrinNodeRow-{node.CategoryID}\" onclick=\"selectVitrinCategory({node.CategoryID}, '{safeJsName}', '{safeJsPath}')\" title=\"'{encodedPath}'\">");
         sb.Append("<div class=\"cat-node-left\">");
 
@@ -44,17 +144,64 @@
         return new Microsoft.AspNetCore.Html.HtmlString(sb.ToString());
     }
 
+    public static Microsoft.AspNetCore.Html.IHtmlContent RenderMobileCategoryModalTree(satinalmaportali2.Controllers.HierarchicalCategoryItem node, int level)
+    {
+        var hasChildren = node.Children != null && node.Children.Count > 0;
+        var encodedName = System.Net.WebUtility.HtmlEncode(node.CategoryName ?? "");
+        var encodedPath = System.Net.WebUtility.HtmlEncode(node.BreadcrumbPath ?? "");
+        var safeJsName = (node.CategoryName ?? "").Replace("'", "\\'");
+        var safeJsPath = (node.BreadcrumbPath ?? "").Replace("'", "\\'");
+        var indentPadding = Math.Min(level, 4) * 12;
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"<div class=\"mob-cat-item-wrap\" data-cat-id=\"{node.CategoryID}\" data-cat-name=\"{encodedName.ToLowerInvariant()}\" data-cat-path=\"{encodedPath.ToLowerInvariant()}\">");
+        sb.Append($"<div class=\"mob-cat-row flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-slate-100 active:bg-blue-50 transition-colors cursor-pointer select-none\" style=\"padding-left: {indentPadding + 12}px;\" onclick=\"selectMobileCatItem({node.CategoryID}, '{safeJsName}', '{safeJsPath}')\">");
+        
+        sb.Append("<div class=\"flex items-center gap-2 min-w-0 flex-1\">");
+        if (level == 0)
+        {
+            sb.Append("<span class=\"w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0\"></span>");
+            sb.Append($"<span class=\"text-xs font-bold text-slate-900 truncate\">{encodedName}</span>");
+        }
+        else
+        {
+            sb.Append("<span class=\"text-slate-300 text-xs shrink-0\">└</span>");
+            sb.Append($"<span class=\"text-xs font-medium text-slate-700 truncate\">{encodedName}</span>");
+        }
+        sb.Append("</div>");
+
+        if (hasChildren)
+        {
+            sb.Append($"<button type=\"button\" class=\"w-7 h-7 rounded-lg hover:bg-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-700 shrink-0 transition-transform\" onclick=\"event.stopPropagation(); toggleMobileCatModalBranch(this, 'mob-branch-{node.CategoryID}')\" aria-label=\"Alt Kategoriler\"><svg class=\"w-3.5 h-3.5 transition-transform duration-200\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\"><polyline points=\"6 9 12 15 18 9\"></polyline></svg></button>");
+        }
+
+        sb.Append("</div>");
+
+        if (hasChildren && node.Children != null)
+        {
+            sb.Append($"<div class=\"mob-children-wrap hidden space-y-1\" id=\"mob-branch-{node.CategoryID}\">");
+            foreach (var child in node.Children)
+            {
+                sb.Append(RenderMobileCategoryModalTree(child, level + 1).ToString());
+            }
+            sb.Append("</div>");
+        }
+
+        sb.Append("</div>");
+        return new Microsoft.AspNetCore.Html.HtmlString(sb.ToString());
+    }
+
     public static Microsoft.AspNetCore.Html.IHtmlContent RenderSuperAdminTree(satinalmaportali2.Controllers.HierarchicalCategoryItem node, int level)
     {
         var hasChildren = node.Children != null && node.Children.Count > 0;
-        var indent = level * 16;
+        var indent = level * 14;
         var encodedName = System.Net.WebUtility.HtmlEncode(node.CategoryName ?? "");
         var encodedPath = System.Net.WebUtility.HtmlEncode(node.BreadcrumbPath ?? "");
         var safeJsName = (node.CategoryName ?? "").Replace("'", "\\'");
         var safeJsPath = (node.BreadcrumbPath ?? "").Replace("'", "\\'");
 
         var sb = new System.Text.StringBuilder();
-        sb.Append($"<div class=\"cat-tree-node level-{Math.Min(level, 3)}\" data-cat-id=\"{node.CategoryID}\" data-cat-name=\"{encodedName.ToLowerInvariant()}\" data-cat-path=\"{encodedPath}\" style=\"margin-left: {indent}px; margin-bottom: 2px;\">");
+        sb.Append($"<div class=\"cat-tree-node level-{Math.Min(level, 3)}\" data-cat-id=\"{node.CategoryID}\" data-cat-name=\"{encodedName.ToLowerInvariant()}\" data-cat-path=\"{encodedPath}\" style=\"--tree-level: {level}; margin-left: {indent}px; margin-bottom: 2px;\">");
         sb.Append($"<div class=\"cat-node-row {(level == 0 ? "is-root" : "")}\" onclick=\"selectCatFromTree({node.CategoryID}, '{safeJsName}', '{safeJsPath}')\" title=\"'{encodedPath}'\">");
         sb.Append("<div class=\"cat-node-left\">");
         sb.Append("<span class=\"cat-tree-bullet\">•</span>");
@@ -77,24 +224,54 @@
     }
 }
 
-<!-- SECTION 1: TOP HERO HEADER AREA -->
-<section class="blue-hero-container">
-    <div class="hero-inner">
-        <h1 class="hero-heading">Tedarik Portalı</h1>
-        <p class="hero-subtext">
-            Türkiye'nin 81 ilindeki kurumsal alıcıları ve doğrulanmış sanayi tedarikçilerini tek çatı altında buluşturan B2B satın alma & teklif pazaryeri.
+<!-- ==================== BÖLÜM 1: TAILWIND HERO HEADER ==================== -->
+<section class="relative overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white pt-12 sm:pt-20 pb-20 sm:pb-28 px-4 sm:px-6 lg:px-8 border-b border-slate-800/80">
+    <!-- Arka Plan Radial Glow Efekti -->
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(37,99,235,0.28),rgba(255,255,255,0))] pointer-events-none"></div>
+
+    <div class="relative max-w-5xl mx-auto text-center">
+        <!-- Kurumsal Rozet -->
+        <div class="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full text-[11px] sm:text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-4 sm:mb-6 backdrop-blur-sm shadow-sm max-w-full">
+            <svg class="w-3.5 h-3.5 text-blue-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                <polyline points="2 17 12 22 22 17"></polyline>
+                <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+            <span class="truncate">Türkiye'nin Güvenilir B2B Satınalma &amp; Tedarik Pazaryeri</span>
+        </div>
+
+        <!-- Ana Başlık -->
+        <h1 class="text-2.5xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.18] sm:leading-[1.12]">
+            Endüstriyel Satınalmada <br class="hidden sm:inline" />
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">
+                Doğrudan Fabrikadan
+            </span> Tedarik Ağı
+        </h1>
+
+        <!-- Açıklama Metni -->
+        <p class="mt-4 sm:mt-5 text-sm sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed font-normal px-2">
+            81 ildeki kurumsal alıcılar ve doğrulanmış sanayi üreticilerini tek çatı altında toplayan, toptan fiyatlandırmalı ve güvenceli B2B ticaret platformu.
         </p>
 
-        <!-- Hero Action Controls -->
-        <div class="hero-control-row">
-            <a asp-controller="Dashboard" asp-action="Index" class="btn-create-pill">
-                <span class="plus-symbol">+</span> Yeni Satınalma Talebi Aç
+        <!-- Eylem & Arama Kontrolleri -->
+        <div class="mt-6 sm:mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-3.5 max-w-2xl mx-auto">
+            <!-- Yeni Satınalma Talebi Aç CTA -->
+            <a asp-controller="Dashboard" asp-action="Index" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 sm:px-6 sm:py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs sm:text-sm shadow-lg shadow-blue-600/30 transition-all duration-150 hover:-translate-y-0.5 whitespace-nowrap">
+                <span class="text-base sm:text-lg leading-none font-bold">+</span>
+                <span>Yeni Satınalma Talebi Aç</span>
             </a>
 
-            <div class="white-search-pill">
-                <input type="text" id="heroSearchInput" placeholder="Endüstriyel ürün, malzeme, SKU veya tedarikçi ara..." onkeydown="if(event.key==='Enter'){ document.getElementById('vitrinSearchInput').value=this.value; document.getElementById('vitrinSearchInput').dispatchEvent(new Event('input')); document.getElementById('ihtiyaciniz-olan-urunler').scrollIntoView({behavior:'smooth'}); }" />
-                <button class="blue-search-btn" title="Arama Yap" onclick="document.getElementById('vitrinSearchInput').value=document.getElementById('heroSearchInput').value; document.getElementById('vitrinSearchInput').dispatchEvent(new Event('input')); document.getElementById('ihtiyaciniz-olan-urunler').scrollIntoView({behavior:'smooth'});">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <!-- Arama Çubuğu -->
+            <div class="relative flex items-center w-full bg-slate-800/90 border border-slate-700/80 rounded-xl p-1 sm:p-1.5 shadow-inner backdrop-blur-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                <input type="text" id="heroSearchInput" 
+                       placeholder="Ürün adı, malzeme, SKU veya tedarikçi ara..." 
+                       class="w-full bg-transparent px-3 sm:px-3.5 py-2 text-xs sm:text-sm text-white placeholder-slate-400 outline-none font-medium" 
+                       onkeydown="if(event.key==='Enter'){ document.getElementById('vitrinSearchInput').value=this.value; document.getElementById('vitrinSearchInput').dispatchEvent(new Event('input')); document.getElementById('ihtiyaciniz-olan-urunler').scrollIntoView({behavior:'smooth'}); }" />
+                
+                <button type="button" class="inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-600 hover:bg-blue-500 text-white shrink-0 transition-colors shadow-sm" 
+                        title="Arama Yap" 
+                        onclick="document.getElementById('vitrinSearchInput').value=document.getElementById('heroSearchInput').value; document.getElementById('vitrinSearchInput').dispatchEvent(new Event('input')); document.getElementById('ihtiyaciniz-olan-urunler').scrollIntoView({behavior:'smooth'});">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
@@ -104,195 +281,208 @@
     </div>
 </section>
 
-<!-- SECTION 2: B2B CORPORATE PURCHASING SHOWCASE (6x8 MATRİS) -->
-<section class="b2b-corporate-showcase" id="ihtiyaciniz-olan-urunler">
+<!-- ==================== BÖLÜM 2: TAILWIND B2B KURUMSAL TEDARİK VİTRİNİ ==================== -->
+<section class="relative bg-slate-50/60 pb-20" id="ihtiyaciniz-olan-urunler">
     
     <!-- Kurumsal Güven & Standartlar Şeridi -->
-    <div class="b2b-trust-strip">
-        <div class="b2b-trust-item">
-            <div class="b2b-trust-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                    <polyline points="9 12 11 14 15 10"></polyline>
-                </svg>
+    <div class="-mt-8 sm:-mt-12 relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 sm:mb-12">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            
+            <!-- Güven Kartı 1 -->
+            <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-3.5 sm:gap-4 group">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-blue-600 group-hover:text-white transition-all duration-200">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <polyline points="9 12 11 14 15 10"></polyline>
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <span class="block text-xs sm:text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">Doğrulanmış Tedarikçiler</span>
+                    <span class="block text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">Sanayi &amp; Ticaret Odası kayıtlı üreticiler</span>
+                </div>
             </div>
-            <div class="b2b-trust-text">
-                <span class="b2b-trust-title">Doğrulanmış Tedarikçiler</span>
-                <span class="b2b-trust-desc">Sanayi & Ticaret Odası kayıtlı üreticiler</span>
-            </div>
-        </div>
 
-        <div class="b2b-trust-item">
-            <div class="b2b-trust-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-                </svg>
+            <!-- Güven Kartı 2 -->
+            <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-3.5 sm:gap-4 group">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-200">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <span class="block text-xs sm:text-sm font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">Toptan &amp; Proje İskontoları</span>
+                    <span class="block text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">Adet bazlı toptan fabrika fiyatlandırması</span>
+                </div>
             </div>
-            <div class="b2b-trust-text">
-                <span class="b2b-trust-title">Toptan & Proje İskontoları</span>
-                <span class="b2b-trust-desc">Adet bazlı toptan fabrika fiyatlandırması</span>
-            </div>
-        </div>
 
-        <div class="b2b-trust-item">
-            <div class="b2b-trust-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                </svg>
+            <!-- Güven Kartı 3 -->
+            <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-3.5 sm:gap-4 group">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-200">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <span class="block text-xs sm:text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">Kurumsal Fatura &amp; Vade</span>
+                    <span class="block text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">30-60 gün vade, DBS ve açık hesap</span>
+                </div>
             </div>
-            <div class="b2b-trust-text">
-                <span class="b2b-trust-title">Kurumsal Fatura & Vade</span>
-                <span class="b2b-trust-desc">30-60 gün vade, DBS ve açık hesap imkanı</span>
-            </div>
-        </div>
 
-        <div class="b2b-trust-item">
-            <div class="b2b-trust-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                    <rect x="1" y="3" width="15" height="13"></rect>
-                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
-                    <circle cx="5.5" cy="18.5" r="2.5"></circle>
-                    <circle cx="18.5" cy="18.5" r="2.5"></circle>
-                </svg>
+            <!-- Güven Kartı 4 -->
+            <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-3.5 sm:gap-4 group">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-amber-600 group-hover:text-white transition-all duration-200">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="1" y="3" width="15" height="13"></rect>
+                        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                        <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                        <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <span class="block text-xs sm:text-sm font-bold text-slate-900 group-hover:text-amber-600 transition-colors">81 İl Kurumsal Lojistik</span>
+                    <span class="block text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">Fabrikadan paletli ve ambarlı sevkiyat</span>
+                </div>
             </div>
-            <div class="b2b-trust-text">
-                <span class="b2b-trust-title">81 İl Kurumsal Lojistik</span>
-                <span class="b2b-trust-desc">Fabrikadan paletli ve ambarlı sevkiyat</span>
-            </div>
+
         </div>
     </div>
 
     <!-- Üst Başlık & B2B Eylemler -->
-    <div class="b2b-header-row">
-        <div class="b2b-title-group">
-            <div class="b2b-section-tag">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-                    <polyline points="2 17 12 22 22 17"></polyline>
-                    <polyline points="2 12 12 17 22 12"></polyline>
-                </svg>
-                <span>B2B KURUMSAL TEDARİK VİTRİNİ</span>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+        <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 sm:gap-6 pb-6 border-b border-slate-200">
+            <div>
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/70 mb-2.5">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                    <span>B2B KURUMSAL TEDARİK VİTRİNİ</span>
+                </div>
+                <h2 class="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-slate-900">
+                    İhtiyacınız Olabilecek Ürünler
+                </h2>
+                <p class="mt-2 text-xs sm:text-sm text-slate-600 max-w-2xl font-normal leading-relaxed">
+                    Doğrudan onaylı üretici ve distribütörlerden endüstriyel hammadde, makine parçaları, bilişim ve kurumsal sarf malzemeleri. Her ziyarette güncellenen toptan teklif havuzu.
+                </p>
             </div>
-            <h2 class="b2b-main-heading">
-                İhtiyacınız Olabilecek Ürünler
-            </h2>
-            <p class="b2b-subtext">
-                Doğrudan onaylı üretici ve distribütörlerden endüstriyel hammadde, makine parçaları, bilişim ve kurumsal işletme sarf malzemeleri. Her ziyarette güncellenen toptan teklif havuzu.
-            </p>
-        </div>
 
-        <div class="b2b-header-actions">
-            <!-- Sepetim Butonu -->
-            <a href="/Cart" class="btn-b2b-cart-cta" title="Kurumsal Sepetinizi Görüntüleyin">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="9" cy="21" r="1"></circle>
-                    <circle cx="20" cy="21" r="1"></circle>
-                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                </svg>
-                <span>Sepetim</span>
-                <span id="vitrinCartBadge" style="background: #ef4444; color: #fff; font-size: 0.72rem; padding: 1px 7px; border-radius: 9999px; font-weight: 800;">0</span>
-            </a>
+            <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-2.5 w-full lg:w-auto shrink-0">
+                <!-- Sepetim Butonu -->
+                <a href="/Cart" class="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 hover:border-slate-300 shadow-sm transition-all" title="Kurumsal Sepetinizi Görüntüleyin">
+                    <svg class="w-4 h-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                    <span>Sepetim</span>
+                    <span id="vitrinCartBadge" class="ml-1 px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-red-500 text-white shadow-sm">0</span>
+                </a>
 
-            <!-- Farklı İlanlar Getir Butonu -->
-            <button type="button" class="btn-b2b-shuffle" id="btnShuffleProducts" title="Yeni 48 farklı kurumsal ürün ve satıcı listele">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                    <polyline points="23 4 23 10 17 10"></polyline>
-                    <polyline points="1 20 1 14 7 14"></polyline>
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                </svg>
-                Farklı İlanları Getir
-            </button>
+                <!-- Farklı İlanlar Getir Butonu -->
+                <button type="button" class="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200 shadow-sm transition-all active:scale-95" id="btnShuffleProducts" title="Yeni farklı kurumsal ürünler listele">
+                    <svg class="w-3.5 h-3.5 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    <span>Farklı İlanlar</span>
+                </button>
 
-            <!-- Tedarikçi Olarak İlan Ver Butonu -->
-            <button type="button" class="btn-b2b-seller-cta" onclick="openSellerOfferModal()" title="Kurumsal satıcı olarak ürünlerinizi listelemek için tıklayın">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="16"></line>
-                    <line x1="8" y1="12" x2="16" y2="12"></line>
-                </svg>
-                Tedarikçi Olarak İlan Ver
-            </button>
+                <!-- Tedarikçi Olarak İlan Ver Butonu -->
+                <button type="button" class="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm shadow-emerald-600/20 transition-all hover:-translate-y-0.5 active:scale-95" onclick="openSellerOfferModal()" title="Kurumsal satıcı olarak ürünlerinizi listelemek için tıklayın">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                    <span>Tedarikçi Olarak İlan Ver</span>
+                </button>
+            </div>
         </div>
     </div>
 
     <!-- ==================== B2B KURUMSAL KATEGORİ AĞACI VE VİTRİN KONTROLLERİ ==================== -->
-    <div class="b2b-vitrin-cat-bar" id="vitrinCategoryTreeBar">
-        <!-- Kompakt Bar Başlığı / Tetikleyici -->
-        <div class="b2b-cat-toggle-header" onclick="toggleVitrinCatTreePanel()">
-            <div class="b2b-cat-toggle-left">
-                <div class="b2b-cat-icon-badge">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                        <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
-                        <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
-                        <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
-                        <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
-                    </svg>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6 hidden md:block">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden" id="vitrinCategoryTreeBar">
+            <!-- Kompakt Bar Başlığı / Tetikleyici -->
+            <div class="p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50/80 transition-colors select-none" onclick="toggleVitrinCatTreePanel()">
+                <div class="flex items-center gap-3.5 min-w-0">
+                    <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+                            <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+                            <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+                            <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+                        </svg>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-sm font-bold text-slate-900">Kategori Ağacı ile Filtrele</span>
+                            <span id="vitrinActiveCatBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                <span id="vitrinActiveCatName">Tüm Kategoriler</span>
+                            </span>
+                        </div>
+                        <div class="text-xs text-slate-500 mt-0.5 truncate" id="vitrinCatSummaryText">
+                            Hiyerarşik kurumsal kategori sistemimizden seçim yaparak ürünleri anlık filtreleyin.
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <div class="b2b-cat-toggle-title">
-                        <span>Kategori Ağacı ile Filtrele</span>
-                        <span id="vitrinActiveCatBadge" class="b2b-active-cat-pill is-all">
-                            <span id="vitrinActiveCatName">Tüm Kategoriler</span>
-                        </span>
-                    </div>
-                    <div class="b2b-cat-toggle-subtitle" id="vitrinCatSummaryText">
-                        Hiyerarşik kurumsal kategori sistemimizden seçim yaparak ürünleri anlık filtreleyin.
-                    </div>
+
+                <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
+                    <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition-colors" id="btnClearVitrinCatFilter" style="display: none;" onclick="event.stopPropagation(); clearVitrinCategoryFilter();" title="Kategori Filtresini Temizle">
+                        <span>✕</span>
+                        <span>Temizle</span>
+                    </button>
+                    <button type="button" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all" id="btnToggleVitrinTree">
+                        <span id="vitrinToggleText">Kategori Ağacını Aç</span>
+                        <svg class="w-3.5 h-3.5 text-slate-500 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="vitrinTreeChevron">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
                 </div>
             </div>
 
-            <div class="b2b-cat-toggle-right">
-                <button type="button" class="b2b-btn-clear-cat-filter" id="btnClearVitrinCatFilter" style="display: none;" onclick="event.stopPropagation(); clearVitrinCategoryFilter();" title="Kategori Filtresini Temizle">
-                    ✕ Temizle
-                </button>
-                <button type="button" class="b2b-btn-toggle-tree" id="btnToggleVitrinTree">
-                    <span id="vitrinToggleText">Kategori Ağacını Aç</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="b2b-chevron-icon" id="vitrinTreeChevron">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                </button>
-            </div>
-        </div>
-
-        <!-- Açılır / Kapanır Kategori Ağacı Gövdesi (Varsayılan olarak kapalı - yer kaplamaz) -->
-        <div class="b2b-vitrin-tree-collapse" id="vitrinCatTreeCollapse" style="display: none;">
-            <div class="b2b-vitrin-tree-inner">
-                
+            <!-- Açılır / Kapanır Kategori Ağacı Gövdesi (Varsayılan olarak kapalı) -->
+            <div class="border-t border-slate-200 p-4 sm:p-6 bg-slate-50/50" id="vitrinCatTreeCollapse" style="display: none;">
                 <!-- Canlı Arama ve Hızlı Araçlar -->
-                <div class="b2b-tree-toolbar">
-                    <div class="b2b-tree-search-wrap">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.2">
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
+                    <div class="relative flex-1 max-w-md bg-white border border-slate-200 rounded-xl shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+                        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                             <circle cx="11" cy="11" r="8"></circle>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
-                        <input type="text" id="vitrinCatSearchInput" placeholder="Kategori veya alt dal ara (örn: Cıvata, Paslanmaz, PLC, Şalt, Rulman...)" oninput="filterVitrinTreeNodes(this.value)" />
-                        <button type="button" class="b2b-tree-search-clear" onclick="document.getElementById('vitrinCatSearchInput').value=''; filterVitrinTreeNodes('');" title="Aramayı Temizle">✕</button>
+                        <input type="text" id="vitrinCatSearchInput" 
+                               placeholder="Kategori veya alt dal ara (örn: Cıvata, Paslanmaz, PLC, Şalt...)" 
+                               class="w-full pl-9 pr-8 py-2 text-xs bg-transparent outline-none text-slate-800 placeholder-slate-400 font-medium" 
+                               oninput="filterVitrinTreeNodes(this.value)" />
+                        <button type="button" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 font-bold" onclick="document.getElementById('vitrinCatSearchInput').value=''; filterVitrinTreeNodes('');" title="Aramayı Temizle">✕</button>
                     </div>
 
-                    <div class="b2b-tree-action-btns">
-                        <button type="button" class="b2b-tree-tool-btn" onclick="expandAllVitrinTree()">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 13 12 18 17 13"></polyline><polyline points="7 6 12 11 17 6"></polyline></svg>
-                            Tümünü Aç
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button type="button" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm transition-all" onclick="expandAllVitrinTree()">
+                            <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 13 12 18 17 13"></polyline><polyline points="7 6 12 11 17 6"></polyline></svg>
+                            <span>Tümünü Aç</span>
                         </button>
-                        <button type="button" class="b2b-tree-tool-btn" onclick="collapseAllVitrinTree()">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 11 12 6 7 11"></polyline><polyline points="17 18 12 13 7 18"></polyline></svg>
-                            Daralt
+                        <button type="button" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm transition-all" onclick="collapseAllVitrinTree()">
+                            <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 11 12 6 7 11"></polyline><polyline points="17 18 12 13 7 18"></polyline></svg>
+                            <span>Daralt</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Hiyerarşik Ağaç Listesi -->
-                <div class="b2b-tree-scrollbox" id="vitrinCategoryTreeList">
+                <div class="max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-white p-3 space-y-1" id="vitrinCategoryTreeList">
                     <!-- 'Tüm Kategoriler' Kök Düğümü -->
                     <div class="cat-tree-node level-0 is-all-node" data-cat-id="0" data-cat-name="tüm kategoriler" data-cat-path="">
                         <div class="cat-node-row is-root is-selected" id="vitrinNodeRow-0" onclick="selectVitrinCategory(0, 'Tüm Kategoriler', '')">
                             <div class="cat-node-left">
                                 <span class="cat-tree-bullet">•</span>
-                                <span class="cat-node-title" style="font-weight: 750; color: #0284c7;">Tüm Kategoriler</span>
+                                <span class="cat-node-title font-bold text-blue-600">Tüm Kategoriler</span>
                             </div>
                         </div>
                     </div>
@@ -307,63 +497,83 @@
                         }
                     }
                 </div>
-
             </div>
         </div>
     </div>
 
     <!-- Canlı Arama ve Sıralama Çubuğu -->
-    <div class="b2b-search-sort-bar" style="display: flex; gap: 12px; margin-bottom: 20px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
-        <div class="b2b-search-box" style="flex: 1; min-width: 280px;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input type="text" id="vitrinSearchInput" placeholder="Ürün, marka, SKU veya firma ara..." />
-        </div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div class="relative flex-1 max-w-lg bg-white border border-slate-200 rounded-xl shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+                <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="vitrinSearchInput" 
+                       placeholder="Ürün adı, marka, SKU veya firma ara..." 
+                       class="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-transparent outline-none text-slate-800 placeholder-slate-400 font-medium" />
+            </div>
 
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <span id="vitrinProductCount" style="font-size: 0.82rem; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 6px 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                Yükleniyor...
-            </span>
+            <div class="flex items-center justify-between sm:justify-end gap-2.5 w-full sm:w-auto shrink-0">
+                <span id="vitrinProductCount" class="inline-flex items-center px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 shadow-sm whitespace-nowrap">
+                    Yükleniyor...
+                </span>
 
-            <select id="vitrinSortSelect" class="b2b-sort-select" title="Sıralama Seçeneği">
-                <option value="recommended">Öne Çıkanlar</option>
-                <option value="score">Tedarikçi Puanı (Yüksek)</option>
-                <option value="discount">En Yüksek İskonto</option>
-                <option value="price-asc">Fiyata Göre (Artan)</option>
-                <option value="price-desc">Fiyata Göre (Azalan)</option>
-            </select>
+                <select id="vitrinSortSelect" class="flex-1 sm:flex-none px-3 py-2 sm:px-3.5 rounded-xl text-xs font-bold bg-white border border-slate-200 text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-sm transition-all cursor-pointer" title="Sıralama Seçeneği">
+                    <option value="recommended">Öne Çıkanlar</option>
+                    <option value="score">Tedarikçi Puanı (Yüksek)</option>
+                    <option value="discount">En Yüksek İskonto</option>
+                    <option value="price-asc">Fiyata Göre (Artan)</option>
+                    <option value="price-desc">Fiyata Göre (Azalan)</option>
+                </select>
+            </div>
         </div>
     </div>
 
     <!-- 6 Sütun x 8 Satır Profesyonel B2B Ürün Matrisi (48 Ürün) -->
-    <div class="b2b-product-grid" id="trendyolProductGrid">
-        <!-- JavaScript (trendyol-vitrin.js) ile dinamik olarak doldurulacaktır -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="b2b-product-grid" id="trendyolProductGrid">
+            <!-- JavaScript (trendyol-vitrin.js) ile dinamik olarak doldurulacaktır -->
+        </div>
     </div>
 </section>
 
-<!-- SECTION 3: STATS METRIC CARDS -->
-<section class="stats-section mt-4">
-    <div class="stats-container">
-        <div class="stats-grid">
+<!-- ==================== BÖLÜM 3: TAILWIND PLATFORM İSTATİSTİKLERİ ==================== -->
+<section class="bg-slate-900 border-t border-slate-800 py-16 text-white relative overflow-hidden">
+    <!-- Subtle glow background -->
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,rgba(37,99,235,0.15),transparent)] pointer-events-none"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div class="text-center max-w-2xl mx-auto mb-12">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-3 backdrop-blur-sm">
+                <span>PLATFORM METRİKLERİ</span>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                Rakamlarla B2B Satınalma Ağı
+            </h2>
+            <p class="mt-2 text-sm text-slate-400 font-normal">
+                Türkiye genelinde güvenilir ticaretin ve sanayi tedariğinin şeffaf göstergeleri.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 lg:gap-6">
 
             <!-- Stat Card 1 -->
-            <div class="metric-card">
-                <div class="metric-icon-badge">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 text-center backdrop-blur-sm hover:border-blue-500/40 hover:bg-slate-800 transition-all duration-200 group">
+                <div class="w-12 h-12 mx-auto mb-4 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-200">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
                         <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
                     </svg>
                 </div>
-                <div class="metric-number">@(ViewBag.TotalBuyers ?? 0)</div>
-                <div class="metric-label">Kayıtlı Alıcı Firma</div>
+                <div class="text-3xl lg:text-4xl font-black tracking-tight text-white mb-1.5">@(ViewBag.TotalBuyers ?? 0)</div>
+                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Kayıtlı Alıcı Firma</div>
             </div>
 
             <!-- Stat Card 2 -->
-            <div class="metric-card">
-                <div class="metric-icon-badge">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 text-center backdrop-blur-sm hover:border-emerald-500/40 hover:bg-slate-800 transition-all duration-200 group">
+                <div class="w-12 h-12 mx-auto mb-4 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-200">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="8" y1="6" x2="21" y2="6"></line>
                         <line x1="8" y1="12" x2="21" y2="12"></line>
                         <line x1="8" y1="18" x2="21" y2="18"></line>
@@ -372,102 +582,107 @@
                         <line x1="3" y1="18" x2="3.01" y2="18"></line>
                     </svg>
                 </div>
-                <div class="metric-number">@(ViewBag.TotalSuppliers ?? 0)</div>
-                <div class="metric-label">Onaylı Sanayi Tedarikçisi</div>
+                <div class="text-3xl lg:text-4xl font-black tracking-tight text-white mb-1.5">@(ViewBag.TotalSuppliers ?? 0)</div>
+                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Onaylı Sanayi Tedarikçisi</div>
             </div>
 
             <!-- Stat Card 3 -->
-            <div class="metric-card">
-                <div class="metric-icon-badge">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 text-center backdrop-blur-sm hover:border-amber-500/40 hover:bg-slate-800 transition-all duration-200 group">
+                <div class="w-12 h-12 mx-auto mb-4 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center group-hover:scale-110 group-hover:bg-amber-600 group-hover:text-white transition-all duration-200">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="9" cy="21" r="1"></circle>
                         <circle cx="20" cy="21" r="1"></circle>
                         <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
                     </svg>
                 </div>
-                <div class="metric-number">@(ViewBag.OpenRequestsCount ?? 0)</div>
-                <div class="metric-label">Açık Satınalma İhalesi</div>
+                <div class="text-3xl lg:text-4xl font-black tracking-tight text-white mb-1.5">@(ViewBag.OpenRequestsCount ?? 0)</div>
+                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Açık Satınalma İhalesi</div>
             </div>
 
             <!-- Stat Card 4 -->
-            <div class="metric-card">
-                <div class="metric-icon-badge">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 text-center backdrop-blur-sm hover:border-purple-500/40 hover:bg-slate-800 transition-all duration-200 group">
+                <div class="w-12 h-12 mx-auto mb-4 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center justify-center group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white transition-all duration-200">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                     </svg>
                 </div>
-                <div class="metric-number">@(ViewBag.CompletedOffersCount ?? 0)</div>
-                <div class="metric-label">Tamamlanan Kurumsal Teklif</div>
+                <div class="text-3xl lg:text-4xl font-black tracking-tight text-white mb-1.5">@(ViewBag.CompletedOffersCount ?? 0)</div>
+                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tamamlanan Kurumsal Teklif</div>
             </div>
 
             <!-- Stat Card 5 -->
-            <div class="metric-card">
-                <div class="metric-icon-badge">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 text-center backdrop-blur-sm hover:border-sky-500/40 hover:bg-slate-800 transition-all duration-200 group col-span-2 sm:col-span-1 md:col-span-1">
+                <div class="w-12 h-12 mx-auto mb-4 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20 flex items-center justify-center group-hover:scale-110 group-hover:bg-sky-600 group-hover:text-white transition-all duration-200">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
                         <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
                         <line x1="12" y1="22.08" x2="12" y2="12"></line>
                     </svg>
                 </div>
-                <div class="metric-number">@(ViewBag.TotalItemsCount ?? 0)</div>
-                <div class="metric-label">Endüstriyel Ürün Portföyü</div>
+                <div class="text-3xl lg:text-4xl font-black tracking-tight text-white mb-1.5">@(ViewBag.TotalItemsCount ?? 0)</div>
+                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Endüstriyel Ürün Portföyü</div>
             </div>
 
         </div>
     </div>
 </section>
 
-<!-- MODAL 1: HIZLI ŞARTNAME VE TEKNİK DETAY MODALI -->
+<!-- ==================== MODAL 1: HIZLI ŞARTNAME VE TEKNİK DETAY MODALI ==================== -->
 <div id="tyQuickViewModal" class="ty-modal-overlay" onclick="if(event.target===this)closeTyModal('tyQuickViewModal')">
-    <div class="ty-modal-box">
-        <button type="button" class="ty-modal-close" onclick="closeTyModal('tyQuickViewModal')">&times;</button>
-        <div class="ty-qv-grid">
-            <div class="ty-qv-img-box">
-                <img id="qvModalImage" src="" alt="Ürün Görseli" />
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-3xl overflow-hidden relative p-4 sm:p-8 animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
+        <button type="button" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-2xl font-bold p-1 leading-none rounded-lg hover:bg-slate-100 transition-colors" onclick="closeTyModal('tyQuickViewModal')">&times;</button>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-6 flex items-center justify-center min-h-[260px]">
+                <img id="qvModalImage" src="" alt="Ürün Görseli" class="max-h-64 max-w-full object-contain mx-auto transition-transform hover:scale-105 duration-200" />
             </div>
-            <div class="ty-qv-details">
-                <div class="ty-qv-header-tag" id="qvModalCategory">Endüstriyel Kategori</div>
-                <h3 class="ty-qv-title" id="qvModalTitle">Ürün Teknik Başlığı</h3>
+            
+            <div class="flex flex-col">
+                <span class="inline-flex items-center self-start px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200/80 mb-2" id="qvModalCategory">Endüstriyel Kategori</span>
+                <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 leading-snug" id="qvModalTitle">Ürün Teknik Başlığı</h3>
                 
-                <div class="ty-qv-seller-card">
-                    <div>
-                        <div style="font-size: 0.72rem; color: #64748b; font-weight: 600;">Üretici / Tedarikçi Firma</div>
-                        <strong id="qvModalSeller" style="color: #0f172a; font-size: 0.88rem;">Firma Ünvanı</strong>
-                        <div style="font-size: 0.72rem; color: #0284c7;" id="qvModalLocation">Lokasyon</div>
-                        <a id="qvModalSellerLink" href="/Seller/1" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.76rem; color: #2563eb; font-weight: 700; text-decoration: none; margin-top: 4px;">
-                            Satıcı Sayfası &amp; 10★ Değerlendirmeleri Gör →
+                <div class="mt-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Üretici / Tedarikçi Firma</div>
+                        <strong id="qvModalSeller" class="text-sm font-bold text-slate-900 block truncate">Firma Ünvanı</strong>
+                        <div class="text-xs text-blue-600 font-medium" id="qvModalLocation">Lokasyon</div>
+                        <a id="qvModalSellerLink" href="/Seller/1" target="_blank" class="inline-flex items-center gap-1 text-xs text-blue-600 font-bold hover:underline mt-1">
+                            Satıcı Sayfası &amp; Değerlendirmeleri Gör →
                         </a>
                     </div>
-                    <span class="ty-seller-rating" id="qvModalScore">★ 9.9 / 10</span>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 font-black text-xs shrink-0" id="qvModalScore">
+                        <svg class="w-3.5 h-3.5 text-amber-500 fill-amber-500" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        <span>9.9 / 10</span>
+                    </span>
                 </div>
 
-                <div class="ty-qv-price-row" style="margin-bottom: 12px;">
-                    <div class="ty-qv-price" id="qvModalPrice">0 ₺</div>
-                    <span style="font-size: 0.85rem; color: #64748b; font-weight: 600;">+ %20 KDV</span>
+                <div class="mt-4 flex items-baseline gap-2">
+                    <div class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight" id="qvModalPrice">0 ₺</div>
+                    <span class="text-xs text-slate-500 font-semibold">+ %20 KDV</span>
                 </div>
 
-                <div class="ty-qv-meta-list" style="margin-bottom: 18px;">
-                    <div class="ty-qv-meta-item">Marka: <strong id="qvModalBrand">Marka</strong></div>
-                    <div class="ty-qv-meta-item">Stok Kodu: <strong id="qvModalSku">SKU-000</strong></div>
-                    <div class="ty-qv-meta-item">Stok Durumu: <span id="qvModalStock" style="color: #059669; font-weight: 700;">Hazır Stok</span></div>
-                    <div class="ty-qv-meta-item">Termin: <span id="qvModalLeadTime">1-2 İş Günü</span></div>
+                <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200/70">
+                    <div>Marka: <strong id="qvModalBrand" class="text-slate-900">Marka</strong></div>
+                    <div>Stok Kodu: <strong id="qvModalSku" class="text-slate-900 font-mono">SKU-000</strong></div>
+                    <div>Stok: <span id="qvModalStock" class="text-emerald-600 font-bold">Hazır Stok</span></div>
+                    <div>Termin: <span id="qvModalLeadTime" class="text-slate-800 font-medium">1-2 İş Günü</span></div>
                 </div>
 
-                <div class="ty-qv-actions">
-                    <button type="button" class="ty-btn-primary" id="qvModalQuoteBtn">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <div class="mt-5 flex flex-col sm:flex-row gap-2.5">
+                    <button type="button" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition-all hover:-translate-y-0.5 active:scale-95" id="qvModalQuoteBtn">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                             <polyline points="14 2 14 8 20 8"></polyline>
                         </svg>
-                        Resmi Teklif İste (RFQ)
+                        <span>Resmi Teklif İste (RFQ)</span>
                     </button>
-                    <button type="button" class="ty-btn-secondary" id="qvModalSellBtn">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <button type="button" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm transition-all hover:-translate-y-0.5 active:scale-95" id="qvModalSellBtn">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="12" y1="8" x2="12" y2="16"></line>
                             <line x1="8" y1="12" x2="16" y2="12"></line>
                         </svg>
-                        Bu Ürünü Ben de Satmak İstiyorum
+                        <span>Bu Ürünü Ben de Satmak İstiyorum</span>
                     </button>
                 </div>
             </div>
@@ -475,53 +690,56 @@
     </div>
 </div>
 
-<!-- MODAL 2: RESMİ KURUMSAL TEKLİF (RFQ) TALEP FORMU -->
+<!-- ==================== MODAL 2: RESMİ KURUMSAL TEKLİF (RFQ) TALEP FORMU ==================== -->
 <div id="tyQuoteModal" class="ty-modal-overlay" onclick="if(event.target===this)closeTyModal('tyQuoteModal')">
-    <div class="ty-modal-box" style="max-width: 560px;">
-        <button type="button" class="ty-modal-close" onclick="closeTyModal('tyQuoteModal')">&times;</button>
-        <div style="margin-bottom: 16px;">
-            <span class="b2b-section-tag">B2B RESMİ SATINALMA TEKLİFİ (RFQ)</span>
-            <h3 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin-top: 6px;">Kurumsal Fiyat & Vade Teklifi İste</h3>
-            <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Doğrudan üreticiye resmi proforma ve şartname talebi oluşturun.</p>
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden relative p-4 sm:p-8 animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
+        <button type="button" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-2xl font-bold p-1 leading-none rounded-lg hover:bg-slate-100 transition-colors" onclick="closeTyModal('tyQuoteModal')">&times;</button>
+        
+        <div class="mb-4">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200/80 mb-2">B2B RESMİ SATINALMA TEKLİFİ (RFQ)</span>
+            <h3 class="text-xl font-black text-slate-900 tracking-tight">Kurumsal Fiyat &amp; Vade Teklifi İste</h3>
+            <p class="text-xs text-slate-500 mt-1 font-normal">Doğrudan üreticiye resmi proforma ve şartname talebi oluşturun.</p>
         </div>
 
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
-            <div style="font-size: 0.86rem; font-weight: 750; color: #0f172a;" id="quoteModalProductTitle">Ürün Adı</div>
-            <div style="font-size: 0.76rem; color: #64748b; margin-top: 3px;" id="quoteModalProductSku">SKU: 0000</div>
-            <div style="font-size: 0.78rem; color: #475569; margin-top: 4px;">
-                Tedarikçi: <strong id="quoteModalSellerName" style="color: #0284c7;">Firma Ünvanı</strong> | Liste Fiyatı: <strong id="quoteModalUnitPrice" style="color: #0f172a;">0 ₺</strong>
+        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 mb-5">
+            <div class="text-sm font-bold text-slate-900" id="quoteModalProductTitle">Ürün Adı</div>
+            <div class="text-xs text-slate-500 mt-0.5 font-mono" id="quoteModalProductSku">SKU: 0000</div>
+            <div class="text-xs text-slate-700 mt-1.5 flex flex-wrap gap-x-2">
+                <span>Tedarikçi: <strong id="quoteModalSellerName" class="text-blue-600">Firma Ünvanı</strong></span>
+                <span>•</span>
+                <span>Liste Fiyatı: <strong id="quoteModalUnitPrice" class="text-slate-900">0 ₺</strong></span>
             </div>
         </div>
 
-        <form id="quoteRequestForm" onsubmit="event.preventDefault(); submitQuoteRequest(event); return false;">
+        <form id="quoteRequestForm" onsubmit="event.preventDefault(); submitQuoteRequest(event); return false;" class="space-y-4">
             <input type="hidden" id="quoteModalHiddenProductId" />
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Satınalma Yapan Firma Ünvanı *</label>
-                    <input type="text" id="quoteBuyerCompany" class="form-control" placeholder="Örn: Aselsan / Ege Kimya A.Ş." required style="border-radius: 6px; font-size: 0.85rem;" />
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Satınalma Yapan Firma Ünvanı *</label>
+                    <input type="text" id="quoteBuyerCompany" class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-medium" placeholder="Örn: Aselsan / Ege Kimya A.Ş." required />
                 </div>
                 <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Vergi Kimlik No / Dairesi</label>
-                    <input type="text" id="quoteBuyerTax" class="form-control" placeholder="1234567890 / Kadıköy VD" style="border-radius: 6px; font-size: 0.85rem;" />
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Talep Edilen Miktar *</label>
-                    <input type="number" id="quoteQuantity" class="form-control" value="100" min="1" required style="border-radius: 6px; font-weight: 700; font-size: 0.85rem;" />
-                </div>
-                <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Hedef Birim Fiyat (₺/Adet - Opsiyonel)</label>
-                    <input type="text" id="quoteTargetPrice" class="form-control" placeholder="Hedef bütçeniz" style="border-radius: 6px; font-size: 0.85rem;" />
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Vergi Kimlik No / Dairesi</label>
+                    <input type="text" id="quoteBuyerTax" class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-medium" placeholder="1234567890 / Kadıköy VD" />
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Tercih Edilen Ödeme Koşulu</label>
-                    <select id="quotePaymentTerms" class="form-control" style="border-radius: 6px; font-size: 0.85rem;">
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Talep Edilen Miktar *</label>
+                    <input type="number" id="quoteQuantity" class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-bold text-slate-900" value="100" min="1" required />
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Hedef Birim Fiyat (₺/Adet - Opsiyonel)</label>
+                    <input type="text" id="quoteTargetPrice" class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-medium" placeholder="Hedef bütçeniz" />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Tercih Edilen Ödeme Koşulu</label>
+                    <select id="quotePaymentTerms" class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-medium cursor-pointer">
                         <option value="Peşin İskontolu">Peşin / Havale (Maksimum İskonto)</option>
                         <option value="30 Gün Vade">30 Gün Vadeli Kurumsal Çek</option>
                         <option value="60 Gün Vade">60 Gün Vadeli Kurumsal Çek</option>
@@ -530,86 +748,87 @@
                     </select>
                 </div>
                 <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Teslimat İli / Fabrika Lokasyonu</label>
-                    <input type="text" id="quoteDeliveryCity" class="form-control" placeholder="Örn: Kocaeli / Dilovası" style="border-radius: 6px; font-size: 0.85rem;" />
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Teslimat İli / Fabrika Lokasyonu</label>
+                    <input type="text" id="quoteDeliveryCity" class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-medium" placeholder="Örn: Kocaeli / Dilovası" />
                 </div>
             </div>
 
-            <div style="margin-bottom: 14px;">
-                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Teknik Şartname & Talep Notu</label>
-                <textarea id="quoteNotes" class="form-control" rows="2" placeholder="Özel toleranslar, ambalaj tipi veya teknik şartname notlarınız..." style="border-radius: 6px; font-size: 0.82rem;"></textarea>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">Teknik Şartname &amp; Talep Notu</label>
+                <textarea id="quoteNotes" rows="2" class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-medium" placeholder="Özel toleranslar, ambalaj tipi veya teknik şartname notlarınız..."></textarea>
             </div>
 
-            <div style="margin-bottom: 16px;">
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #334155; cursor: pointer;">
-                    <input type="checkbox" id="quoteSampleCheck" />
+            <div>
+                <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer select-none">
+                    <input type="checkbox" id="quoteSampleCheck" class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500" />
                     <span>Toplu alım öncesi <strong>numune (sample)</strong> talep ediyorum.</span>
                 </label>
             </div>
 
-            <div style="display: flex; gap: 10px;">
-                <button type="button" class="btn-edit-cancel" style="flex: 1; border-radius: 6px;" onclick="closeTyModal('tyQuoteModal')">Vazgeç</button>
-                <button type="submit" class="b2b-btn-rfq" style="flex: 2; border-radius: 6px; padding: 11px 16px; font-size: 0.88rem; justify-content: center;">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div class="flex items-center gap-3 pt-2">
+                <button type="button" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-colors" onclick="closeTyModal('tyQuoteModal')">Vazgeç</button>
+                <button type="submit" class="flex-[2] inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition-all hover:-translate-y-0.5 active:scale-95">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="22" y1="2" x2="11" y2="13"></line>
                         <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                     </svg>
-                    Resmi RFQ Talebini İlet
+                    <span>Resmi RFQ Talebini İlet</span>
                 </button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- MODAL 3: TEDARİKÇİ OLARAK İLAN VERME / PAZARYERİ GİRİŞİ FORMU -->
+<!-- ==================== MODAL 3: TEDARİKÇİ OLARAK İLAN VERME / PAZARYERİ GİRİŞİ FORMU ==================== -->
 <div id="tySellerOfferModal" class="ty-modal-overlay" onclick="if(event.target===this)closeTyModal('tySellerOfferModal')">
-    <div class="ty-modal-box" style="max-width: 560px;">
-        <button type="button" class="ty-modal-close" onclick="closeTyModal('tySellerOfferModal')">&times;</button>
-        <div style="margin-bottom: 16px;">
-            <span class="b2b-section-tag" style="background: #f0fdf4; color: #166534; border-color: #bbf7d0;">KURUMSAL TEDARİKÇİ GİRİŞİ</span>
-            <h3 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin-top: 6px;">Tedarikçi Olarak Ürün / Fiyat Listele</h3>
-            <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Fabrika veya distribütör portföyünüzü binlerce kurumsal satınalma yöneticisine açın.</p>
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden relative p-4 sm:p-8 animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
+        <button type="button" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-2xl font-bold p-1 leading-none rounded-lg hover:bg-slate-100 transition-colors" onclick="closeTyModal('tySellerOfferModal')">&times;</button>
+        
+        <div class="mb-4">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 mb-2">KURUMSAL TEDARİKÇİ GİRİŞİ</span>
+            <h3 class="text-xl font-black text-slate-900 tracking-tight">Tedarikçi Olarak Ürün / Fiyat Listele</h3>
+            <p class="text-xs text-slate-500 mt-1 font-normal">Fabrika veya distribütör portföyünüzü binlerce kurumsal satınalma yöneticisine açın.</p>
         </div>
 
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; font-size: 0.82rem; color: #1e293b;" id="sellerModalProductInfo">
-            Yeni Kurumsal Ürün & Toptan İlan
+        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 mb-4" id="sellerModalProductInfo">
+            Yeni Kurumsal Ürün &amp; Toptan İlan
         </div>
 
-        <form id="sellerOfferForm" onsubmit="event.preventDefault(); submitSellerOffer(event); return false;">
-            <div style="margin-bottom: 12px;">
-                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Ürün İsmi / Başlığı *</label>
-                <input type="text" id="sellerOfferProductName" class="form-control" placeholder="Örn: DIN 933 A2 Paslanmaz Cıvata M8x30" required style="border-radius: 6px; font-size: 0.85rem;" />
+        <form id="sellerOfferForm" onsubmit="event.preventDefault(); submitSellerOffer(event); return false;" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">Ürün İsmi / Başlığı *</label>
+                <input type="text" id="sellerOfferProductName" class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-medium" placeholder="Örn: DIN 933 A2 Paslanmaz Cıvata M8x30" required />
             </div>
 
-            <div style="margin-bottom: 14px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <label style="font-size: 0.8rem; font-weight: 700; color: #334155; margin: 0;">Kategori Seçimi *</label>
-                    <span style="font-size: 0.72rem; color: #64748b;">(Ağaçtan tıklayarak seçiniz)</span>
+            <div>
+                <div class="flex justify-between items-center mb-1.5">
+                    <label class="text-xs font-bold text-slate-700">Kategori Seçimi *</label>
+                    <span class="text-[11px] text-slate-400 font-normal">(Ağaçtan tıklayarak seçiniz)</span>
                 </div>
 
                 <!-- Gizli Inputlar (Form Validasyonu & Gönderim İçin) -->
                 <input type="hidden" id="sellerOfferCategory" name="CategoryName" />
                 <input type="hidden" id="sellerOfferCategoryId" name="CategoryID" />
 
-                <!-- Kategori Ağacı Seçici (Ana Sayfa ile Birebir Aynı Sade Görünüm) -->
-                <div class="b2b-cat-picker-container" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #f8fafc;">
+                <!-- Kategori Ağacı Seçici -->
+                <div class="border border-slate-200 rounded-xl p-3 bg-slate-50/70">
                     <!-- Seçili Kategori Rozet Alanı -->
-                    <div class="b2b-cat-picker-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <div id="catTreeSelectedDisplay" class="b2b-cat-picker-selected is-empty" style="display: flex; align-items: center; gap: 6px; font-size: 0.84rem; color: #64748b;">
+                    <div class="flex justify-between items-center mb-2.5">
+                        <div id="catTreeSelectedDisplay" class="flex items-center gap-1.5 text-xs text-slate-500 font-medium truncate">
                             <span id="catTreeSelectedIcon"></span>
-                            <span class="b2b-cat-selected-text" id="catTreeSelectedText">Lütfen aşağıdaki listeden bir kategori seçiniz...</span>
+                            <span class="truncate" id="catTreeSelectedText">Lütfen aşağıdaki listeden bir kategori seçiniz...</span>
                         </div>
-                        <button type="button" class="btn-tree-tool" onclick="clearCatTreeSelection()" style="font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; border: 1px solid #cbd5e1; background: #ffffff; cursor: pointer;" title="Seçimi Temizle">Temizle</button>
+                        <button type="button" class="text-xs px-2 py-0.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 font-semibold shrink-0 transition-colors" onclick="clearCatTreeSelection()" title="Seçimi Temizle">Temizle</button>
                     </div>
 
                     <!-- Canlı Arama -->
-                    <div class="b2b-cat-search-box" style="margin-bottom: 8px; position: relative; display: flex; align-items: center;">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" style="position: absolute; left: 10px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                        <input type="text" id="catTreePickerSearch" placeholder="Kategori ara (örn: Paslanmaz, CNC, Boru...)" oninput="filterCatTreePicker(this.value)" style="width: 100%; padding: 6px 10px 6px 28px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 6px; background: #ffffff;" />
+                    <div class="relative flex items-center mb-2">
+                        <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <input type="text" id="catTreePickerSearch" placeholder="Kategori ara (örn: Paslanmaz, CNC, Boru...)" oninput="filterCatTreePicker(this.value)" class="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 font-medium" />
                     </div>
 
-                    <!-- Hiyerarşik Ağaç Listesi (Ana Sayfa ile Birebir Aynı Sade Stil) -->
-                    <div class="b2b-tree-scrollbox" id="catTreePickerList" style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px; background: #ffffff;">
+                    <!-- Hiyerarşik Ağaç Listesi -->
+                    <div class="max-h-48 overflow-y-auto border border-slate-200 rounded-lg p-2 bg-white space-y-1" id="catTreePickerList">
                         @if (ViewBag.CategoryTree != null && ((IEnumerable<satinalmaportali2.Controllers.HierarchicalCategoryItem>)ViewBag.CategoryTree).Any())
                         {
                             var rootCategories = (IEnumerable<satinalmaportali2.Controllers.HierarchicalCategoryItem>)ViewBag.CategoryTree;
@@ -620,7 +839,7 @@
                         }
                         else
                         {
-                            <div style="padding: 12px; text-align: center; color: #94a3b8; font-size: 0.8rem;">
+                            <div class="p-3 text-center text-slate-400 text-xs">
                                 Kategori listesi yükleniyor...
                             </div>
                         }
@@ -628,103 +847,173 @@
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Toptan Birim Fiyat (₺ + KDV) *</label>
-                    <input type="number" id="sellerOfferPrice" class="form-control" placeholder="Örn: 2450" required style="border-radius: 6px; font-size: 0.85rem;" />
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Toptan Birim Fiyat (₺ + KDV) *</label>
+                    <input type="number" id="sellerOfferPrice" class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-bold text-slate-900" placeholder="Örn: 2450" required />
                 </div>
                 <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Hazır Stok / Aylık Kapasite *</label>
-                    <input type="text" id="sellerOfferStock" class="form-control" placeholder="Örn: 2.500 Adet" required style="border-radius: 6px; font-size: 0.85rem;" />
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Hazır Stok / Aylık Kapasite *</label>
+                    <input type="text" id="sellerOfferStock" class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-medium" placeholder="Örn: 2.500 Adet" required />
                 </div>
             </div>
 
-            <div style="margin-bottom: 16px;">
-                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Tedarik & Sevkiyat Şartları</label>
-                <textarea id="sellerOfferDesc" class="form-control" rows="2" placeholder="Minimum sipariş (MOQ), termin süresi, teslimat yöntemleri..." style="border-radius: 6px; font-size: 0.82rem;"></textarea>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">Tedarik &amp; Sevkiyat Şartları</label>
+                <textarea id="sellerOfferDesc" rows="2" class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-medium" placeholder="Minimum sipariş (MOQ), termin süresi, teslimat yöntemleri..."></textarea>
             </div>
 
             <!-- Ürün Görselleri Yükleme (Cloudinary Çoklu Görsel) -->
-            <div style="margin-bottom: 16px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <label style="font-size: 0.8rem; font-weight: 700; color: #334155; margin: 0;">Ürün Görselleri (Cloudinary)</label>
-                    <span style="font-size: 0.72rem; color: #64748b;">(Birden fazla ekleyebilir, ana resmi seçebilirsiniz)</span>
+            <div>
+                <div class="flex justify-between items-center mb-1.5">
+                    <label class="text-xs font-bold text-slate-700">Ürün Görselleri (Cloudinary)</label>
+                    <span class="text-[11px] text-slate-400 font-normal">(Birden fazla ekleyebilir, ana resmi seçebilirsiniz)</span>
                 </div>
 
-                <div class="b2b-upload-dropzone" id="homeProductImageDropzone" onclick="document.getElementById('homeProductImageFileInput').click()">
-                    <input type="file" id="homeProductImageFileInput" multiple accept="image/png,image/jpeg,image/webp,image/jpg" style="display: none;" onchange="handleHomeProductImageFiles(this.files)" />
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" style="margin-bottom: 4px;">
+                <div class="border-2 border-dashed border-slate-200 hover:border-blue-400 rounded-xl p-4 text-center bg-slate-50/50 hover:bg-blue-50/20 transition-all cursor-pointer" id="homeProductImageDropzone" onclick="document.getElementById('homeProductImageFileInput').click()">
+                    <input type="file" id="homeProductImageFileInput" multiple accept="image/png,image/jpeg,image/webp,image/jpg" class="hidden" onchange="handleHomeProductImageFiles(this.files)" />
+                    <svg class="w-6 h-6 text-blue-500 mx-auto mb-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                         <circle cx="8.5" cy="8.5" r="1.5"></circle>
                         <polyline points="21 15 16 10 5 21"></polyline>
                     </svg>
-                    <div style="font-size: 0.82rem; font-weight: 700; color: #0f172a;">Görselleri Seçin veya Sürükleyin</div>
-                    <div style="font-size: 0.72rem; color: #64748b;">Cloudinary ile otomatik optimize edilir (Maks: 5MB)</div>
+                    <div class="text-xs font-bold text-slate-900">Görselleri Seçin veya Sürükleyin</div>
+                    <div class="text-[11px] text-slate-500 mt-0.5">Cloudinary ile otomatik optimize edilir (Maks: 5MB)</div>
                 </div>
 
-                <div id="homeImageUploadProgress" style="display: none; align-items: center; gap: 8px; margin-top: 8px; padding: 6px 12px; background: #eff6ff; border-radius: 6px; font-size: 0.78rem; color: #1d4ed8;">
-                    <span class="spinner-border spinner-border-sm" role="status" style="width: 14px; height: 14px; border-width: 2px;"></span>
+                <div id="homeImageUploadProgress" class="hidden items-center gap-2 mt-2 p-2 rounded-lg bg-blue-50 border border-blue-100 text-xs text-blue-700">
+                    <span class="inline-block w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></span>
                     <span id="homeImageUploadProgressText">Görseller Cloudinary'ye yükleniyor...</span>
                 </div>
 
-                <div id="homeUploadedImagesGrid" class="b2b-uploaded-images-grid"></div>
+                <div id="homeUploadedImagesGrid" class="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-2.5"></div>
             </div>
 
-            <div style="display: flex; gap: 10px;">
-                <button type="button" class="btn-edit-cancel" style="flex: 1; border-radius: 6px;" onclick="closeTyModal('tySellerOfferModal')">Vazgeç</button>
-                <button type="submit" class="btn-b2b-seller-cta" style="flex: 2; border-radius: 6px; padding: 11px 16px; font-size: 0.88rem; justify-content: center; background: #0f172a;">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div class="flex items-center gap-3 pt-2">
+                <button type="button" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-colors" onclick="closeTyModal('tySellerOfferModal')">Vazgeç</button>
+                <button type="submit" class="flex-[2] inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-md transition-all hover:-translate-y-0.5 active:scale-95">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="20 6 9 17 4 12"></polyline>
                     </svg>
-                    Ürün İlanını Doğrulamaya Gönder
+                    <span>Ürün İlanını Doğrulamaya Gönder</span>
                 </button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- ==================== B2B KURUMSAL SEPET ÇEKMECESİ (SLIDE-OVER DRAWER) ==================== -->
-<div id="b2bCartDrawerOverlay" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(3px); z-index: 99998; justify-content: flex-end;" onclick="if(event.target===this)closeCartDrawer()">
-    <div id="b2bCartDrawer" style="width: 100%; max-width: 440px; height: 100vh; background: #ffffff; box-shadow: -10px 0 30px rgba(0,0,0,0.25); display: flex; flex-direction: column; animation: slideDrawerLeft 0.25s ease-out;">
+<!-- ==================== MOBİL KATEGORİ SEÇİM MODALI (#mobileCategoryModal) ==================== -->
+<div id="mobileCategoryModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(4px); z-index: 100000; align-items: flex-end; justify-content: center; padding: 0;" onclick="if(event.target===this)closeMobileCategoryModal()">
+    <div class="w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[88vh] sm:max-h-[82vh] animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
         
-        <!-- Drawer Başlığı -->
-        <div style="padding: 18px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #0f172a; color: #fff;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 1.3rem;">🛒</span>
+        <!-- Modal Başlığı -->
+        <div class="px-5 py-4 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+                        <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+                        <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+                        <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+                    </svg>
+                </div>
                 <div>
-                    <h3 style="font-size: 1.05rem; font-weight: 800; margin: 0; color: #fff;">Kurumsal Satınalma Sepeti</h3>
-                    <small id="cartDrawerItemCountText" style="color: #94a3b8; font-size: 0.76rem;">0 Kalem Ürün</small>
+                    <h3 class="text-sm font-extrabold text-white">Kategori Seçimi</h3>
+                    <p class="text-[11px] text-slate-400">Ürünleri kategoriye göre filtreleyin</p>
                 </div>
             </div>
-            <button type="button" onclick="closeCartDrawer()" style="background: transparent; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer; padding: 4px;">✕</button>
+            <button type="button" onclick="closeMobileCategoryModal()" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-lg font-bold transition-colors" aria-label="Kapat">&times;</button>
+        </div>
+
+        <!-- Arama ve Hızlı Filtre Barı -->
+        <div class="p-3.5 bg-slate-50 border-b border-slate-200 shrink-0 space-y-2">
+            <!-- Arama Kutusu -->
+            <div class="relative bg-white border border-slate-200 rounded-xl shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+                <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="mobileCatModalSearchInput" 
+                       placeholder="Kategori ara (örn: Cıvata, Paslanmaz, PLC...)" 
+                       class="w-full pl-9 pr-8 py-2 text-xs bg-transparent outline-none text-slate-800 placeholder-slate-400 font-medium" 
+                       oninput="filterMobileModalCategories(this.value)" />
+                <button type="button" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 font-bold" onclick="document.getElementById('mobileCatModalSearchInput').value=''; filterMobileModalCategories('');" title="Temizle">&times;</button>
+            </div>
+
+            <!-- "Tüm Kategoriler" Hızlı Seçim Butonu -->
+            <button type="button" onclick="selectMobileCatItem(0, 'Tüm Kategoriler', '')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-800 transition-all active:scale-[0.99]">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+                    <span class="text-xs font-bold">Tüm Kategoriler (Filtreyi Temizle)</span>
+                </div>
+                <svg class="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Kaydırılabilir Kategori Ağacı Listesi -->
+        <div id="mobileCategoryModalList" class="flex-1 overflow-y-auto p-3 space-y-1 divide-y divide-slate-100">
+            @if (ViewBag.CategoryTree != null && ((IEnumerable<satinalmaportali2.Controllers.HierarchicalCategoryItem>)ViewBag.CategoryTree).Any())
+            {
+                var rootCategories = (IEnumerable<satinalmaportali2.Controllers.HierarchicalCategoryItem>)ViewBag.CategoryTree;
+                foreach (var root in rootCategories)
+                {
+                    @RenderMobileCategoryModalTree(root, 0)
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<!-- ==================== B2B KURUMSAL SEPET ÇEKMECESİ (SLIDE-OVER DRAWER) ==================== -->
+<div id="b2bCartDrawerOverlay" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(4px); z-index: 99998; justify-content: flex-end;" onclick="if(event.target===this)closeCartDrawer()">
+    <div id="b2bCartDrawer" class="w-full max-w-full sm:max-w-md h-full bg-white shadow-2xl flex flex-col" style="animation: slideDrawerLeft 0.25s ease-out;">
+        
+        <!-- Drawer Başlığı -->
+        <div class="px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-800 flex justify-between items-center bg-slate-950 text-white">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center text-base">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-white tracking-tight">Kurumsal Satınalma Sepeti</h3>
+                    <small id="cartDrawerItemCountText" class="text-xs text-slate-400 font-normal">0 Kalem Ürün</small>
+                </div>
+            </div>
+            <button type="button" onclick="closeCartDrawer()" class="text-slate-400 hover:text-white text-xl font-bold p-1 leading-none rounded-lg hover:bg-slate-800 transition-colors">&times;</button>
         </div>
 
         <!-- Sepet İçerik Listesi -->
-        <div id="cartDrawerItemsList" style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+        <div id="cartDrawerItemsList" class="flex-1 overflow-y-auto p-3.5 sm:p-5 space-y-3">
             <!-- Dinamik JS ile doldurulur -->
         </div>
 
         <!-- Sepet Alt Özet & Butonlar -->
-        <div id="cartDrawerFooter" style="padding: 18px 20px; border-top: 1px solid #e2e8f0; background: #f8fafc; display: flex; flex-direction: column; gap: 12px;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.86rem; color: #475569;">
+        <div id="cartDrawerFooter" class="p-4 sm:p-6 border-t border-slate-200 bg-slate-50 flex flex-col gap-3">
+            <div class="flex justify-between text-xs text-slate-600 font-medium">
                 <span>Ara Toplam:</span>
-                <strong id="cartDrawerSubtotal" style="color: #0f172a;">0 ₺</strong>
+                <strong id="cartDrawerSubtotal" class="text-slate-900 font-bold">0 ₺</strong>
             </div>
-            <div style="display: flex; justify-content: space-between; font-size: 0.86rem; color: #475569;">
+            <div class="flex justify-between text-xs text-slate-600 font-medium">
                 <span>KDV (%20):</span>
-                <span id="cartDrawerTax" style="color: #64748b;">0 ₺</span>
+                <span id="cartDrawerTax" class="text-slate-500">0 ₺</span>
             </div>
-            <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: 800; color: #0f172a; padding-top: 8px; border-top: 1px dashed #cbd5e1;">
+            <div class="flex justify-between text-base font-black text-slate-900 pt-2 border-t border-dashed border-slate-200">
                 <span>Genel Toplam:</span>
-                <strong id="cartDrawerGrandTotal" style="color: #0284c7;">0 ₺</strong>
+                <strong id="cartDrawerGrandTotal" class="text-blue-600">0 ₺</strong>
             </div>
 
-            <div style="display: flex; gap: 8px; margin-top: 6px;">
-                <button type="button" onclick="clearB2BCart()" class="btn-cancel" style="padding: 10px 12px; font-size: 0.82rem;" title="Sepeti Temizle">
-                    🗑️ Boşalt
+            <div class="flex gap-2.5 mt-2">
+                <button type="button" onclick="clearB2BCart()" class="px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 text-xs font-bold transition-colors" title="Sepeti Temizle">
+                    Boşalt
                 </button>
-                <button type="button" onclick="openCheckoutModal()" class="b2b-btn-checkout-cta" style="flex: 1; padding: 12px 18px; font-size: 0.92rem;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <button type="button" onclick="openCheckoutModal()" class="flex-1 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition-all hover:-translate-y-0.5 active:scale-95">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <polyline points="20 6 9 17 4 12"></polyline>
                     </svg>
                     <span>Kurumsal Siparişi Tamamla →</span>
@@ -736,229 +1025,225 @@
 
 <!-- ==================== B2B KURUMSAL CHECKOUT / ÖDEME MODALI ==================== -->
 <div id="b2bCheckoutModal" class="b2b-checkout-overlay" onclick="if(event.target===this)closeCheckoutModal()">
-    <div class="b2b-checkout-dialog" role="dialog" aria-modal="true" aria-labelledby="b2bHomeCheckoutModalTitle">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden relative max-h-[92vh] flex flex-col animate-in fade-in zoom-in-95 duration-200" role="dialog" aria-modal="true" aria-labelledby="b2bHomeCheckoutModalTitle">
         
         <!-- Modal Başlık Alanı -->
-        <div class="b2b-checkout-header">
+        <div class="p-4 sm:p-6 sm:px-8 border-b border-slate-200 bg-slate-50 flex items-start justify-between">
             <div>
-                <span class="b2b-checkout-badge">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200/80 mb-1.5">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
                         <polyline points="2 17 12 22 22 17"></polyline>
                         <polyline points="2 12 12 17 22 12"></polyline>
                     </svg>
-                    B2B KURUMSAL CHECKOUT
+                    <span>B2B KURUMSAL CHECKOUT</span>
                 </span>
-                <h3 id="b2bHomeCheckoutModalTitle" class="b2b-checkout-title">Siparişi Onayla & Satın Al</h3>
-                <p class="b2b-checkout-subtitle">Kurumsal fatura, fabrika teslimatı ve ödeme yöntemi bilgilerinizi tamamlayınız.</p>
+                <h3 id="b2bHomeCheckoutModalTitle" class="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Siparişi Onayla &amp; Satın Al</h3>
+                <p class="text-xs text-slate-500 mt-0.5 font-normal">Kurumsal fatura, fabrika teslimatı ve ödeme yöntemi bilgilerinizi tamamlayınız.</p>
             </div>
-            <button type="button" class="b2b-checkout-close-btn" onclick="closeCheckoutModal()" title="Kapat">&times;</button>
+            <button type="button" class="text-slate-400 hover:text-slate-700 text-2xl font-bold p-1 leading-none rounded-lg hover:bg-slate-200 transition-colors" onclick="closeCheckoutModal()" title="Kapat">&times;</button>
         </div>
 
-        <form id="corporateCheckoutForm" onsubmit="submitCorporateOrder(event); return false;">
-            <div class="b2b-checkout-body">
-                
-                <!-- Adım 1: Kurumsal Fatura Bilgileri -->
-                <div class="b2b-checkout-step">
-                    <div class="b2b-step-header">
-                        <h4 class="b2b-step-title">
-                            <span class="b2b-step-num-badge">1</span>
-                            <span>🏢 Kurumsal Fatura Bilgileri</span>
-                        </h4>
-                        <span class="b2b-input-helper-badge">E-Fatura & VKN Uyumlu</span>
-                    </div>
-
-                    <div style="margin-bottom: 12px;">
-                        <label class="b2b-input-label" for="checkoutBuyerCompany">
-                            <span>Satınalma Yapan Firma Ünvanı *</span>
-                            <span style="color: #ef4444; font-size: 0.70rem;">Zorunlu</span>
-                        </label>
-                        <input type="text" id="checkoutBuyerCompany" class="b2b-custom-input" placeholder="Örn: Aselsan A.Ş. / Ege Kimya San. Tic. Ltd. Şti." required />
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                        <div>
-                            <label class="b2b-input-label" for="checkoutBuyerTaxNo">
-                                <span>Vergi Kimlik / TC No</span>
-                                <span id="checkoutTaxCounter" class="b2b-input-helper-badge">0/11 Hane</span>
-                            </label>
-                            <input type="text" id="checkoutBuyerTaxNo" class="b2b-custom-input" placeholder="10 haneli VKN veya 11 haneli TCKN" maxlength="11" inputmode="numeric" oninput="formatTaxNumberInput(this)" />
-                        </div>
-                        <div>
-                            <label class="b2b-input-label" for="checkoutBuyerTaxOffice">
-                                <span>Vergi Dairesi</span>
-                                <span class="b2b-input-helper-badge">İsteğe Bağlı</span>
-                            </label>
-                            <input type="text" id="checkoutBuyerTaxOffice" class="b2b-custom-input" placeholder="Örn: Kadıköy VD / Ostim VD" />
-                        </div>
-                    </div>
+        <form id="corporateCheckoutForm" onsubmit="submitCorporateOrder(event); return false;" class="flex-1 overflow-y-auto p-4 sm:p-8 space-y-4 sm:space-y-6">
+            
+            <!-- Adım 1: Kurumsal Fatura Bilgileri -->
+            <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 sm:p-5">
+                <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-200">
+                    <h4 class="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-extrabold flex items-center justify-center">1</span>
+                        <span>Kurumsal Fatura Bilgileri</span>
+                    </h4>
+                    <span class="text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-full">E-Fatura &amp; VKN Uyumlu</span>
                 </div>
 
-                <!-- Adım 2: Sevkiyat ve Fabrika Teslimat Adresi -->
-                <div class="b2b-checkout-step">
-                    <div class="b2b-step-header">
-                        <h4 class="b2b-step-title">
-                            <span class="b2b-step-num-badge">2</span>
-                            <span>📍 Sevkiyat & Fabrika Teslimat Adresi</span>
-                        </h4>
-                        <span class="b2b-input-helper-badge">Ambar & Lojistik Sevk</span>
-                    </div>
+                <div class="mb-3">
+                    <label class="flex justify-between items-center text-xs font-bold text-slate-700 mb-1" for="checkoutBuyerCompany">
+                        <span>Satınalma Yapan Firma Ünvanı *</span>
+                        <span class="text-rose-500 font-semibold text-[10px]">Zorunlu</span>
+                    </label>
+                    <input type="text" id="checkoutBuyerCompany" class="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-medium" placeholder="Örn: Aselsan A.Ş. / Ege Kimya San. Tic. Ltd. Şti." required />
+                </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                        <div>
-                            <label class="b2b-input-label" for="checkoutDeliveryCity">
-                                <span>Teslimat İli / İlçe *</span>
-                                <span style="color: #ef4444; font-size: 0.70rem;">Zorunlu</span>
-                            </label>
-                            <input type="text" id="checkoutDeliveryCity" class="b2b-custom-input" placeholder="Örn: Kocaeli / Dilovası İMES OSB" required />
-                        </div>
-                        <div>
-                            <label class="b2b-input-label" for="checkoutReceiverPhone">
-                                <span>Yetkili / Alıcı Telefonu</span>
-                                <span id="checkoutPhoneCounter" class="b2b-input-helper-badge">0/10 Hane</span>
-                            </label>
-                            <div class="b2b-phone-input-wrap">
-                                <span class="b2b-phone-flag-prefix">🇹🇷 +90</span>
-                                <input type="tel" id="checkoutReceiverPhone" class="b2b-phone-input-field" placeholder="5XX XXX XX XX" maxlength="10" inputmode="numeric" oninput="formatPhoneInput(this)" />
-                            </div>
-                        </div>
-                    </div>
-
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <label class="b2b-input-label" for="checkoutDeliveryAddress">
-                            <span>Fabrika / Depo / Şantiye Açık Adresi *</span>
-                            <span style="color: #ef4444; font-size: 0.70rem;">Zorunlu</span>
+                        <label class="flex justify-between items-center text-xs font-bold text-slate-700 mb-1" for="checkoutBuyerTaxNo">
+                            <span>Vergi Kimlik / TC No</span>
+                            <span id="checkoutTaxCounter" class="text-[10px] text-slate-400 font-mono">0/11 Hane</span>
                         </label>
-                        <textarea id="checkoutDeliveryAddress" class="b2b-custom-input" rows="2" style="height: auto; min-height: 56px; resize: vertical;" placeholder="Fabrika No, Blok, Mal Kabul Girişi veya Şantiye Adresi..." required></textarea>
+                        <input type="text" id="checkoutBuyerTaxNo" class="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-mono font-bold" placeholder="10 haneli VKN veya 11 haneli TCKN" maxlength="11" inputmode="numeric" oninput="formatTaxNumberInput(this)" />
                     </div>
-                </div>
-
-                <!-- Adım 3: Kurumsal Ödeme Yöntemi -->
-                <div class="b2b-checkout-step">
-                    <div class="b2b-step-header">
-                        <h4 class="b2b-step-title">
-                            <span class="b2b-step-num-badge">3</span>
-                            <span>💳 Kurumsal Ödeme Yöntemi</span>
-                        </h4>
-                        <span class="b2b-input-helper-badge">Güvenli 3D & DBS Altyapı</span>
-                    </div>
-
-                    <div class="b2b-paymethods-grid">
-                        <label class="b2b-paymethod-card is-selected" onclick="selectPaymentMethod('Kredi Kartı', this)">
-                            <input type="radio" name="checkoutPaymentMethod" value="Kredi Kartı" checked onchange="togglePaymentFields(this.value)" />
-                            <div class="b2b-paymethod-info">
-                                <span class="b2b-paymethod-title">💳 Kredi / Şirket Kartı</span>
-                                <span class="b2b-paymethod-desc">3D Secure ile Anında Onay</span>
-                            </div>
-                        </label>
-
-                        <label class="b2b-paymethod-card" onclick="selectPaymentMethod('Havale / EFT', this)">
-                            <input type="radio" name="checkoutPaymentMethod" value="Havale / EFT" onchange="togglePaymentFields(this.value)" />
-                            <div class="b2b-paymethod-info">
-                                <span class="b2b-paymethod-title">🏦 Kurumsal Havale / EFT</span>
-                                <span class="b2b-paymethod-desc">Proforma Fatura ile Ödeme</span>
-                            </div>
-                        </label>
-
-                        <label class="b2b-paymethod-card" onclick="selectPaymentMethod('Cari Hesap / Vadeli', this)">
-                            <input type="radio" name="checkoutPaymentMethod" value="Cari Hesap / Vadeli" onchange="togglePaymentFields(this.value)" />
-                            <div class="b2b-paymethod-info">
-                                <span class="b2b-paymethod-title">📄 30/60 Gün Vadeli Çek</span>
-                                <span class="b2b-paymethod-desc">Kurumsal Cari Sözleşme</span>
-                            </div>
-                        </label>
-
-                        <label class="b2b-paymethod-card" onclick="selectPaymentMethod('DBS', this)">
-                            <input type="radio" name="checkoutPaymentMethod" value="DBS" onchange="togglePaymentFields(this.value)" />
-                            <div class="b2b-paymethod-info">
-                                <span class="b2b-paymethod-title">🛡️ DBS (Doğrudan Borçl.)</span>
-                                <span class="b2b-paymethod-desc">Banka Limit Garantili</span>
-                            </div>
-                        </label>
-                    </div>
-
-                    <!-- Kredi Kartı Alanı -->
-                    <div id="paymentCreditCardFields" class="b2b-card-box">
-                        <div class="b2b-card-visual-header">
-                            <span style="font-size: 0.76rem; font-weight: 700; color: #475569;">Kart Bilgileri</span>
-                            <span id="cardTypeBadge" class="b2b-card-type-badge">💳 3D SECURE &amp; İYZİCO HAVUZ</span>
-                        </div>
-
-                        <!-- iyzico Escrow Bilgilendirme Rozeti -->
-                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                            <span style="font-size: 1.2rem;">🛡️</span>
-                            <div style="font-size: 0.76rem; color: #166534; line-height: 1.35;">
-                                <strong>B2B Güvenli Havuz (Escrow) Garantisi:</strong><br />
-                                Ödemeniz satıcıya hemen aktarılmaz; ürün teslim edilip onaylayana kadar <strong>iyzico güvence havuzunda</strong> bloke edilir.
-                            </div>
-                        </div>
-
-                        <div style="margin-bottom: 10px;">
-                            <label class="b2b-input-label" style="margin-bottom: 3px;">Kart Üzerindeki İsim</label>
-                            <input type="text" id="checkoutCardHolder" class="b2b-custom-input" placeholder="Ad Soyad veya Şirket Ünvanı" oninput="formatCardHolderInput(this)" style="text-transform: uppercase;" />
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px;">
-                            <div>
-                                <label class="b2b-input-label" style="margin-bottom: 3px;">Kart Numarası (16 Hane)</label>
-                                <input type="text" id="checkoutCardNumber" class="b2b-custom-input" placeholder="5528 7900 0000 0008" maxlength="19" inputmode="numeric" oninput="formatCardNumberInput(this)" style="font-family: monospace; font-weight: 700; letter-spacing: 0.06em;" />
-                            </div>
-                            <div>
-                                <label class="b2b-input-label" style="margin-bottom: 3px;">SKT (AA/YY)</label>
-                                <input type="text" id="checkoutCardExpiry" class="b2b-custom-input" placeholder="12/28" maxlength="5" inputmode="numeric" oninput="formatExpiryInput(this)" style="font-family: monospace; text-align: center;" />
-                            </div>
-                            <div>
-                                <label class="b2b-input-label" style="margin-bottom: 3px;">CVV / CVC</label>
-                                <input type="password" id="checkoutCardCvv" class="b2b-custom-input" placeholder="***" maxlength="3" inputmode="numeric" oninput="formatCvvInput(this)" style="font-family: monospace; text-align: center;" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Havale/EFT Bilgilendirme Alanı -->
-                    <div id="paymentBankFields" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 14px; margin-top: 10px;">
-                        <div style="display: flex; gap: 10px; align-items: flex-start;">
-                            <span style="font-size: 1.4rem;">🏦</span>
-                            <div style="font-size: 0.82rem; color: #1e40af; line-height: 1.45;">
-                                <strong style="color: #1e3a8a; display: block; margin-bottom: 4px;">Kurumsal Havale / EFT Talimatı</strong>
-                                Sipariş onayınızın ardından resmi <strong>Proforma Fatura</strong> ve şirket banka IBAN hesaplarımız otomatik olarak sistem ve e-posta adresinize iletilecektir.
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Vadeli Çek / DBS Bilgilendirme Alanı -->
-                    <div id="paymentCheckFields" style="display: none; background: #fefce8; border: 1px solid #fef08a; border-radius: 10px; padding: 14px; margin-top: 10px;">
-                        <div style="display: flex; gap: 10px; align-items: flex-start;">
-                            <span style="font-size: 1.4rem;">📄</span>
-                            <div style="font-size: 0.82rem; color: #854d0e; line-height: 1.45;">
-                                <strong style="color: #713f12; display: block; margin-bottom: 4px;">Kurumsal Vadeli / DBS Süreci</strong>
-                                Siparişiniz onaylandıktan sonra finans departmanımız firmanızın tanımlı kurumsal kredi/DBS limiti üzerinden cari işleminizi tamamlayacaktır.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sipariş Özeti ve Tutar Şeridi -->
-                <div class="b2b-checkout-summary-box">
                     <div>
-                        <span style="font-size: 0.78rem; color: #94a3b8; display: block;">Ödenecek Toplam Tutar (KDV Dahil):</span>
-                        <strong id="checkoutModalGrandTotalText" class="b2b-checkout-summary-amount">0 ₺</strong>
+                        <label class="flex justify-between items-center text-xs font-bold text-slate-700 mb-1" for="checkoutBuyerTaxOffice">
+                            <span>Vergi Dairesi</span>
+                            <span class="text-[10px] text-slate-400">İsteğe Bağlı</span>
+                        </label>
+                        <input type="text" id="checkoutBuyerTaxOffice" class="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-medium" placeholder="Örn: Kadıköy VD / Ostim VD" />
                     </div>
-                    <div style="text-align: right; font-size: 0.78rem; color: #94a3b8;">
-                        <span id="checkoutModalItemCount" style="color: #ffffff; font-weight: 700;">0 Kalem</span><br />
-                        <span style="color: #10b981; font-weight: 600;">🔒 256-Bit SSL &amp; 3D Secure</span>
+                </div>
+            </div>
+
+            <!-- Adım 2: Sevkiyat ve Fabrika Teslimat Adresi -->
+            <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 sm:p-5">
+                <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-200">
+                    <h4 class="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-extrabold flex items-center justify-center">2</span>
+                        <span>Sevkiyat &amp; Fabrika Teslimat Adresi</span>
+                    </h4>
+                    <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">Ambar &amp; Lojistik Sevk</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label class="flex justify-between items-center text-xs font-bold text-slate-700 mb-1" for="checkoutDeliveryCity">
+                            <span>Teslimat İli / İlçe *</span>
+                            <span class="text-rose-500 font-semibold text-[10px]">Zorunlu</span>
+                        </label>
+                        <input type="text" id="checkoutDeliveryCity" class="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-medium" placeholder="Örn: Kocaeli / Dilovası İMES OSB" required />
+                    </div>
+                    <div>
+                        <label class="flex justify-between items-center text-xs font-bold text-slate-700 mb-1" for="checkoutReceiverPhone">
+                            <span>Yetkili / Alıcı Telefonu</span>
+                            <span id="checkoutPhoneCounter" class="text-[10px] text-slate-400 font-mono">0/10 Hane</span>
+                        </label>
+                        <div class="relative flex items-center">
+                            <span class="absolute left-3 text-xs text-slate-500 font-semibold pointer-events-none">+90</span>
+                            <input type="tel" id="checkoutReceiverPhone" class="w-full pl-11 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-mono font-bold" placeholder="5XX XXX XX XX" maxlength="10" inputmode="numeric" oninput="formatPhoneInput(this)" />
+                        </div>
                     </div>
                 </div>
 
-                <!-- Aksiyon Butonları -->
-                <div class="b2b-checkout-actions">
-                    <button type="button" class="b2b-btn-cancel-checkout" onclick="closeCheckoutModal()">Vazgeç</button>
-                    <button type="submit" id="btnSubmitOrder" class="b2b-btn-confirm-checkout">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <polyline points="20 6 9 17 4 12"></polyline>
+                <div>
+                    <label class="flex justify-between items-center text-xs font-bold text-slate-700 mb-1" for="checkoutDeliveryAddress">
+                        <span>Fabrika / Depo / Şantiye Açık Adresi *</span>
+                        <span class="text-rose-500 font-semibold text-[10px]">Zorunlu</span>
+                    </label>
+                    <textarea id="checkoutDeliveryAddress" rows="2" class="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-medium" placeholder="Fabrika No, Blok, Mal Kabul Girişi veya Şantiye Adresi..." required></textarea>
+                </div>
+            </div>
+
+            <!-- Adım 3: Kurumsal Ödeme Yöntemi -->
+            <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 sm:p-5">
+                <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-200">
+                    <h4 class="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-extrabold flex items-center justify-center">3</span>
+                        <span>Kurumsal Ödeme Yöntemi</span>
+                    </h4>
+                    <span class="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">Güvenli 3D &amp; DBS Altyapı</span>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                    <label class="b2b-paymethod-card is-selected flex flex-col p-3 rounded-xl border border-blue-500 bg-blue-50/40 cursor-pointer text-center transition-all select-none" onclick="selectPaymentMethod('Kredi Kartı', this)">
+                        <input type="radio" name="checkoutPaymentMethod" value="Kredi Kartı" checked onchange="togglePaymentFields(this.value)" class="sr-only" />
+                        <span class="text-xs font-bold text-slate-900">Kredi Kartı</span>
+                        <span class="text-[10px] text-slate-500 mt-0.5">3D Secure Onay</span>
+                    </label>
+
+                    <label class="b2b-paymethod-card flex flex-col p-3 rounded-xl border border-slate-200 bg-white hover:border-slate-300 cursor-pointer text-center transition-all select-none" onclick="selectPaymentMethod('Havale / EFT', this)">
+                        <input type="radio" name="checkoutPaymentMethod" value="Havale / EFT" onchange="togglePaymentFields(this.value)" class="sr-only" />
+                        <span class="text-xs font-bold text-slate-900">Havale / EFT</span>
+                        <span class="text-[10px] text-slate-500 mt-0.5">Proforma Fatura</span>
+                    </label>
+
+                    <label class="b2b-paymethod-card flex flex-col p-3 rounded-xl border border-slate-200 bg-white hover:border-slate-300 cursor-pointer text-center transition-all select-none" onclick="selectPaymentMethod('Cari Hesap / Vadeli', this)">
+                        <input type="radio" name="checkoutPaymentMethod" value="Cari Hesap / Vadeli" onchange="togglePaymentFields(this.value)" class="sr-only" />
+                        <span class="text-xs font-bold text-slate-900">Vadeli Çek</span>
+                        <span class="text-[10px] text-slate-500 mt-0.5">30-60 Gün Vade</span>
+                    </label>
+
+                    <label class="b2b-paymethod-card flex flex-col p-3 rounded-xl border border-slate-200 bg-white hover:border-slate-300 cursor-pointer text-center transition-all select-none" onclick="selectPaymentMethod('DBS', this)">
+                        <input type="radio" name="checkoutPaymentMethod" value="DBS" onchange="togglePaymentFields(this.value)" class="sr-only" />
+                        <span class="text-xs font-bold text-slate-900">DBS</span>
+                        <span class="text-[10px] text-slate-500 mt-0.5">Banka Garantili</span>
+                    </label>
+                </div>
+
+                <!-- Kredi Kartı Alanı -->
+                <div id="paymentCreditCardFields" class="bg-white border border-slate-200 rounded-xl p-4">
+                    <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
+                        <span class="text-xs font-bold text-slate-700">Kart Bilgileri</span>
+                        <span id="cardTypeBadge" class="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200/60">3D SECURE &amp; İYZİCO HAVUZ</span>
+                    </div>
+
+                    <!-- iyzico Escrow Bilgilendirme Rozeti -->
+                    <div class="bg-emerald-50/80 border border-emerald-200 rounded-lg p-3 mb-3 text-xs text-emerald-800 leading-relaxed flex items-start gap-2.5">
+                        <svg class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                         </svg>
-                        <span>✓ Siparişi Onayla ve Satın Al</span>
-                    </button>
+                        <div>
+                            <strong class="text-emerald-900 block font-bold mb-0.5">B2B Güvenli Havuz (Escrow) Garantisi:</strong>
+                            Ödemeniz satıcıya hemen aktarılmaz; ürün teslim edilip onaylayana kadar <strong>iyzico güvence havuzunda</strong> bloke edilir.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Kart Üzerindeki İsim</label>
+                        <input type="text" id="checkoutCardHolder" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all uppercase font-medium" placeholder="Ad Soyad veya Şirket Ünvanı" oninput="formatCardHolderInput(this)" />
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        <div class="col-span-2">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Kart Numarası (16 Hane)</label>
+                            <input type="text" id="checkoutCardNumber" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-mono font-bold tracking-wider" placeholder="5528 7900 0000 0008" maxlength="19" inputmode="numeric" oninput="formatCardNumberInput(this)" />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">SKT (AA/YY)</label>
+                            <input type="text" id="checkoutCardExpiry" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-mono text-center font-bold" placeholder="12/28" maxlength="5" inputmode="numeric" oninput="formatExpiryInput(this)" />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">CVV / CVC</label>
+                            <input type="password" id="checkoutCardCvv" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-mono text-center font-bold" placeholder="***" maxlength="3" inputmode="numeric" oninput="formatCvvInput(this)" />
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Havale/EFT Bilgilendirme Alanı -->
+                <div id="paymentBankFields" class="hidden bg-blue-50 border border-blue-200 rounded-xl p-4 mt-3">
+                    <div class="flex gap-3 items-start">
+                        <div class="text-xs text-blue-800 leading-relaxed">
+                            <strong class="text-blue-950 block mb-1 font-bold">Kurumsal Havale / EFT Talimatı</strong>
+                            Sipariş onayınızın ardından resmi <strong>Proforma Fatura</strong> ve şirket banka IBAN hesaplarımız otomatik olarak sistem ve e-posta adresinize iletilecektir.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vadeli Çek / DBS Bilgilendirme Alanı -->
+                <div id="paymentCheckFields" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-4 mt-3">
+                    <div class="flex gap-3 items-start">
+                        <div class="text-xs text-amber-800 leading-relaxed">
+                            <strong class="text-amber-950 block mb-1 font-bold">Kurumsal Vadeli / DBS Süreci</strong>
+                            Siparişiniz onaylandıktan sonra finans departmanımız firmanızın tanımlı kurumsal kredi/DBS limiti üzerinden cari işleminizi tamamlayacaktır.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sipariş Özeti ve Tutar Şeridi -->
+            <div class="rounded-xl bg-slate-900 text-white p-4 sm:p-5 flex items-center justify-between">
+                <div>
+                    <span class="text-[11px] text-slate-400 block font-medium">Ödenecek Toplam Tutar (KDV Dahil):</span>
+                    <strong id="checkoutModalGrandTotalText" class="text-xl sm:text-2xl font-black text-white tracking-tight">0 ₺</strong>
+                </div>
+                <div class="text-right text-xs">
+                    <span id="checkoutModalItemCount" class="font-bold text-white block">0 Kalem</span>
+                    <span class="inline-flex items-center gap-1 text-emerald-400 text-[11px] font-semibold">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        256-Bit SSL &amp; 3D Secure
+                    </span>
+                </div>
+            </div>
+
+            <!-- Aksiyon Butonları -->
+            <div class="flex items-center gap-3 pt-2">
+                <button type="button" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-colors" onclick="closeCheckoutModal()">Vazgeç</button>
+                <button type="submit" id="btnSubmitOrder" class="flex-[2] inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition-all hover:-translate-y-0.5 active:scale-95">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>Siparişi Onayla ve Satın Al</span>
+                </button>
             </div>
         </form>
     </div>
@@ -966,116 +1251,127 @@
 
 <!-- ==================== SİPARİŞ BAŞARILI / ALINDI MODALI ==================== -->
 <div id="b2bOrderSuccessModal" class="b2b-checkout-overlay" style="z-index: 999999;">
-    <div class="b2b-success-dialog" role="dialog" aria-modal="true">
-        <div class="b2b-success-icon-badge">✓</div>
-        <span class="b2b-checkout-badge" style="background: #ecfdf5; color: #059669; border-color: #a7f3d0; margin-bottom: 8px;">SİPARİŞİNİZ ALINDI</span>
-        <h3 class="b2b-success-title">Satın Alımınız Başarıyla Gerçekleşti!</h3>
-        <p class="b2b-success-desc">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-4 sm:p-8 text-center animate-in fade-in zoom-in-95 duration-200" role="dialog" aria-modal="true">
+        <div class="w-14 h-14 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4 shadow-sm">
+            <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 mb-2">SİPARİŞİNİZ ALINDI</span>
+        <h3 class="text-xl font-black text-slate-900 tracking-tight">Satın Alımınız Başarıyla Gerçekleşti!</h3>
+        <p class="text-xs text-slate-500 mt-1 font-normal leading-relaxed">
             Kurumsal siparişiniz satıcı tedarikçilere iletilmiş olup hazırlık ve faturalandırma aşamasına alınmıştır.
         </p>
 
-        <div class="b2b-success-details-card">
-            <div class="b2b-success-detail-row">
+        <div class="mt-5 p-4 rounded-xl bg-slate-50 border border-slate-200 text-left space-y-2 text-xs">
+            <div class="flex justify-between items-center text-slate-600">
                 <span>Sipariş Numarası:</span>
-                <span class="b2b-order-code-badge" onclick="copyOrderNumber(this)" title="Kopyalamak için tıklayın">
+                <span class="font-mono font-bold text-slate-900 bg-white border border-slate-200 px-2 py-0.5 rounded cursor-pointer hover:bg-slate-100 transition-colors inline-flex items-center gap-1" onclick="copyOrderNumber(this)" title="Kopyalamak için tıklayın">
                     <span id="successModalOrderNo">ORD-0000</span>
-                    <span style="font-size: 0.72rem; color: #0369a1;">📋</span>
+                    <svg class="w-3.5 h-3.5 text-blue-600 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
                 </span>
             </div>
-            <div class="b2b-success-detail-row">
+            <div class="flex justify-between items-center text-slate-600">
                 <span>Toplam Ödeme Tutarı:</span>
-                <strong id="successModalTotal" style="font-size: 1.05rem; font-weight: 850; color: #059669;">0 ₺</strong>
+                <strong id="successModalTotal" class="text-sm font-black text-emerald-600">0 ₺</strong>
             </div>
-            <div class="b2b-success-detail-row">
+            <div class="flex justify-between items-center text-slate-600">
                 <span>Ödeme Yöntemi:</span>
-                <span id="successModalPayMethod" style="font-weight: 700; color: #0f172a;">Kredi Kartı</span>
+                <span id="successModalPayMethod" class="font-bold text-slate-900">Kredi Kartı</span>
             </div>
-            <div class="b2b-success-detail-row">
+            <div class="flex justify-between items-center text-slate-600">
                 <span>Sipariş Tarihi:</span>
-                <span id="successModalDate" style="color: #64748b; font-size: 0.80rem;">Bugün</span>
+                <span id="successModalDate" class="text-slate-500">Bugün</span>
             </div>
-            <div class="b2b-success-detail-row" style="border-top: 1px dashed #cbd5e1; padding-top: 8px; margin-top: 2px;">
+            <div class="flex justify-between items-center text-slate-600 pt-2 border-t border-dashed border-slate-200">
                 <span>Tahmini Fabrika Sevkiyatı:</span>
-                <span style="color: #0284c7; font-weight: 700;">🚚 1-3 İş Günü (Doğrudan Sevk)</span>
+                <span class="text-blue-600 font-bold">1-3 İş Günü (Doğrudan Sevk)</span>
             </div>
         </div>
 
         <!-- Değerlendirme Aksiyon Alanı -->
-        <div id="orderSuccessReviewActionWrap" style="margin-bottom: 12px; width: 100%;">
-            <button type="button" id="btnSuccessReviewSingle" class="b2b-btn-success-primary" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); width: 100%; justify-content: center; padding: 11px 18px; font-weight: 800; display: none; margin-bottom: 8px; border: none; border-radius: 10px; color: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(245,158,11,0.35);" onclick="openSuccessSellerReviewModal()">
-                ★ Satıcıyı Değerlendir
+        <div id="orderSuccessReviewActionWrap" class="mt-4 w-full">
+            <button type="button" id="btnSuccessReviewSingle" class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-md shadow-amber-500/25 transition-all mb-2" style="display: none;" onclick="openSuccessSellerReviewModal()">
+                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <span>Satıcıyı Değerlendir</span>
             </button>
-            <a href="/Dashboard/Orders" id="btnSuccessReviewMultiple" class="b2b-btn-success-primary" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); width: 100%; justify-content: center; padding: 11px 18px; font-weight: 800; display: none; margin-bottom: 8px; text-decoration: none; border-radius: 10px; color: #fff; text-align: center; box-shadow: 0 4px 14px rgba(37,99,235,0.35);">
-                ★ Satıcıları Değerlendir (Siparişlerim) →
+            <a href="/Dashboard/Orders" id="btnSuccessReviewMultiple" class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/25 transition-all mb-2" style="display: none;">
+                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <span>Satıcıları Değerlendir (Siparişlerim) →</span>
             </a>
         </div>
 
-        <div class="b2b-success-actions-grid">
-            <button type="button" class="b2b-btn-success-secondary" onclick="closeCheckoutModal(); window.location.href='/#ihtiyaciniz-olan-urunler';">
-                🛍️ Alışverişe Devam Et
+        <div class="grid grid-cols-2 gap-2.5 mt-3">
+            <button type="button" class="px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-colors" onclick="closeCheckoutModal(); window.location.href='/#ihtiyaciniz-olan-urunler';">
+                Alışverişe Devam Et
             </button>
-            <a href="/Dashboard/Orders" class="b2b-btn-success-primary">
-                📦 Siparişlerim →
+            <a href="/Dashboard/Orders" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm transition-colors">
+                Siparişlerim →
             </a>
         </div>
     </div>
 </div>
 
 <!-- ==================== SİPARİŞ SONRASI SATICI DEĞERLENDİRME MODALI ==================== -->
-<div id="orderSuccessRatingModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.7); backdrop-filter: blur(4px); z-index: 1000000; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this)closeSuccessSellerReviewModal()">
-    <div class="ty-modal-box" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; width: 100%; max-width: 520px; padding: 26px; box-shadow: 0 25px 40px -5px rgba(0,0,0,0.3);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+<div id="orderSuccessRatingModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.7); backdrop-filter: blur(4px); z-index: 1000000; align-items: center; justify-content: center; padding: 10px sm:padding: 20px;" onclick="if(event.target===this)closeSuccessSellerReviewModal()">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-4 sm:p-8 animate-in fade-in zoom-in-95 duration-200">
+        <div class="flex justify-between items-start mb-4">
             <div>
-                <span class="status-badge" style="background: #eff6ff; color: #1d4ed8; font-size: 0.72rem; padding: 3px 8px; border-radius: 6px; font-weight: 800;">DOĞRULANMIŞ SATINALMA</span>
-                <h3 id="successRateModalSellerTitle" style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-top: 6px; margin-bottom: 2px;">Satıcıyı Değerlendir</h3>
-                <small style="color: #64748b; font-size: 0.8rem;">Bu değerlendirme satıcının onaylı kurumsal profiline ve karne istatistiklerine yansıyacaktır.</small>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">DOĞRULANMIŞ SATINALMA</span>
+                <h3 id="successRateModalSellerTitle" class="text-lg font-extrabold text-slate-900 mt-1">Satıcıyı Değerlendir</h3>
+                <small class="text-xs text-slate-500">Bu değerlendirme satıcının onaylı kurumsal profiline ve karne istatistiklerine yansıyacaktır.</small>
             </div>
-            <button type="button" onclick="closeSuccessSellerReviewModal()" style="border: none; background: transparent; font-size: 1.3rem; cursor: pointer; color: #64748b;">&times;</button>
+            <button type="button" onclick="closeSuccessSellerReviewModal()" class="text-slate-400 hover:text-slate-700 text-2xl font-bold p-1 leading-none rounded-lg hover:bg-slate-100 transition-colors">&times;</button>
         </div>
 
-        <form id="successRateModalForm" onsubmit="submitSuccessSellerReview(event)">
+        <form id="successRateModalForm" onsubmit="submitSuccessSellerReview(event)" class="space-y-4">
             <input type="hidden" id="successRateModalOrderID" />
             <input type="hidden" id="successRateModalSupplierCompanyID" />
             <input type="hidden" id="successRateModalSupplierName" />
             <input type="hidden" id="successRateModalScore" value="10" />
 
             <!-- 10 Yıldız Seçici -->
-            <div style="text-align: center; margin-bottom: 16px; background: rgba(245,158,11,0.06); padding: 14px; border-radius: 12px; border: 1px solid rgba(245,158,11,0.18);">
-                <label style="display: block; font-size: 0.84rem; font-weight: 750; color: #0f172a; margin-bottom: 6px;">Satıcı Genel Memnuniyet Puanı (10 Yıldız)</label>
-                <div style="display: flex; justify-content: center; gap: 4px;" id="successStarPickerWrap">
+            <div class="text-center p-4 rounded-xl bg-amber-500/5 border border-amber-500/20">
+                <label class="block text-xs font-bold text-slate-900 mb-1.5">Satıcı Genel Memnuniyet Puanı (10 Yıldız)</label>
+                <div class="flex justify-center gap-1" id="successStarPickerWrap">
                     @for (int i = 1; i <= 10; i++)
                     {
-                        <button type="button" class="btn-star-pick-success" data-val="@i" onclick="pickSuccessScore(@i)" onmouseenter="previewSuccessScore(@i)" onmouseleave="restoreSuccessScore()" style="background: none; border: none; font-size: 1.8rem; color: #f59e0b; cursor: pointer; padding: 2px; transition: transform 0.15s;">★</button>
+                        <button type="button" class="btn-star-pick-success text-amber-400 hover:text-amber-500 hover:scale-125 transition-transform p-0.5 leading-none" data-val="@i" onclick="pickSuccessScore(@i)" onmouseenter="previewSuccessScore(@i)" onmouseleave="restoreSuccessScore()">
+                            <svg class="w-6 h-6 inline fill-current" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        </button>
                     }
                 </div>
-                <div id="successScoreText" style="font-size: 1.05rem; font-weight: 800; color: #d97706; margin-top: 6px;">★ 10.0 / 10 - Mükemmel</div>
+                <div id="successScoreText" class="text-sm font-extrabold text-amber-600 mt-1.5">10.0 / 10 - Mükemmel</div>
             </div>
 
-            <!-- Alt Kriterler (10 Üzerinden) -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+            <!-- Alt Kriterler -->
+            <div class="grid grid-cols-3 gap-2.5">
                 <div>
-                    <label style="font-size: 0.74rem; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">🚚 Teslimat Hızı</label>
-                    <input type="number" id="successRateDelivery" class="form-control" value="10" min="1" max="10" step="0.5" style="font-size: 0.85rem; padding: 6px 10px;" />
+                    <label class="block text-[11px] font-bold text-slate-700 mb-1">Teslimat Hızı</label>
+                    <input type="number" id="successRateDelivery" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-center font-bold text-slate-900" value="10" min="1" max="10" step="0.5" />
                 </div>
                 <div>
-                    <label style="font-size: 0.74rem; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">📦 Ürün Kalitesi</label>
-                    <input type="number" id="successRateQuality" class="form-control" value="10" min="1" max="10" step="0.5" style="font-size: 0.85rem; padding: 6px 10px;" />
+                    <label class="block text-[11px] font-bold text-slate-700 mb-1">Ürün Kalitesi</label>
+                    <input type="number" id="successRateQuality" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-center font-bold text-slate-900" value="10" min="1" max="10" step="0.5" />
                 </div>
                 <div>
-                    <label style="font-size: 0.74rem; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">💬 İletişim / Süreç</label>
-                    <input type="number" id="successRateComm" class="form-control" value="10" min="1" max="10" step="0.5" style="font-size: 0.85rem; padding: 6px 10px;" />
+                    <label class="block text-[11px] font-bold text-slate-700 mb-1">İletişim / Süreç</label>
+                    <input type="number" id="successRateComm" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-center font-bold text-slate-900" value="10" min="1" max="10" step="0.5" />
                 </div>
             </div>
 
             <!-- Yorum -->
-            <div class="form-group" style="margin-bottom: 18px;">
-                <label style="font-size: 0.82rem; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Yorumunuz (Opsiyonel)</label>
-                <textarea id="successRateComment" class="form-control" rows="3" placeholder="Teslimat süreci, ambalaj ve şartnameye uygunluk nasıldı?" style="font-size: 0.85rem; border-radius: 8px;"></textarea>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Yorumunuz (Opsiyonel)</label>
+                <textarea id="successRateComment" rows="3" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-medium" placeholder="Teslimat süreci, ambalaj ve şartnameye uygunluk nasıldı?"></textarea>
             </div>
 
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button type="button" class="btn-cancel" onclick="closeSuccessSellerReviewModal()">Vazgeç</button>
-                <button type="submit" id="btnSubmitSuccessReview" class="btn-primary" style="padding: 10px 20px; font-weight: 750; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none; border-radius: 8px; color: #fff; cursor: pointer;">
+            <div class="flex items-center gap-3 pt-2">
+                <button type="button" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-colors" onclick="closeSuccessSellerReviewModal()">Vazgeç</button>
+                <button type="submit" id="btnSubmitSuccessReview" class="flex-[2] px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-md shadow-amber-500/25 transition-all">
                     Değerlendir &amp; Gönder
                 </button>
             </div>
@@ -1085,15 +1381,18 @@
 
 <!-- ==================== İYZİCO 3D SECURE MODALI ==================== -->
 <div id="iyzico3DModal" class="b2b-checkout-overlay" style="display: none; z-index: 1000002;">
-    <div style="background: #fff; border-radius: 16px; width: 100%; max-width: 680px; max-height: 90vh; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35); display: flex; flex-direction: column;">
-        <div style="padding: 16px 20px; background: #0f172a; color: #fff; display: flex; justify-content: space-between; align-items: center;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 1.2rem;">🔒</span>
-                <strong style="font-size: 0.95rem;">Banka 3D Secure Doğrulama Ekranı</strong>
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="px-6 py-4 bg-slate-950 text-white flex justify-between items-center border-b border-slate-800">
+            <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <strong class="text-sm font-bold">Banka 3D Secure Doğrulama Ekranı</strong>
             </div>
-            <button type="button" onclick="closeIyzico3DModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer;">&times;</button>
+            <button type="button" onclick="closeIyzico3DModal()" class="text-slate-400 hover:text-white text-xl font-bold p-1 leading-none rounded-lg hover:bg-slate-800 transition-colors">&times;</button>
         </div>
-        <div id="iyzico3DFrameContainer" style="flex: 1; min-height: 520px; width: 100%; position: relative; background: #f8fafc;">
+        <div id="iyzico3DFrameContainer" class="flex-1 min-h-[520px] w-full relative bg-slate-50">
             <!-- 3D Secure HTML form / iframe dinamik basılır -->
         </div>
     </div>
@@ -1101,5 +1400,108 @@
 
 @section Scripts {
     <script src="~/js/trendyol-vitrin.js" asp-append-version="true"></script>
+    <script>
+        function openMobileCategoryModal() {
+            var modal = document.getElementById('mobileCategoryModal');
+            if (!modal) {
+                window.location.href = '/?openCategories=1';
+                return;
+            }
+            modal.style.display = 'flex';
+            modal.style.opacity = '1';
+            modal.style.pointerEvents = 'auto';
+            modal.classList.add('show', 'is-open');
+            document.body.classList.add('mobile-nav-locked');
+
+            var searchInput = document.getElementById('mobileCatModalSearchInput');
+            if (searchInput) {
+                searchInput.value = '';
+                filterMobileModalCategories('');
+            }
+        }
+
+        function closeMobileCategoryModal() {
+            var modal = document.getElementById('mobileCategoryModal');
+            if (modal) {
+                modal.style.display = 'none';
+                modal.style.opacity = '0';
+                modal.style.pointerEvents = 'none';
+                modal.classList.remove('show', 'is-open');
+            }
+            document.body.classList.remove('mobile-nav-locked');
+        }
+
+        function toggleMobileCatModalBranch(btn, branchId) {
+            var branch = document.getElementById(branchId);
+            if (!branch) return;
+            var isHidden = branch.classList.contains('hidden');
+            if (isHidden) {
+                branch.classList.remove('hidden');
+                if (btn) {
+                    var svg = btn.querySelector('svg');
+                    if (svg) svg.style.transform = 'rotate(180deg)';
+                }
+            } else {
+                branch.classList.add('hidden');
+                if (btn) {
+                    var svg = btn.querySelector('svg');
+                    if (svg) svg.style.transform = 'rotate(0deg)';
+                }
+            }
+        }
+
+        function selectMobileCatItem(catId, catName, catPath) {
+            if (typeof selectVitrinCategory === 'function') {
+                selectVitrinCategory(catId, catName, catPath);
+            }
+            closeMobileCategoryModal();
+            var vitrin = document.getElementById('vitrinContainer');
+            if (vitrin) {
+                vitrin.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        function filterMobileModalCategories(query) {
+            var q = (query || '').toLowerCase().trim();
+            var items = document.querySelectorAll('#mobileCategoryModalList .mob-cat-item-wrap');
+            if (!q) {
+                items.forEach(function(item) {
+                    item.style.display = '';
+                });
+                return;
+            }
+
+            items.forEach(function(item) {
+                var name = (item.getAttribute('data-cat-name') || '').toLowerCase();
+                var path = (item.getAttribute('data-cat-path') || '').toLowerCase();
+                if (name.indexOf(q) !== -1 || path.indexOf(q) !== -1) {
+                    item.style.display = '';
+                    var parentBranch = item.closest('.mob-children-wrap');
+                    while (parentBranch) {
+                        parentBranch.classList.remove('hidden');
+                        parentBranch = parentBranch.parentElement ? parentBranch.parentElement.closest('.mob-children-wrap') : null;
+                    }
+                } else {
+                    var hasMatchingChild = item.querySelector('.mob-cat-item-wrap[data-cat-name*="' + q + '"]');
+                    if (hasMatchingChild) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                var params = new URLSearchParams(window.location.search);
+                if (params.get('openCategories') === '1') {
+                    setTimeout(function() {
+                        openMobileCategoryModal();
+                    }, 250);
+                }
+            } catch (e) {}
+        });
+    </script>
 }
 

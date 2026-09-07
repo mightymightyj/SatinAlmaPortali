@@ -9,6 +9,10 @@ namespace satinalmaportali2.Models
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int FormId { get; set; }
+        
+        [Column("companyid")]
+        public int? CompanyId { get; set; }
+
         public string? Name { get; set; }
         public string? Surname { get; set; }
         public string? Email { get; set; }

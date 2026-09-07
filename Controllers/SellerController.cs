@@ -206,6 +206,7 @@ namespace satinalmaportali2.Controllers
             var productsQuery = _context.Items
                 .Include(i => i.Images)
                 .AsNoTracking()
+                .Where(i => !i.IsDeleted)
                 .AsQueryable();
             if (!string.IsNullOrWhiteSpace(compName))
             {

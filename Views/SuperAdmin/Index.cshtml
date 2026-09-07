@@ -231,34 +231,38 @@
         .tabs-nav {
             display: flex;
             align-items: center;
-            gap: 6px;
+            flex-wrap: wrap;
+            gap: 4px;
             border-bottom: 1px solid var(--border);
             margin-bottom: 24px;
-            overflow-x: auto;
+            padding-bottom: 4px;
         }
 
         .tab-btn {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 10px 16px;
-            font-size: 0.88rem;
+            gap: 6px;
+            padding: 8px 13px;
+            font-size: 0.83rem;
             font-weight: 600;
             color: var(--text-muted);
             text-decoration: none;
             border-bottom: 2px solid transparent;
+            border-radius: 6px 6px 0 0;
             margin-bottom: -1px;
-            transition: color 0.15s ease, border-color 0.15s ease;
+            transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
             white-space: nowrap;
         }
 
         .tab-btn:hover {
             color: var(--text-heading);
+            background: #F1F5F9;
         }
 
         .tab-btn.is-active {
             color: var(--primary);
             border-bottom-color: var(--primary);
+            background: #EFF6FF;
         }
 
         .tab-count {
@@ -494,6 +498,42 @@
         .badge-super { background: #FEF2F2; color: #991B1B; border: 1px solid #FEE2E2; }
         .badge-root { background: #F0FDF4; color: #166534; border: 1px solid #DCFCE7; }
         .badge-sub { background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; }
+        .badge-free { background: #F8FAFC; color: #475569; border: 1px solid #CBD5E1; }
+        .badge-pro { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; font-weight: 700; }
+        .badge-kurumsal { background: #F5F3FF; color: #6D28D9; border: 1px solid #DDD6FE; font-weight: 700; box-shadow: 0 1px 2px rgba(109, 40, 217, 0.08); }
+        .badge-danger { background: #FEF2F2; color: #DC2626; border: 1px solid #FEE2E2; font-weight: 600; }
+        .badge-warning { background: #FFFBEB; color: #B45309; border: 1px solid #FEF3C7; font-weight: 600; }
+        .badge-purple { background: #F5F3FF; color: #6D28D9; border: 1px solid #DDD6FE; font-weight: 600; }
+        .badge-info { background: #ECFEFF; color: #0E7490; border: 1px solid #CFFAFE; font-weight: 600; }
+        .badge-gray { background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; font-weight: 500; }
+        .badge-blue { background: #EFF6FF; color: #2563EB; border: 1px solid #DBEAFE; font-weight: 600; }
+        .badge-success { background: #F0FDF4; color: #16A34A; border: 1px solid #DCFCE7; font-weight: 600; }
+
+        .feedback-preview-box {
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: var(--radius-sm);
+            padding: 8px 12px;
+            font-size: 0.81rem;
+            color: #334155;
+            line-height: 1.45;
+            max-height: 52px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            word-break: break-word;
+            transition: all 0.15s ease;
+            cursor: pointer;
+        }
+
+        .feedback-preview-box:hover {
+            background: #F1F5F9;
+            border-color: #CBD5E1;
+            color: var(--text-heading);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
 
         /* ACTION BUTTONS */
         .actions-group {
@@ -931,6 +971,12 @@
                class="tab-btn @(Model.ActiveTab == "settings" ? "is-active" : "")">
                 Sistem Ayarları
             </a>
+
+            <a href="@Url.Action("Index", "SuperAdmin", new { tab = "feedbacks" })" 
+               class="tab-btn @(Model.ActiveTab == "feedbacks" ? "is-active" : "")">
+                Geri Bildirimler &amp; Destek
+                <span class="tab-count" style="background: #FEE2E2; color: #DC2626; font-weight: 700;">@Model.TotalFeedbacksCount</span>
+            </a>
         </nav>
 
         <!-- ==================== SEKME 1: GENEL BAKIŞ ==================== -->
@@ -1002,6 +1048,55 @@
                 </div>
             </div>
 
+            <!-- ==================== ÜYELİK SEVİYESİ DAĞILIMI (KOTALAR & GELİR) ==================== -->
+            <div style="margin-bottom: 24px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <div style="font-size: 0.92rem; font-weight: 700; color: var(--text-heading); display: flex; align-items: center; gap: 8px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                        </svg>
+                        Üyelik Seviyesi Dağılımı &amp; Paket Satış Gelirleri
+                    </div>
+                    <a href="@Url.Action("Index", "SuperAdmin", new { tab = "companies" })" style="font-size: 0.78rem; font-weight: 600; color: var(--primary); text-decoration: none;">
+                        Tüm Firmaları İncele &rarr;
+                    </a>
+                </div>
+
+                <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+                    <div class="kpi-card" style="border-left: 4px solid #94A3B8;">
+                        <div class="kpi-label">Bedava Üyelik</div>
+                        <div class="kpi-value" style="color: #475569;">@Model.Stats.BedavaMembersCount <small style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">firma</small></div>
+                        <div class="kpi-desc">
+                            Kota: <strong>10 Talep</strong> · <strong>10 Ürün</strong> · <strong>3 Resim</strong>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card" style="border-left: 4px solid #2563EB;">
+                        <div class="kpi-label">Pro Üyelik</div>
+                        <div class="kpi-value" style="color: #2563EB;">@Model.Stats.ProMembersCount <small style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">firma</small></div>
+                        <div class="kpi-desc">
+                            Kota: <strong>100 Talep</strong> · <strong>100 Ürün</strong> · <strong>20 Resim</strong> (990 ₺/Ay)
+                        </div>
+                    </div>
+
+                    <div class="kpi-card" style="border-left: 4px solid #7C3AED;">
+                        <div class="kpi-label">Kurumsal Üyelik</div>
+                        <div class="kpi-value" style="color: #7C3AED;">@Model.Stats.KurumsalMembersCount <small style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">firma</small></div>
+                        <div class="kpi-desc">
+                            Kota: <strong>Sınırsız Talep</strong> · <strong>Sınırsız Ürün</strong> · <strong>Sınırsız Resim</strong> (2.990 ₺/Ay)
+                        </div>
+                    </div>
+
+                    <div class="kpi-card" style="border-left: 4px solid #059669;">
+                        <div class="kpi-label">Üyelik Satış Cirosu</div>
+                        <div class="kpi-value" style="color: #059669;">@Model.Stats.TotalMembershipRevenue.ToString("N0") ₺</div>
+                        <div class="kpi-desc">
+                            Toplam @Model.Stats.TotalMembershipOrdersCount Dijital Üyelik Satışı
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
                 <div class="content-card" style="padding: 20px;">
                     <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-heading); margin-bottom: 8px;">
@@ -1037,6 +1132,18 @@
                     </p>
                     <div>
                         <a href="@Url.Action("Index", "SuperAdmin", new { tab = "companies" })" class="btn-primary">Firmaları Yönet</a>
+                    </div>
+                </div>
+
+                <div class="content-card" style="padding: 20px;">
+                    <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-heading); margin-bottom: 8px;">
+                        Geri Bildirimler &amp; Destek
+                    </h3>
+                    <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+                        Kullanıcılar ve kurumsal firmalar tarafından iletilen hata raporları, işlev önerileri ve destek taleplerini denetleyin.
+                    </p>
+                    <div>
+                        <a href="@Url.Action("Index", "SuperAdmin", new { tab = "feedbacks" })" class="btn-primary">Bildirimleri İncele (@Model.TotalFeedbacksCount)</a>
                     </div>
                 </div>
             </div>
@@ -1114,6 +1221,13 @@
                             <option value="corporate">Kurumsal Firmalar (Alıcı & Tedarikçi)</option>
                             <option value="4">Süper Adminler</option>
                         </select>
+
+                        <select id="compMemberFilter" class="select-filter" onchange="filterCompaniesTable()">
+                            <option value="">Tüm Üyelikler</option>
+                            <option value="1">Bedava (10 Talep, 10 Ürün, 3 Resim)</option>
+                            <option value="2">Pro (100 Talep, 100 Ürün, 20 Resim)</option>
+                            <option value="3">Kurumsal (Sınırsız)</option>
+                        </select>
                     </div>
                 </div>
 
@@ -1126,7 +1240,7 @@
                                 <th>E-posta & Telefon</th>
                                 <th>Vergi / TC</th>
                                 <th>Hesap Türü</th>
-                                <th>Üyelik</th>
+                                <th>Üyelik &amp; Kotalar</th>
                                 <th>Aktivite</th>
                                 <th style="text-align: right; width: 170px;">İşlemler</th>
                             </tr>
@@ -1136,34 +1250,56 @@
                             {
                                 @foreach (var comp in Model.Companies)
                                 {
-                                    <tr class="comp-row" id="comp-row-@comp.CompanyID" data-type="@(comp.CompanyTypeID ?? 0)" data-search="@comp.CompanyName.ToLowerInvariant() @comp.CompanyOfficial.ToLowerInvariant() @comp.CompanyMail.ToLowerInvariant() @(comp.TCNO ?? "")">
+                                    <tr class="comp-row" id="comp-row-@comp.CompanyID" data-type="@(comp.CompanyTypeID ?? 0)" data-member="@(comp.MembershipTypeID ?? 1)" data-search="@comp.CompanyName.ToLowerInvariant() @comp.CompanyOfficial.ToLowerInvariant() @comp.CompanyMail.ToLowerInvariant() @(comp.TCNO ?? "")">
                                         <td style="color: var(--text-muted); font-weight: 500;">#@comp.CompanyID</td>
                                         <td>
-                                            <div style="font-weight: 600; color: var(--text-heading);" id="comp-name-@comp.CompanyID">@comp.CompanyName</div>
-                                            <div style="font-size: 0.78rem; color: var(--text-muted);" id="comp-official-@comp.CompanyID">@comp.CompanyOfficial</div>
+                                             <div style="font-weight: 600; color: var(--text-heading);" id="comp-name-@comp.CompanyID">@comp.CompanyName</div>
+                                             <div style="font-size: 0.78rem; color: var(--text-muted);" id="comp-official-@comp.CompanyID">@comp.CompanyOfficial</div>
                                         </td>
                                         <td>
-                                            <div style="color: var(--text-heading);" id="comp-mail-@comp.CompanyID">@comp.CompanyMail</div>
-                                            <div style="font-size: 0.78rem; color: var(--text-muted);" id="comp-phone-@comp.CompanyID">@(comp.CompanyPhone ?? "—")</div>
+                                             <div style="color: var(--text-heading);" id="comp-mail-@comp.CompanyID">@comp.CompanyMail</div>
+                                             <div style="font-size: 0.78rem; color: var(--text-muted);" id="comp-phone-@comp.CompanyID">@(comp.CompanyPhone ?? "—")</div>
                                         </td>
                                         <td>
-                                            <div style="font-size: 0.82rem; color: var(--text-heading);">@(string.IsNullOrWhiteSpace(comp.TCNO) ? "—" : comp.TCNO)</div>
-                                            <div style="font-size: 0.76rem; color: var(--text-muted);">@(string.IsNullOrWhiteSpace(comp.TaxOffice) ? "" : comp.TaxOffice)</div>
+                                             <div style="font-size: 0.82rem; color: var(--text-heading);">@(string.IsNullOrWhiteSpace(comp.TCNO) ? "—" : comp.TCNO)</div>
+                                             <div style="font-size: 0.76rem; color: var(--text-muted);">@(string.IsNullOrWhiteSpace(comp.TaxOffice) ? "" : comp.TaxOffice)</div>
                                         </td>
                                         <td>
-                                            @if (comp.CompanyTypeID == 4)
-                                            {
-                                                <span class="badge badge-super">Süper Admin</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge badge-both">Kurumsal Firma</span>
-                                            }
+                                             @if (comp.CompanyTypeID == 4)
+                                             {
+                                                 <span class="badge badge-super">Süper Admin</span>
+                                             }
+                                             else
+                                             {
+                                                 <span class="badge badge-both">Kurumsal Firma</span>
+                                             }
                                         </td>
                                         <td>
-                                            <span class="badge badge-member">
-                                                @(comp.MembershipTypeName ?? "Standart")
-                                            </span>
+                                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                                <div style="display: flex; align-items: center; gap: 6px;">
+                                                    @if (comp.MembershipTypeID == 3)
+                                                    {
+                                                        <span class="badge badge-kurumsal" id="comp-mem-badge-@comp.CompanyID">👑 Kurumsal</span>
+                                                    }
+                                                    else if (comp.MembershipTypeID == 2)
+                                                    {
+                                                        <span class="badge badge-pro" id="comp-mem-badge-@comp.CompanyID">★ Pro</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge badge-free" id="comp-mem-badge-@comp.CompanyID">Bedava</span>
+                                                    }
+                                                    <select class="form-select" style="padding: 2px 4px; font-size: 0.7rem; width: auto; height: 23px; border-radius: 4px;" onchange="handleQuickChangeMembership(@comp.CompanyID, this.value)" title="Hızlı Üyelik Seviyesi Değiştir">
+                                                        <option value="1" selected="@(comp.MembershipTypeID == 1)">Bedava</option>
+                                                        <option value="2" selected="@(comp.MembershipTypeID == 2)">Pro</option>
+                                                        <option value="3" selected="@(comp.MembershipTypeID == 3)">Kurumsal</option>
+                                                    </select>
+                                                </div>
+                                                <div style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.3;" id="comp-mem-limits-@comp.CompanyID">
+                                                    <span>Açık Talep: <strong>@comp.ActiveRequestCount</strong>/@(comp.MaxRequests == int.MaxValue ? "∞" : comp.MaxRequests.ToString())</span> · 
+                                                    <span>Ürün: <strong>@comp.ListedProductCount</strong>/@(comp.MaxProducts == int.MaxValue ? "∞" : comp.MaxProducts.ToString())</span>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td>
                                             <span class="badge badge-sub">
@@ -1248,7 +1384,8 @@
                         </div>
 
                         <select id="orderStatusFilter" class="select-filter" onchange="filterOrdersTable()">
-                            <option value="">Tüm Durumlar</option>
+                            <option value="">Tüm Siparişler</option>
+                            <option value="membership">👑 Dijital Üyelik Satın Alımları</option>
                             <option value="Onaylandı">Onaylandı</option>
                             <option value="Hazırlanıyor">Hazırlanıyor</option>
                             <option value="Kargoda">Kargoda / Kargoya Verildi</option>
@@ -1262,12 +1399,12 @@
                     <table class="data-table" id="ordersTable">
                         <thead>
                             <tr>
-                                <th style="width: 110px;">Sipariş No</th>
+                                <th style="width: 120px;">Sipariş No</th>
                                 <th>Alıcı Firma</th>
                                 <th>Tedarikçi Firma(lar)</th>
                                 <th style="text-align: center; width: 90px;">Kalem</th>
                                 <th style="text-align: right; width: 120px;">Tutar</th>
-                                <th>Kargo &amp; Takip</th>
+                                <th>Kargo &amp; Takip / Teslimat</th>
                                 <th style="text-align: center; width: 120px;">Durum</th>
                                 <th>Tarih</th>
                                 <th style="text-align: right; width: 140px;">İşlemler</th>
@@ -1285,9 +1422,16 @@
 
                                     <tr class="order-row" id="order-row-@ord.OrderID" 
                                         data-search="@ord.OrderNumber.ToLowerInvariant() @ord.BuyerCompanyName.ToLowerInvariant() @(ord.SupplierCompanyName?.ToLowerInvariant() ?? "") @(ord.TrackingNumber?.ToLowerInvariant() ?? "")"
-                                        data-status="@ord.OrderStatus">
+                                        data-status="@ord.OrderStatus"
+                                        data-membership="@(ord.IsMembershipOrder ? "1" : "0")">
                                         <td>
                                             <strong style="color: var(--primary);">#@ord.OrderNumber</strong>
+                                            @if (ord.IsMembershipOrder)
+                                            {
+                                                <div style="margin-top: 3px;">
+                                                    <span class="badge" style="background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; font-size: 0.68rem; font-weight: 700;">👑 Dijital Üyelik</span>
+                                                </div>
+                                            }
                                         </td>
                                         <td>
                                             <div style="font-weight: 600; color: var(--text-heading);">@ord.BuyerCompanyName</div>
@@ -1297,7 +1441,15 @@
                                             }
                                         </td>
                                         <td>
-                                            @if (isMulti)
+                                            @if (ord.IsMembershipOrder)
+                                            {
+                                                <div style="display: flex; align-items: center; gap: 6px;">
+                                                    <span class="badge" style="background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; font-weight: 600;">
+                                                        Sistem / Portal Hizmeti
+                                                    </span>
+                                                </div>
+                                            }
+                                            else if (isMulti)
                                             {
                                                 <div style="display: flex; align-items: center; gap: 6px;">
                                                     <span class="badge" style="background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; font-weight: 700;">
@@ -1323,7 +1475,14 @@
                                             @ord.GrandTotal.ToString("N2") ₺
                                         </td>
                                         <td>
-                                            @if (!string.IsNullOrWhiteSpace(ord.TrackingNumber))
+                                            @if (ord.IsMembershipOrder)
+                                            {
+                                                <span style="font-size: 0.76rem; color: #16A34A; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                                                    ⚡ Anında Dijital Aktivasyon
+                                                </span>
+                                                <div style="font-size: 0.7rem; color: var(--text-muted);">Adres &amp; Kargo Gerekmez</div>
+                                            }
+                                            else if (!string.IsNullOrWhiteSpace(ord.TrackingNumber))
                                             {
                                                 <div style="font-size: 0.78rem; font-weight: 600; color: #1E40AF;">
                                                     @(string.IsNullOrWhiteSpace(ord.ShippingCarrier) ? "Kargo" : ord.ShippingCarrier): @ord.TrackingNumber
@@ -1500,13 +1659,91 @@
 
                             <div class="form-field-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
                                 <div class="form-field">
-                                    <label class="form-label" for="simReqType">Talep Türü</label>
-                                    <select id="simReqType" name="RequestType" class="form-select">
-                                        <option value="Satın Alma">Satın Alma</option>
-                                        <option value="Fiyat Araştırması">Fiyat Araştırması</option>
-                                        <option value="İhale">İhale</option>
-                                        <option value="Hizmet / Proje">Hizmet / Proje</option>
-                                    </select>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                                        <label class="form-label" for="simReqType" style="margin-bottom: 0;">Talep Türü</label>
+                                        <button type="button" id="btnToggleSimCustomReqType" onclick="toggleSimCustomRequestType()" style="background: transparent; border: none; font-size: 0.73rem; color: #0284C7; font-weight: 600; cursor: pointer; text-decoration: underline; padding: 0;">
+                                            ✏️ Kendi Türünü Yaz
+                                        </button>
+                                    </div>
+                                    <div id="simReqTypeSelectWrap">
+                                        <select id="simReqType" name="RequestType" class="form-select" onchange="handleSimReqTypeSelect(this)">
+                                            <optgroup label="Standart & Alım Türleri">
+                                                <option value="Satın Alma" selected>Satın Alma (Doğrudan Temin)</option>
+                                                <option value="Fiyat Araştırması (RFQ)">Fiyat Araştırması (RFQ / Teklif Toplama)</option>
+                                                <option value="Açık İhale / Kapalı Zarf İhale">Açık İhale / Kapalı Zarf İhale</option>
+                                            </optgroup>
+                                            <optgroup label="Hammadde, Malzeme & İmalat">
+                                                <option value="Hammadde & Yarı Mamul Tedariği">Hammadde & Yarı Mamul Tedariği</option>
+                                                <option value="Fason Üretim & Talaşlı İmalat">Fason Üretim & Talaşlı İmalat</option>
+                                                <option value="Sac İşleme, Lazer Kesim & Büküm">Sac İşleme, Lazer Kesim & Büküm</option>
+                                                <option value="Plastik Enjeksiyon & Kalıp İmalatı">Plastik Enjeksiyon & Kalıp İmalatı</option>
+                                                <option value="Kimyasal, Boya & Kaplama">Kimyasal, Boya & Kaplama</option>
+                                                <option value="Döküm, Dövme & Metalurji">Döküm, Dövme & Metalurji</option>
+                                                <option value="Tekstil, Kumaş & İş Kıyafetleri">Tekstil, Kumaş & İş Kıyafetleri</option>
+                                                <option value="Gıda, İkram & Kurumsal Tüketim">Gıda, İkram & Kurumsal Tüketim</option>
+                                            </optgroup>
+                                            <optgroup label="Makine, Ekipman & Teknik Donanım">
+                                                <option value="Makine & Endüstriyel Ekipman">Makine & Endüstriyel Ekipman</option>
+                                                <option value="Yedek Parça & Sarf Malzeme">Yedek Parça & Sarf Malzeme</option>
+                                                <option value="Otomasyon, Elektrik & Elektronik">Otomasyon, Elektrik & Elektronik</option>
+                                                <option value="Hırdavat, Rulman & Bağlantı Elemanları">Hırdavat, Rulman & Bağlantı Elemanları</option>
+                                                <option value="Hidrolik, Pnömatik & Vana Tesisatı">Hidrolik, Pnömatik & Vana Tesisatı</option>
+                                            </optgroup>
+                                            <optgroup label="Hizmet, Bakım, Lojistik & İnşaat">
+                                                <option value="Hizmet Alımı & Taşeronluk">Hizmet Alımı & Taşeronluk</option>
+                                                <option value="Bakım, Onarım & Teknik Servis">Bakım, Onarım & Teknik Servis</option>
+                                                <option value="İnşaat, Taahhüt & Mimari Proje">İnşaat, Taahhüt & Mimari Proje</option>
+                                                <option value="Lojistik, Nakliye & Depolama">Lojistik, Nakliye & Depolama</option>
+                                                <option value="Endüstriyel Temizlik & Atık Yönetimi">Endüstriyel Temizlik & Atık Yönetimi</option>
+                                            </optgroup>
+                                            <optgroup label="Bilişim, Kurumsal & Profesyonel">
+                                                <option value="Bilişim, Yazılım & Sunucu Donanımı">Bilişim, Yazılım & Sunucu Donanımı</option>
+                                                <option value="Danışmanlık, Denetim & Müşavirlik">Danışmanlık, Denetim & Müşavirlik</option>
+                                                <option value="Laboratuvar, Test & Kalibrasyon">Laboratuvar, Test & Kalibrasyon</option>
+                                                <option value="Ambalaj, Paketleme & Etiketleme">Ambalaj, Paketleme & Etiketleme</option>
+                                                <option value="Personel Temini, İSG & Eğitim">Personel Temini, İSG & Eğitim</option>
+                                                <option value="Kiralama & Filo / Vinç Hizmetleri">Kiralama & Filo / Vinç Hizmetleri</option>
+                                            </optgroup>
+                                            <optgroup label="Özel Giriş">
+                                                <option value="__custom__">✏️ Diğer / Kendi Talep Türünüzü Yazın...</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+                                    <div id="simReqTypeCustomWrap" style="display: none; margin-top: 4px;">
+                                        <div style="position: relative; display: flex; align-items: center;">
+                                            <input type="text" id="simReqTypeCustomInput" list="simRequestTypePresetsList" placeholder="Örn: 5 Eksen CNC İşleme, Çatı GES Kurulumu..." class="form-input" style="padding-right: 28px;" oninput="syncSimCustomRequestType(this.value)" />
+                                            <button type="button" onclick="cancelSimCustomRequestType()" title="Listeden Seçime Geri Dön" style="position: absolute; right: 8px; background: transparent; border: none; cursor: pointer; color: #94A3B8; font-size: 0.95rem; font-weight: 700;">✕</button>
+                                        </div>
+                                        <span style="font-size: 0.71rem; color: #0284C7; margin-top: 2px; display: block; font-weight: 500;">
+                                            ✍️ İstediğiniz talep türünü serbestçe yazabilirsiniz.
+                                        </span>
+                                    </div>
+                                    <input type="hidden" id="simReqFinalType" value="Satın Alma" />
+                                    <datalist id="simRequestTypePresetsList">
+                                        <option value="Satın Alma"></option>
+                                        <option value="Fiyat Araştırması (RFQ)"></option>
+                                        <option value="Açık İhale / Kapalı Zarf İhale"></option>
+                                        <option value="Hammadde & Yarı Mamul Tedariği"></option>
+                                        <option value="Fason Üretim & Talaşlı İmalat"></option>
+                                        <option value="Sac İşleme, Lazer Kesim & Büküm"></option>
+                                        <option value="Plastik Enjeksiyon & Kalıp İmalatı"></option>
+                                        <option value="Kimyasal, Boya & Kaplama"></option>
+                                        <option value="Döküm, Dövme & Metalurji"></option>
+                                        <option value="Makine & Endüstriyel Ekipman"></option>
+                                        <option value="Yedek Parça & Sarf Malzeme"></option>
+                                        <option value="Otomasyon, Elektrik & Elektronik"></option>
+                                        <option value="Hırdavat, Rulman & Bağlantı Elemanları"></option>
+                                        <option value="Hidrolik, Pnömatik & Vana Tesisatı"></option>
+                                        <option value="Hizmet Alımı & Taşeronluk"></option>
+                                        <option value="Bakım, Onarım & Teknik Servis"></option>
+                                        <option value="İnşaat, Taahhüt & Mimari Proje"></option>
+                                        <option value="Lojistik, Nakliye & Depolama"></option>
+                                        <option value="Endüstriyel Temizlik & Atık Yönetimi"></option>
+                                        <option value="Bilişim, Yazılım & Sunucu Donanımı"></option>
+                                        <option value="Danışmanlık, Denetim & Müşavirlik"></option>
+                                        <option value="Laboratuvar, Test & Kalibrasyon"></option>
+                                        <option value="Ambalaj, Paketleme & Etiketleme"></option>
+                                    </datalist>
                                 </div>
                                 <div class="form-field">
                                     <label class="form-label" for="simCategory">Kategori</label>
@@ -2187,6 +2424,244 @@
             </div>
         }
 
+        <!-- ==================== SEKME 5: GERİ BİLDİRİMLER & DESTEK ==================== -->
+        @if (Model.ActiveTab == "feedbacks")
+        {
+            var bugCount = Model.Feedbacks.Count(f => f.Category == "Hata Bildirimi");
+            var suggestionCount = Model.Feedbacks.Count(f => f.Category == "Yeni Özellik / Öneri");
+            var ratedFeedbacks = Model.Feedbacks.Where(f => f.Rating.HasValue && f.Rating > 0).ToList();
+            var avgRating = ratedFeedbacks.Any() ? Math.Round(ratedFeedbacks.Average(f => f.Rating!.Value), 1) : 5.0;
+
+            <!-- KPI ÖZET KARTLARI -->
+            <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 24px;">
+                <div class="kpi-card">
+                    <div class="kpi-label">Toplam Geri Bildirim</div>
+                    <div class="kpi-value" style="color: var(--primary);">@Model.TotalFeedbacksCount <small style="font-size: 0.8rem; color: var(--text-muted);">kayıt</small></div>
+                    <div class="kpi-desc">Kullanıcı ve firmalardan iletilen toplam talep</div>
+                </div>
+
+                <div class="kpi-card" style="border-left: 4px solid #DC2626;">
+                    <div class="kpi-label">Hata Bildirimleri</div>
+                    <div class="kpi-value" style="color: #DC2626;">@bugCount <small style="font-size: 0.8rem; color: var(--text-muted);">hata</small></div>
+                    <div class="kpi-desc">İncelenmesi gereken teknik arıza bildirimleri</div>
+                </div>
+
+                <div class="kpi-card" style="border-left: 4px solid #7C3AED;">
+                    <div class="kpi-label">Öneri &amp; Yeni Özellikler</div>
+                    <div class="kpi-value" style="color: #7C3AED;">@suggestionCount <small style="font-size: 0.8rem; color: var(--text-muted);">öneri</small></div>
+                    <div class="kpi-desc">Platform geliştirme ve modül tavsiyeleri</div>
+                </div>
+
+                <div class="kpi-card" style="border-left: 4px solid #D97706;">
+                    <div class="kpi-label">Ortalama Memnuniyet</div>
+                    <div class="kpi-value" style="color: #D97706;">@avgRating.ToString("0.0") <small style="font-size: 0.82rem; color: var(--text-muted);">/ 5.0</small></div>
+                    <div class="kpi-desc">Toplam @ratedFeedbacks.Count puanlanmış değerlendirme</div>
+                </div>
+            </div>
+
+            <!-- GERİ BİLDİRİM LİSTESİ TABLOSU -->
+            <div class="content-card">
+                <div class="card-toolbar">
+                    <div class="toolbar-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);">
+                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                        </svg>
+                        Geri Bildirimler &amp; Destek Talepleri
+                        <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;" id="fbVisibleCount">
+                            (@Model.Feedbacks.Count kayıt listeleniyor)
+                        </span>
+                    </div>
+
+                    <div class="toolbar-actions">
+                        <form method="get" asp-action="Index" id="fbFilterForm" style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <input type="hidden" name="tab" value="feedbacks" />
+
+                            <div class="search-input-wrap">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                <input type="text" id="fbSearchInput" name="search" class="input-search" 
+                                       placeholder="Firma, yetkili, konu, mesaj ara..." 
+                                       value="@Model.SearchQuery"
+                                       oninput="filterFeedbacksTable()" />
+                            </div>
+
+                            <select name="category" id="fbCategoryFilter" class="select-filter" onchange="filterFeedbacksTable(); this.form.submit();">
+                                <option value="">— Tüm Kategoriler —</option>
+                                <option value="Hata Bildirimi" selected="@(Model.FilterFeedbackCategory == "Hata Bildirimi")">Hata Bildirimi</option>
+                                <option value="Yeni Özellik / Öneri" selected="@(Model.FilterFeedbackCategory == "Yeni Özellik / Öneri")">Yeni Özellik / Öneri</option>
+                                <option value="Satın Alma & İhale" selected="@(Model.FilterFeedbackCategory == "Satın Alma & İhale")">Satın Alma &amp; İhale</option>
+                                <option value="Arayüz & Kullanılabilirlik" selected="@(Model.FilterFeedbackCategory == "Arayüz & Kullanılabilirlik")">Arayüz &amp; UX</option>
+                                <option value="Üyelik & Faturalandırma" selected="@(Model.FilterFeedbackCategory == "Üyelik & Faturalandırma")">Üyelik &amp; Fatura</option>
+                                <option value="Genel Geri Bildirim" selected="@(Model.FilterFeedbackCategory == "Genel Geri Bildirim")">Genel Geri Bildirim</option>
+                            </select>
+
+                            @if (!string.IsNullOrWhiteSpace(Model.SearchQuery) || !string.IsNullOrWhiteSpace(Model.FilterFeedbackCategory))
+                            {
+                                <a href="@Url.Action("Index", "SuperAdmin", new { tab = "feedbacks" })" class="btn-table-action" title="Filtreyi Temizle">Temizle</a>
+                            }
+                        </form>
+                    </div>
+                </div>
+
+                <div class="data-table-wrap">
+                    <table class="data-table" id="feedbacksTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 85px;">ID / Tarih</th>
+                                <th style="width: 240px;">Kayıtlı Firma &amp; Yetkili</th>
+                                <th style="width: 190px;">İletişim</th>
+                                <th style="width: 200px;">Kategori &amp; Puan</th>
+                                <th>Mesaj İçeriği</th>
+                                <th style="width: 130px; text-align: right;">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Feedbacks.Any())
+                            {
+                                foreach (var fb in Model.Feedbacks)
+                                {
+                                    string catBadgeClass = fb.Category switch {
+                                        "Hata Bildirimi" => "badge-danger",
+                                        "Yeni Özellik / Öneri" => "badge-purple",
+                                        "Satın Alma & İhale" => "badge-warning",
+                                        "Arayüz & Kullanılabilirlik" => "badge-info",
+                                        _ => "badge-gray"
+                                    };
+
+                                    string tierBadgeClass = fb.MembershipTypeID switch {
+                                        3 => "badge-kurumsal",
+                                        2 => "badge-pro",
+                                        _ => "badge-free"
+                                    };
+
+                                    <tr class="feedback-row" id="feedback-row-@fb.FormId"
+                                        data-search="@fb.FormId @fb.CompanyName.ToLowerInvariant() @fb.OfficialName.ToLowerInvariant() @fb.Email.ToLowerInvariant() @fb.Phone.ToLowerInvariant() @fb.Category.ToLowerInvariant() @(fb.Subject?.ToLowerInvariant() ?? "") @fb.Message.ToLowerInvariant()"
+                                        data-category="@fb.Category">
+                                        <td>
+                                            <div style="font-weight: 700; color: var(--text-heading); font-size: 0.86rem;">#@fb.FormId</div>
+                                            <div style="font-size: 0.74rem; color: var(--text-muted); white-space: nowrap; margin-top: 2px;">
+                                                @(fb.FormDate.HasValue ? fb.FormDate.Value.ToString("dd.MM.yyyy") : "—")
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                                <span style="font-weight: 600; color: var(--text-heading); font-size: 0.86rem;">@fb.CompanyName</span>
+                                                @if (fb.IsRegisteredCompany)
+                                                {
+                                                    <span class="badge @tierBadgeClass">@fb.MembershipTypeName</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge badge-gray" style="font-size: 0.65rem;">Kayıtsız</span>
+                                                }
+                                            </div>
+                                            <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">
+                                                Yetkili: <span style="color: var(--text-body); font-weight: 500;">@fb.OfficialName</span>
+                                                @if (fb.IsRegisteredCompany && fb.CompanyID.HasValue)
+                                                {
+                                                    <span> · <a href="javascript:void(0)" onclick="openEditCompanyModal(@fb.CompanyID.Value)" style="color: var(--primary); text-decoration: none; font-weight: 500;">(Firma #@fb.CompanyID)</a></span>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div style="display: flex; flex-direction: column; gap: 3px;">
+                                                @if (!string.IsNullOrWhiteSpace(fb.Email) && fb.Email != "-")
+                                                {
+                                                    <a href="mailto:@fb.Email" style="color: var(--primary); font-size: 0.82rem; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="E-Posta Gönder">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                                        @fb.Email
+                                                    </a>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(fb.Phone) && fb.Phone != "-")
+                                                {
+                                                    <span style="font-size: 0.76rem; color: var(--text-muted); display: inline-flex; align-items: center; gap: 4px;">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                                                        @fb.Phone
+                                                    </span>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                                    <span class="badge @catBadgeClass">@fb.Category</span>
+                                                    @if (fb.Rating.HasValue && fb.Rating.Value > 0)
+                                                    {
+                                                        <span class="badge badge-warning" style="font-weight: 700;">
+                                                            ★ @fb.Rating/5
+                                                        </span>
+                                                    }
+                                                </div>
+                                                @if (!string.IsNullOrWhiteSpace(fb.Subject))
+                                                {
+                                                    <div style="font-size: 0.81rem; font-weight: 600; color: var(--text-heading); line-height: 1.3;">
+                                                        @fb.Subject
+                                                    </div>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="feedback-preview-box" 
+                                                 data-id="@fb.FormId"
+                                                 data-company-id="@(fb.CompanyID?.ToString() ?? "")"
+                                                 data-name="@fb.CompanyName"
+                                                 data-surname="@fb.OfficialName"
+                                                 data-membership="@fb.MembershipTypeName"
+                                                 data-email="@fb.Email"
+                                                 data-phone="@fb.Phone"
+                                                 data-category="@fb.Category"
+                                                 data-subject="@fb.Subject"
+                                                 data-rating="@(fb.Rating?.ToString() ?? "")"
+                                                 data-date="@(fb.FormDate.HasValue ? fb.FormDate.Value.ToString("dd.MM.yyyy") : "-")"
+                                                 data-text="@fb.Message"
+                                                 onclick="openFeedbackDetail(this)"
+                                                 title="Tam mesajı görüntülemek için tıklayın">
+                                                @fb.Message
+                                            </div>
+                                        </td>
+                                        <td style="text-align: right; white-space: nowrap;">
+                                            <div class="actions-group">
+                                                <button type="button" class="btn-table-action"
+                                                        data-id="@fb.FormId"
+                                                        data-company-id="@(fb.CompanyID?.ToString() ?? "")"
+                                                        data-name="@fb.CompanyName"
+                                                        data-surname="@fb.OfficialName"
+                                                        data-membership="@fb.MembershipTypeName"
+                                                        data-email="@fb.Email"
+                                                        data-phone="@fb.Phone"
+                                                        data-category="@fb.Category"
+                                                        data-subject="@fb.Subject"
+                                                        data-rating="@(fb.Rating?.ToString() ?? "")"
+                                                        data-date="@(fb.FormDate.HasValue ? fb.FormDate.Value.ToString("dd.MM.yyyy") : "-")"
+                                                        data-text="@fb.Message"
+                                                        onclick="openFeedbackDetail(this)"
+                                                        title="Geri Bildirim Detaylarını İncele">
+                                                    İncele
+                                                </button>
+                                                <button type="button" class="btn-table-action danger" 
+                                                        onclick="handleDeleteFeedbackClick(@fb.FormId)"
+                                                        title="Bu Bildirimi Kalıcı Olarak Sil">
+                                                    Sil
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 48px 16px; color: var(--text-muted);">
+                                        <div style="font-size: 0.95rem; font-weight: 600; margin-bottom: 4px;">Kayıtlı geri bildirim veya destek talebi bulunamadı.</div>
+                                        <div style="font-size: 0.82rem;">Kullanıcılar Dashboard üzerinden geri bildirim gönderdiğinde burada listelenecektir.</div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+
     </main>
 
     <!-- ==================== MODAL: YENİ KATEGORİ EKLE ==================== -->
@@ -2304,7 +2779,14 @@
                             <select id="editCompMember" name="MembershipTypeID" class="form-select">
                                 @foreach (var mt in Model.AvailableMembershipTypes)
                                 {
-                                    <option value="@mt.MembershipTypeID">@mt.MembershipTypeName</option>
+                                    string desc = mt.MembershipTypeID switch
+                                    {
+                                        1 => "Bedava (10 Talep, 10 Ürün, 3 Resim - Ücretsiz)",
+                                        2 => "Pro (100 Talep, 100 Ürün, 20 Resim - 990 ₺/Ay)",
+                                        3 => "Kurumsal (Sınırsız Talep, Ürün, Resim - 2.990 ₺/Ay)",
+                                        _ => mt.MembershipTypeName ?? "Standart"
+                                    };
+                                    <option value="@mt.MembershipTypeID">@desc</option>
                                 }
                             </select>
                         </div>
@@ -2463,6 +2945,64 @@
         </div>
     </div>
 
+    <!-- ==================== MODAL: GERİ BİLDİRİM DETAY ==================== -->
+    <div id="feedbackDetailModal" class="modal-backdrop-wrap" aria-hidden="true">
+        <div class="modal-panel" style="max-width: 650px;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);">
+                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                    </svg>
+                    <h3 class="modal-title" id="fbModalTitle">Geri Bildirim Detayı</h3>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('feedbackDetailModal')">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; background: #F8FAFC; padding: 14px; border-radius: 8px; border: 1px solid #E2E8F0;">
+                    <div>
+                        <div style="font-size: 0.72rem; color: #64748B; font-weight: 600; text-transform: uppercase;">Kayıtlı Firma &amp; Yetkili</div>
+                        <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap;">
+                            <span style="font-size: 0.95rem; font-weight: 700; color: #0F172A;" id="fbModalSender">-</span>
+                            <span id="fbModalMembershipBadge" style="font-size: 0.68rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: #2563EB; color: #FFFFFF;"></span>
+                        </div>
+                        <div style="font-size: 0.8rem; color: #475569; margin-top: 4px;" id="fbModalOfficial"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.72rem; color: #64748B; font-weight: 600; text-transform: uppercase;">İletişim &amp; Tarih</div>
+                        <div style="font-size: 0.85rem; color: #2563EB; font-weight: 600; margin-top: 4px;" id="fbModalEmail">-</div>
+                        <div style="font-size: 0.78rem; color: #64748B; margin-top: 2px;" id="fbModalPhone">-</div>
+                        <div style="font-size: 0.75rem; color: #94A3B8; margin-top: 4px;" id="fbModalDate">-</div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                        <div style="font-size: 0.72rem; color: #64748B; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Kategori &amp; Konu</div>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span id="fbModalCategoryBadge" class="badge badge-blue"></span>
+                            <span style="font-size: 0.92rem; font-weight: 700; color: #1E293B;" id="fbModalSubject"></span>
+                        </div>
+                    </div>
+                    <div id="fbModalRatingWrap" style="display: none;">
+                        <span style="font-size: 0.72rem; color: #64748B; font-weight: 600; text-transform: uppercase; display: block; margin-bottom: 3px;">Memnuniyet</span>
+                        <span id="fbModalRating" style="background: #FEF3C7; color: #B45309; font-size: 0.8rem; font-weight: 700; padding: 2px 8px; border-radius: 6px;"></span>
+                    </div>
+                </div>
+
+                <div>
+                    <div style="font-size: 0.72rem; color: #64748B; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">Mesaj İçeriği</div>
+                    <div style="background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; padding: 14px; font-size: 0.88rem; color: #1E293B; line-height: 1.55; white-space: pre-wrap; min-height: 120px; max-height: 320px; overflow-y: auto;" id="fbModalMessage">-</div>
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: space-between;">
+                <a id="fbModalReplyMail" href="#" class="btn-primary" style="text-decoration: none;">
+                    E-Posta İle Yanıtla
+                </a>
+                <button type="button" class="btn-secondary" onclick="closeModal('feedbackDetailModal')">Kapat</button>
+            </div>
+        </div>
+    </div>
+
     <!-- CLIENT JAVASCRIPT -->
     <script>
         function openModal(id) {
@@ -2606,17 +3146,20 @@
             });
         }
 
-        // Anlık Firma Arama & Tür Filtresi
+        // Anlık Firma Arama, Tür & Üyelik Filtresi
         function filterCompaniesTable() {
             var searchInput = document.getElementById('compSearchInput');
             var typeFilter = document.getElementById('compTypeFilter');
+            var memberFilter = document.getElementById('compMemberFilter');
             var query = searchInput ? searchInput.value.trim().toLowerCase() : '';
             var typeVal = typeFilter ? typeFilter.value : '';
+            var memberVal = memberFilter ? memberFilter.value : '';
 
             var rows = document.querySelectorAll('#companiesTable .comp-row');
             rows.forEach(function(row) {
                 var rowSearch = row.getAttribute('data-search') || '';
                 var rowType = row.getAttribute('data-type') || '';
+                var rowMember = row.getAttribute('data-member') || '';
 
                 var matchQuery = !query || rowSearch.indexOf(query) > -1;
                 var matchType = true;
@@ -2626,7 +3169,9 @@
                     matchType = (rowType !== '4');
                 }
 
-                if (matchQuery && matchType) {
+                var matchMember = !memberVal || (rowMember === memberVal);
+
+                if (matchQuery && matchType && matchMember) {
                     row.style.display = '';
                 } else {
                     row.style.display = 'none';
@@ -2645,9 +3190,15 @@
             rows.forEach(function(row) {
                 var rowSearch = row.getAttribute('data-search') || '';
                 var rowStatus = row.getAttribute('data-status') || '';
+                var isMembership = row.getAttribute('data-membership') === '1';
 
                 var matchQuery = !query || rowSearch.indexOf(query) > -1;
-                var matchStatus = !statusVal || rowStatus.indexOf(statusVal) > -1;
+                var matchStatus = true;
+                if (statusVal === 'membership') {
+                    matchStatus = isMembership;
+                } else if (statusVal) {
+                    matchStatus = (rowStatus.indexOf(statusVal) > -1);
+                }
 
                 if (matchQuery && matchStatus) {
                     row.style.display = '';
@@ -2655,6 +3206,45 @@
                     row.style.display = 'none';
                 }
             });
+        }
+
+        // Hızlı Üyelik Seviyesi Değiştirme
+        async function handleQuickChangeMembership(companyId, membershipTypeId) {
+            try {
+                const formData = new FormData();
+                formData.append('companyId', companyId);
+                formData.append('membershipTypeId', membershipTypeId);
+
+                const response = await fetch('/SuperAdmin/QuickChangeMembershipType', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showAdminToast(data.message, 'success');
+                    
+                    const row = document.getElementById('comp-row-' + companyId);
+                    if (row) {
+                        row.setAttribute('data-member', membershipTypeId);
+                    }
+                    const badge = document.getElementById('comp-mem-badge-' + companyId);
+                    if (badge) {
+                        badge.className = 'badge ' + (membershipTypeId == 3 ? 'badge-kurumsal' : (membershipTypeId == 2 ? 'badge-pro' : 'badge-free'));
+                        badge.innerHTML = (membershipTypeId == 3 ? '👑 Kurumsal' : (membershipTypeId == 2 ? '★ Pro' : 'Bedava'));
+                    }
+                    const limitsEl = document.getElementById('comp-mem-limits-' + companyId);
+                    if (limitsEl) {
+                        const curReq = limitsEl.querySelector('strong') ? limitsEl.querySelector('strong').textContent : '0';
+                        limitsEl.innerHTML = `<span>Açık Talep: <strong>${curReq}</strong>/${data.maxRequests}</span> · <span>Kota: ${data.maxProducts} Ürün / ${data.maxImages} Resim</span>`;
+                    }
+                } else {
+                    showAdminToast(data.message || 'Üyelik güncellenemedi.', 'error');
+                }
+            } catch (err) {
+                showAdminToast('Sunucu hatası: ' + err.message, 'error');
+            }
         }
 
         // Sipariş Detayı ve Kalem Sevkiyat Modalını Aç
@@ -2682,10 +3272,21 @@
                 document.getElementById('admOrdDate').textContent = data.orderDate;
                 document.getElementById('admOrdPaymentStatus').textContent = data.paymentStatus;
                 document.getElementById('admOrdPaymentMethod').textContent = data.paymentMethod;
-                document.getElementById('admOrdAddress').textContent = data.deliveryAddress;
+                const isMem = (data.orderNumber && data.orderNumber.startsWith('MEM-')) || (data.deliveryAddress && data.deliveryAddress.includes('Dijital'));
+                if (isMem) {
+                    document.getElementById('admOrdAddress').innerHTML = '<span style="color: #16A34A; font-weight: 700;">⚡ Dijital Hizmet / Üyelik Paketi</span> <span style="color: var(--text-muted); font-size: 0.8rem;">(Fiziksel kargo & adres gerekmez)</span>';
+                    document.getElementById('admOrdCarrierInput').value = 'Dijital Aktivasyon';
+                    document.getElementById('admOrdTrackingInput').value = 'Anında Tamamlandı';
+                    document.getElementById('admOrdCarrierInput').disabled = true;
+                    document.getElementById('admOrdTrackingInput').disabled = true;
+                } else {
+                    document.getElementById('admOrdAddress').textContent = data.deliveryAddress;
+                    document.getElementById('admOrdCarrierInput').value = data.shippingCarrier !== '-' ? data.shippingCarrier : '';
+                    document.getElementById('admOrdTrackingInput').value = data.trackingNumber !== '-' ? data.trackingNumber : '';
+                    document.getElementById('admOrdCarrierInput').disabled = false;
+                    document.getElementById('admOrdTrackingInput').disabled = false;
+                }
                 document.getElementById('admOrdStatusSelect').value = data.orderStatus;
-                document.getElementById('admOrdCarrierInput').value = data.shippingCarrier !== '-' ? data.shippingCarrier : '';
-                document.getElementById('admOrdTrackingInput').value = data.trackingNumber !== '-' ? data.trackingNumber : '';
 
                 if (data.items && data.items.length > 0) {
                     let html = '';
@@ -3349,6 +3950,54 @@
             }
         }
 
+        function handleSimReqTypeSelect(selectEl) {
+            if (selectEl.value === '__custom__') {
+                toggleSimCustomRequestType();
+            } else {
+                var finalInput = document.getElementById('simReqFinalType');
+                if (finalInput) finalInput.value = selectEl.value;
+            }
+        }
+
+        function toggleSimCustomRequestType() {
+            var dropWrap = document.getElementById('simReqTypeSelectWrap');
+            var customWrap = document.getElementById('simReqTypeCustomWrap');
+            var customInput = document.getElementById('simReqTypeCustomInput');
+            var toggleBtn = document.getElementById('btnToggleSimCustomReqType');
+            var finalInput = document.getElementById('simReqFinalType');
+            if (customWrap && customWrap.style.display === 'none') {
+                if (dropWrap) dropWrap.style.display = 'none';
+                customWrap.style.display = 'block';
+                if (toggleBtn) toggleBtn.textContent = '📋 Listeden Seç';
+                if (customInput) {
+                    customInput.focus();
+                    if (finalInput) finalInput.value = customInput.value.trim() || 'Özel Talep';
+                }
+            } else {
+                cancelSimCustomRequestType();
+            }
+        }
+
+        function cancelSimCustomRequestType() {
+            var dropWrap = document.getElementById('simReqTypeSelectWrap');
+            var customWrap = document.getElementById('simReqTypeCustomWrap');
+            var selectBox = document.getElementById('simReqType');
+            var toggleBtn = document.getElementById('btnToggleSimCustomReqType');
+            var finalInput = document.getElementById('simReqFinalType');
+            if (customWrap) customWrap.style.display = 'none';
+            if (dropWrap) dropWrap.style.display = 'block';
+            if (toggleBtn) toggleBtn.textContent = '✏️ Kendi Türünü Yaz';
+            if (selectBox && selectBox.value === '__custom__') selectBox.value = 'Satın Alma';
+            if (finalInput && selectBox) finalInput.value = selectBox.value;
+        }
+
+        function syncSimCustomRequestType(val) {
+            var finalInput = document.getElementById('simReqFinalType');
+            if (finalInput) {
+                finalInput.value = (val && val.trim()) ? val.trim() : 'Özel Talep';
+            }
+        }
+
         // 8. Simülasyon: Talep Oluştur AJAX
         async function handleSimRequestSubmit(event) {
             if (event) { event.preventDefault(); event.stopPropagation(); }
@@ -3380,7 +4029,7 @@
                 const payload = {
                     senderCompanyID: parseInt(form.querySelector('#simSenderComp')?.value) || 0,
                     productName: form.querySelector('#simProdName')?.value?.trim() || '',
-                    requestType: form.querySelector('#simReqType')?.value || 'Satın Alma',
+                    requestType: document.getElementById('simReqFinalType')?.value?.trim() || form.querySelector('#simReqType')?.value || 'Satın Alma',
                     categoryID: parseInt(form.querySelector('#simCategory')?.value) || null,
                     quantity: parseInt(form.querySelector('#simQuantity')?.value) || 1,
                     estimatedBudget: parseFloat(form.querySelector('#simBudget')?.value) || null,
@@ -3401,6 +4050,7 @@
                 const result = await response.json();
                 if (result.success) {
                     form.reset();
+                    cancelSimCustomRequestType();
                     if (result.requestId) {
                         const offerReqSelect = document.getElementById('simOfferReq');
                         if (offerReqSelect) {
@@ -3675,6 +4325,129 @@
                 showAdminToast('Bağlantı hatası: ' + err.message, 'error');
             } finally {
                 if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = origText; }
+            }
+        }
+
+        // 16. Geri Bildirim Tablosu Filtreleme (Anlık İstemci Filtresi)
+        function filterFeedbacksTable() {
+            var search = (document.getElementById('fbSearchInput')?.value || '').toLowerCase().trim();
+            var category = (document.getElementById('fbCategoryFilter')?.value || '').toLowerCase().trim();
+            var rows = document.querySelectorAll('.feedback-row');
+            var visible = 0;
+
+            rows.forEach(function(row) {
+                var searchData = (row.getAttribute('data-search') || '').toLowerCase();
+                var catData = (row.getAttribute('data-category') || '').toLowerCase();
+
+                var matchesSearch = !search || searchData.indexOf(search) > -1;
+                var matchesCat = !category || catData.indexOf(category) > -1;
+
+                if (matchesSearch && matchesCat) {
+                    row.style.display = '';
+                    visible++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            var countEl = document.getElementById('fbVisibleCount');
+            if (countEl) {
+                countEl.textContent = '(' + visible + ' kayıt listeleniyor)';
+            }
+        }
+
+        // 17. Geri Bildirim Detay Modalı ve Silme
+        function openFeedbackDetail(btn) {
+            if (!btn) return;
+            var id = btn.getAttribute('data-id') || '';
+            var name = btn.getAttribute('data-name') || 'Kurumsal Kullanıcı';
+            var surname = btn.getAttribute('data-surname') || '';
+            var membership = btn.getAttribute('data-membership') || '';
+            var email = btn.getAttribute('data-email') || '-';
+            var phone = btn.getAttribute('data-phone') || '-';
+            var category = btn.getAttribute('data-category') || 'Genel';
+            var subject = btn.getAttribute('data-subject') || '';
+            var rating = btn.getAttribute('data-rating') || '';
+            var date = btn.getAttribute('data-date') || '-';
+            var text = btn.getAttribute('data-text') || '';
+
+            document.getElementById('fbModalTitle').textContent = 'Geri Bildirim #' + id;
+            document.getElementById('fbModalSender').textContent = name;
+            document.getElementById('fbModalOfficial').textContent = 'Yetkili: ' + (surname || '-');
+            
+            var memBadge = document.getElementById('fbModalMembershipBadge');
+            if (membership) {
+                memBadge.textContent = membership;
+                var memClass = membership === 'Kurumsal' ? 'badge-kurumsal' : (membership === 'Pro' ? 'badge-pro' : 'badge-free');
+                memBadge.className = 'badge ' + memClass;
+                memBadge.style.display = 'inline-block';
+            } else {
+                memBadge.style.display = 'none';
+            }
+
+            document.getElementById('fbModalEmail').textContent = email;
+            document.getElementById('fbModalPhone').textContent = phone;
+            document.getElementById('fbModalDate').textContent = 'Tarih: ' + date;
+
+            var catBadge = document.getElementById('fbModalCategoryBadge');
+            catBadge.textContent = category;
+            var catClass = 'badge-gray';
+            if (category === 'Hata Bildirimi') catClass = 'badge-danger';
+            else if (category.indexOf('Öneri') > -1) catClass = 'badge-purple';
+            else if (category.indexOf('İhale') > -1) catClass = 'badge-warning';
+            else if (category.indexOf('Arayüz') > -1) catClass = 'badge-info';
+            catBadge.className = 'badge ' + catClass;
+
+            document.getElementById('fbModalSubject').textContent = subject ? ('— ' + subject) : '';
+
+            var ratingWrap = document.getElementById('fbModalRatingWrap');
+            var ratingEl = document.getElementById('fbModalRating');
+            if (rating && rating !== '0') {
+                ratingWrap.style.display = 'block';
+                ratingEl.textContent = '★ ' + rating + ' / 5';
+            } else {
+                ratingWrap.style.display = 'none';
+            }
+
+            document.getElementById('fbModalMessage').textContent = text;
+
+            var replyLink = document.getElementById('fbModalReplyMail');
+            if (email && email !== '-') {
+                replyLink.href = 'mailto:' + email + '?subject=' + encodeURIComponent('RE: ' + (category + (subject ? ' - ' + subject : '')));
+                replyLink.style.display = 'inline-flex';
+            } else {
+                replyLink.style.display = 'none';
+            }
+
+            openModal('feedbackDetailModal');
+        }
+
+        async function handleDeleteFeedbackClick(formId) {
+            if (!confirm('Bu geri bildirim veya destek talebini kalıcı olarak silmek istediğinize emin misiniz?')) {
+                return;
+            }
+
+            try {
+                var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                var formData = new FormData();
+                formData.append('formId', formId);
+                formData.append('__RequestVerificationToken', token);
+
+                var response = await fetch('/SuperAdmin/DeleteFeedback', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    body: formData
+                });
+                var result = await response.json();
+                if (result.success) {
+                    showAdminToast(result.message || 'Geri bildirim silindi.', 'success');
+                    var row = document.getElementById('feedback-row-' + formId);
+                    if (row) row.remove();
+                } else {
+                    showAdminToast('Hata: ' + (result.message || 'Silme işlemi başarısız.'), 'error');
+                }
+            } catch (err) {
+                showAdminToast('Bağlantı hatası: ' + err.message, 'error');
             }
         }
 

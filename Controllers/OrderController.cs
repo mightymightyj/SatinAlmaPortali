@@ -254,6 +254,10 @@ namespace satinalmaportali2.Controllers
 
                     foreach (var dbIt in checkedDbItems)
                     {
+                        if (dbIt.IsDeleted)
+                        {
+                            return Json(new { success = false, message = $"Sepetinizdeki '{dbIt.ItemName}' ürünü satıştan kaldırılmıştır. Lütfen sepetinizden çıkartıp tekrar deneyiniz." });
+                        }
                         if (IsProductOwnedByCompany(dbIt, currentCompanyId, currentCompanyName, comp))
                         {
                             return Json(new { success = false, message = $"Kendi satışa sunduğunuz ürünü ({dbIt.ItemName}) satın alamazsınız." });
@@ -288,6 +292,10 @@ namespace satinalmaportali2.Controllers
                         var dbItem = await _context.Items.FirstOrDefaultAsync(i => i.ItemID == item.ProductID);
                         if (dbItem != null)
                         {
+                            if (dbItem.IsDeleted)
+                            {
+                                return Json(new { success = false, message = $"'{dbItem.ItemName ?? item.Title}' ürünü satıştan kaldırılmıştır." });
+                            }
                             int availableStock = dbItem.Quantity ?? 0;
                             if (availableStock <= 0)
                             {

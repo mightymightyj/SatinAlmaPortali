@@ -313,9 +313,9 @@ namespace satinalmaportali2.Controllers
                 }
 
                 var dbItem = await _context.Items.AsNoTracking().FirstOrDefaultAsync(i => i.ItemID == input.ProductID);
-                if (dbItem == null)
+                if (dbItem == null || dbItem.IsDeleted)
                 {
-                    return Json(new { success = false, message = "Ürün sistemde bulunamadı." });
+                    return Json(new { success = false, message = "Bu ürün satıştan veya yayından kaldırılmıştır." });
                 }
 
                 int availableStock = dbItem.Quantity ?? 0;
@@ -400,6 +400,10 @@ namespace satinalmaportali2.Controllers
                 }
 
                 var dbItem = await _context.Items.AsNoTracking().FirstOrDefaultAsync(i => i.ItemID == input.ProductID);
+                if (dbItem == null || dbItem.IsDeleted)
+                {
+                    return Json(new { success = false, message = "Bu ürün satıştan veya yayından kaldırılmıştır." });
+                }
                 int availableStock = dbItem?.Quantity ?? 0;
 
                 if (input.Quantity > availableStock)

@@ -15,11 +15,15 @@ namespace satinalmaportali2.Models
         public List<ReviewAdminDto> Reviews { get; set; } = new();
         public List<OrderAdminDto> Orders { get; set; } = new();
         public List<OrderSummaryDto> AvailableOrders { get; set; } = new();
+        public List<FeedbackAdminDto> Feedbacks { get; set; } = new();
+        public int TotalFeedbacksCount { get; set; }
 
-        public string ActiveTab { get; set; } = "overview"; // overview, categories, companies, orders, reviews, simulation, settings
+        public string ActiveTab { get; set; } = "overview"; // overview, categories, companies, orders, reviews, simulation, settings, feedbacks
         public string? SearchQuery { get; set; }
         public int? FilterCompanyType { get; set; }
+        public int? FilterMembershipType { get; set; }
         public string? FilterOrderStatus { get; set; }
+        public string? FilterFeedbackCategory { get; set; }
     }
 
     public class SuperAdminStatsDto
@@ -30,6 +34,13 @@ namespace satinalmaportali2.Models
         public int BuyerCount { get; set; }
         public int BothCount { get; set; }
         public int SuperAdminCount { get; set; }
+
+        // Üyelik Seviyesi İstatistikleri
+        public int BedavaMembersCount { get; set; }
+        public int ProMembersCount { get; set; }
+        public int KurumsalMembersCount { get; set; }
+        public decimal TotalMembershipRevenue { get; set; }
+        public int TotalMembershipOrdersCount { get; set; }
 
         public int TotalCategories { get; set; }
         public int RootCategoriesCount { get; set; }
@@ -78,11 +89,16 @@ namespace satinalmaportali2.Models
         public int? CompanyTypeID { get; set; }
         public string CompanyTypeName { get; set; } = "Belirtilmemiş";
         public int? MembershipTypeID { get; set; }
-        public string MembershipTypeName { get; set; } = "Standart";
+        public string MembershipTypeName { get; set; } = "Bedava";
         public string? CompanyLogo { get; set; }
         public string? CompanyDetailText { get; set; }
         public string? AddressText { get; set; }
         public int RequestCount { get; set; }
+        public int ActiveRequestCount { get; set; }
+        public int MaxRequests { get; set; } = 10;
+        public int ListedProductCount { get; set; }
+        public int MaxProducts { get; set; } = 10;
+        public int MaxImagesPerProduct { get; set; } = 3;
         public int OfferCount { get; set; }
         public bool IsSuperAdmin => CompanyTypeID == 4;
     }
@@ -284,10 +300,12 @@ namespace satinalmaportali2.Models
         public string? PaymentMethod { get; set; }
         public string OrderStatus { get; set; } = "Onaylandı";
         public DateTime OrderDate { get; set; }
+        public string? DeliveryCity { get; set; }
         public string? DeliveryAddress { get; set; }
         public string? ShippingCarrier { get; set; }
         public string? TrackingNumber { get; set; }
         public string? Notes { get; set; }
+        public bool IsMembershipOrder => (!string.IsNullOrEmpty(OrderNumber) && OrderNumber.StartsWith("MEM-")) || (!string.IsNullOrEmpty(DeliveryCity) && DeliveryCity.Contains("Dijital"));
         public List<OrderItemAdminDto> Items { get; set; } = new();
         public int SupplierCount { get; set; }
         public int TotalItemCount => Items.Count;
@@ -337,5 +355,24 @@ namespace satinalmaportali2.Models
 
         public string? ReviewText { get; set; }
         public bool IsVerifiedPurchase { get; set; } = true;
+    }
+
+    public class FeedbackAdminDto
+    {
+        public int FormId { get; set; }
+        public DateTime? FormDate { get; set; }
+        public int? CompanyID { get; set; }
+        public string CompanyName { get; set; } = "Bilinmeyen Firma";
+        public string OfficialName { get; set; } = "-";
+        public string Email { get; set; } = "-";
+        public string Phone { get; set; } = "-";
+        public string MembershipTypeName { get; set; } = "Bedava";
+        public int MembershipTypeID { get; set; } = 1;
+        public string CompanyTypeName { get; set; } = "Kurumsal Firma";
+        public string Category { get; set; } = "Genel";
+        public string? Subject { get; set; }
+        public int? Rating { get; set; }
+        public string Message { get; set; } = "";
+        public bool IsRegisteredCompany { get; set; }
     }
 }

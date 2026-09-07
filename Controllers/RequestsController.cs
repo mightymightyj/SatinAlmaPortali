@@ -11,6 +11,7 @@ using satinalmaportali2.Data;
 using satinalmaportali2.Hubs;
 using satinalmaportali2.Models;
 using satinalmaportali2.Services;
+using satinalmaportali2.Helpers;
 
 namespace satinalmaportali2.Controllers
 {
@@ -163,6 +164,14 @@ namespace satinalmaportali2.Controllers
 
                         bool isOwner = IsRequestOwnedByCurrentCompany(req, currentCompanyId, currentCompany);
                         var myOffer = currentCompanyId > 0 ? req.Offers.FirstOrDefault(o => o.SupplierID == currentCompanyId) : null;
+                        bool isAdmin = userType == "SuperAdmin" || userType == "Admin";
+
+                        // Alıcı veya satıcı haklarını koruma: Kaldırılan talepleri yalnızca talep sahibi, teklif verenler ve admin görebilir
+                        if (req.Status == "Kaldırıldı" && !isOwner && myOffer == null && !isAdmin)
+                        {
+                            continue;
+                        }
+
                         var bestOffer = req.Offers.Any() ? req.Offers.Min(o => o.OfferedPrice) : (decimal?)null;
                         var (cleanNotes, myRejectionReason, _, _, _) = ParseSupplierNotes(myOffer?.SupplierNotes);
                         int revisedOffersCount = req.Offers.Count(o => ParseSupplierNotes(o.SupplierNotes).IsRevised);
@@ -279,6 +288,27 @@ namespace satinalmaportali2.Controllers
             {
                 int currentCompanyId = GetCurrentCompanyId();
                 var currentCompany = currentCompanyId > 0 ? await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId) : null;
+
+                // Üyelik Seviyesi Talep Limiti Kontrolü
+                if (currentCompanyId > 0 && currentCompany != null)
+                {
+                    int memTypeId = currentCompany.MembershipTypeID ?? MembershipConstants.TierBedava;
+                    int maxRequests = MembershipConstants.GetMaxRequests(memTypeId);
+                    if (maxRequests < int.MaxValue)
+                    {
+                        int activeCount = await _context.Requests
+                            .Where(r => r.SenderID == currentCompanyId && r.Status != "İptal Edildi" && r.Status != "Tamamlandı" && r.Status != "Reddedildi" && r.Status != "Kaldırıldı")
+                            .CountAsync();
+
+                        if (activeCount >= maxRequests)
+                        {
+                            string tierName = MembershipConstants.GetTierName(memTypeId);
+                            TempData["ErrorMessage"] = $"{tierName} üyelik planınızda aynı anda en fazla {maxRequests} aktif talebe sahip olabilirsiniz. (Mevcut aktif talep: {activeCount}). Yeni talep oluşturmak için mevcut taleplerinizi sonuçlandırabilir veya üyeliğinizi yükseltebilirsiniz.";
+                            return RedirectToAction(nameof(Index));
+                        }
+                    }
+                }
+
                 string companyName = currentCompany?.CompanyName ?? currentCompany?.CompanyOfficial ?? GetCurrentCompanyName();
                 string finalBuyerInfo = !string.IsNullOrWhiteSpace(companyName) ? companyName : (!string.IsNullOrWhiteSpace(input.BuyerInfo) ? input.BuyerInfo : "Kurumsal Alıcı");
 
@@ -382,6 +412,31 @@ namespace satinalmaportali2.Controllers
             {
                 int currentCompanyId = GetCurrentCompanyId();
                 var currentCompany = currentCompanyId > 0 ? await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId) : null;
+
+                // Üyelik Seviyesi Talep Limiti Kontrolü
+                if (currentCompanyId > 0 && currentCompany != null)
+                {
+                    int memTypeId = currentCompany.MembershipTypeID ?? MembershipConstants.TierBedava;
+                    int maxRequests = MembershipConstants.GetMaxRequests(memTypeId);
+                    if (maxRequests < int.MaxValue)
+                    {
+                        int activeCount = await _context.Requests
+                            .Where(r => r.SenderID == currentCompanyId && r.Status != "İptal Edildi" && r.Status != "Tamamlandı" && r.Status != "Reddedildi" && r.Status != "Kaldırıldı")
+                            .CountAsync();
+
+                        if (activeCount >= maxRequests)
+                        {
+                            string tierName = MembershipConstants.GetTierName(memTypeId);
+                            return Json(new
+                            {
+                                success = false,
+                                limitExceeded = true,
+                                message = $"{tierName} üyelik planınızda aynı anda en fazla {maxRequests} aktif talebe sahip olabilirsiniz. (Mevcut aktif talep: {activeCount}). Yeni talep açmak için mevcut taleplerinizi sonuçlandırabilir veya üyeliğinizi yükseltebilirsiniz."
+                            });
+                        }
+                    }
+                }
+
                 string companyName = currentCompany?.CompanyName ?? currentCompany?.CompanyOfficial ?? GetCurrentCompanyName();
                 string finalBuyerInfo = !string.IsNullOrWhiteSpace(companyName) ? companyName : (!string.IsNullOrWhiteSpace(input.BuyerInfo) ? input.BuyerInfo : "Kurumsal Alıcı");
 
@@ -2286,7 +2341,10 @@ namespace satinalmaportali2.Controllers
                 bool isAdmin = userType == "SuperAdmin" || userType == "Admin";
                 var currentCompany = currentCompanyId > 0 ? await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.CompanyID == currentCompanyId) : null;
 
-                var req = await _context.Requests.FindAsync(id);
+                var req = await _context.Requests
+                    .Include(r => r.Offers)
+                    .FirstOrDefaultAsync(r => r.RequestID == id);
+
                 if (req != null)
                 {
                     bool isOwner = IsRequestOwnedByCurrentCompany(req, currentCompanyId, currentCompany);
@@ -2299,21 +2357,51 @@ namespace satinalmaportali2.Controllers
                         return RedirectToAction(nameof(Index));
                     }
 
-                    _context.Requests.Remove(req);
-                    await _context.SaveChangesAsync();
+                    // Onaylanmış teklif, kabul edilmiş anlaşma veya inceleme/değerlendirme geçmişi kontrolü
+                    bool hasApprovedOffer = (req.Offers != null && req.Offers.Any(o => o.Status == "Kabul Edildi" || o.Status == "Onaylandı"))
+                                         || req.Status == "Onaylandı" || req.Status == "Kabul Edildi" || req.Status == "Tamamlandı"
+                                         || await _context.Reviews.AnyAsync(r => r.RequestID == id);
 
-                    try
+                    if (hasApprovedOffer)
                     {
-                        await _hubContext.Clients.All.SendAsync("OnRequestDeleted", new { requestId = id });
-                    }
-                    catch (Exception hubEx)
-                    {
-                        Console.WriteLine($"SignalR Delete broadcast error: {hubEx.Message}");
-                    }
+                        // Alıcı veya satıcı haklarını korumak için fiziksel olarak silme!
+                        // Talebin durumunu 'Kaldırıldı' yaparak yayından kaldır ve arşivle.
+                        req.Status = "Kaldırıldı";
+                        string auditNote = $"[Yayından Kaldırıldı / Arşivlendi: {DateTime.Now:dd.MM.yyyy HH:mm} - Sahip firma tarafından kaldırıldı. Onaylı teklif ve alıcı/satıcı hakları korundu]";
+                        req.Notes = string.IsNullOrWhiteSpace(req.Notes) ? auditNote : $"{req.Notes} | {auditNote}";
+                        await _context.SaveChangesAsync();
 
-                    var succMsg = $"#{id} numaralı talep veritabanından başarıyla silindi.";
-                    if (isAjax) return Json(new { success = true, message = succMsg, requestId = id });
-                    TempData["SuccessMessage"] = succMsg;
+                        try
+                        {
+                            await _hubContext.Clients.All.SendAsync("OnRequestDeleted", new { requestId = id, isArchived = true });
+                        }
+                        catch (Exception hubEx)
+                        {
+                            Console.WriteLine($"SignalR Delete broadcast error: {hubEx.Message}");
+                        }
+
+                        var archiveMsg = "Bu talebe ait onaylanmış tedarikçi teklifi ve anlaşması bulunduğu için alıcı ve satıcı haklarını korumak adına talep veritabanından tamamen silinmedi, arşivlenerek yayından kaldırıldı.";
+                        if (isAjax) return Json(new { success = true, message = archiveMsg, requestId = id, isArchived = true });
+                        TempData["SuccessMessage"] = archiveMsg;
+                    }
+                    else
+                    {
+                        _context.Requests.Remove(req);
+                        await _context.SaveChangesAsync();
+
+                        try
+                        {
+                            await _hubContext.Clients.All.SendAsync("OnRequestDeleted", new { requestId = id, isArchived = false });
+                        }
+                        catch (Exception hubEx)
+                        {
+                            Console.WriteLine($"SignalR Delete broadcast error: {hubEx.Message}");
+                        }
+
+                        var succMsg = $"#{id} numaralı talep veritabanından başarıyla silindi.";
+                        if (isAjax) return Json(new { success = true, message = succMsg, requestId = id, isArchived = false });
+                        TempData["SuccessMessage"] = succMsg;
+                    }
                 }
                 else
                 {

@@ -132,7 +132,7 @@ namespace satinalmaportali2.Controllers
         [HttpGet]
         [Route("")]
         [Route("Index")]
-        public async Task<IActionResult> Index(string? tab = "overview", string? search = null, int? filterType = null, string? status = null)
+        public async Task<IActionResult> Index(string? tab = "overview", string? search = null, int? filterType = null, string? status = null, int? filterMembership = null, string? category = null)
         {
             if (!await CheckIsSuperAdminAsync())
             {
@@ -145,7 +145,9 @@ namespace satinalmaportali2.Controllers
                 ActiveTab = string.IsNullOrWhiteSpace(tab) ? "overview" : tab.ToLowerInvariant(),
                 SearchQuery = search,
                 FilterCompanyType = filterType,
-                FilterOrderStatus = status
+                FilterMembershipType = filterMembership,
+                FilterOrderStatus = status,
+                FilterFeedbackCategory = category
             };
 
             try
@@ -155,7 +157,7 @@ namespace satinalmaportali2.Controllers
                 viewModel.AvailableMembershipTypes = await _context.MembershipTypes.AsNoTracking().OrderBy(mt => mt.MembershipTypeID).ToListAsync();
 
                 var typeMap = viewModel.AvailableCompanyTypes.ToDictionary(ct => ct.CompanyTypeID ?? 0, ct => ct.CompanyTypeName ?? "Bilinmiyor");
-                var memberMap = viewModel.AvailableMembershipTypes.ToDictionary(mt => mt.MembershipTypeID ?? 0, mt => mt.MembershipTypeName ?? "Standart");
+                var memberMap = viewModel.AvailableMembershipTypes.ToDictionary(mt => mt.MembershipTypeID ?? 0, mt => mt.MembershipTypeName ?? "Bedava");
 
                 // 2. Kategoriler (N-Seviyeli Tam Hiyerarşik Ağaç Yapısı)
                 var dbCategories = await _context.Category.AsNoTracking().ToListAsync();
@@ -196,12 +198,19 @@ namespace satinalmaportali2.Controllers
                 FlattenCategoriesForDropdown(categoryTree, 0, parentDropdownList);
                 viewModel.AvailableParentCategories = parentDropdownList;
 
-                // 3. Firmalar
+                // 3. Firmalar, Talepler ve Ürünler
                 var dbCompanies = await _context.Companies.AsNoTracking().OrderByDescending(c => c.CompanyID).ToListAsync();
                 var dbAddresses = await _context.Addresses.AsNoTracking().ToDictionaryAsync(a => a.AddressID, a => a.AddressText ?? "");
+                var dbItems = await _context.Items.AsNoTracking().Where(i => !i.IsDeleted).OrderByDescending(i => i.ItemID).ToListAsync();
 
                 var requestsBySender = await _context.Requests.AsNoTracking()
                     .Where(r => r.SenderID.HasValue)
+                    .GroupBy(r => r.SenderID!.Value)
+                    .Select(g => new { SenderID = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.SenderID, x => x.Count);
+
+                var activeRequestsBySender = await _context.Requests.AsNoTracking()
+                    .Where(r => r.SenderID.HasValue && r.Status != "İptal Edildi" && r.Status != "Tamamlandı" && r.Status != "Reddedildi" && r.Status != "Kaldırıldı")
                     .GroupBy(r => r.SenderID!.Value)
                     .Select(g => new { SenderID = g.Key, Count = g.Count() })
                     .ToDictionaryAsync(x => x.SenderID, x => x.Count);
@@ -211,30 +220,53 @@ namespace satinalmaportali2.Controllers
                     .Select(g => new { SupplierID = g.Key, Count = g.Count() })
                     .ToDictionaryAsync(x => x.SupplierID, x => x.Count);
 
-                viewModel.Companies = dbCompanies.Select(c => new CompanyAdminDto
+                // Her firmanın yayındaki ürün sayısını önceden hesapla
+                var companyProductCounts = new Dictionary<int, int>();
+                foreach (var c in dbCompanies)
                 {
-                    CompanyID = c.CompanyID,
-                    CompanyName = c.CompanyName ?? "İsimsiz Firma",
-                    CompanyOfficial = c.CompanyOfficial ?? "-",
-                    CompanyMail = c.CompanyMail ?? "-",
-                    CompanyPhone = c.CompanyPhone,
-                    TCNO = c.TCNO,
-                    TaxOffice = c.TaxOffice,
-                    CompanyTypeID = c.CompanyTypeID,
-                    CompanyTypeName = (c.CompanyTypeID == 4 || string.Equals(c.CompanyMail, "admin@tedarikportal.com", StringComparison.OrdinalIgnoreCase)) ? "Süper Admin" : "Kurumsal Hesap (Alıcı & Tedarikçi)",
-                    MembershipTypeID = c.MembershipTypeID,
-                    MembershipTypeName = c.MembershipTypeID.HasValue && memberMap.TryGetValue(c.MembershipTypeID.Value, out var mName) ? mName : "Standart",
-                    CompanyLogo = c.CompanyLogo,
-                    CompanyDetailText = c.CompanyDetailText,
-                    AddressText = c.AddressID.HasValue && dbAddresses.TryGetValue(c.AddressID.Value, out var addr) ? addr : null,
-                    RequestCount = requestsBySender.TryGetValue(c.CompanyID, out var rCount) ? rCount : 0,
-                    OfferCount = offersBySupplier.TryGetValue(c.CompanyID, out var oCount) ? oCount : 0
+                    int cid = c.CompanyID;
+                    string cName = c.CompanyName ?? "";
+                    int pCount = dbItems.Count(i => !i.IsDeleted && ((!string.IsNullOrEmpty(i.Properties) && i.Properties.Contains($"FirmaID: {cid}"))
+                                                   || (!string.IsNullOrEmpty(cName) && i.Brand == cName)));
+                    companyProductCounts[cid] = pCount;
+                }
+
+                viewModel.Companies = dbCompanies.Select(c =>
+                {
+                    int tier = c.MembershipTypeID ?? MembershipConstants.TierBedava;
+                    string tierName = memberMap.TryGetValue(tier, out var mName) ? mName : MembershipConstants.GetTierName(tier);
+                    int actReq = activeRequestsBySender.TryGetValue(c.CompanyID, out var arCount) ? arCount : 0;
+                    int prodCount = companyProductCounts.TryGetValue(c.CompanyID, out var prCount) ? prCount : 0;
+
+                    return new CompanyAdminDto
+                    {
+                        CompanyID = c.CompanyID,
+                        CompanyName = c.CompanyName ?? "İsimsiz Firma",
+                        CompanyOfficial = c.CompanyOfficial ?? "-",
+                        CompanyMail = c.CompanyMail ?? "-",
+                        CompanyPhone = c.CompanyPhone,
+                        TCNO = c.TCNO,
+                        TaxOffice = c.TaxOffice,
+                        CompanyTypeID = c.CompanyTypeID,
+                        CompanyTypeName = (c.CompanyTypeID == 4 || string.Equals(c.CompanyMail, "admin@tedarikportal.com", StringComparison.OrdinalIgnoreCase)) ? "Süper Admin" : "Kurumsal Hesap (Alıcı & Tedarikçi)",
+                        MembershipTypeID = tier,
+                        MembershipTypeName = tierName,
+                        ActiveRequestCount = actReq,
+                        MaxRequests = MembershipConstants.GetMaxRequests(tier),
+                        ListedProductCount = prodCount,
+                        MaxProducts = MembershipConstants.GetMaxProducts(tier),
+                        MaxImagesPerProduct = MembershipConstants.GetMaxImagesPerProduct(tier),
+                        CompanyLogo = c.CompanyLogo,
+                        CompanyDetailText = c.CompanyDetailText,
+                        AddressText = c.AddressID.HasValue && dbAddresses.TryGetValue(c.AddressID.Value, out var addr) ? addr : null,
+                        RequestCount = requestsBySender.TryGetValue(c.CompanyID, out var rCount) ? rCount : 0,
+                        OfferCount = offersBySupplier.TryGetValue(c.CompanyID, out var oCount) ? oCount : 0
+                    };
                 }).ToList();
 
                 // 4. İstatistikler
                 var dbRequests = await _context.Requests.AsNoTracking().ToListAsync();
                 var dbOffers = await _context.RequestOffers.AsNoTracking().ToListAsync();
-                var dbItems = await _context.Items.AsNoTracking().OrderByDescending(i => i.ItemID).ToListAsync();
 
                 viewModel.Stats = new SuperAdminStatsDto
                 {
@@ -244,6 +276,11 @@ namespace satinalmaportali2.Controllers
                     BuyerCount = 0,
                     BothCount = dbCompanies.Count(c => c.CompanyTypeID != 4 && !string.Equals(c.CompanyMail, "admin@tedarikportal.com", StringComparison.OrdinalIgnoreCase)),
                     SuperAdminCount = dbCompanies.Count(c => c.CompanyTypeID == 4 || string.Equals(c.CompanyMail, "admin@tedarikportal.com", StringComparison.OrdinalIgnoreCase)),
+
+                    // Üyelik Dağılımı İstatistikleri
+                    BedavaMembersCount = dbCompanies.Count(c => (c.MembershipTypeID ?? 1) == MembershipConstants.TierBedava),
+                    ProMembersCount = dbCompanies.Count(c => c.MembershipTypeID == MembershipConstants.TierPro),
+                    KurumsalMembersCount = dbCompanies.Count(c => c.MembershipTypeID == MembershipConstants.TierKurumsal),
 
                     TotalCategories = dbCategories.Count,
                     RootCategoriesCount = dbCategories.Count(c => !c.ParentCategoryID.HasValue || c.ParentCategoryID.Value == 0),
@@ -361,6 +398,7 @@ namespace satinalmaportali2.Controllers
                         PaymentMethod = o.PaymentMethod,
                         OrderStatus = o.OrderStatus ?? "Onaylandı",
                         OrderDate = o.OrderDate,
+                        DeliveryCity = o.DeliveryCity,
                         DeliveryAddress = o.DeliveryAddress ?? (string.IsNullOrWhiteSpace(o.DeliveryCity) ? "-" : o.DeliveryCity),
                         ShippingCarrier = o.ShippingCarrier,
                         TrackingNumber = o.TrackingNumber,
@@ -403,12 +441,95 @@ namespace satinalmaportali2.Controllers
                 viewModel.Stats.TotalOrderItemsCount = dbOrders.Sum(o => o.OrderItems.Count);
                 viewModel.Stats.MultiSupplierOrdersCount = viewModel.Orders.Count(o => o.SupplierCount > 1);
 
+                // Üyelik Satış Geliri & Siparişleri
+                var memOrders = dbOrders.Where(o => (o.OrderNumber != null && o.OrderNumber.StartsWith("MEM-")) || (o.DeliveryCity != null && o.DeliveryCity.Contains("Dijital"))).ToList();
+                viewModel.Stats.TotalMembershipOrdersCount = memOrders.Count;
+                viewModel.Stats.TotalMembershipRevenue = memOrders.Sum(o => o.GrandTotal);
+
                 viewModel.Stats.TotalReviews = dbReviews.Count;
                 viewModel.Stats.AveragePlatformScore = dbReviews.Any() ? Math.Round(dbReviews.Average(r => r.ReviewScore ?? 10.0), 1) : 10.0;
                 viewModel.Stats.BuyerToSellerReviewsCount = dbReviews.Count(r => r.ReviewType == "BuyerToSeller");
                 viewModel.Stats.SellerToBuyerReviewsCount = dbReviews.Count(r => r.ReviewType == "SellerToBuyer");
 
-                // Filtreleme (Kategoriler & Firmalar & Siparişler)
+                // Geri Bildirim & Destek Talepleri (forms tablosu) - Firma bilgileri doğrudan Companies tablosundan alınır
+                var dbForms = await _context.Forms.AsNoTracking().OrderByDescending(f => f.FormDate).ThenByDescending(f => f.FormId).ToListAsync();
+                viewModel.TotalFeedbacksCount = dbForms.Count;
+
+                var compById = dbCompanies.ToDictionary(c => c.CompanyID, c => c);
+                var compByEmail = dbCompanies
+                    .Where(c => !string.IsNullOrEmpty(c.CompanyMail))
+                    .GroupBy(c => c.CompanyMail!.Trim().ToLowerInvariant())
+                    .ToDictionary(g => g.Key, g => g.First());
+
+                var feedbackDtos = new List<FeedbackAdminDto>();
+                foreach (var f in dbForms)
+                {
+                    Company? comp = null;
+                    if (f.CompanyId.HasValue && compById.TryGetValue(f.CompanyId.Value, out var c1))
+                    {
+                        comp = c1;
+                    }
+                    else if (!string.IsNullOrWhiteSpace(f.Email) && compByEmail.TryGetValue(f.Email.Trim().ToLowerInvariant(), out var c2))
+                    {
+                        comp = c2;
+                    }
+
+                    // Kategori ve Konu ayrıştırması
+                    string cat = "Genel Geri Bildirim";
+                    string subj = "";
+                    string rawTopic = f.Topic ?? "";
+                    if (!string.IsNullOrWhiteSpace(rawTopic))
+                    {
+                        var dashIdx = rawTopic.IndexOf(" - ");
+                        if (dashIdx > 0)
+                        {
+                            cat = rawTopic.Substring(0, dashIdx).Trim();
+                            subj = rawTopic.Substring(dashIdx + 3).Trim();
+                        }
+                        else
+                        {
+                            cat = rawTopic.Trim();
+                        }
+                    }
+
+                    // Puan ve temiz mesaj ayrıştırması
+                    string rawMsg = f.FormText ?? "";
+                    int? rating = null;
+                    var ratingMatch = System.Text.RegularExpressions.Regex.Match(rawMsg, @"\[(?:Memnuniyet\s*\/\s*Puan|Kullanıcı\s*Memnuniyet\s*Puanı)\s*:\s*(\d+)\s*\/\s*5\]");
+                    if (ratingMatch.Success && int.TryParse(ratingMatch.Groups[1].Value, out int rVal))
+                    {
+                        rating = rVal;
+                        rawMsg = rawMsg.Replace(ratingMatch.Value, "").Trim();
+                    }
+
+                    int memId = comp?.MembershipTypeID ?? 1;
+                    string memName = memberMap.TryGetValue(memId, out var mName) ? mName : "Bedava";
+                    int typeId = comp?.CompanyTypeID ?? 0;
+                    string typeName = typeMap.TryGetValue(typeId, out var tName) ? tName : "Kurumsal Firma";
+
+                    feedbackDtos.Add(new FeedbackAdminDto
+                    {
+                        FormId = f.FormId,
+                        FormDate = f.FormDate,
+                        CompanyID = comp?.CompanyID,
+                        CompanyName = comp?.CompanyName ?? (!string.IsNullOrWhiteSpace(f.Name) ? f.Name : "Kayıtsız Kullanıcı"),
+                        OfficialName = comp?.CompanyOfficial ?? (!string.IsNullOrWhiteSpace(f.Surname) ? f.Surname : "-"),
+                        Email = comp?.CompanyMail ?? f.Email ?? "-",
+                        Phone = comp?.CompanyPhone ?? f.Phone ?? "-",
+                        MembershipTypeID = memId,
+                        MembershipTypeName = memName,
+                        CompanyTypeName = (typeId == 4) ? "Süper Admin" : typeName,
+                        Category = cat,
+                        Subject = subj,
+                        Rating = rating,
+                        Message = rawMsg,
+                        IsRegisteredCompany = comp != null
+                    });
+                }
+
+                viewModel.Feedbacks = feedbackDtos;
+
+                // Filtreleme (Kategoriler & Firmalar & Siparişler & Geri Bildirimler)
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     var q = search.Trim().ToLowerInvariant();
@@ -434,6 +555,23 @@ namespace satinalmaportali2.Controllers
                             o.Items.Any(it => it.ProductName.ToLowerInvariant().Contains(q) || (it.SupplierCompanyName != null && it.SupplierCompanyName.ToLowerInvariant().Contains(q)))
                         ).ToList();
                     }
+                    else if (viewModel.ActiveTab == "feedbacks")
+                    {
+                        viewModel.Feedbacks = viewModel.Feedbacks.Where(f =>
+                            f.CompanyName.ToLowerInvariant().Contains(q) ||
+                            f.OfficialName.ToLowerInvariant().Contains(q) ||
+                            f.Email.ToLowerInvariant().Contains(q) ||
+                            f.Phone.ToLowerInvariant().Contains(q) ||
+                            f.Category.ToLowerInvariant().Contains(q) ||
+                            (f.Subject != null && f.Subject.ToLowerInvariant().Contains(q)) ||
+                            f.Message.ToLowerInvariant().Contains(q)
+                        ).ToList();
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(category) && category != "all")
+                {
+                    viewModel.Feedbacks = viewModel.Feedbacks.Where(f => f.Category.Equals(category, StringComparison.OrdinalIgnoreCase)).ToList();
                 }
 
                 if (filterType.HasValue && filterType.Value > 0)
@@ -441,9 +579,21 @@ namespace satinalmaportali2.Controllers
                     viewModel.Companies = viewModel.Companies.Where(c => c.CompanyTypeID == filterType.Value).ToList();
                 }
 
+                if (filterMembership.HasValue && filterMembership.Value > 0)
+                {
+                    viewModel.Companies = viewModel.Companies.Where(c => (c.MembershipTypeID ?? 1) == filterMembership.Value).ToList();
+                }
+
                 if (!string.IsNullOrWhiteSpace(viewModel.FilterOrderStatus) && viewModel.FilterOrderStatus != "all")
                 {
-                    viewModel.Orders = viewModel.Orders.Where(o => o.OrderStatus == viewModel.FilterOrderStatus).ToList();
+                    if (viewModel.FilterOrderStatus == "membership")
+                    {
+                        viewModel.Orders = viewModel.Orders.Where(o => o.IsMembershipOrder).ToList();
+                    }
+                    else
+                    {
+                        viewModel.Orders = viewModel.Orders.Where(o => o.OrderStatus == viewModel.FilterOrderStatus).ToList();
+                    }
                 }
             }
             catch (Exception ex)
@@ -832,6 +982,70 @@ namespace satinalmaportali2.Controllers
             catch (Exception ex)
             {
                 var errMsg = "Firma türü değiştirme hatası: " + ex.Message;
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["AdminError"] = errMsg;
+            }
+
+            return RedirectToAction(nameof(Index), new { tab = "companies" });
+        }
+
+        [HttpPost]
+        [Route("QuickChangeMembershipType")]
+        public async Task<IActionResult> QuickChangeMembershipType(int companyId, int membershipTypeId)
+        {
+            if (!await CheckIsSuperAdminAsync())
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Yetkisiz işlem." });
+                return Forbid();
+            }
+
+            try
+            {
+                var company = await _context.Companies.FirstOrDefaultAsync(c => c.CompanyID == companyId);
+                if (company == null)
+                {
+                    var notFoundMsg = "Firma bulunamadı.";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = notFoundMsg });
+                    TempData["AdminError"] = notFoundMsg;
+                    return RedirectToAction(nameof(Index), new { tab = "companies" });
+                }
+
+                if (membershipTypeId < MembershipConstants.TierBedava || membershipTypeId > MembershipConstants.TierKurumsal)
+                {
+                    var invalidMsg = "Geçersiz üyelik seviyesi seçildi.";
+                    if (IsAjaxRequest()) return Json(new { success = false, message = invalidMsg });
+                    TempData["AdminError"] = invalidMsg;
+                    return RedirectToAction(nameof(Index), new { tab = "companies" });
+                }
+
+                company.MembershipTypeID = membershipTypeId;
+                await _context.SaveChangesAsync();
+
+                string tierName = MembershipConstants.GetTierName(membershipTypeId);
+                int maxReq = MembershipConstants.GetMaxRequests(membershipTypeId);
+                int maxProd = MembershipConstants.GetMaxProducts(membershipTypeId);
+                int maxImg = MembershipConstants.GetMaxImagesPerProduct(membershipTypeId);
+
+                var succMsg = $"'{company.CompanyName}' firmasının üyelik seviyesi '{tierName}' olarak güncellendi!";
+                if (IsAjaxRequest())
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        message = succMsg,
+                        companyId = companyId,
+                        membershipTypeId = membershipTypeId,
+                        membershipTypeName = tierName,
+                        maxRequests = maxReq == int.MaxValue ? "∞" : maxReq.ToString(),
+                        maxProducts = maxProd == int.MaxValue ? "∞" : maxProd.ToString(),
+                        maxImages = maxImg == int.MaxValue ? "∞" : maxImg.ToString()
+                    });
+                }
+                TempData["AdminSuccess"] = succMsg;
+            }
+            catch (Exception ex)
+            {
+                var errMsg = "Üyelik seviyesi değiştirme hatası: " + ex.Message;
                 if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
                 TempData["AdminError"] = errMsg;
             }
@@ -1662,12 +1876,28 @@ namespace satinalmaportali2.Controllers
                     return RedirectToAction(nameof(Index), new { tab = "simulation" });
                 }
 
-                _context.Items.Remove(item);
-                await _context.SaveChangesAsync();
+                // Alıcı veya satıcı haklarını ve sipariş kayıtlarını koruma kontrolü
+                bool hasPurchased = await _context.OrderItems.AnyAsync(oi => oi.ItemID == id);
 
-                var succMsg = $"'{item.ItemName}' ürün ilanı vitrinden başarıyla kaldırıldı.";
-                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, itemId = id });
-                TempData["AdminSuccess"] = succMsg;
+                if (hasPurchased)
+                {
+                    item.IsDeleted = true;
+                    item.Quantity = 0;
+                    await _context.SaveChangesAsync();
+
+                    var succMsg = $"'{item.ItemName}' ürününe ait verilmiş sipariş(ler) bulunduğu için alıcı/satıcı hakları ve sipariş geçmişini korumak adına ürün tamamen silinmedi; yayından kaldırılarak arşivlendi.";
+                    if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, itemId = id, isArchived = true });
+                    TempData["AdminSuccess"] = succMsg;
+                }
+                else
+                {
+                    _context.Items.Remove(item);
+                    await _context.SaveChangesAsync();
+
+                    var succMsg = $"'{item.ItemName}' ürün ilanı vitrinden başarıyla kaldırıldı.";
+                    if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, itemId = id, isArchived = false });
+                    TempData["AdminSuccess"] = succMsg;
+                }
             }
             catch (Exception ex)
             {
@@ -2176,6 +2406,38 @@ namespace satinalmaportali2.Controllers
             int currentCompanyId = GetCurrentCompanyId();
             var result = await _iyzicoService.DisapproveEscrowRefundAsync(orderId, currentCompanyId, reason ?? "Admin İade Kararı", isAdmin: true);
             return Json(new { success = result.Success, message = result.Message });
+        }
+
+        /// <summary>
+        /// Süper Admin: Geri bildirim veya destek talebi kaydını siler.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Route("DeleteFeedback")]
+        public async Task<IActionResult> DeleteFeedback(int formId)
+        {
+            if (!await CheckIsSuperAdminAsync())
+            {
+                return Json(new { success = false, message = "Yetkisiz işlem." });
+            }
+
+            try
+            {
+                var form = await _context.Forms.FirstOrDefaultAsync(f => f.FormId == formId);
+                if (form == null)
+                {
+                    return Json(new { success = false, message = "Geri bildirim kaydı bulunamadı." });
+                }
+
+                _context.Forms.Remove(form);
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = "Geri bildirim kaydı başarıyla silindi." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Silme işlemi sırasında hata oluştu: " + ex.Message });
+            }
         }
     }
 }

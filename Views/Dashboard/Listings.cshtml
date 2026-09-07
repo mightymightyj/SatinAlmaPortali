@@ -846,6 +846,8 @@
         // =========================================================================
         // GÖRSEL YÖNETİMİ & MODAL FONKSİYONLARI (CLOUDINARY ENTEGRASYONU)
         // =========================================================================
+        const memMaxImages = @(Model.MaxImagesPerProduct < int.MaxValue ? Model.MaxImagesPerProduct : 100);
+        const memTierName = '@(Model.MembershipTypeName)';
         let dashCreateUploadedImages = [];
         let dashEditUploadedImages = [];
 
@@ -855,15 +857,15 @@
             const validExts = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/jpg'];
             const validFileExts = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
 
-            if (dashCreateUploadedImages.length >= 10) {
-                if (typeof showRealtimeToast === 'function') showRealtimeToast("Bir ürün için en fazla 10 görsel ekleyebilirsiniz.", "warning");
+            if (dashCreateUploadedImages.length >= memMaxImages) {
+                if (typeof showRealtimeToast === 'function') showRealtimeToast(`${memTierName} planınızda bir ürün için en fazla ${memMaxImages} görsel ekleyebilirsiniz.`, "warning");
                 return;
             }
 
             let addedCount = 0;
             for (let i = 0; i < files.length; i++) {
-                if (dashCreateUploadedImages.length >= 10) {
-                    if (typeof showRealtimeToast === 'function') showRealtimeToast("En fazla 10 görsel sınırına ulaşıldı. Kalan dosyalar eklenmedi.", "warning");
+                if (dashCreateUploadedImages.length >= memMaxImages) {
+                    if (typeof showRealtimeToast === 'function') showRealtimeToast(`En fazla ${memMaxImages} görsel sınırına ulaşıldı. Kalan dosyalar eklenmedi.`, "warning");
                     break;
                 }
 
@@ -1328,15 +1330,16 @@
             const validExts = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/jpg'];
             const validFileExts = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
 
-            if (dashEditUploadedImages.length >= 10) {
-                if (typeof showRealtimeToast === 'function') showRealtimeToast("Bir ürün için en fazla 10 görsel ekleyebilirsiniz.", "warning");
+            const existingCount = (typeof dashEditExistingImages !== 'undefined') ? dashEditExistingImages.length : 0;
+            if ((existingCount + dashEditUploadedImages.length) >= memMaxImages) {
+                if (typeof showRealtimeToast === 'function') showRealtimeToast(`${memTierName} planınızda bir ürün için en fazla ${memMaxImages} görsel ekleyebilirsiniz.`, "warning");
                 return;
             }
 
             let addedCount = 0;
             for (let i = 0; i < files.length; i++) {
-                if (dashEditUploadedImages.length >= 10) {
-                    if (typeof showRealtimeToast === 'function') showRealtimeToast("En fazla 10 görsel sınırına ulaşıldı. Kalan dosyalar eklenmedi.", "warning");
+                if ((existingCount + dashEditUploadedImages.length) >= memMaxImages) {
+                    if (typeof showRealtimeToast === 'function') showRealtimeToast(`En fazla ${memMaxImages} görsel sınırına ulaşıldı. Kalan dosyalar eklenmedi.`, "warning");
                     break;
                 }
 

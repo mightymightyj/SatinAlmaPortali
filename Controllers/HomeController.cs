@@ -5,6 +5,7 @@ using satinalmaportali2.Data;
 using satinalmaportali2.Hubs;
 using satinalmaportali2.Models;
 using satinalmaportali2.Services;
+using satinalmaportali2.Helpers;
 using System.Diagnostics;
 using System.Security.Claims;
 
@@ -103,9 +104,9 @@ namespace satinalmaportali2.Controllers {
                 // Gerçek veritabanı istatistikleri
                 var totalBuyers = await _context.Companies.CountAsync(c => c.CompanyTypeID == 2 || c.CompanyTypeID == 3);
                 var totalSuppliers = await _context.Companies.CountAsync(c => c.CompanyTypeID == 1 || c.CompanyTypeID == 3);
-                var openRequests = await _context.Requests.CountAsync(r => r.Status == "Açık" || r.Status == "Beklemede" || r.Status == "İncelemede" || string.IsNullOrEmpty(r.Status));
+                var openRequests = await _context.Requests.CountAsync(r => r.Status != "Kaldırıldı" && (r.Status == "Açık" || r.Status == "Beklemede" || r.Status == "İncelemede" || string.IsNullOrEmpty(r.Status)));
                 var completedOffers = await _context.RequestOffers.CountAsync(o => o.Status == "Kabul Edildi" || o.Status == "Onaylandı");
-                var totalItems = await _context.Items.CountAsync();
+                var totalItems = await _context.Items.CountAsync(i => !i.IsDeleted);
 
                 ViewBag.TotalBuyers = totalBuyers;
                 ViewBag.TotalSuppliers = totalSuppliers;
@@ -216,8 +217,88 @@ namespace satinalmaportali2.Controllers {
             return View();
         }
 
-        public IActionResult Fiyatlandirma() {
-            return View();
+        public async Task<IActionResult> Fiyatlandirma() {
+            var (currentCompanyId, currentCompanyName, comp) = await GetCurrentCompanyContextAsync();
+            int currentTierId = comp?.MembershipTypeID ?? MembershipConstants.TierBedava;
+            string currentTierName = MembershipConstants.GetTierName(currentTierId);
+
+            var viewModel = new PricingPageViewModel
+            {
+                IsAuthenticated = User?.Identity?.IsAuthenticated == true && currentCompanyId > 0,
+                CurrentCompanyId = currentCompanyId,
+                CurrentCompanyName = currentCompanyName,
+                CurrentCompanyEmail = comp?.CompanyMail ?? User?.FindFirst(ClaimTypes.Email)?.Value ?? "",
+                CurrentMembershipTypeId = currentTierId,
+                CurrentMembershipTypeName = currentTierName,
+                Plans = new List<MembershipPlanDto>
+                {
+                    new MembershipPlanDto
+                    {
+                        TierId = MembershipConstants.TierBedava,
+                        Name = MembershipConstants.NameBedava,
+                        Badge = "Başlangıç",
+                        PriceMonthly = MembershipConstants.BedavaPrice,
+                        Description = "Yeni başlayan işletmeler ve temel satın alma/satış operasyonları için.",
+                        MaxRequests = MembershipConstants.BedavaMaxRequests,
+                        MaxProducts = MembershipConstants.BedavaMaxProducts,
+                        MaxImagesPerProduct = MembershipConstants.BedavaMaxImagesPerProduct,
+                        IsCurrentPlan = currentTierId == MembershipConstants.TierBedava,
+                        Highlights = new List<string>
+                        {
+                            "Aynı anda 10 adet aktif talep hakkı",
+                            "Aynı anda 10 adet ürün satış ilanı",
+                            "Her ürün için 3 görsel hakkı",
+                            "Standart B2B tedarikçi pazar yeri erişimi",
+                            "Temel teklif alma ve teklif verme",
+                            "E-posta desteği"
+                        }
+                    },
+                    new MembershipPlanDto
+                    {
+                        TierId = MembershipConstants.TierPro,
+                        Name = MembershipConstants.NamePro,
+                        Badge = "En Çok Tercih Edilen",
+                        PriceMonthly = MembershipConstants.ProPrice,
+                        Description = "Büyüyen ve satış/tedarik hacmini hızlandırmak isteyen aktif işletmeler için.",
+                        MaxRequests = MembershipConstants.ProMaxRequests,
+                        MaxProducts = MembershipConstants.ProMaxProducts,
+                        MaxImagesPerProduct = MembershipConstants.ProMaxImagesPerProduct,
+                        IsCurrentPlan = currentTierId == MembershipConstants.TierPro,
+                        Highlights = new List<string>
+                        {
+                            "Aynı anda 100 adet aktif talep hakkı",
+                            "Aynı anda 100 adet ürün satış ilanı",
+                            "Her ürün için 20 görsel hakkı",
+                            "B2B Vitrinde öne çıkarılan ürünler",
+                            "Gelişmiş teklif değerlendirme araçları",
+                            "7/24 Öncelikli destek"
+                        }
+                    },
+                    new MembershipPlanDto
+                    {
+                        TierId = MembershipConstants.TierKurumsal,
+                        Name = MembershipConstants.NameKurumsal,
+                        Badge = "Maksimum Güç",
+                        PriceMonthly = MembershipConstants.KurumsalPrice,
+                        Description = "Büyük ölçekli üretici, distribütör ve yüksek hacimli satın alma yapan kurumlar için.",
+                        MaxRequests = MembershipConstants.KurumsalMaxRequests,
+                        MaxProducts = MembershipConstants.KurumsalMaxProducts,
+                        MaxImagesPerProduct = MembershipConstants.KurumsalMaxImagesPerProduct,
+                        IsCurrentPlan = currentTierId == MembershipConstants.TierKurumsal,
+                        Highlights = new List<string>
+                        {
+                            "Sınırsız aktif talep oluşturma",
+                            "Sınırsız ürün satışı ilanı listeleme",
+                            "Her ürün için sınırsız görsel ekleme",
+                            "Onaylı Kurumsal Tedarikçi rozeti",
+                            "Öncelikli arama ve vitrin listelemesi",
+                            "7/24 VIP Müşteri Yöneticisi & SLA garantisi"
+                        }
+                    }
+                }
+            };
+
+            return View(viewModel);
         }
 
         public IActionResult MedyaDuyurular() {
@@ -373,6 +454,42 @@ namespace satinalmaportali2.Controllers {
                     });
                 }
 
+                // 2.5 Üyelik Seviyesi Kontrolleri (Ürün Satış Limiti ve Görsel Limiti)
+                int memTypeId = comp.MembershipTypeID ?? MembershipConstants.TierBedava;
+                int maxProducts = MembershipConstants.GetMaxProducts(memTypeId);
+                if (maxProducts < int.MaxValue)
+                {
+                    int currentProductCount = await _context.Items
+                        .Where(i => !i.IsDeleted && ((i.Properties != null && (i.Properties.Contains($"FirmaID: {currentCompanyId}") || i.Properties.Contains($"FirmaID:{currentCompanyId}")))
+                                 || (!string.IsNullOrEmpty(currentCompanyName) && i.Brand == currentCompanyName)))
+                        .CountAsync(cancellationToken);
+
+                    if (currentProductCount >= maxProducts)
+                    {
+                        string tierName = MembershipConstants.GetTierName(memTypeId);
+                        return Json(new
+                        {
+                            success = false,
+                            limitExceeded = true,
+                            message = $"{tierName} üyelik planınızda aynı anda en fazla {maxProducts} adet ürün satış ilanı verebilirsiniz. (Mevcut ilanınız: {currentProductCount}). Yeni ürün satışı eklemek için eski ilanlarınızı kaldırabilir veya üyeliğinizi Pro / Kurumsal plana yükseltebilirsiniz."
+                        });
+                    }
+                }
+
+                int maxImages = MembershipConstants.GetMaxImagesPerProduct(memTypeId);
+                if (input.ImageFiles != null && input.ImageFiles.Any())
+                {
+                    if (maxImages < int.MaxValue && input.ImageFiles.Count > maxImages)
+                    {
+                        string tierName = MembershipConstants.GetTierName(memTypeId);
+                        return Json(new
+                        {
+                            success = false,
+                            message = $"{tierName} üyelik planınızda ürün başına en fazla {maxImages} resim ekleyebilirsiniz. Seçtiğiniz resim sayısı: {input.ImageFiles.Count}. Lütfen en fazla {maxImages} adet resim seçiniz veya planınızı yükseltiniz."
+                        });
+                    }
+                }
+
                 string finalBrand = !string.IsNullOrWhiteSpace(currentCompanyName) 
                     ? currentCompanyName.Trim() 
                     : (!string.IsNullOrWhiteSpace(input.Brand) ? input.Brand.Trim() : "Onaylı Tedarikçi");
@@ -456,8 +573,8 @@ namespace satinalmaportali2.Controllers {
 
                 if (input.ImageFiles != null && input.ImageFiles.Any())
                 {
-                    // Kötüye kullanım önleme: maks 10 görsel sınırı
-                    var filesToProcess = input.ImageFiles.Take(10).ToList();
+                    // Üyelik planına göre görsel sınırı (Bedava: 3, Pro: 20, Kurumsal: Sınırsız/50)
+                    var filesToProcess = input.ImageFiles.Take(maxImages < int.MaxValue ? maxImages : 50).ToList();
                     var uploadedCloudinaryList = new List<ItemImage>();
 
                     for (int i = 0; i < filesToProcess.Count; i++)
@@ -802,13 +919,13 @@ namespace satinalmaportali2.Controllers {
                 var allItems = await _context.Items
                     .Include(i => i.Images)
                     .AsNoTracking()
+                    .Where(i => !i.IsDeleted)
                     .OrderByDescending(i => i.ItemID)
                     .Take(100)
                     .ToListAsync();
 
-                // Kendi ürünlerini filtrele (Anasayfada kendi ürünlerini görmesin)
+                // Tüm ürünleri listele (Kendi ürünlerini filtrelemeden göster, böylece satıcı eklediği ürünü görebilir)
                 var items = allItems
-                    .Where(it => !IsProductOwnedByCompany(it, currentCompanyId, currentCompanyName, comp))
                     .Take(50)
                     .ToList();
 
@@ -936,9 +1053,11 @@ namespace satinalmaportali2.Controllers {
                     bool isOutOfStock = rawStock <= 0;
                     string stockText = isOutOfStock ? "Tükendi (Stokta Yok)" : $"{rawStock} Adet Hazır Stok";
 
+                    bool isOwnProduct = IsProductOwnedByCompany(it, currentCompanyId, currentCompanyName, comp);
+
                     // Ürünün özel görsel URL'lerini çek (ItemImages tablosu veya Properties)
                     var itemImages = it.Images != null && it.Images.Any()
-                        ? it.Images.OrderByDescending(x => x.IsMain).ThenBy(x => x.DisplayOrder).Select(x => x.ImageUrl).ToList()
+                        ? it.Images.OrderByDescending(x => x.IsMain).ThenBy(x => x.DisplayOrder).Select(x => x.ImageUrl).Where(x => !string.IsNullOrWhiteSpace(x)).ToList()
                         : new List<string>();
 
                     if (!itemImages.Any() && !string.IsNullOrWhiteSpace(it.Properties))
@@ -989,7 +1108,8 @@ namespace satinalmaportali2.Controllers {
                         image = itemImage,
                         images = itemImages,
                         badge = "Doğrudan Üreticiden",
-                        badgeType = "manufacturer"
+                        badgeType = "manufacturer",
+                        isOwnProduct = isOwnProduct
                     };
                 }).ToList();
 
@@ -1015,7 +1135,7 @@ namespace satinalmaportali2.Controllers {
                 .Include(i => i.Images)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(i => i.ItemID == id);
-            if (item == null)
+            if (item == null || item.IsDeleted)
             {
                 TempData["ErrorMessage"] = "Aradığınız ürün bulunamadı veya satıştan kaldırılmış olabilir.";
                 return RedirectToAction("Index", "Home");
@@ -1137,7 +1257,7 @@ namespace satinalmaportali2.Controllers {
             // Benzer / İlgili Ürünler (Aynı kategoriden veya diğer ürünlerden 4 adet)
             var relatedDbItems = await _context.Items
                 .AsNoTracking()
-                .Where(i => i.ItemID != item.ItemID && (item.CategoryID == null || i.CategoryID == item.CategoryID))
+                .Where(i => !i.IsDeleted && i.ItemID != item.ItemID && (item.CategoryID == null || i.CategoryID == item.CategoryID))
                 .OrderByDescending(i => i.ItemID)
                 .Take(4)
                 .ToListAsync();
@@ -1146,7 +1266,7 @@ namespace satinalmaportali2.Controllers {
             {
                 var fallbackItems = await _context.Items
                     .AsNoTracking()
-                    .Where(i => i.ItemID != item.ItemID && !relatedDbItems.Select(r => r.ItemID).Contains(i.ItemID))
+                    .Where(i => !i.IsDeleted && i.ItemID != item.ItemID && !relatedDbItems.Select(r => r.ItemID).Contains(i.ItemID))
                     .OrderByDescending(i => i.ItemID)
                     .Take(4 - relatedDbItems.Count)
                     .ToListAsync();
