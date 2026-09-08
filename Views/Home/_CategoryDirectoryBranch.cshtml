@@ -1,0 +1,39 @@
+@using satinalmaportali2.Models
+@model (CategoryDirectoryNodeViewModel Node, int Level)
+@{
+    var node = Model.Node;
+    var level = Model.Level;
+    var hasChildren = node.Children != null && node.Children.Count > 0;
+}
+
+@if (hasChildren && node.Children != null)
+{
+    <ul class="space-y-1">
+        @foreach (var child in node.Children)
+        {
+            var childHasChildren = child.Children != null && child.Children.Count > 0;
+            <li class="dir-node-item" data-cat-id="@child.CategoryID" data-cat-name="@child.CategoryName.ToLowerInvariant()">
+                <a href="/Home/Index?catId=@child.CategoryID" 
+                   class="dir-node-link group/link flex items-center justify-between py-1.5 px-2.5 rounded-lg text-xs font-medium text-slate-700 hover:text-blue-600 hover:bg-blue-50/80 active:bg-blue-100 transition-colors"
+                   title="@child.CategoryName ürünlerini incele">
+                    <span class="flex items-center gap-2 min-w-0">
+                        <span class="text-slate-400 font-mono text-[11px] shrink-0">@(level == 1 ? "↳" : "›")</span>
+                        <span class="leading-snug break-words">@child.CategoryName</span>
+                    </span>
+                    @if (child.ProductCount > 0)
+                    {
+                        <span class="text-[10px] font-bold text-blue-600 bg-blue-100/70 group-hover/link:bg-blue-600 group-hover/link:text-white px-1.5 py-0.5 rounded-md shrink-0 transition-colors ml-2">
+                            @child.ProductCount
+                        </span>
+                    }
+                </a>
+                @if (childHasChildren)
+                {
+                    <div class="ml-2.5 pl-2 border-l border-slate-200/80 space-y-1 my-0.5">
+                        <partial name="_CategoryDirectoryBranch" model="(Node: child, Level: level + 1)" />
+                    </div>
+                }
+            </li>
+        }
+    </ul>
+}

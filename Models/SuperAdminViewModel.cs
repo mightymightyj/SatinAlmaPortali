@@ -73,6 +73,7 @@ namespace satinalmaportali2.Models
         public string? ParentCategoryName { get; set; }
         public int SubCategoryCount { get; set; }
         public int LinkedRequestsCount { get; set; }
+        public string? Icon { get; set; }
         public bool IsRoot => !ParentCategoryID.HasValue || ParentCategoryID.Value == 0;
         public List<CategoryAdminDto> SubCategories { get; set; } = new();
     }
@@ -122,6 +123,7 @@ namespace satinalmaportali2.Models
         [Required(ErrorMessage = "Kategori adı zorunludur.")]
         public string CategoryName { get; set; } = string.Empty;
         public int? ParentCategoryID { get; set; }
+        public string? Icon { get; set; }
     }
 
     public class EditCompanyInputModel

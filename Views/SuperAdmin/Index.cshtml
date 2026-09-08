@@ -13,6 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <style>
         :root {
             --bg-page: #F8FAFC;
@@ -745,6 +746,81 @@
 
         .cat-children-wrap.is-hidden {
             display: none;
+        }
+
+        /* ICON SELECTOR & PICKER STYLES */
+        .icon-selector-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .icon-preview-box {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-sm);
+            background: #EFF6FF;
+            border: 1px solid #BFDBFE;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.35rem;
+            color: var(--primary);
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+        .icon-picker-hints {
+            margin-top: 8px;
+        }
+        .hint-label {
+            display: block;
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        .icon-chips-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+            gap: 6px;
+            max-height: 220px;
+            overflow-y: auto;
+            padding: 8px;
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: var(--radius-sm);
+        }
+        .icon-chips-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+        .icon-chips-grid::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 4px;
+        }
+        .icon-chip-btn {
+            width: 100%;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #E2E8F0;
+            background: #FFFFFF;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.05rem;
+            color: #334155;
+            transition: all 0.15s ease;
+        }
+        .icon-chip-btn:hover {
+            background: #EFF6FF;
+            border-color: #93C5FD;
+            color: var(--primary);
+            transform: translateY(-1px);
+        }
+        .icon-chip-btn.is-active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #FFFFFF;
         }
 
         /* MODALS */
@@ -2666,7 +2742,7 @@
 
     <!-- ==================== MODAL: YENİ KATEGORİ EKLE ==================== -->
     <div id="addCategoryModal" class="modal-backdrop-wrap" aria-hidden="true">
-        <div class="modal-panel">
+        <div class="modal-panel" style="max-width: 540px;">
             <div class="modal-header">
                 <h3 class="modal-title">Yeni Kategori Ekle</h3>
                 <button type="button" class="modal-close-btn" onclick="closeModal('addCategoryModal')">&times;</button>
@@ -2681,13 +2757,38 @@
 
                     <div class="form-field">
                         <label class="form-label" for="newCatParent">Üst Kategori (İsteğe Bağlı)</label>
-                        <select id="newCatParent" name="parentCategoryId" class="form-select">
-                            <option value="">— Yok (Ana Kategori Olarak Ekle) —</option>
+                        <select id="newCatParent" name="parentCategoryId" class="form-select" onchange="toggleCatIconField('new')">
+                            <option value="">— Yok (Ana / Kök Kategori Olarak Ekle) —</option>
                             @foreach (var parent in Model.AvailableParentCategories)
                             {
                                 <option value="@parent.CategoryID">@parent.FormattedName</option>
                             }
                         </select>
+                        <span class="field-hint" style="font-size:0.75rem; color:var(--text-muted); margin-top:4px; display:block;">
+                            Eğer ana kategori oluşturuyorsanız simge seçimi zorunludur.
+                        </span>
+                    </div>
+
+                    <!-- KÖK KATEGORİ SİMGE SEÇİCİ (Yalnızca Ana/Kök Kategoriler için) -->
+                    <div class="form-field" id="newCatIconGroup">
+                        <label class="form-label" for="newCatIcon">
+                            Kök Kategori Simgesi (Font Awesome) <span style="color:#ef4444;">*</span>
+                        </label>
+                        <div class="icon-selector-control">
+                            <div class="icon-preview-box">
+                                <i id="newCatIconPreview" class="fa-solid fa-folder-tree"></i>
+                            </div>
+                            <input type="text" id="newCatIcon" name="icon" class="form-input" placeholder="Örn: fa-solid fa-microchip" value="fa-solid fa-folder-tree" oninput="updateIconPreview('new')" required />
+                        </div>
+                        <div class="icon-picker-hints">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; gap: 8px;">
+                                <span class="hint-label" style="margin-bottom: 0;">Simgelerden Seçin (175+ Simge):</span>
+                                <input type="text" id="newCatIconFilter" class="form-input" placeholder="Simge ara... (robot, kaynak, tır...)" style="max-width: 220px; font-size: 0.76rem; padding: 4px 8px; height: 28px;" oninput="filterIconChips('new', this.value)" />
+                            </div>
+                            <div class="icon-chips-grid" id="newCatIconChips">
+                                <!-- JS ile dinamik doldurulacak -->
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -2700,7 +2801,7 @@
 
     <!-- ==================== MODAL: KATEGORİ DÜZENLE ==================== -->
     <div id="editCategoryModal" class="modal-backdrop-wrap" aria-hidden="true">
-        <div class="modal-panel">
+        <div class="modal-panel" style="max-width: 540px;">
             <div class="modal-header">
                 <h3 class="modal-title">Kategoriyi Düzenle</h3>
                 <button type="button" class="modal-close-btn" onclick="closeModal('editCategoryModal')">&times;</button>
@@ -2716,13 +2817,38 @@
 
                     <div class="form-field">
                         <label class="form-label" for="editCatParent">Üst Kategori</label>
-                        <select id="editCatParent" name="ParentCategoryID" class="form-select">
-                            <option value="">— Yok (Ana Kategori) —</option>
+                        <select id="editCatParent" name="ParentCategoryID" class="form-select" onchange="toggleCatIconField('edit')">
+                            <option value="">— Yok (Ana / Kök Kategori) —</option>
                             @foreach (var parent in Model.AvailableParentCategories)
                             {
                                 <option value="@parent.CategoryID">@parent.FormattedName</option>
                             }
                         </select>
+                        <span class="field-hint" style="font-size:0.75rem; color:var(--text-muted); margin-top:4px; display:block;">
+                            Kök kategori ise bir simge belirlenmesi zorunludur.
+                        </span>
+                    </div>
+
+                    <!-- KÖK KATEGORİ SİMGE SEÇİCİ -->
+                    <div class="form-field" id="editCatIconGroup">
+                        <label class="form-label" for="editCatIcon">
+                            Kök Kategori Simgesi (Font Awesome) <span style="color:#ef4444;">*</span>
+                        </label>
+                        <div class="icon-selector-control">
+                            <div class="icon-preview-box">
+                                <i id="editCatIconPreview" class="fa-solid fa-folder-tree"></i>
+                            </div>
+                            <input type="text" id="editCatIcon" name="Icon" class="form-input" placeholder="Örn: fa-solid fa-microchip" oninput="updateIconPreview('edit')" />
+                        </div>
+                        <div class="icon-picker-hints">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; gap: 8px;">
+                                <span class="hint-label" style="margin-bottom: 0;">Simgelerden Seçin (175+ Simge):</span>
+                                <input type="text" id="editCatIconFilter" class="form-input" placeholder="Simge ara... (robot, kaynak, tır...)" style="max-width: 220px; font-size: 0.76rem; padding: 4px 8px; height: 28px;" oninput="filterIconChips('edit', this.value)" />
+                            </div>
+                            <div class="icon-chips-grid" id="editCatIconChips">
+                                <!-- JS ile dinamik doldurulacak -->
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -3021,20 +3147,330 @@
             }
         }
 
+        const CATEGORIES_PRESET_ICONS = [
+            // Sanayi, Fabrika & İmalat
+            { icon: 'fa-solid fa-industry', label: 'Ağır Sanayi / Tesis', cat: 'sanayi fabrika tesis baca üretim imalat endüstri heavy industry' },
+            { icon: 'fa-solid fa-gears', label: 'Makine & Dişliler', cat: 'makine dişli çark mekanizma mekanik aparat tezgah gear gears' },
+            { icon: 'fa-solid fa-gear', label: 'Dişli & Mekanizma', cat: 'dişli ayar çark mekanizma parça parça gear' },
+            { icon: 'fa-solid fa-fire-burner', label: 'Kazan / Isıl İşlem', cat: 'kazan fırın ocak ısıtma ısıl işlem metalurji döküm burner boiler' },
+            { icon: 'fa-solid fa-screwdriver-wrench', label: 'Montaj & Bakım', cat: 'montaj bakım onarım servis alet edevat tamir screwdriver wrench' },
+            { icon: 'fa-solid fa-wrench', label: 'Hırdavat & El Aletleri', cat: 'hırdavat anahtar somun cıvata tamir el aleti wrench spanner' },
+            { icon: 'fa-solid fa-hammer', label: 'Takım & İmalat', cat: 'çekiç imalat dövme metal takım tezgâh hammer' },
+            { icon: 'fa-solid fa-toolbox', label: 'Takım Çantası', cat: 'takım çantası alet kutusu set ekipman toolbox' },
+            { icon: 'fa-solid fa-oil-can', label: 'Yağlama & Bakım', cat: 'yağlama yağdanlık gres makine yağı motor yağı oil can' },
+            { icon: 'fa-solid fa-gas-pump', label: 'Akaryakıt & Pompa', cat: 'yakıt benzin motorin akaryakıt pompa dolum istasyon gas pump' },
+            { icon: 'fa-solid fa-cubes-stacked', label: 'Hammadde & Külçe', cat: 'hammadde metal külçe profil kütük blok stacked cubes' },
+            { icon: 'fa-solid fa-cubes', label: 'Modüler Parçalar', cat: 'parça bileşen modül blok hammadde cubes' },
+            { icon: 'fa-solid fa-cube', label: '3D Prototip & Parça', cat: 'prototip 3d parça numune model cube' },
+            { icon: 'fa-solid fa-bore-hole', label: 'Sondaj & Maden', cat: 'sondaj delme kuyu maden yeraltı zemin bore hole' },
+            { icon: 'fa-solid fa-scale-balanced', label: 'Ölçüm & Terazi', cat: 'terazi tartım kantar ölçüm kalibrasyon scale' },
+            { icon: 'fa-solid fa-compass-drafting', label: 'Proje & Çizim', cat: 'teknik çizim mühendislik proje mimari cetvel pergel compass drafting' },
+            { icon: 'fa-solid fa-ruler-combined', label: 'Hassas Ölçüm', cat: 'kumpas mikrometre ölçü aleti cetvel ruler' },
+            { icon: 'fa-solid fa-ruler', label: 'Cetvel & Boyutlandırma', cat: 'cetvel uzunluk metre boyut ebat ruler' },
+            { icon: 'fa-solid fa-tape', label: 'Bant & İzolasyon', cat: 'koli bandı izolasyon yapışkan şerit sızdırmazlık tape' },
+            { icon: 'fa-solid fa-filter', label: 'Filtre & Arıtma', cat: 'filtre hava filtresi yağ filtresi su arıtma separator filter' },
+            { icon: 'fa-solid fa-fan', label: 'Havalandırma & Fan', cat: 'havalandırma fan klima soğutma aspiratör fan' },
+            { icon: 'fa-solid fa-wind', label: 'Pnömatik & Kompresör', cat: 'pnömatik hava basınç kompresör üfleme rüzgar wind' },
+            { icon: 'fa-solid fa-temperature-high', label: 'Isı Kontrol & Termometre', cat: 'sıcaklık ısı termometre fırın soğutma derece temperature' },
+            { icon: 'fa-solid fa-fire', label: 'Ateş & Kaynak', cat: 'kaynak alev ateş gaz yakma ısı fire' },
+
+            // Elektrik, Elektronik & Otomasyon
+            { icon: 'fa-solid fa-bolt', label: 'Elektrik & Yüksek Gerilim', cat: 'elektrik trafo pano yüksek gerilim enerji akım şebeke bolt' },
+            { icon: 'fa-solid fa-microchip', label: 'Elektronik / Mikroçip', cat: 'elektronik çip entegre devre pcb kart donanım microchip' },
+            { icon: 'fa-solid fa-robot', label: 'Otomasyon & Robotik', cat: 'robot robotik otomasyon plc kol mekatronik yapay zeka robot' },
+            { icon: 'fa-solid fa-solar-panel', label: 'Güneş Paneli & GES', cat: 'güneş paneli ges yenilenebilir yeşil enerji fotovoltaik solar' },
+            { icon: 'fa-solid fa-plug', label: 'Priz & Konnektör', cat: 'fiş priz soket konnektör kablo bağlantı plug' },
+            { icon: 'fa-solid fa-battery-full', label: 'Akü & Batarya', cat: 'akü batarya pil ups kesintisiz güç kaynağı battery' },
+            { icon: 'fa-solid fa-car-battery', label: 'Endüstriyel Akü', cat: 'akü jel akü starter forklift aküsü traksiyoner car battery' },
+            { icon: 'fa-solid fa-lightbulb', label: 'Aydınlatma & LED', cat: 'aydınlatma led lamba projektör armatür ampul lightbulb' },
+            { icon: 'fa-solid fa-server', label: 'Sunucu & Veri Merkezi', cat: 'sunucu server rack kabinet veri merkezi datacenter hosting' },
+            { icon: 'fa-solid fa-network-wired', label: 'Ağ & Bilişim Altyapısı', cat: 'ethernet kablo ağ network switch router modem switch' },
+            { icon: 'fa-solid fa-wifi', label: 'Kablosuz İletişim', cat: 'kablosuz wifi telsiz rf anten wireless iot' },
+            { icon: 'fa-solid fa-tower-cell', label: 'Telekomünikasyon', cat: 'baz istasyonu telekom verici direk kule iletişim tower' },
+            { icon: 'fa-solid fa-satellite-dish', label: 'Uydu & Radar', cat: 'uydu çanak radar telekomünikasyon veri haberleşme satellite' },
+            { icon: 'fa-solid fa-display', label: 'Endüstriyel Ekran & HMI', cat: 'ekran hmi panel pc monitör dokunmatik display' },
+            { icon: 'fa-solid fa-laptop', label: 'Bilgisayar & Donanım', cat: 'bilgisayar dizüstü laptop pc donanım it laptop' },
+            { icon: 'fa-solid fa-barcode', label: 'Barkod Okuyucu', cat: 'barkod barkod okuyucu el terminali karekod tarayıcı barcode' },
+            { icon: 'fa-solid fa-qrcode', label: 'Karekod & İzlenebilirlik', cat: 'karekod qr izlenebilirlik takip etiket qr code' },
+            { icon: 'fa-solid fa-walkie-talkie', label: 'Telsiz & Saha İletişimi', cat: 'telsiz saha haberleşme güvenlik iletişim walkie talkie' },
+            { icon: 'fa-solid fa-wave-square', label: 'Sinyal & Ölçüm', cat: 'osiloskop sinyal frekans dalga sensör transdüser wave' },
+            { icon: 'fa-solid fa-power-off', label: 'Şalter & Güç Kontrol', cat: 'şalter kontaktör röle güç düğme aç kapa power switch' },
+            { icon: 'fa-solid fa-memory', label: 'Bellek & Donanım', cat: 'ram hafıza bellek depolama kartı flash memory' },
+            { icon: 'fa-solid fa-hard-drive', label: 'Veri Depolama & Disk', cat: 'hard disk ssd disk depolama storage hard drive' },
+            { icon: 'fa-solid fa-camera', label: 'Endüstriyel Kamera', cat: 'kamera görüntü işleme optik denetim lens cctv camera' },
+
+            // Lojistik, Taşıma & Depolama
+            { icon: 'fa-solid fa-truck-moving', label: 'Ağır Nakliye & Lojistik', cat: 'lojistik tır nakliye taşımacılık çekici dorse truck' },
+            { icon: 'fa-solid fa-truck', label: 'Kamyon & Dağıtım', cat: 'kamyon sevkiyat teslimat nakliye dağıtım truck' },
+            { icon: 'fa-solid fa-truck-fast', label: 'Hızlı Kargo & Kurye', cat: 'kargo hızlı kurye ekspres teslimat dağıtım express' },
+            { icon: 'fa-solid fa-truck-pickup', label: 'Kamyonet & Saha Aracı', cat: 'kamyonet pikap saha aracı hafif ticari pickup' },
+            { icon: 'fa-solid fa-truck-ramp-box', label: 'Yükleme & Rampa', cat: 'rampa yükleme boşaltma sevkiyat forklift dock loading' },
+            { icon: 'fa-solid fa-cart-flatbed', label: 'Depo Arabası & Platform', cat: 'platform araba taşıma arabası depo içi lojistik flatbed' },
+            { icon: 'fa-solid fa-dolly', label: 'El Arabası & İstif', cat: 'el arabası paket taşıma istif koli taşıyıcı dolly' },
+            { icon: 'fa-solid fa-pallet', label: 'Palet & Ambalaj Tabanı', cat: 'palet ahşap palet euro plastik palet istif pallet' },
+            { icon: 'fa-solid fa-boxes-stacked', label: 'İstifli Koliler & Depo', cat: 'koli koli yığını depo stok ambalaj kutu boxes' },
+            { icon: 'fa-solid fa-box-open', label: 'Açık Koli & Paketleme', cat: 'koli kutu ambalaj karton mukavva paket packaging' },
+            { icon: 'fa-solid fa-box', label: 'Kutu & Gönderi', cat: 'kutu koli gönderi paket ambalaj kargo box' },
+            { icon: 'fa-solid fa-warehouse', label: 'Antrepo & Depolama', cat: 'antrepo depo hangar silo lojistik tesis warehouse' },
+            { icon: 'fa-solid fa-ship', label: 'Deniz Taşımacılığı', cat: 'gemi konteyner denizyolu navlun liman kargo ship' },
+            { icon: 'fa-solid fa-plane', label: 'Hava Taşımacılığı', cat: 'uçak hava kargo havayolu lojistik ihracat plane cargo' },
+            { icon: 'fa-solid fa-train', label: 'Demiryolu Taşımacılığı', cat: 'tren vagon demiryolu lojistik raylı taşıma train' },
+            { icon: 'fa-solid fa-car', label: 'Otomotiv & Araç', cat: 'otomotiv binek araç filo filo kiralama car' },
+            { icon: 'fa-solid fa-car-side', label: 'Otomotiv Yan Sanayi', cat: 'araç karoser kaporta yan sanayi yedek parça car side' },
+            { icon: 'fa-solid fa-trailer', label: 'Dorse & Römork', cat: 'dorse treyler römork kasa taşıma trailer' },
+            { icon: 'fa-solid fa-weight-hanging', label: 'Vinç & Ağır Yük', cat: 'vinç sapan tonaj ağır yük kaldırma caraskal crane weight' },
+            { icon: 'fa-solid fa-anchor', label: 'Liman & Marin', cat: 'liman marin denizcilik rıhtım demirleme anchor' },
+            { icon: 'fa-solid fa-compass', label: 'Yönlendirme & Navigasyon', cat: 'navigasyon yön koordinat rota takip compass' },
+            { icon: 'fa-solid fa-route', label: 'Sevkiyat Rotası', cat: 'rota güzergah sevkiyat sevkiyat planı lojistik route' },
+            { icon: 'fa-solid fa-location-dot', label: 'Konum & Adres', cat: 'konum adres bayi tesis koordinat lokasyon map pin' },
+
+            // İSG & Güvenlik
+            { icon: 'fa-solid fa-shield-halved', label: 'İş Sağlığı & Güvenliği', cat: 'isg iş güvenliği sağlık koruma emniyet güvenlik shield' },
+            { icon: 'fa-solid fa-helmet-safety', label: 'Baret & Kask', cat: 'baret kask baş koruyucu şantiye isg helmet safety' },
+            { icon: 'fa-solid fa-vest', label: 'Reflektörlü Yelek', cat: 'yelek reflektör ikaz yeleği fosforlu iş elbisesi safety vest' },
+            { icon: 'fa-solid fa-glasses', label: 'İş Gözlüğü & Koruma', cat: 'gözlük iş gözlüğü kaynak gözlüğü koruyucu siperlik glasses' },
+            { icon: 'fa-solid fa-mitten', label: 'İş Eldiveni', cat: 'eldiven iş eldiveni koruyucu eldiven deri eldiven glove mitten' },
+            { icon: 'fa-solid fa-fire-extinguisher', label: 'Yangın Güvenliği', cat: 'yangın tüpü söndürme yangın dolabı sprinkler yangın güvenliği' },
+            { icon: 'fa-solid fa-bell-concierge', label: 'Alarm & İkaz', cat: 'alarm siren ikaz zili uyarı sistemi notification bell' },
+            { icon: 'fa-solid fa-triangle-exclamation', label: 'Tehlike & Uyarı Levhası', cat: 'tehlike ikaz uyarı levhası dikkat risk warning alert' },
+            { icon: 'fa-solid fa-radiation', label: 'Radyasyon & Tehlikeli Madde', cat: 'radyasyon nükleer tehlikeli atık nükleer sanayi radiation' },
+            { icon: 'fa-solid fa-biohazard', label: 'Biyolojik Tehlike', cat: 'biyolojik tehlike medikal atık laboratuvar risk biohazard' },
+            { icon: 'fa-solid fa-lock', label: 'LOTO & Kilit Güvenliği', cat: 'kilit loto etiketleme emniyet asma kilit lock' },
+            { icon: 'fa-solid fa-key', label: 'Yetkilendirme & Anahtar', cat: 'anahtar yetki kilit erişim kapı key' },
+            { icon: 'fa-solid fa-video', label: 'Güvenlik Kamerası (CCTV)', cat: 'kamera cctv güvenlik izleme kayıt güvenlik sistemi video' },
+            { icon: 'fa-solid fa-shield', label: 'Muhafaza & Koruma', cat: 'koruma muhafaza bariyer çit emniyet shield' },
+
+            // Kimyasallar, Plastik & Laboratuvar
+            { icon: 'fa-solid fa-flask', label: 'Kimyasallar & Reaktifler', cat: 'kimya kimyasal reaktif asit baz hammadde flask' },
+            { icon: 'fa-solid fa-flask-vial', label: 'Laboratuvar & Analiz', cat: 'laboratuvar tüp deney analiz test ar-ge vial flask' },
+            { icon: 'fa-solid fa-vial', label: 'Test Tüpü & Numune', cat: 'numune test tüpü tahlil laboratuvar vial' },
+            { icon: 'fa-solid fa-vials', label: 'Tüp Grubu & Serum', cat: 'tüpler analiz seti kimyasal test vials' },
+            { icon: 'fa-solid fa-microscope', label: 'Mikroskop & Kalite Kontrol', cat: 'mikroskop inceleme kalite kontrol ar-ge büyüteç microscope' },
+            { icon: 'fa-solid fa-atom', label: 'Temel Kimya & Molekül', cat: 'atom molekül formül fizik kimya sentez atom' },
+            { icon: 'fa-solid fa-dna', label: 'Biyoteknoloji & Genetik', cat: 'biyoteknoloji dna biyokimya analiz tohum ıslah dna' },
+            { icon: 'fa-solid fa-spray-can', label: 'Aerosol & Sprey Kimyasalı', cat: 'sprey aerosol boya yağlayıcı sprey vernik aerosol spray can' },
+            { icon: 'fa-solid fa-droplet', label: 'Sıvı Hammadde & Yağ', cat: 'damla sıvı yağ kimyasal akışkan lubricant droplet' },
+            { icon: 'fa-solid fa-eye-dropper', label: 'Hassas Dozaj & Pipet', cat: 'damlalık pipet dozaj esans konsantre eye dropper' },
+            { icon: 'fa-solid fa-bottle-droplet', label: 'Solüsyon Şişesi', cat: 'şişe solüsyon kimyasal reaktif çözelti bottle droplet' },
+            { icon: 'fa-solid fa-soap', label: 'Endüstriyel Temizlik & Hijyen', cat: 'sabun deterjan dezenfektan endüstriyel temizlik hijyen soap' },
+
+            // İnşaat, Tesisat & Yapı
+            { icon: 'fa-solid fa-trowel-bricks', label: 'İnşaat & Yapı Malzemeleri', cat: 'inşaat tuğla duvar harç çimento yapı malzemeleri trowel bricks' },
+            { icon: 'fa-solid fa-trowel', label: 'Sıva & Zemin', cat: 'mala şap zemin kaplama sıva harç epoksi trowel' },
+            { icon: 'fa-solid fa-building', label: 'Bina & Şantiye', cat: 'bina tesis fabrika şantiye inşaat yapı building' },
+            { icon: 'fa-solid fa-city', label: 'Toplu Konut & Tesis', cat: 'şehir tesis altyapı toplu yapı endüstriyel bölge city' },
+            { icon: 'fa-solid fa-paint-roller', label: 'Boya & Yüzey İşlem', cat: 'boya rulo badana kaplama astar boyama roller' },
+            { icon: 'fa-solid fa-brush', label: 'Fırça & Detay Boyama', cat: 'fırça vernik cila epoksi uygulama brush' },
+            { icon: 'fa-solid fa-faucet', label: 'Vana & Tesisat Armatürü', cat: 'vana musluk armatür boru fitting tesisat faucet' },
+            { icon: 'fa-solid fa-faucet-drip', label: 'Sıhhi Tesisat & Boru', cat: 'sıhhi tesisat su kaçağı drenaj pimaş boru fitting faucet drip' },
+            { icon: 'fa-solid fa-water', label: 'Su & Altyapı Tesisatı', cat: 'su arıtma altyapı kanalizasyon şebeke hidrofor su motoru water' },
+            { icon: 'fa-solid fa-door-open', label: 'Kapı Sistemleri', cat: 'kapı endüstriyel kapı fotoselli seksiyonel yangın kapısı door' },
+            { icon: 'fa-solid fa-window-maximize', label: 'Cephe & Doğrama', cat: 'pencere alüminyum doğrama cam cephe giydirme pvc window' },
+            { icon: 'fa-solid fa-stairs', label: 'İskele & Merdiven', cat: 'merdiven iskele platform basamak kule stairs' },
+            { icon: 'fa-solid fa-bridge', label: 'Çelik Konstrüksiyon & Altyapı', cat: 'köprü çelik çelik konstrüksiyon altyapı kiriş kolon bridge' },
+            { icon: 'fa-solid fa-road', label: 'Asfalt & Saha Zemin', cat: 'yol asfalt otopark zemin çizgisi saha betonu road' },
+            { icon: 'fa-solid fa-bath', label: 'Islak Hacim & Banyo', cat: 'banyo vitrifiye lavabo duş ıslak hacim bath' },
+
+            // Medikal & Sağlık
+            { icon: 'fa-solid fa-notes-medical', label: 'Medikal & Sağlık', cat: 'medikal tıbbi sağlık rapor reçete hastane medical' },
+            { icon: 'fa-solid fa-stethoscope', label: 'Tanı & Teşhis Cihazları', cat: 'stetoskop doktor muayene klinik tanı cihazı stethoscope' },
+            { icon: 'fa-solid fa-heart-pulse', label: 'Biyomedikal & Yaşam Destek', cat: 'nabız kalp ekg monitör biyomedikal kardiyo pulse' },
+            { icon: 'fa-solid fa-syringe', label: 'Enjektör & Tıbbi Sarf', cat: 'enjektör aşı iğne serum tıbbi sarf medikal syringe' },
+            { icon: 'fa-solid fa-pills', label: 'Farmasötik & İlaç', cat: 'ilaç hap tablet farmasötik kapsül eczane pills' },
+            { icon: 'fa-solid fa-capsules', label: 'Kapsül & İlaç Sanayi', cat: 'kapsül ilaç hammadde tablet dozaj capsules' },
+            { icon: 'fa-solid fa-bandage', label: 'İlk Yardım & Pansuman', cat: 'yara bandı sargı bezi gazlı bez ilk yardım pansuman bandage' },
+            { icon: 'fa-solid fa-briefcase-medical', label: 'Medikal Çanta & Set', cat: 'ilk yardım çantası acil çanta medikal çanta kit medical kit' },
+            { icon: 'fa-solid fa-wheelchair', label: 'Hasta Taşıma & Engelli', cat: 'tekerlekli sandalye hasta transfer engelli ekipman wheelchair' },
+            { icon: 'fa-solid fa-bed-pulse', label: 'Hasta Yatağı & Yoğun Bakım', cat: 'hasta yatağı karyola yoğun bakım klinik sedye hospital bed' },
+            { icon: 'fa-solid fa-teeth', label: 'Dental & Diş Malzemeleri', cat: 'diş dental implant protez diş hekimliği teeth' },
+            { icon: 'fa-solid fa-x-ray', label: 'Radyoloji & Görüntüleme', cat: 'röntgen xray mr tomografi görüntüleme x-ray' },
+            { icon: 'fa-solid fa-truck-medical', label: 'Ambulans & Acil Sağlık', cat: 'ambulans acil nakil donanımlı araç ambulance' },
+            { icon: 'fa-solid fa-pump-medical', label: 'İnfüzyon & Dozaj Pompası', cat: 'serum pompası infüzyon dozaj medikal cihaz pump medical' },
+
+            // Tekstil, Konfeksiyon & Deri
+            { icon: 'fa-solid fa-shirt', label: 'Giyim & Tekstil', cat: 'giyim gömlek tişört kumaş tekstil iş kıyafeti üniforma shirt' },
+            { icon: 'fa-solid fa-socks', label: 'Çorap & Triko', cat: 'çorap triko örgü iç giyim tekstil socks' },
+            { icon: 'fa-solid fa-shoe-prints', label: 'İş Ayakkabısı & Taban', cat: 'ayakkabı iş ayakkabısı bot çizme taban deri shoe' },
+            { icon: 'fa-solid fa-scissors', label: 'Kesim & Terzilik', cat: 'makas kumaş kesim dikim konfeksiyon modelhane scissors' },
+            { icon: 'fa-solid fa-tag', label: 'Etiket & Barkod', cat: 'etiket dokuma etiket yıkama talimatı fiyat tag' },
+            { icon: 'fa-solid fa-tags', label: 'Etiketleme Sistemleri', cat: 'etiketler barkodlama markalama sallama kart tags' },
+            { icon: 'fa-solid fa-bag-shopping', label: 'Poşet & Bez Çanta', cat: 'çanta torba poşet alışveriş bez çanta packaging bag' },
+
+            // Ofis, Kırtasiye, Matbaa & Mobilya
+            { icon: 'fa-solid fa-briefcase', label: 'Ofis Malzemeleri', cat: 'ofis evrak çanta kurumsal iş gereçleri briefcase' },
+            { icon: 'fa-solid fa-print', label: 'Baskı, Fotokopi & Matbaa', cat: 'yazıcı printer fotokopi toner kartuş matbaa baskı print' },
+            { icon: 'fa-solid fa-paperclip', label: 'Kırtasiye & Sarf', cat: 'ataş zımba bant kağıt ofis kırtasiye paperclip' },
+            { icon: 'fa-solid fa-folder-tree', label: 'Katalog & Dosyalama', cat: 'katalog kategori ağaç dosyalama hiyerarşi klasör folder tree' },
+            { icon: 'fa-solid fa-folder-open', label: 'Arşiv & Klasör', cat: 'klasör dosya arşiv evrak folder' },
+            { icon: 'fa-solid fa-pen-nib', label: 'Tasarım & Grafik', cat: 'kalem dolmakalem çizim tasarım kurumsal kimlik pen nib' },
+            { icon: 'fa-solid fa-pen', label: 'Yazı Gereçleri', cat: 'tükenmez kalem marker imza yazı seti pen' },
+            { icon: 'fa-solid fa-stamp', label: 'Kaşe & Mühür', cat: 'kaşe mühür onay damga imza stamp' },
+            { icon: 'fa-solid fa-calculator', label: 'Muhasebe & Hesap', cat: 'hesap makinesi muhasebe finans maliye bütçe calculator' },
+            { icon: 'fa-solid fa-envelope', label: 'Zarf & Posta', cat: 'zarf kargo poşeti mektup posta yazışma envelope' },
+            { icon: 'fa-solid fa-book', label: 'Kitap & Kılavuz', cat: 'kitap defter katalog kullanım kılavuzu dokümantasyon book' },
+            { icon: 'fa-solid fa-couch', label: 'Ofis Mobilyası & Dinlenme', cat: 'koltuk kanepe lobi bekleme mobilya sofa couch' },
+            { icon: 'fa-solid fa-chair', label: 'Çalışma Sandalyesi', cat: 'koltuk sandalye ofis koltuğu ergonomik chair' },
+            { icon: 'fa-solid fa-phone', label: 'Santral & Telefon', cat: 'telefon santral çağrı merkezi iletişim call phone' },
+
+            // Tarım, Ziraat, Hayvancılık & Gıda
+            { icon: 'fa-solid fa-seedling', label: 'Tohum & Ziraat', cat: 'tohum fide fidan gübre tarım ziraat sera seedling' },
+            { icon: 'fa-solid fa-wheat-awn', label: 'Tahıl & Hububat', cat: 'buğday tahıl hububat un yem tarla hasat wheat' },
+            { icon: 'fa-solid fa-tractor', label: 'Tarım Makineleri', cat: 'traktör biçerdöver pulluk tarım aleti ziraat tractor' },
+            { icon: 'fa-solid fa-apple-whole', label: 'Meyve, Sebze & Yaş Gıda', cat: 'meyve sebze elma taze gıda manav tarım apple' },
+            { icon: 'fa-solid fa-bowl-rice', label: 'Kuru Gıda & Bakliyat', cat: 'pirinç bakliyat pirinç bulgur kuru gıda tahıl rice' },
+            { icon: 'fa-solid fa-fish', label: 'Su Ürünleri & Balıkçılık', cat: 'balık su ürünleri dondurulmuş deniz gıda fish' },
+            { icon: 'fa-solid fa-cow', label: 'Hayvancılık & Süt Ürünleri', cat: 'büyükbaş hayvancılık süt et damızlık çiftlik cow' },
+            { icon: 'fa-solid fa-egg', label: 'Yumurta & Kanatlı Hayvan', cat: 'yumurta tavukçuluk kanatlı kümes protein egg' },
+            { icon: 'fa-solid fa-bottle-water', label: 'Su & Meşrubat', cat: 'su şişe damacana meşrubat içecek maden suyu water' },
+            { icon: 'fa-solid fa-mug-hot', label: 'Sıcak İçecek & Çay/Kahve', cat: 'çay kahve otomat sıcak içecek kahve çekirdeği mug' },
+            { icon: 'fa-solid fa-utensils', label: 'Catering & Endüstriyel Mutfak', cat: 'catering yemekhane gastronomi endüstriyel mutfak çatal bıçak utensils' },
+
+            // Ticaret, Finans, Denetim & Sürdürülebilirlik
+            { icon: 'fa-solid fa-handshake', label: 'B2B Anlaşma & Tedarik', cat: 'anlaşma sözleşme ortaklık b2b el sıkışma ticaret handshake' },
+            { icon: 'fa-solid fa-credit-card', label: 'Ödeme & POS Sistemleri', cat: 'kredi kartı pos ödeme tahsilat sanal pos credit card' },
+            { icon: 'fa-solid fa-money-bill-wave', label: 'Finans & Nakit Akışı', cat: 'para nakit döviz finans sermaye banka money' },
+            { icon: 'fa-solid fa-chart-line', label: 'Finansal Analiz & Rapor', cat: 'grafik analiz büyüme borsa rapor trend chart' },
+            { icon: 'fa-solid fa-chart-pie', label: 'İstatistik & Pazar Payı', cat: 'pasta grafik oran pay pazar dağılım analiz chart pie' },
+            { icon: 'fa-solid fa-globe', label: 'Dış Ticaret / İhracat', cat: 'dünya küre ihracat ithalat global ticaret gümrük globe' },
+            { icon: 'fa-solid fa-certificate', label: 'Kalite Belgesi & ISO', cat: 'sertifika iso tse ce kalite belgesi akreditasyon certificate' },
+            { icon: 'fa-solid fa-award', label: 'Ödül & Standart', cat: 'ödül madalya standart birincilik yetki belgesi award' },
+            { icon: 'fa-solid fa-gem', label: 'Kıymetli Maden & Lüks', cat: 'mücevher elmas pırlanta altın kıymetli taş maden gem' },
+            { icon: 'fa-solid fa-recycle', label: 'Geri Dönüşüm & Çevre', cat: 'geri dönüşüm sıfır atık yeşil döngüsel ekonomi recycle' },
+            { icon: 'fa-solid fa-leaf', label: 'Ekolojik & Organik Ürün', cat: 'yaprak çevre ekoloji organik doğa bio sürdürülebilir leaf' },
+            { icon: 'fa-solid fa-trash-can', label: 'Atık Yönetimi & Çöp', cat: 'atık çöp konteyner bertaraf tasfiye trash' },
+            { icon: 'fa-solid fa-broom', label: 'Tesis Temizlik Malzemesi', cat: 'süpürge temizlik fırça zemin bakım deterjan broom' },
+            { icon: 'fa-solid fa-clock', label: 'Vardiya & Zaman Yönetimi', cat: 'saat zaman süre vardiya teslim süresi clock' },
+            { icon: 'fa-solid fa-calendar-days', label: 'Planlama & Takvim', cat: 'takvim termin planlama teslim tarihi ajanda calendar' },
+            { icon: 'fa-solid fa-user-tie', label: 'Danışmanlık & Yönetim', cat: 'yönetici danışman teftiş uzman müşavir tie user' },
+            { icon: 'fa-solid fa-users', label: 'İnsan Kaynakları & Ekip', cat: 'personel çalışan ekip insan kaynakları ik users' },
+            { icon: 'fa-solid fa-clipboard-check', label: 'Kontrol & Kabul Listesi', cat: 'denetim onay kontrol listesi kalite kabul test checklist' }
+        ];
+
+        function renderCategoryIconChips(mode, filterQuery) {
+            const container = document.getElementById(mode + 'CatIconChips');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const q = (filterQuery || '').trim().toLowerCase();
+            const filtered = q
+                ? CATEGORIES_PRESET_ICONS.filter(item =>
+                    item.label.toLowerCase().includes(q) ||
+                    item.icon.toLowerCase().includes(q) ||
+                    (item.cat && item.cat.toLowerCase().includes(q))
+                )
+                : CATEGORIES_PRESET_ICONS;
+
+            if (filtered.length === 0) {
+                const empty = document.createElement('div');
+                empty.style.gridColumn = '1 / -1';
+                empty.style.textAlign = 'center';
+                empty.style.color = '#94A3B8';
+                empty.style.fontSize = '0.78rem';
+                empty.style.padding = '14px 4px';
+                empty.textContent = '"' + filterQuery + '" ile eşleşen simge bulunamadı.';
+                container.appendChild(empty);
+                return;
+            }
+
+            const currentVal = (document.getElementById(mode + 'CatIcon')?.value || '').trim();
+
+            filtered.forEach(item => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'icon-chip-btn' + (item.icon === currentVal ? ' is-active' : '');
+                btn.title = item.label;
+                btn.innerHTML = `<i class="${item.icon}"></i>`;
+                btn.onclick = () => selectCategoryIcon(mode, item.icon);
+                container.appendChild(btn);
+            });
+        }
+
+        function filterIconChips(mode, query) {
+            renderCategoryIconChips(mode, query);
+        }
+
+        function initCategoryIconPickers(targetMode) {
+            const modes = targetMode ? [targetMode] : ['new', 'edit'];
+            modes.forEach(mode => {
+                const filterInput = document.getElementById(mode + 'CatIconFilter');
+                if (filterInput) filterInput.value = '';
+                renderCategoryIconChips(mode, '');
+            });
+        }
+
+        function selectCategoryIcon(mode, iconClass) {
+            const input = document.getElementById(mode + 'CatIcon');
+            if (input) {
+                input.value = iconClass;
+                updateIconPreview(mode);
+            }
+        }
+
+        function updateIconPreview(mode) {
+            const input = document.getElementById(mode + 'CatIcon');
+            const preview = document.getElementById(mode + 'CatIconPreview');
+            const chips = document.querySelectorAll(`#${mode}CatIconChips .icon-chip-btn`);
+            const val = input ? input.value.trim() : '';
+            if (preview) {
+                preview.className = val || 'fa-solid fa-folder-tree';
+            }
+            chips.forEach(chip => {
+                const iconEl = chip.querySelector('i');
+                if (iconEl && iconEl.className === val) {
+                    chip.classList.add('is-active');
+                } else {
+                    chip.classList.remove('is-active');
+                }
+            });
+        }
+
+        function toggleCatIconField(mode) {
+            const parentSelect = document.getElementById(mode + 'CatParent');
+            const group = document.getElementById(mode + 'CatIconGroup');
+            const input = document.getElementById(mode + 'CatIcon');
+            const isRoot = !parentSelect || !parentSelect.value;
+            if (group) {
+                group.style.display = isRoot ? 'block' : 'none';
+            }
+            if (input) {
+                if (isRoot) {
+                    input.setAttribute('required', 'required');
+                    if (!input.value.trim()) {
+                        input.value = 'fa-solid fa-folder-tree';
+                        updateIconPreview(mode);
+                    }
+                } else {
+                    input.removeAttribute('required');
+                }
+            }
+        }
+
         function openAddCategoryModal(parentCatId) {
+            initCategoryIconPickers('new');
             document.getElementById('newCatName').value = '';
-            document.getElementById('newCatParent').value = parentCatId || '';
+            const parentSelect = document.getElementById('newCatParent');
+            if (parentSelect) parentSelect.value = parentCatId || '';
+            const iconInput = document.getElementById('newCatIcon');
+            if (iconInput) iconInput.value = 'fa-solid fa-folder-tree';
+            toggleCatIconField('new');
+            updateIconPreview('new');
             openModal('addCategoryModal');
         }
 
         async function openEditCategoryModal(catId) {
             try {
+                initCategoryIconPickers('edit');
                 var response = await fetch('/SuperAdmin/GetCategory/' + catId);
                 var data = await response.json();
                 if (data.success) {
                     document.getElementById('editCatId').value = data.categoryId;
                     document.getElementById('editCatName').value = data.categoryName;
-                    document.getElementById('editCatParent').value = data.parentCategoryId || '';
+                    var parentSelect = document.getElementById('editCatParent');
+                    if (parentSelect) parentSelect.value = data.parentCategoryId || '';
+                    var iconInput = document.getElementById('editCatIcon');
+                    if (iconInput) iconInput.value = data.icon || 'fa-solid fa-folder-tree';
+                    toggleCatIconField('edit');
+                    updateIconPreview('edit');
                     openModal('editCategoryModal');
                 } else {
                     alert('Kategori bilgisi alınamadı.');

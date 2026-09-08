@@ -1,39 +1,112 @@
 @{
-    ViewData["Title"] = "Kurumsal";
+    ViewData["Title"] = "Kurumsal - Tedarik Portalı";
 }
 
-<!-- KURUMSAL HERO SECTION -->
-<section class="kurumsal-hero">
-    <div class="kurumsal-hero-inner">
-        <div class="kurumsal-badge">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                <polyline points="9 22 9 12 15 12 15 22"></polyline>
-            </svg>
-            <span>Kurumsal</span>
-        </div>
-        <h1 class="kurumsal-hero-title">Tedarik Portalı <span class="highlight-dot">Hakkında</span></h1>
-        <p class="kurumsal-hero-desc">
-            Türkiye'nin lider B2B satın alma platformu olarak, alıcılar ve tedarikçiler arasında güvenilir bir köprü kuruyoruz.
-            Dijital dönüşümle tedarik süreçlerinizi hızlandırıyor, maliyetlerinizi düşürüyoruz.
-        </p>
-    </div>
-</section>
+@section Styles {
+    <!-- Tailwind CSS (Play CDN) & Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                            950: '#082f49',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+}
 
-<!-- HAKKIMIZDA SECTION -->
-<section class="kurumsal-section">
-    <div class="kurumsal-container">
-        <div class="section-header">
-            <div class="section-icon-badge">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+<div class="font-sans antialiased bg-slate-50 text-slate-800 selection:bg-blue-500 selection:text-white pb-20 sm:pb-24 lg:pb-12">
+
+    <!-- ==================== BÖLÜM 1: TAILWIND HERO HEADER ==================== -->
+    <section class="relative overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white pt-12 sm:pt-20 pb-16 sm:pb-28 px-4 sm:px-6 lg:px-8 border-b border-slate-800/80">
+        <!-- Radial Glow Efekti -->
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(37,99,235,0.30),rgba(255,255,255,0))] pointer-events-none"></div>
+
+        <div class="relative max-w-4xl mx-auto text-center">
+            <!-- Kurumsal Rozet -->
+            <div class="inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-5 sm:mb-6 backdrop-blur-sm shadow-sm">
+                <svg class="w-4 h-4 text-blue-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
                 </svg>
+                <span>Kurumsal</span>
             </div>
-            <h2>Hakkımızda</h2>
+
+            <!-- Ana Başlık -->
+            <h1 class="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.18] sm:leading-[1.15]">
+                Tedarik Portalı <br class="hidden sm:inline" />
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">
+                    Hakkında
+                </span>
+            </h1>
+
+            <!-- Lorem Açıklama Metni -->
+            <p class="mt-4 sm:mt-6 text-sm sm:text-base md:text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed font-normal px-2">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+            </p>
+
+            <!-- Hızlı Gezinme Butonları -->
+            <div class="mt-6 sm:mt-10 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3.5">
+                <a href="#hakkimizda" class="inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 transition-all hover:scale-[1.02]">
+                    <span>Hakkımızda</span>
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <polyline points="19 12 12 19 5 12"></polyline>
+                    </svg>
+                </a>
+                <a href="#vizyon-misyon" class="inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 border border-slate-700 hover:border-slate-600 transition-all">
+                    <span>Vizyon &amp; Misyon</span>
+                </a>
+                <a href="#degerlerimiz" class="inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 border border-slate-700 hover:border-slate-600 transition-all">
+                    <span>Değerlerimiz</span>
+                </a>
+                <a asp-controller="Home" asp-action="Iletisim" class="inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-all">
+                    <i class="fa-solid fa-headset text-blue-400 text-xs sm:text-sm"></i>
+                    <span>İletişim</span>
+                </a>
+            </div>
         </div>
-        <div class="kurumsal-content-card">
+    </section>
+
+    <!-- ==================== BÖLÜM 2: HAKKIMIZDA ==================== -->
+    <section id="hakkimizda" class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto scroll-mt-12">
+        <div class="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200 mb-3">
+                <i class="fa-solid fa-circle-info text-blue-600"></i>
+                <span>Tanıtım</span>
+            </div>
+            <h2 class="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                Hakkımızda
+            </h2>
+        </div>
+
+        <div class="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-10 md:p-12 border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow space-y-5 sm:space-y-6 text-slate-600 text-sm sm:text-base md:text-lg leading-relaxed">
             <p>
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
                 Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
@@ -52,199 +125,161 @@
                 exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur.
             </p>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- VİZYON & MİSYON SECTION -->
-<section class="kurumsal-section kurumsal-section-alt">
-    <div class="kurumsal-container">
-        <div class="vizyon-misyon-grid">
-            <!-- Vizyon -->
-            <div class="vm-card">
-                <div class="vm-icon vizyon-icon">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <circle cx="12" cy="12" r="6"></circle>
-                        <circle cx="12" cy="12" r="2"></circle>
-                    </svg>
+    <!-- ==================== BÖLÜM 3: VİZYON & MİSYON ==================== -->
+    <section id="vizyon-misyon" class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 bg-slate-100/70 border-y border-slate-200/80 scroll-mt-12">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center max-w-2xl mx-auto mb-8 sm:mb-14">
+                <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200 mb-3">
+                    <i class="fa-solid fa-bullseye text-blue-600"></i>
+                    <span>Hedeflerimiz</span>
                 </div>
-                <h3>Vizyonumuz</h3>
-                <p>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent commodo cursus magna, 
-                    vel scelerisque nisl consectetur et. Donec sed odio dui. Nullam quis risus eget urna mollis 
-                    ornare vel eu leo. Cras mattis consectetur purus sit amet fermentum. Vivamus sagittis lacus vel 
-                    augue laoreet rutrum faucibus dolor auctor.
-                </p>
+                <h2 class="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                    Vizyon ve Misyon
+                </h2>
             </div>
-            <!-- Misyon -->
-            <div class="vm-card">
-                <div class="vm-icon misyon-icon">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                    </svg>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10">
+                <!-- Vizyon Kartı -->
+                <div class="group relative rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 bg-white text-slate-900 shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-200/90 overflow-hidden">
+                    <div class="flex items-center gap-3.5 sm:gap-4 mb-5 sm:mb-6">
+                        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-sky-500 text-white flex items-center justify-center text-xl sm:text-2xl shadow-lg shadow-blue-500/20 shrink-0">
+                            <i class="fa-solid fa-eye"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl sm:text-2xl font-extrabold text-slate-900">Vizyonumuz</h3>
+                        </div>
+                    </div>
+
+                    <p class="text-xs sm:text-sm md:text-base text-slate-600 leading-relaxed font-normal">
+                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent commodo cursus magna, 
+                        vel scelerisque nisl consectetur et. Donec sed odio dui. Nullam quis risus eget urna mollis 
+                        ornare vel eu leo. Cras mattis consectetur purus sit amet fermentum. Vivamus sagittis lacus vel 
+                        augue laoreet rutrum faucibus dolor auctor.
+                    </p>
                 </div>
-                <h3>Misyonumuz</h3>
-                <p>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas faucibus mollis interdum. 
-                    Aenean lacinia bibendum nulla sed consectetur. Etiam porta sem malesuada magna mollis euismod.
-                    Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo 
-                    sit amet risus. Integer posuere erat a ante venenatis dapibus posuere velit aliquet.
-                </p>
+
+                <!-- Misyon Kartı -->
+                <div class="group relative rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 bg-white text-slate-900 shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-200/90 overflow-hidden">
+                    <div class="flex items-center gap-3.5 sm:gap-4 mb-5 sm:mb-6">
+                        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-400 text-white flex items-center justify-center text-xl sm:text-2xl shadow-lg shadow-amber-500/20 shrink-0">
+                            <i class="fa-solid fa-rocket"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl sm:text-2xl font-extrabold text-slate-900">Misyonumuz</h3>
+                        </div>
+                    </div>
+
+                    <p class="text-xs sm:text-sm md:text-base text-slate-600 leading-relaxed font-normal">
+                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas faucibus mollis interdum. 
+                        Aenean lacinia bibendum nulla sed consectetur. Etiam porta sem malesuada magna mollis euismod.
+                        Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo 
+                        sit amet risus. Integer posuere erat a ante venenatis dapibus posuere velit aliquet.
+                    </p>
+                </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- DEĞERLERİMİZ SECTION -->
-<section class="kurumsal-section">
-    <div class="kurumsal-container">
-        <div class="section-header">
-            <div class="section-icon-badge">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                </svg>
+    <!-- ==================== BÖLÜM 4: DEĞERLERİMİZ ==================== -->
+    <section id="degerlerimiz" class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto scroll-mt-12">
+        <div class="text-center max-w-2xl mx-auto mb-8 sm:mb-14">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200 mb-3">
+                <i class="fa-solid fa-gem text-blue-600"></i>
+                <span>İlkelerimiz</span>
             </div>
-            <h2>Değerlerimiz</h2>
+            <h2 class="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                Değerlerimiz
+            </h2>
         </div>
-        <div class="degerler-grid">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             <!-- Değer 1 -->
-            <div class="deger-card">
-                <div class="deger-number">01</div>
-                <h4>Güvenilirlik</h4>
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent commodo cursus magna, vel scelerisque nisl consectetur et.</p>
+            <div class="group relative p-5 sm:p-6 md:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-blue-400 hover:-translate-y-1 transition-all duration-200">
+                <div class="flex items-center justify-between mb-4 sm:mb-5">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-50 group-hover:bg-blue-600 text-blue-600 group-hover:text-white flex items-center justify-center text-lg sm:text-xl transition-colors">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <span class="text-2xl sm:text-3xl font-black text-slate-200 group-hover:text-blue-100 transition-colors">01</span>
+                </div>
+                <h3 class="text-base sm:text-lg font-bold text-slate-900 mb-1.5 sm:mb-2">Güvenilirlik</h3>
+                <p class="text-xs sm:text-sm text-slate-500 leading-relaxed font-normal">
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent commodo cursus magna, vel scelerisque nisl consectetur et.
+                </p>
             </div>
+
             <!-- Değer 2 -->
-            <div class="deger-card">
-                <div class="deger-number">02</div>
-                <h4>Şeffaflık</h4>
-                <p>Donec sed odio dui. Nullam quis risus eget urna mollis ornare vel eu leo. Cras mattis consectetur purus sit amet fermentum.</p>
+            <div class="group relative p-5 sm:p-6 md:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-emerald-400 hover:-translate-y-1 transition-all duration-200">
+                <div class="flex items-center justify-between mb-4 sm:mb-5">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 group-hover:bg-emerald-600 text-emerald-600 group-hover:text-white flex items-center justify-center text-lg sm:text-xl transition-colors">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                    </div>
+                    <span class="text-2xl sm:text-3xl font-black text-slate-200 group-hover:text-emerald-100 transition-colors">02</span>
+                </div>
+                <h3 class="text-base sm:text-lg font-bold text-slate-900 mb-1.5 sm:mb-2">Şeffaflık</h3>
+                <p class="text-xs sm:text-sm text-slate-500 leading-relaxed font-normal">
+                    Donec sed odio dui. Nullam quis risus eget urna mollis ornare vel eu leo. Cras mattis consectetur purus sit amet fermentum.
+                </p>
             </div>
+
             <!-- Değer 3 -->
-            <div class="deger-card">
-                <div class="deger-number">03</div>
-                <h4>İnovasyon</h4>
-                <p>Maecenas faucibus mollis interdum. Aenean lacinia bibendum nulla sed consectetur. Etiam porta sem malesuada magna mollis.</p>
+            <div class="group relative p-5 sm:p-6 md:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-indigo-400 hover:-translate-y-1 transition-all duration-200">
+                <div class="flex items-center justify-between mb-4 sm:mb-5">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-indigo-50 group-hover:bg-indigo-600 text-indigo-600 group-hover:text-white flex items-center justify-center text-lg sm:text-xl transition-colors">
+                        <i class="fa-solid fa-microchip"></i>
+                    </div>
+                    <span class="text-2xl sm:text-3xl font-black text-slate-200 group-hover:text-indigo-100 transition-colors">03</span>
+                </div>
+                <h3 class="text-base sm:text-lg font-bold text-slate-900 mb-1.5 sm:mb-2">İnovasyon</h3>
+                <p class="text-xs sm:text-sm text-slate-500 leading-relaxed font-normal">
+                    Maecenas faucibus mollis interdum. Aenean lacinia bibendum nulla sed consectetur. Etiam porta sem malesuada magna mollis.
+                </p>
             </div>
+
             <!-- Değer 4 -->
-            <div class="deger-card">
-                <div class="deger-number">04</div>
-                <h4>Müşteri Odaklılık</h4>
-                <p>Vivamus sagittis lacus vel augue laoreet rutrum faucibus dolor auctor. Fusce dapibus, tellus ac cursus commodo.</p>
+            <div class="group relative p-5 sm:p-6 md:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-amber-400 hover:-translate-y-1 transition-all duration-200">
+                <div class="flex items-center justify-between mb-4 sm:mb-5">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-50 group-hover:bg-amber-600 text-amber-600 group-hover:text-white flex items-center justify-center text-lg sm:text-xl transition-colors">
+                        <i class="fa-solid fa-headset"></i>
+                    </div>
+                    <span class="text-2xl sm:text-3xl font-black text-slate-200 group-hover:text-amber-100 transition-colors">04</span>
+                </div>
+                <h3 class="text-base sm:text-lg font-bold text-slate-900 mb-1.5 sm:mb-2">Müşteri Odaklılık</h3>
+                <p class="text-xs sm:text-sm text-slate-500 leading-relaxed font-normal">
+                    Vivamus sagittis lacus vel augue laoreet rutrum faucibus dolor auctor. Fusce dapibus, tellus ac cursus commodo.
+                </p>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- RAKAMLARLA BİZ SECTION -->
-<section class="kurumsal-section kurumsal-section-alt">
-    <div class="kurumsal-container">
-        <div class="section-header">
-            <div class="section-icon-badge">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="20" x2="18" y2="10"></line>
-                    <line x1="12" y1="20" x2="12" y2="4"></line>
-                    <line x1="6" y1="20" x2="6" y2="14"></line>
-                </svg>
-            </div>
-            <h2>Rakamlarla Biz</h2>
-        </div>
-        <div class="rakamlar-grid">
-            <div class="rakam-card">
-                <div class="rakam-value">10+</div>
-                <div class="rakam-label">Yıllık Deneyim</div>
-            </div>
-            <div class="rakam-card">
-                <div class="rakam-value">81</div>
-                <div class="rakam-label">İl Kapsamı</div>
-            </div>
-            <div class="rakam-card">
-                <div class="rakam-value">5.000+</div>
-                <div class="rakam-label">Aktif Kullanıcı</div>
-            </div>
-            <div class="rakam-card">
-                <div class="rakam-value">15.000+</div>
-                <div class="rakam-label">Tamamlanan İşlem</div>
-            </div>
-            <div class="rakam-card">
-                <div class="rakam-value">%98</div>
-                <div class="rakam-label">Müşteri Memnuniyeti</div>
-            </div>
-        </div>
-    </div>
-</section>
+    <!-- ==================== BÖLÜM 5: İLETİŞİM / CTA ==================== -->
+    <section class="py-12 sm:py-18 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+        <div class="relative rounded-2xl sm:rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950 p-6 sm:p-10 md:p-12 text-white shadow-2xl border border-slate-800 overflow-hidden text-center">
+            <!-- Glow Efektleri -->
+            <div class="absolute -left-20 -top-20 w-72 h-72 rounded-full bg-blue-500/20 blur-3xl pointer-events-none"></div>
+            <div class="absolute -right-20 -bottom-20 w-72 h-72 rounded-full bg-indigo-500/20 blur-3xl pointer-events-none"></div>
 
-<!-- TARİHÇE SECTION -->
-<section class="kurumsal-section">
-    <div class="kurumsal-container">
-        <div class="section-header">
-            <div class="section-icon-badge">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-            </div>
-            <h2>Tarihçemiz</h2>
-        </div>
-        <div class="timeline">
-            <div class="timeline-item">
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="timeline-year">2015</div>
-                    <h4>Kuruluş</h4>
-                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-                </div>
-            </div>
-            <div class="timeline-item">
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="timeline-year">2017</div>
-                    <h4>İlk Büyük Büyüme</h4>
-                    <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-                </div>
-            </div>
-            <div class="timeline-item">
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="timeline-year">2020</div>
-                    <h4>Dijital Dönüşüm</h4>
-                    <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
-                </div>
-            </div>
-            <div class="timeline-item">
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="timeline-year">2023</div>
-                    <h4>Pazar Liderliği</h4>
-                    <p>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-                </div>
-            </div>
-            <div class="timeline-item">
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="timeline-year">2025</div>
-                    <h4>Uluslararası Açılım</h4>
-                    <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+            <div class="relative max-w-2xl mx-auto">
+                <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white leading-tight">
+                    Bizimle İletişime Geçin
+                </h2>
 
-<!-- İLETİŞİM CTA SECTION -->
-<section class="kurumsal-cta-section">
-    <div class="kurumsal-container">
-        <div class="cta-card">
-            <div class="cta-content">
-                <h2>Bizimle İletişime Geçin</h2>
-                <p>Kurumsal satın alma süreçlerinizi dijitalleştirmek ve tedarik zincirinizi güçlendirmek için bize ulaşın.</p>
+                <p class="mt-3 sm:mt-4 text-xs sm:text-sm md:text-base text-slate-300 leading-relaxed font-normal px-2">
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                </p>
+
+                <div class="mt-6 sm:mt-8 flex items-center justify-center">
+                    <a asp-controller="Home" asp-action="Iletisim" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 transition-all hover:scale-105">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        <span>İletişime Geç</span>
+                    </a>
+                </div>
             </div>
-            <a asp-controller="Home" asp-action="Iletisim" class="cta-btn">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                    <polyline points="22,6 12,13 2,6"></polyline>
-                </svg>
-                İletişime Geç
-            </a>
         </div>
-    </div>
-</section>
+    </section>
+
+</div>

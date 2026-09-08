@@ -1,373 +1,554 @@
+@model satinalmaportali2.Models.UrunKategorileriViewModel
 @{
-    ViewData["Title"] = "Ürün Kategorileri";
+    ViewData["Title"] = "Sanayi & Kurumsal Ürün Kategorileri";
 }
 
-<!-- HERO SECTION -->
-<section class="kategori-hero">
-    <div class="kategori-hero-inner">
-        <div class="kategori-badge">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
+@section Styles {
+    <!-- Tailwind CSS (Play CDN) & Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                            950: '#082f49',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Özel İnce Kaydırma Çubuğu */
+        .custom-tree-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-tree-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-tree-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-tree-scroll::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Canlı Arama Vurgusu */
+        .dir-node-link.is-highlighted {
+            background-color: #fef08a !important;
+            color: #854d0e !important;
+            font-weight: 700 !important;
+            box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.4);
+        }
+
+        /* Scrollbar gizleme yardımcısı (yatay sekmeler için) */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+}
+
+<!-- ==================== BÖLÜM 1: TAILWIND HERO HEADER ==================== -->
+<section class="relative overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white pt-8 sm:pt-14 md:pt-16 pb-8 sm:pb-12 px-4 sm:px-6 lg:px-8 border-b border-slate-800/80 font-sans">
+    <!-- Arka Plan Radial Glow Efekti -->
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(37,99,235,0.28),rgba(255,255,255,0))] pointer-events-none"></div>
+
+    <div class="relative max-w-5xl mx-auto text-center">
+        <!-- Kurumsal Rozet -->
+        <div class="inline-flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-3 sm:mb-5 backdrop-blur-sm shadow-sm max-w-full">
+            <svg class="w-3.5 h-3.5 text-blue-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                <rect x="3" y="14" width="7" height="7" rx="1"></rect>
             </svg>
-            <span>Ürün Kategorileri</span>
+            <span class="truncate">B2B Kurumsal Ürün Kataloğu &amp; Sanayi Ağacı</span>
         </div>
-        <h1 class="kategori-hero-title">Tüm <span class="highlight-dot">Kategoriler</span></h1>
-        <p class="kategori-hero-desc">
-            Binlerce ürün ve hizmet kategorisinde güvenilir tedarikçilere ulaşın. 
-            İhtiyacınız olan her şey tek platformda.
+
+        <!-- Ana Başlık -->
+        <h1 class="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.18] sm:leading-[1.12]">
+            Tüm Sanayi &amp; <br class="hidden sm:inline" />
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">
+                Ürün Kategorileri
+            </span>
+        </h1>
+
+        <!-- Açıklama Metni -->
+        <p class="mt-2.5 sm:mt-4 text-xs sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed font-normal px-2">
+            Veritabanımızda kayıtlı @Model.TotalRootCategories ana sanayi kolu ve @Model.TotalCategories kurumsal alt kategorisinde doğrudan üretici, ana distribütör ve onaylı kurumsal tedarikçilere ulaşın.
         </p>
-        <!-- Arama -->
-        <div class="kategori-search-bar">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input type="text" placeholder="Kategorilerde ara..." />
+
+        <!-- Canlı Arama Çubuğu -->
+        <div class="mt-5 sm:mt-7 max-w-2xl mx-auto">
+            <div class="relative flex items-center w-full bg-slate-800/90 border border-slate-700/80 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 shadow-inner backdrop-blur-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                <div class="pl-3 sm:pl-3.5 text-slate-400">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </div>
+                <input type="text" id="kategoriSearchInput" 
+                       placeholder="Kategori, alt ürün grubu veya anahtar kelime ara..." 
+                       class="w-full bg-transparent px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder-slate-400 outline-none font-medium" 
+                       oninput="handleCategorySearch(this.value)" autocomplete="off" />
+                
+                <button type="button" id="btnClearCatSearch" 
+                       class="hidden inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white shrink-0 transition-colors mr-1" 
+                       onclick="clearCategorySearch()" title="Aramayı Temizle">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div id="searchMatchFeedback" class="mt-2 text-xs text-sky-400 font-medium hidden"></div>
         </div>
-    </div>
-</section>
 
-<!-- ANA KATEGORİLER GRID -->
-<section class="kategori-section">
-    <div class="kategori-container">
-        <div class="kategori-section-header">
-            <div class="kategori-section-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-                    <polyline points="2 17 12 22 22 17"></polyline>
-                    <polyline points="2 12 12 17 22 12"></polyline>
-                </svg>
-            </div>
-            <h2>Ana Kategoriler</h2>
-        </div>
-
-        <div class="ana-kategori-grid">
-            <!-- Kategori 1 - Bilişim & Teknoloji -->
-            <div class="ana-kategori-card kat-bilisim">
-                <div class="kat-icon-wrap">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                        <line x1="8" y1="21" x2="16" y2="21"></line>
-                        <line x1="12" y1="17" x2="12" y2="21"></line>
-                    </svg>
-                </div>
-                <h3>Bilişim & Teknoloji</h3>
-                <p>Bilgisayar, sunucu, yazılım, ağ ekipmanları ve tüm IT altyapı çözümleri.</p>
-                <div class="kat-alt-tags">
-                    <span>Bilgisayarlar</span>
-                    <span>Sunucular</span>
-                    <span>Yazılım</span>
-                    <span>Ağ Cihazları</span>
-                </div>
-                <div class="kat-count">124 Ürün</div>
-            </div>
-
-            <!-- Kategori 2 - Ofis & Kırtasiye -->
-            <div class="ana-kategori-card kat-ofis">
-                <div class="kat-icon-wrap">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                        <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
-                </div>
-                <h3>Ofis & Kırtasiye</h3>
-                <p>Kağıt ürünleri, yazıcı sarf malzemeleri, ofis mobilyaları ve kırtasiye malzemeleri.</p>
-                <div class="kat-alt-tags">
-                    <span>Kağıt Ürünleri</span>
-                    <span>Toner</span>
-                    <span>Mobilya</span>
-                    <span>Kalem & Dosya</span>
-                </div>
-                <div class="kat-count">89 Ürün</div>
-            </div>
-
-            <!-- Kategori 3 - Endüstriyel Malzeme -->
-            <div class="ana-kategori-card kat-endustri">
-                <div class="kat-icon-wrap">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
-                    </svg>
-                </div>
-                <h3>Endüstriyel Malzeme</h3>
-                <p>Hırdavat, el aletleri, iş güvenliği ekipmanları ve endüstriyel sarf malzemeleri.</p>
-                <div class="kat-alt-tags">
-                    <span>El Aletleri</span>
-                    <span>İş Güvenliği</span>
-                    <span>Hırdavat</span>
-                    <span>Sarf Malz.</span>
-                </div>
-                <div class="kat-count">215 Ürün</div>
-            </div>
-
-            <!-- Kategori 4 - Temizlik & Hijyen -->
-            <div class="ana-kategori-card kat-temizlik">
-                <div class="kat-icon-wrap">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                    </svg>
-                </div>
-                <h3>Temizlik & Hijyen</h3>
-                <p>Endüstriyel temizlik ürünleri, hijyen malzemeleri ve kurumsal temizlik çözümleri.</p>
-                <div class="kat-alt-tags">
-                    <span>Deterjan</span>
-                    <span>Dezenfektan</span>
-                    <span>Kağıt Havlu</span>
-                    <span>Hijyen Seti</span>
-                </div>
-                <div class="kat-count">156 Ürün</div>
-            </div>
-
-            <!-- Kategori 5 - İnşaat & Yapı -->
-            <div class="ana-kategori-card kat-insaat">
-                <div class="kat-icon-wrap">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                    </svg>
-                </div>
-                <h3>İnşaat & Yapı</h3>
-                <p>Yapı malzemeleri, çimento, demir, boya ve inşaat ekipmanları.</p>
-                <div class="kat-alt-tags">
-                    <span>Çimento</span>
-                    <span>Demir</span>
-                    <span>Boya</span>
-                    <span>Seramik</span>
-                </div>
-                <div class="kat-count">178 Ürün</div>
-            </div>
-
-            <!-- Kategori 6 - Elektrik & Aydınlatma -->
-            <div class="ana-kategori-card kat-elektrik">
-                <div class="kat-icon-wrap">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <!-- Kök Kategoriler Hızlı Erişim Gezinme Çubuğu -->
+        @if (Model.RootCategories.Any())
+        {
+            <div class="mt-5 sm:mt-8 pt-4 sm:pt-6 border-t border-slate-800/60 max-w-4xl mx-auto">
+                <div class="flex items-center justify-center gap-2 mb-2 sm:mb-3 text-slate-400 text-xs font-semibold">
+                    <svg class="w-3.5 h-3.5 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                     </svg>
+                    <span>Hızlı Sektör Atlama:</span>
                 </div>
-                <h3>Elektrik & Aydınlatma</h3>
-                <p>Kablo, priz, anahtar, LED aydınlatma, pano ve elektrik tesisat malzemeleri.</p>
-                <div class="kat-alt-tags">
-                    <span>Kablo</span>
-                    <span>LED Armatür</span>
-                    <span>Pano</span>
-                    <span>Priz & Anahtar</span>
+                <div class="flex items-center gap-2 overflow-x-auto no-scrollbar sm:flex-wrap sm:justify-center py-1.5 -mx-4 px-4 sm:mx-0 sm:px-0 scroll-smooth">
+                    @foreach (var root in Model.RootCategories)
+                    {
+                        <a href="#root-cat-@root.CategoryID" 
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/70 hover:border-blue-500/60 text-slate-300 hover:text-white text-xs font-medium transition-all shadow-xs shrink-0 active:scale-95">
+                            <i class="@(root.Icon ?? "fa-solid fa-folder") text-blue-400 text-xs shrink-0"></i>
+                            <span class="whitespace-nowrap">@root.CategoryName</span>
+                        </a>
+                    }
                 </div>
-                <div class="kat-count">143 Ürün</div>
             </div>
+        }
+    </div>
+</section>
 
-            <!-- Kategori 7 - Gıda & İçecek -->
-            <div class="ana-kategori-card kat-gida">
-                <div class="kat-icon-wrap">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
-                        <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
-                        <line x1="6" y1="1" x2="6" y2="4"></line>
-                        <line x1="10" y1="1" x2="10" y2="4"></line>
-                        <line x1="14" y1="1" x2="14" y2="4"></line>
+<!-- ==================== BÖLÜM 2: GERÇEK VERİTABANI İSTATİSTİK ŞERİDİ ==================== -->
+<section class="relative bg-slate-50/70 pb-8 sm:pb-14 font-sans">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+            
+            <!-- İstatistik Kartı 1 -->
+            <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-slate-200/90 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-3 sm:gap-4 group">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-blue-600 group-hover:text-white transition-all duration-200">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
                     </svg>
                 </div>
-                <h3>Gıda & İçecek</h3>
-                <p>Kurumsal yemek hizmetleri, toptan gıda ürünleri ve içecek tedarik çözümleri.</p>
-                <div class="kat-alt-tags">
-                    <span>Toptan Gıda</span>
-                    <span>İçecekler</span>
-                    <span>Catering</span>
-                    <span>Ambalajlı Gıda</span>
+                <div class="min-w-0 flex-1">
+                    <span class="block text-base sm:text-2xl font-black text-slate-900 leading-tight">@Model.TotalRootCategories</span>
+                    <span class="block text-[11px] sm:text-xs font-semibold text-slate-500 leading-snug">Ana Sanayi</span>
                 </div>
-                <div class="kat-count">92 Ürün</div>
             </div>
 
-            <!-- Kategori 8 - Otomotiv & Yedek Parça -->
-            <div class="ana-kategori-card kat-otomotiv">
-                <div class="kat-icon-wrap">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+            <!-- İstatistik Kartı 2 -->
+            <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-slate-200/90 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-3 sm:gap-4 group">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-200">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                        <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                        <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                        <rect x="3" y="14" width="7" height="7" rx="1"></rect>
                     </svg>
                 </div>
-                <h3>Otomotiv & Yedek Parça</h3>
-                <p>Araç filosu yönetimi, yedek parça, lastik, akü ve otomotiv sarf malzemeleri.</p>
-                <div class="kat-alt-tags">
-                    <span>Yedek Parça</span>
-                    <span>Lastik</span>
-                    <span>Akü</span>
-                    <span>Yağ & Filtre</span>
+                <div class="min-w-0 flex-1">
+                    <span class="block text-base sm:text-2xl font-black text-slate-900 leading-tight">@Model.TotalCategories</span>
+                    <span class="block text-[11px] sm:text-xs font-semibold text-slate-500 leading-snug">Kategori</span>
                 </div>
-                <div class="kat-count">167 Ürün</div>
             </div>
 
-            <!-- Kategori 9 - Tekstil & Giyim -->
-            <div class="ana-kategori-card kat-tekstil">
-                <div class="kat-icon-wrap">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <path d="M20.38 3.46L16 2 12 5.5 8 2l-4.38 1.46a2 2 0 0 0-1.34 1.88v14.44a2 2 0 0 0 1.34 1.88L8 22l4-3.5L16 22l4.38-1.46a2 2 0 0 0 1.34-1.88V5.34a2 2 0 0 0-1.34-1.88z"></path>
+            <!-- İstatistik Kartı 3 -->
+            <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-slate-200/90 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-3 sm:gap-4 group">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-200">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <path d="M16 10a4 4 0 0 1-8 0"></path>
                     </svg>
                 </div>
-                <h3>Tekstil & Giyim</h3>
-                <p>İş kıyafetleri, promosyon tekstili, kumaş ve hazır giyim toptan çözümleri.</p>
-                <div class="kat-alt-tags">
-                    <span>İş Kıyafeti</span>
-                    <span>Kumaş</span>
-                    <span>Promosyon</span>
-                    <span>Forma</span>
+                <div class="min-w-0 flex-1">
+                    <span class="block text-base sm:text-2xl font-black text-slate-900 leading-tight">@Model.TotalProducts</span>
+                    <span class="block text-[11px] sm:text-xs font-semibold text-slate-500 leading-snug">Ürün İlanı</span>
                 </div>
-                <div class="kat-count">78 Ürün</div>
             </div>
 
-            <!-- Kategori 10 - Sağlık & Medikal -->
-            <div class="ana-kategori-card kat-saglik">
-                <div class="kat-icon-wrap">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+            <!-- İstatistik Kartı 4 -->
+            <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-slate-200/90 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-3 sm:gap-4 group">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-amber-600 group-hover:text-white transition-all duration-200">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <polyline points="9 12 11 14 15 10"></polyline>
                     </svg>
                 </div>
-                <h3>Sağlık & Medikal</h3>
-                <p>Tıbbi cihazlar, medikal sarf malzemeleri, laboratuvar ekipmanları ve ilaçlar.</p>
-                <div class="kat-alt-tags">
-                    <span>Tıbbi Cihaz</span>
-                    <span>Sarf Malz.</span>
-                    <span>Laboratuvar</span>
-                    <span>İlaç</span>
+                <div class="min-w-0 flex-1">
+                    <span class="block text-base sm:text-2xl font-black text-slate-900 leading-tight">@(Model.TotalSuppliers)+</span>
+                    <span class="block text-[11px] sm:text-xs font-semibold text-slate-500 leading-snug">B2B Tedarikçi</span>
                 </div>
-                <div class="kat-count">201 Ürün</div>
             </div>
 
-            <!-- Kategori 11 - Mobilya & Dekorasyon -->
-            <div class="ana-kategori-card kat-mobilya">
-                <div class="kat-icon-wrap">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-                    </svg>
-                </div>
-                <h3>Mobilya & Dekorasyon</h3>
-                <p>Ofis mobilyaları, çalışma masaları, koltuklar ve dekorasyon ürünleri.</p>
-                <div class="kat-alt-tags">
-                    <span>Ofis Masası</span>
-                    <span>Koltuk</span>
-                    <span>Dolap</span>
-                    <span>Dekorasyon</span>
-                </div>
-                <div class="kat-count">134 Ürün</div>
-            </div>
+        </div>
+    </div>
 
-            <!-- Kategori 12 - Lojistik & Ambalaj -->
-            <div class="ana-kategori-card kat-lojistik">
-                <div class="kat-icon-wrap">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line>
-                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                    </svg>
+    <!-- ==================== BÖLÜM 3: KÖK KATEGORİLER & HİYERARŞİK LİSTE ==================== -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10">
+        
+        <!-- Bölüm Başlığı -->
+        <div class="flex items-center justify-between mb-6 sm:mb-8 pb-3.5 border-b border-slate-200">
+            <div>
+                <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-600 mb-1">
+                    <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+                    <span>Sektörel Dizin</span>
                 </div>
-                <h3>Lojistik & Ambalaj</h3>
-                <p>Koli, streç, ambalaj malzemeleri, nakliye ve depolama çözümleri.</p>
-                <div class="kat-alt-tags">
-                    <span>Koli</span>
-                    <span>Streç Film</span>
-                    <span>Bant</span>
-                    <span>Palet</span>
-                </div>
-                <div class="kat-count">65 Ürün</div>
+                <h2 class="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">Sanayi Kolları ve Hiyerarşik Ürün Ağacı</h2>
+                <p class="text-xs sm:text-sm text-slate-500 mt-1">Ana sanayi kolları ve alt ürün gruplarını kolayca inceleyin, vitrinde tek tıkla filtreleyin.</p>
             </div>
+        </div>
+
+        <!-- Arama Sonucu Bulunamadı Uyarısı -->
+        <div id="noSearchResultsMsg" class="hidden bg-white rounded-2xl p-6 sm:p-10 text-center border border-slate-200 shadow-sm max-w-lg mx-auto my-8">
+            <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-500 border border-amber-200 flex items-center justify-center text-2xl mx-auto mb-3">
+                🔍
+            </div>
+            <h3 class="text-base sm:text-lg font-bold text-slate-900">Aramanızla Eşleşen Kategori Bulunamadı</h3>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1 mb-4">Farklı bir anahtar kelime deneyebilir veya arama filtresini sıfırlayabilirsiniz.</p>
+            <button type="button" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition-colors shadow-sm" onclick="clearCategorySearch()">
+                Tüm Kategorileri Göster
+            </button>
+        </div>
+
+        <!-- Kök Kategoriler Listesi -->
+        <div class="space-y-6 sm:space-y-8" id="kategoriRootsContainer">
+            @foreach (var root in Model.RootCategories)
+            {
+                <div class="kategori-root-block bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-md transition-all overflow-hidden scroll-mt-20 sm:scroll-mt-24" 
+                     id="root-cat-@root.CategoryID" 
+                     data-root-id="@root.CategoryID" 
+                     data-root-name="@root.CategoryName.ToLowerInvariant()">
+                    
+                    <!-- KÖK KATEGORİ BAŞLIK ÇUBUĞU -->
+                    <div class="p-4 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4 bg-gradient-to-r from-slate-50/90 via-white to-blue-50/30">
+                        <div class="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                            <!-- Simge Rozeti (Font Awesome) -->
+                            <div class="w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 flex items-center justify-center text-lg sm:text-2xl shrink-0">
+                                <i class="@(root.Icon ?? "fa-solid fa-folder-tree")"></i>
+                            </div>
+
+                            <!-- Bilgi ve Rozetler -->
+                            <div class="min-w-0 flex-1">
+                                @if (root.ProductCount > 0)
+                                {
+                                    <div class="flex items-center gap-2 flex-wrap mb-0.5">
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                                            @root.ProductCount Ürün Yayında
+                                        </span>
+                                    </div>
+                                }
+                                <h3 class="text-base sm:text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-snug break-words">
+                                    @root.CategoryName
+                                </h3>
+                            </div>
+                        </div>
+
+                        <!-- Bu Sektördeki Ürünleri Gör CTA Butonu -->
+                        <div class="shrink-0 flex items-center">
+                            <a href="/Home/Index?catId=@root.CategoryID" 
+                               class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs sm:text-sm shadow-md shadow-blue-600/20 hover:-translate-y-0.5 transition-all whitespace-nowrap"
+                               title="@root.CategoryName sektöründeki ürünleri incele">
+                                <span>Bu Sektördeki Ürünleri Gör</span>
+                                <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- ALT KATEGORİLER IZGARASI & DİZİN AĞACI -->
+                    @if (root.Children.Any())
+                    {
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 lg:gap-5 p-3.5 sm:p-5 lg:p-6 bg-slate-50/50">
+                            @foreach (var sub in root.Children)
+                            {
+                                <div class="sub-kategori-card bg-white rounded-xl sm:rounded-2xl p-3.5 sm:p-4 border border-slate-200/90 shadow-xs hover:border-blue-300 hover:shadow-md transition-all flex flex-col justify-between group/sub" 
+                                     data-sub-id="@sub.CategoryID" 
+                                     data-sub-name="@sub.CategoryName.ToLowerInvariant()">
+                                    
+                                    <!-- Kart Başlığı -->
+                                    <div>
+                                        <div class="flex items-center justify-between gap-2 mb-2.5 pb-2 border-b border-slate-100">
+                                            <a href="/Home/Index?catId=@sub.CategoryID" 
+                                               class="text-xs sm:text-sm font-bold text-slate-900 group-hover/sub:text-blue-600 transition-colors flex items-center gap-2 min-w-0 flex-1" 
+                                               title="@sub.CategoryName ürünlerini incele">
+                                                <span class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
+                                                <span class="leading-snug break-words">@sub.CategoryName</span>
+                                            </a>
+                                            @if (sub.ProductCount > 0)
+                                            {
+                                                <span class="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                                                    @sub.ProductCount
+                                                </span>
+                                            }
+                                        </div>
+
+                                        <!-- Hiyerarşik Alt Dallar (Ağaç Görünümü - Doğal Yükseklik, Scroll Trap Yok) -->
+                                        @if (sub.Children != null && sub.Children.Any())
+                                        {
+                                            <div class="my-1.5 space-y-0.5">
+                                                <partial name="_CategoryDirectoryBranch" model="(Node: sub, Level: 1)" />
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="text-[11px] text-slate-400 italic py-2 text-center bg-slate-50/80 rounded-lg my-1.5">
+                                                Doğrudan bu kategori seviyesinde listelenmektedir.
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <!-- Kart Altı Vitrin Aç Butonu -->
+                                    <div class="pt-2.5 mt-2.5 border-t border-dashed border-slate-200/80 flex items-center justify-between">
+                                        <span class="text-[11px] font-medium text-slate-400">Tüm ürünler</span>
+                                        <a href="/Home/Index?catId=@sub.CategoryID" 
+                                           class="inline-flex items-center gap-1 text-xs font-bold text-blue-600 group-hover/sub:text-blue-700 hover:underline">
+                                            <span>Vitrinde Aç</span>
+                                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                                <polyline points="12 5 19 12 12 19"></polyline>
+                                            </svg>
+                                        </a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="p-5 sm:p-6 text-center text-xs text-slate-400 italic">
+                            Bu kök kategori altında henüz kayıtlı alt kategori bulunmamaktadır.
+                        </div>
+                    }
+                </div>
+            }
         </div>
     </div>
 </section>
 
-<!-- İSTATİSTİK BANDI -->
-<section class="kategori-stats-band">
-    <div class="kategori-container">
-        <div class="kategori-stats-row">
-            <div class="kategori-stat-item">
-                <div class="kategori-stat-value">12</div>
-                <div class="kategori-stat-label">Ana Kategori</div>
+<!-- ==================== BÖLÜM 4: NEDEN TEDARİK PORTALI? (B2B DEĞERLERİ) ==================== -->
+<section class="bg-white py-10 sm:py-16 lg:py-20 border-t border-slate-200/80 font-sans">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
+            <div class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-blue-600 mb-2">
+                <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+                <span>Kurumsal Avantajlar</span>
             </div>
-            <div class="kategori-stat-divider"></div>
-            <div class="kategori-stat-item">
-                <div class="kategori-stat-value">1.642</div>
-                <div class="kategori-stat-label">Toplam Ürün</div>
-            </div>
-            <div class="kategori-stat-divider"></div>
-            <div class="kategori-stat-item">
-                <div class="kategori-stat-value">250+</div>
-                <div class="kategori-stat-label">Tedarikçi</div>
-            </div>
-            <div class="kategori-stat-divider"></div>
-            <div class="kategori-stat-item">
-                <div class="kategori-stat-value">81 İl</div>
-                <div class="kategori-stat-label">Türkiye Geneli</div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- NEDEN BİZİ TERCİH ETMELİSİNİZ -->
-<section class="kategori-section kategori-section-alt">
-    <div class="kategori-container">
-        <div class="kategori-section-header">
-            <div class="kategori-section-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-            </div>
-            <h2>Neden Tedarik Portalı?</h2>
+            <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Neden Tedarik Portalı?</h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-2">Türkiye sanayisinin kurumsal tedarik ve doğrudan fabrika satış platformu.</p>
         </div>
 
-        <div class="neden-grid">
-            <div class="neden-card">
-                <div class="neden-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            <div class="bg-slate-50/70 rounded-2xl p-5 sm:p-7 border border-slate-200/80 hover:shadow-md transition-all">
+                <div class="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center mb-5 shadow-sm shadow-blue-600/30">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                     </svg>
                 </div>
-                <h4>Doğrulanmış Tedarikçiler</h4>
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent commodo cursus magna, vel scelerisque nisl consectetur et.</p>
+                <h4 class="text-base sm:text-lg font-bold text-slate-900 mb-2">Doğrulanmış B2B Tedarikçileri</h4>
+                <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    Platformumuzdaki satıcılar vergi levhası, ticaret sicil gazetesi ve kurumsal belgeleriyle ön onaydan geçer. Aracıları devreden çıkarıp doğrudan ana üreticilerle çalışın.
+                </p>
             </div>
-            <div class="neden-card">
-                <div class="neden-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+            <div class="bg-slate-50/70 rounded-2xl p-5 sm:p-7 border border-slate-200/80 hover:shadow-md transition-all">
+                <div class="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center mb-5 shadow-sm shadow-indigo-600/30">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
                 </div>
-                <h4>Hızlı Teklif Süreci</h4>
-                <p>Donec sed odio dui. Nullam quis risus eget urna mollis ornare vel eu leo. Cras mattis consectetur purus sit amet.</p>
+                <h4 class="text-base sm:text-lg font-bold text-slate-900 mb-2">Hızlı RFQ &amp; Şeffaf Teklif Süreci</h4>
+                <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    İhtiyaç duyduğunuz ürün veya özel üretim parçalar için anında talep açın; Türkiye'nin dört bir yanındaki sanayi üreticilerinden gelen teklifleri tek ekranda karşılaştırın.
+                </p>
             </div>
-            <div class="neden-card">
-                <div class="neden-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+            <div class="bg-slate-50/70 rounded-2xl p-5 sm:p-7 border border-slate-200/80 hover:shadow-md transition-all">
+                <div class="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center mb-5 shadow-sm shadow-emerald-600/30">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="1" x2="12" y2="23"></line>
                         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                     </svg>
                 </div>
-                <h4>Rekabetçi Fiyatlar</h4>
-                <p>Maecenas faucibus mollis interdum. Aenean lacinia bibendum nulla sed consectetur. Etiam porta sem malesuada magna.</p>
+                <h4 class="text-base sm:text-lg font-bold text-slate-900 mb-2">iyzico Escrow Güvenli Havuz</h4>
+                <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    Sipariş tutarınız iyzico korumalı güvence havuzunda bloke edilir. Ürün ve sevk irsaliyesi teslim alınıp tarafınızca onaylanana kadar ödeme satıcıya aktarılmaz.
+                </p>
             </div>
         </div>
     </div>
 </section>
 
-<!-- CTA SECTION -->
-<section class="kategori-cta-section">
-    <div class="kategori-container">
-        <div class="kategori-cta-card">
-            <div class="kategori-cta-content">
-                <h2>Aradığınız Ürünü Bulamadınız mı?</h2>
-                <p>Özel talepleriniz için bizimle iletişime geçin. Tedarik ekibimiz size en uygun çözümü sunacaktır.</p>
+<!-- ==================== BÖLÜM 5: CTA TALEP SECTION (ANASAYFA TARZI) ==================== -->
+<section class="bg-slate-50/70 py-8 sm:py-14 pb-24 sm:pb-28 lg:pb-16 font-sans">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="relative overflow-hidden bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950 text-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-12 border border-slate-800 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-6">
+            <!-- Arka plan hafif mavi parıltı -->
+            <div class="absolute right-0 top-0 -mt-8 -mr-8 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="relative max-w-2xl">
+                <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20 mb-2.5 sm:mb-3">
+                    Özel İmalat &amp; Toptan Talep
+                </span>
+                <h2 class="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight">
+                    Aradığınız Ürünü veya Özel İmalatı Bulamadınız mı?
+                </h2>
+                <p class="text-xs sm:text-sm text-slate-300 mt-2 sm:mt-2.5 leading-relaxed">
+                    Kataloğumuzda yer almayan özel teknik şartnameli ürünler, fason talaşlı imalat veya toptan hammadde ihtiyaçlarınız için hemen ücretsiz satın alma talebi (RFQ) oluşturun. Onaylı üreticiler size en uygun tekliflerini iletsin.
+                </p>
             </div>
-            <a href="#talep" class="kategori-cta-btn">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            
+            <a href="/Requests" 
+               class="relative w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs sm:text-sm shadow-lg shadow-blue-600/30 hover:-translate-y-0.5 transition-all whitespace-nowrap shrink-0">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
-                Talep Oluştur
+                <span>Satın Alma Talebi Aç</span>
             </a>
         </div>
     </div>
 </section>
+
+@section Scripts {
+    <script>
+        /**
+         * Canlı Kategori ve Alt Dallarda Dinamik Arama Motoru
+         */
+        function handleCategorySearch(val) {
+            var q = (val || '').toLowerCase().trim();
+            var clearBtn = document.getElementById('btnClearCatSearch');
+            var feedback = document.getElementById('searchMatchFeedback');
+            var emptyMsg = document.getElementById('noSearchResultsMsg');
+
+            if (clearBtn) {
+                if (q) {
+                    clearBtn.classList.remove('hidden');
+                    clearBtn.classList.add('inline-flex');
+                } else {
+                    clearBtn.classList.add('hidden');
+                    clearBtn.classList.remove('inline-flex');
+                }
+            }
+
+            var rootBlocks = document.querySelectorAll('.kategori-root-block');
+            var totalMatchingItems = 0;
+            var visibleRoots = 0;
+
+            rootBlocks.forEach(function (rootBlock) {
+                var rootName = rootBlock.getAttribute('data-root-name') || '';
+                var rootMatches = q && rootName.indexOf(q) !== -1;
+
+                var subCards = rootBlock.querySelectorAll('.sub-kategori-card');
+                var anySubVisibleInRoot = false;
+
+                subCards.forEach(function (card) {
+                    var subName = card.getAttribute('data-sub-name') || '';
+                    var subMatches = q && subName.indexOf(q) !== -1;
+
+                    var nodeItems = card.querySelectorAll('.dir-node-item');
+                    var anyNodeMatches = false;
+
+                    nodeItems.forEach(function (node) {
+                        var nodeName = node.getAttribute('data-cat-name') || '';
+                        var link = node.querySelector('.dir-node-link');
+                        if (!q) {
+                            if (link) link.classList.remove('is-highlighted');
+                            node.style.display = '';
+                        } else if (nodeName.indexOf(q) !== -1) {
+                            anyNodeMatches = true;
+                            if (link) link.classList.add('is-highlighted');
+                            node.style.display = '';
+                            totalMatchingItems++;
+                        } else {
+                            if (link) link.classList.remove('is-highlighted');
+                            node.style.display = subMatches ? '' : 'none';
+                        }
+                    });
+
+                    if (!q || rootMatches || subMatches || anyNodeMatches) {
+                        card.style.display = '';
+                        anySubVisibleInRoot = true;
+                        if (q && (subMatches || rootMatches)) totalMatchingItems++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                if (!q || rootMatches || anySubVisibleInRoot) {
+                    rootBlock.style.display = '';
+                    visibleRoots++;
+                } else {
+                    rootBlock.style.display = 'none';
+                }
+            });
+
+            if (feedback) {
+                if (q) {
+                    feedback.classList.remove('hidden');
+                    feedback.innerHTML = `"${q}" araması için <strong>${totalMatchingItems}</strong> kategori ve alt dal eşleşti.`;
+                } else {
+                    feedback.classList.add('hidden');
+                }
+            }
+
+            if (emptyMsg) {
+                if (q && visibleRoots === 0) {
+                    emptyMsg.classList.remove('hidden');
+                } else {
+                    emptyMsg.classList.add('hidden');
+                }
+            }
+        }
+
+        function clearCategorySearch() {
+            var input = document.getElementById('kategoriSearchInput');
+            if (input) {
+                input.value = '';
+                handleCategorySearch('');
+                input.focus();
+            }
+        }
+    </script>
+}

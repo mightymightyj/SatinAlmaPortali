@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Tedarik Portalı</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/satinalmaportali2.styles.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
@@ -240,7 +241,7 @@
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
                     <span>Kurumsal</span>
                 </a>
-                <a href="javascript:void(0)" class="mobile-nav-item" onclick="closeMobileNavDrawer(); handleMobileBottomCategories();">
+                <a asp-controller="Home" asp-action="UrunKategorileri" class="mobile-nav-item" onclick="closeMobileNavDrawer()">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
                     <span>Ürün Kategorileri</span>
                 </a>
@@ -278,16 +279,16 @@
         </div>
     </aside>
 
-    <!-- Telefonlar İçin Sabit Mobil Alt Gezinme Barı (Mobile Bottom Bar) -->
+    <!-- Mobil & Tablet Cihazlar İçin Sabit Alt Gezinme Barı (Mobile Bottom Bar) -->
     <nav class="mobile-bottom-bar" aria-label="Hızlı Gezinme">
-        <a href="/" class="bottom-bar-item is-active" title="Ana Sayfa">
+        <a href="/" class="bottom-bar-item" id="bottomNavHome" title="Ana Sayfa">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                 <polyline points="9 22 9 12 15 12 15 22"></polyline>
             </svg>
             <span>Ana Sayfa</span>
         </a>
-        <button type="button" class="bottom-bar-item" onclick="handleMobileBottomCategories()" title="Kategoriler">
+        <button type="button" class="bottom-bar-item" id="bottomNavCategories" onclick="handleMobileBottomCategories()" title="Kategoriler">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
                 <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
@@ -296,7 +297,7 @@
             </svg>
             <span>Kategoriler</span>
         </button>
-        <button type="button" class="bottom-bar-item bottom-bar-cta" onclick="handleMobileBottomAddListing()" title="İlan Ver">
+        <button type="button" class="bottom-bar-item bottom-bar-cta" id="bottomNavAddListing" onclick="handleMobileBottomAddListing()" title="İlan Ver">
             <div class="cta-circle">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -305,7 +306,7 @@
             </div>
             <span>İlan Ver</span>
         </button>
-        <button type="button" class="bottom-bar-item relative" onclick="handleMobileBottomCart()" title="Sepetim">
+        <button type="button" class="bottom-bar-item relative" id="bottomNavCart" onclick="handleMobileBottomCart()" title="Sepetim">
             <div class="relative inline-flex">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="9" cy="21" r="1"></circle>
@@ -316,7 +317,7 @@
             </div>
             <span>Sepetim</span>
         </button>
-        <a asp-controller="Dashboard" asp-action="Index" class="bottom-bar-item" title="Panelim">
+        <a asp-controller="Dashboard" asp-action="Index" class="bottom-bar-item" id="bottomNavPanel" title="Panelim">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="8" r="4.5"></circle>
                 <path d="M4 21c0-4 3.5-6.5 8-6.5s8 2.5 8 6.5"></path>
@@ -470,10 +471,28 @@
             document.body.classList.remove('mobile-nav-locked');
         }
 
-        // Mobil Alt Bar (Bottom Bar) Eylemleri
+        // Mobil Alt Bar (Bottom Bar) Eylemleri & Dinamik Aktif Durumu
         function handleMobileBottomCategories() {
-            if (typeof openMobileCategoryModal === 'function') {
-                openMobileCategoryModal();
+            var modal = document.getElementById('mobileCategoryModal');
+            if (modal) {
+                if (typeof openMobileCategoryModal === 'function') {
+                    openMobileCategoryModal();
+                } else if (typeof window.openMobileCategoryModal === 'function') {
+                    window.openMobileCategoryModal();
+                } else {
+                    modal.style.display = 'flex';
+                    modal.style.opacity = '1';
+                    modal.style.pointerEvents = 'auto';
+                    modal.classList.add('show', 'is-open');
+                    document.body.classList.add('mobile-nav-locked');
+                    var searchInput = document.getElementById('mobileCatModalSearchInput');
+                    if (searchInput) {
+                        searchInput.value = '';
+                        if (typeof filterMobileModalCategories === 'function') {
+                            filterMobileModalCategories('');
+                        }
+                    }
+                }
             } else {
                 window.location.href = '/?openCategories=1';
             }
@@ -488,6 +507,11 @@
         }
 
         function handleMobileBottomCart() {
+            var currentPath = window.location.pathname.toLowerCase();
+            if (currentPath.startsWith('/cart')) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
             var drawerOverlay = document.getElementById('b2bCartDrawerOverlay');
             if (drawerOverlay && typeof openCartDrawer === 'function') {
                 openCartDrawer();
@@ -495,6 +519,31 @@
                 window.location.href = '/Cart';
             }
         }
+
+        function initMobileBottomBarActiveState() {
+            try {
+                var path = window.location.pathname.toLowerCase();
+                var items = document.querySelectorAll('.mobile-bottom-bar .bottom-bar-item');
+                items.forEach(function(el) { el.classList.remove('is-active'); });
+
+                if (path === '/' || path === '/home' || path === '/home/index') {
+                    var homeBtn = document.getElementById('bottomNavHome');
+                    if (homeBtn) homeBtn.classList.add('is-active');
+                } else if (path.indexOf('/home/urunkategorileri') !== -1) {
+                    var catBtn = document.getElementById('bottomNavCategories');
+                    if (catBtn) catBtn.classList.add('is-active');
+                } else if (path.indexOf('/cart') !== -1) {
+                    var cartBtn = document.getElementById('bottomNavCart');
+                    if (cartBtn) cartBtn.classList.add('is-active');
+                } else if (path.indexOf('/dashboard') !== -1) {
+                    var dashBtn = document.getElementById('bottomNavPanel');
+                    if (dashBtn) dashBtn.classList.add('is-active');
+                }
+            } catch (err) {
+                console.warn('Bottom nav active state error:', err);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', initMobileBottomBarActiveState);
     </script>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

@@ -12,5 +12,7 @@ namespace satinalmaportali2.Models
         public string? CategoryName { get; set; }
 
         public int? ParentCategoryID { get; set; }
+
+        public string? Icon { get; set; }
     }
 }

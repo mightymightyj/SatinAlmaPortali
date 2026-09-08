@@ -99,7 +99,8 @@ namespace satinalmaportali2.Controllers
                     CategoryID = c.CategoryID,
                     CategoryName = c.CategoryName ?? "İsimsiz Kategori",
                     ParentCategoryID = c.ParentCategoryID,
-                    ParentCategoryName = parentName
+                    ParentCategoryName = parentName,
+                    Icon = c.Icon
                 };
                 node.SubCategories = BuildCategoryHierarchy(allCategories, c.CategoryID, c.CategoryName);
                 node.SubCategoryCount = node.SubCategories.Count;
@@ -186,6 +187,7 @@ namespace satinalmaportali2.Controllers
                         CategoryName = orphan.CategoryName ?? "İsimsiz Kategori",
                         ParentCategoryID = orphan.ParentCategoryID,
                         ParentCategoryName = orphan.ParentCategoryID.HasValue && catMap.TryGetValue(orphan.ParentCategoryID.Value, out var pName) ? pName : "Bilinmeyen Üst Kategori",
+                        Icon = orphan.Icon,
                         SubCategories = BuildCategoryHierarchy(dbCategories, orphan.CategoryID, orphan.CategoryName)
                     };
                     orphanNode.SubCategoryCount = orphanNode.SubCategories.Count;
@@ -615,7 +617,7 @@ namespace satinalmaportali2.Controllers
 
         [HttpPost]
         [Route("CreateCategory")]
-        public async Task<IActionResult> CreateCategory(string categoryName, int? parentCategoryId)
+        public async Task<IActionResult> CreateCategory(string categoryName, int? parentCategoryId, string? icon)
         {
             if (!await CheckIsSuperAdminAsync())
             {
@@ -631,12 +633,22 @@ namespace satinalmaportali2.Controllers
                 return RedirectToAction(nameof(Index), new { tab = "categories" });
             }
 
+            bool isRoot = (!parentCategoryId.HasValue || parentCategoryId.Value <= 0);
+            if (isRoot && string.IsNullOrWhiteSpace(icon))
+            {
+                var reqIconMsg = "Kök kategoriler için bir simge (ikon) seçilmesi zorunludur.";
+                if (IsAjaxRequest()) return Json(new { success = false, message = reqIconMsg });
+                TempData["AdminError"] = reqIconMsg;
+                return RedirectToAction(nameof(Index), new { tab = "categories" });
+            }
+
             try
             {
                 var newCat = new Category
                 {
                     CategoryName = categoryName.Trim(),
-                    ParentCategoryID = (parentCategoryId.HasValue && parentCategoryId.Value > 0) ? parentCategoryId.Value : null
+                    ParentCategoryID = isRoot ? null : parentCategoryId,
+                    Icon = !string.IsNullOrWhiteSpace(icon) ? icon.Trim() : null
                 };
 
                 _context.Category.Add(newCat);
@@ -648,7 +660,8 @@ namespace satinalmaportali2.Controllers
                     {
                         categoryId = newCat.CategoryID,
                         categoryName = newCat.CategoryName,
-                        parentCategoryId = newCat.ParentCategoryID
+                        parentCategoryId = newCat.ParentCategoryID,
+                        icon = newCat.Icon
                     });
                 }
                 catch (Exception hubEx)
@@ -657,7 +670,7 @@ namespace satinalmaportali2.Controllers
                 }
 
                 var succMsg = $"'{newCat.CategoryName}' kategorisi başarıyla eklendi!";
-                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, categoryId = newCat.CategoryID, categoryName = newCat.CategoryName });
+                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, categoryId = newCat.CategoryID, categoryName = newCat.CategoryName, icon = newCat.Icon });
                 TempData["AdminSuccess"] = succMsg;
             }
             catch (Exception ex)
@@ -688,6 +701,15 @@ namespace satinalmaportali2.Controllers
                 return RedirectToAction(nameof(Index), new { tab = "categories" });
             }
 
+            bool isRoot = (!model.ParentCategoryID.HasValue || model.ParentCategoryID.Value <= 0);
+            if (isRoot && string.IsNullOrWhiteSpace(model.Icon))
+            {
+                var reqIconMsg = "Kök kategoriler için bir simge (ikon) seçilmesi zorunludur.";
+                if (IsAjaxRequest()) return Json(new { success = false, message = reqIconMsg });
+                TempData["AdminError"] = reqIconMsg;
+                return RedirectToAction(nameof(Index), new { tab = "categories" });
+            }
+
             try
             {
                 var category = await _context.Category.FirstOrDefaultAsync(c => c.CategoryID == model.CategoryID);
@@ -708,7 +730,8 @@ namespace satinalmaportali2.Controllers
                 }
 
                 category.CategoryName = model.CategoryName.Trim();
-                category.ParentCategoryID = (model.ParentCategoryID.HasValue && model.ParentCategoryID.Value > 0) ? model.ParentCategoryID.Value : null;
+                category.ParentCategoryID = isRoot ? null : model.ParentCategoryID;
+                category.Icon = !string.IsNullOrWhiteSpace(model.Icon) ? model.Icon.Trim() : null;
 
                 await _context.SaveChangesAsync();
 
@@ -718,7 +741,8 @@ namespace satinalmaportali2.Controllers
                     {
                         categoryId = category.CategoryID,
                         categoryName = category.CategoryName,
-                        parentCategoryId = category.ParentCategoryID
+                        parentCategoryId = category.ParentCategoryID,
+                        icon = category.Icon
                     });
                 }
                 catch (Exception hubEx)
@@ -727,7 +751,7 @@ namespace satinalmaportali2.Controllers
                 }
 
                 var succMsg = $"'{category.CategoryName}' kategorisi başarıyla güncellendi!";
-                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, categoryId = category.CategoryID, categoryName = category.CategoryName });
+                if (IsAjaxRequest()) return Json(new { success = true, message = succMsg, categoryId = category.CategoryID, categoryName = category.CategoryName, icon = category.Icon });
                 TempData["AdminSuccess"] = succMsg;
             }
             catch (Exception ex)
@@ -808,7 +832,8 @@ namespace satinalmaportali2.Controllers
                 success = true,
                 categoryId = category.CategoryID,
                 categoryName = category.CategoryName,
-                parentCategoryId = category.ParentCategoryID
+                parentCategoryId = category.ParentCategoryID,
+                icon = category.Icon
             });
         }
 

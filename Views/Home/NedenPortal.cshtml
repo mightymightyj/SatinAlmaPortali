@@ -1,471 +1,882 @@
 @{
-    ViewData["Title"] = "Neden Portal?";
+    ViewData["Title"] = "Neden Tedarik Portalı?";
 }
 
-<!-- HERO SECTION -->
-<section class="nportal-hero">
-    <div class="nportal-hero-inner">
-        <div class="nportal-badge">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-            <span>Neden Portal?</span>
-        </div>
-        <h1 class="nportal-hero-title">Neden <span class="highlight-dot">Tedarik Portalı</span>?</h1>
-        <p class="nportal-hero-desc">
-            Satın alma süreçlerinizi dijitalleştirin, maliyetlerinizi düşürün ve doğrulanmış tedarikçilerle güvenle çalışın.
-            İşte bizi tercih etmeniz için nedenler.
-        </p>
-    </div>
-</section>
+@section Styles {
+    <!-- Tailwind CSS (Play CDN) & Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                            950: '#082f49',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+}
 
-<!-- ÖNE ÇIKAN AVANTAJLAR -->
-<section class="nportal-section">
-    <div class="nportal-container">
-        <div class="nportal-section-header">
-            <div class="nportal-section-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                </svg>
+<div class="font-sans antialiased bg-slate-50 text-slate-800 selection:bg-blue-500 selection:text-white pb-20 sm:pb-24 lg:pb-12">
+
+    <!-- ==================== BÖLÜM 1: HERO SECTION ==================== -->
+    <section class="relative overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white pt-12 sm:pt-20 pb-16 sm:pb-28 px-4 sm:px-6 lg:px-8 border-b border-slate-800/80">
+        <!-- Radial Glow Efekti -->
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(37,99,235,0.30),rgba(255,255,255,0))] pointer-events-none"></div>
+
+        <div class="relative max-w-4xl mx-auto text-center">
+            <!-- Rozet -->
+            <div class="inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-5 sm:mb-6 backdrop-blur-sm shadow-sm">
+                <i class="fa-solid fa-circle-question text-blue-400 text-xs sm:text-sm"></i>
+                <span>Neden Tedarik Portalı?</span>
             </div>
-            <h2>Öne Çıkan Avantajlar</h2>
+
+            <!-- Ana Başlık -->
+            <h1 class="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.18] sm:leading-[1.15]">
+                Neden <br class="hidden sm:inline" />
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">
+                    Tedarik Portalı?
+                </span>
+            </h1>
+
+            <!-- Açıklama Metni (Lorem) -->
+            <p class="mt-4 sm:mt-6 text-sm sm:text-base md:text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed font-normal px-2">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Satın alma operasyonlarınızı dijitalleştirin, doğrulanmış tedarikçilerle hızla teklif toplayın ve maliyetlerinizi optimize edin.
+            </p>
+
+            <!-- Hızlı Gezinme Butonları -->
+            <div class="mt-6 sm:mt-10 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
+                <a href="#avantajlar" class="inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 transition-all hover:scale-[1.02]">
+                    <i class="fa-solid fa-shield-halved text-xs"></i>
+                    <span>Avantajlar</span>
+                </a>
+                <a href="#nasil-calisir" class="inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700/80 hover:border-slate-600 transition-all hover:scale-[1.02]">
+                    <i class="fa-solid fa-bars-staggered text-xs"></i>
+                    <span>Nasıl Çalışır?</span>
+                </a>
+                <a href="#karsilastirma" class="inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700/80 hover:border-slate-600 transition-all hover:scale-[1.02]">
+                    <i class="fa-solid fa-scale-balanced text-xs"></i>
+                    <span>Karşılaştırma</span>
+                </a>
+                <a href="#sss" class="inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700/80 hover:border-slate-600 transition-all hover:scale-[1.02]">
+                    <i class="fa-solid fa-circle-question text-xs"></i>
+                    <span>S.S.S.</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== BÖLÜM 2: ÖNE ÇIKAN AVANTAJLAR ==================== -->
+    <section id="avantajlar" class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 mb-3">
+                <i class="fa-solid fa-star text-blue-600 text-xs"></i>
+                <span>Temel Ayrıcalıklar</span>
+            </div>
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                Öne Çıkan Avantajlar
+            </h2>
+            <p class="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed font-normal">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
+            </p>
         </div>
 
-        <div class="avantaj-showcase">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <!-- Avantaj 1 -->
-            <div class="avantaj-feature-card">
-                <div class="avantaj-feature-left">
-                    <div class="avantaj-num">01</div>
-                    <div class="avantaj-feature-icon av-icon-1">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                            <polyline points="9 12 11 14 15 10"></polyline>
-                        </svg>
+            <div class="group relative p-8 sm:p-10 rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-blue-500/30 transition-all duration-300 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                            <i class="fa-solid fa-shield-halved text-2xl"></i>
+                        </div>
+                        <span class="text-3xl font-black text-slate-200 group-hover:text-blue-200 transition-colors">01</span>
                     </div>
-                </div>
-                <div class="avantaj-feature-body">
-                    <h3>Doğrulanmış Tedarikçi Ağı</h3>
-                    <p>
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                        Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                        Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+                    <h3 class="text-xl sm:text-2xl font-bold text-slate-900 mb-3 group-hover:text-blue-600 transition-colors">
+                        Doğrulanmış Tedarikçi Ağı
+                    </h3>
+                    <p class="text-slate-600 leading-relaxed text-sm sm:text-base font-normal">
+                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit.
                     </p>
-                    <div class="avantaj-tags">
-                        <span>Kimlik Doğrulama</span>
-                        <span>Ticaret Sicil</span>
-                        <span>Referans Kontrolü</span>
-                    </div>
+                </div>
+                <div class="mt-6 pt-6 border-t border-slate-100 flex flex-wrap gap-2">
+                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700">
+                        <i class="fa-solid fa-check text-blue-600 mr-1.5 text-[10px]"></i>Kimlik Doğrulama
+                    </span>
+                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700">
+                        <i class="fa-solid fa-check text-blue-600 mr-1.5 text-[10px]"></i>Ticaret Sicil
+                    </span>
+                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700">
+                        <i class="fa-solid fa-check text-blue-600 mr-1.5 text-[10px]"></i>Referans Kontrolü
+                    </span>
                 </div>
             </div>
 
             <!-- Avantaj 2 -->
-            <div class="avantaj-feature-card">
-                <div class="avantaj-feature-left">
-                    <div class="avantaj-num">02</div>
-                    <div class="avantaj-feature-icon av-icon-2">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="12 6 12 12 16 14"></polyline>
-                        </svg>
+            <div class="group relative p-8 sm:p-10 rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-emerald-500/30 transition-all duration-300 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 group-hover:scale-110 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                            <i class="fa-solid fa-bolt-lightning text-2xl"></i>
+                        </div>
+                        <span class="text-3xl font-black text-slate-200 group-hover:text-emerald-200 transition-colors">02</span>
                     </div>
-                </div>
-                <div class="avantaj-feature-body">
-                    <h3>Dakikalar İçinde Teklif Alın</h3>
-                    <p>
-                        Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-                        Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium,
-                        totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
+                    <h3 class="text-xl sm:text-2xl font-bold text-slate-900 mb-3 group-hover:text-emerald-600 transition-colors">
+                        Dakikalar İçinde Teklif Alın
+                    </h3>
+                    <p class="text-slate-600 leading-relaxed text-sm sm:text-base font-normal">
+                        Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis.
                     </p>
-                    <div class="avantaj-tags">
-                        <span>Anlık Bildirim</span>
-                        <span>Otomatik Eşleştirme</span>
-                        <span>Hızlı Yanıt</span>
-                    </div>
+                </div>
+                <div class="mt-6 pt-6 border-t border-slate-100 flex flex-wrap gap-2">
+                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700">
+                        <i class="fa-solid fa-check text-emerald-600 mr-1.5 text-[10px]"></i>Anlık Bildirim
+                    </span>
+                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700">
+                        <i class="fa-solid fa-check text-emerald-600 mr-1.5 text-[10px]"></i>Otomatik Eşleştirme
+                    </span>
+                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700">
+                        <i class="fa-solid fa-check text-emerald-600 mr-1.5 text-[10px]"></i>Hızlı Yanıt
+                    </span>
                 </div>
             </div>
 
             <!-- Avantaj 3 -->
-            <div class="avantaj-feature-card">
-                <div class="avantaj-feature-left">
-                    <div class="avantaj-num">03</div>
-                    <div class="avantaj-feature-icon av-icon-3">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <line x1="12" y1="1" x2="12" y2="23"></line>
-                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                        </svg>
+            <div class="group relative p-8 sm:p-10 rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-indigo-500/30 transition-all duration-300 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                            <i class="fa-solid fa-scale-balanced text-2xl"></i>
+                        </div>
+                        <span class="text-3xl font-black text-slate-200 group-hover:text-indigo-200 transition-colors">03</span>
                     </div>
-                </div>
-                <div class="avantaj-feature-body">
-                    <h3>Rekabetçi Fiyat Garantisi</h3>
-                    <p>
-                        Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos
-                        qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur,
-                        adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.
+                    <h3 class="text-xl sm:text-2xl font-bold text-slate-900 mb-3 group-hover:text-indigo-600 transition-colors">
+                        Rekabetçi Fiyat Garantisi
+                    </h3>
+                    <p class="text-slate-600 leading-relaxed text-sm sm:text-base font-normal">
+                        Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam.
                     </p>
-                    <div class="avantaj-tags">
-                        <span>Fiyat Karşılaştırma</span>
-                        <span>Toptan İndirim</span>
-                        <span>Şeffaf Fiyat</span>
-                    </div>
+                </div>
+                <div class="mt-6 pt-6 border-t border-slate-100 flex flex-wrap gap-2">
+                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700">
+                        <i class="fa-solid fa-check text-indigo-600 mr-1.5 text-[10px]"></i>Fiyat Karşılaştırma
+                    </span>
+                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700">
+                        <i class="fa-solid fa-check text-indigo-600 mr-1.5 text-[10px]"></i>Toptan İndirim
+                    </span>
+                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700">
+                        <i class="fa-solid fa-check text-indigo-600 mr-1.5 text-[10px]"></i>Şeffaf Piyasa
+                    </span>
                 </div>
             </div>
 
             <!-- Avantaj 4 -->
-            <div class="avantaj-feature-card">
-                <div class="avantaj-feature-left">
-                    <div class="avantaj-num">04</div>
-                    <div class="avantaj-feature-icon av-icon-4">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                            <line x1="8" y1="21" x2="16" y2="21"></line>
-                            <line x1="12" y1="17" x2="12" y2="21"></line>
-                        </svg>
+            <div class="group relative p-8 sm:p-10 rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-purple-500/30 transition-all duration-300 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="w-14 h-14 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                            <i class="fa-solid fa-laptop-code text-2xl"></i>
+                        </div>
+                        <span class="text-3xl font-black text-slate-200 group-hover:text-purple-200 transition-colors">04</span>
                     </div>
-                </div>
-                <div class="avantaj-feature-body">
-                    <h3>Dijital Satın Alma Yönetimi</h3>
-                    <p>
-                        At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti
-                        quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia
-                        deserunt mollitia animi, id est laborum et dolorum fuga.
+                    <h3 class="text-xl sm:text-2xl font-bold text-slate-900 mb-3 group-hover:text-purple-600 transition-colors">
+                        Dijital Satın Alma Yönetimi
+                    </h3>
+                    <p class="text-slate-600 leading-relaxed text-sm sm:text-base font-normal">
+                        At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi.
                     </p>
-                    <div class="avantaj-tags">
-                        <span>Bulut Tabanlı</span>
-                        <span>Raporlama</span>
-                        <span>Süreç Takibi</span>
-                    </div>
+                </div>
+                <div class="mt-6 pt-6 border-t border-slate-100 flex flex-wrap gap-2">
+                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700">
+                        <i class="fa-solid fa-check text-purple-600 mr-1.5 text-[10px]"></i>Bulut Tabanlı
+                    </span>
+                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700">
+                        <i class="fa-solid fa-check text-purple-600 mr-1.5 text-[10px]"></i>Otomatik Raporlama
+                    </span>
+                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700">
+                        <i class="fa-solid fa-check text-purple-600 mr-1.5 text-[10px]"></i>Süreç Takibi
+                    </span>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- NASIL ÇALIŞIR -->
-<section class="nportal-section nportal-section-alt">
-    <div class="nportal-container">
-        <div class="nportal-section-header nportal-header-center">
-            <div class="nportal-section-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                </svg>
-            </div>
-            <h2>Nasıl Çalışır?</h2>
-        </div>
-
-        <div class="adimlar-grid">
-            <div class="adim-card">
-                <div class="adim-step">1</div>
-                <div class="adim-icon-circle">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="8.5" cy="7" r="4"></circle>
-                        <line x1="20" y1="8" x2="20" y2="14"></line>
-                        <line x1="23" y1="11" x2="17" y2="11"></line>
-                    </svg>
+    <!-- ==================== BÖLÜM 3: NASIL ÇALIŞIR? ==================== -->
+    <section id="nasil-calisir" class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 bg-slate-100/70 border-y border-slate-200/80">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 mb-3">
+                    <i class="fa-solid fa-diagram-project text-emerald-600 text-xs"></i>
+                    <span>İşleyiş Modeli</span>
                 </div>
-                <h4>Ücretsiz Kayıt Olun</h4>
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent commodo cursus magna vel scelerisque.</p>
+                <h2 class="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                    Nasıl Çalışır?
+                </h2>
+                <p class="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg text-slate-600 leading-relaxed font-normal px-2">
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 4 kolay adımda tedarik operasyonunuzu tamamlayın.
+                </p>
             </div>
-            <div class="adim-connector">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
-                </svg>
-            </div>
-            <div class="adim-card">
-                <div class="adim-step">2</div>
-                <div class="adim-icon-circle">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
-                </div>
-                <h4>Ürün & Tedarikçi Arayın</h4>
-                <p>Donec sed odio dui. Nullam quis risus eget urna mollis ornare vel eu leo cras mattis consectetur.</p>
-            </div>
-            <div class="adim-connector">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
-                </svg>
-            </div>
-            <div class="adim-card">
-                <div class="adim-step">3</div>
-                <div class="adim-icon-circle">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                    </svg>
-                </div>
-                <h4>Teklif Alın & Karşılaştırın</h4>
-                <p>Maecenas faucibus mollis interdum. Aenean lacinia bibendum nulla sed consectetur etiam porta sem.</p>
-            </div>
-            <div class="adim-connector">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
-                </svg>
-            </div>
-            <div class="adim-card">
-                <div class="adim-step">4</div>
-                <div class="adim-icon-circle">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                </div>
-                <h4>Siparişi Tamamlayın</h4>
-                <p>Vivamus sagittis lacus vel augue laoreet rutrum faucibus dolor auctor fusce dapibus tellus cursus.</p>
-            </div>
-        </div>
-    </div>
-</section>
 
-<!-- KARŞILAŞTIRMA TABLOSU -->
-<section class="nportal-section">
-    <div class="nportal-container">
-        <div class="nportal-section-header nportal-header-center">
-            <div class="nportal-section-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="20" x2="18" y2="10"></line>
-                    <line x1="12" y1="20" x2="12" y2="4"></line>
-                    <line x1="6" y1="20" x2="6" y2="14"></line>
-                </svg>
-            </div>
-            <h2>Geleneksel Yöntem vs Tedarik Portalı</h2>
-        </div>
-
-        <div class="karsilastirma-table-wrap">
-            <table class="karsilastirma-table">
-                <thead>
-                    <tr>
-                        <th class="kriter-col">Kriter</th>
-                        <th class="geleneksel-col">
-                            <span class="col-label-old">Geleneksel Yöntem</span>
-                        </th>
-                        <th class="portal-col">
-                            <span class="col-label-new">Tedarik Portalı</span>
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Tedarikçi Bulma Süresi</td>
-                        <td class="geleneksel-col"><span class="val-bad">Günler / Haftalar</span></td>
-                        <td class="portal-col"><span class="val-good">Dakikalar</span></td>
-                    </tr>
-                    <tr>
-                        <td>Teklif Karşılaştırma</td>
-                        <td class="geleneksel-col"><span class="val-bad">Manuel & Zorlu</span></td>
-                        <td class="portal-col"><span class="val-good">Otomatik & Kolay</span></td>
-                    </tr>
-                    <tr>
-                        <td>Fiyat Şeffaflığı</td>
-                        <td class="geleneksel-col"><span class="val-bad">Düşük</span></td>
-                        <td class="portal-col"><span class="val-good">Tam Şeffaflık</span></td>
-                    </tr>
-                    <tr>
-                        <td>Tedarikçi Güvenilirliği</td>
-                        <td class="geleneksel-col"><span class="val-bad">Belirsiz</span></td>
-                        <td class="portal-col"><span class="val-good">Doğrulanmış</span></td>
-                    </tr>
-                    <tr>
-                        <td>Süreç Takibi</td>
-                        <td class="geleneksel-col"><span class="val-bad">Yok</span></td>
-                        <td class="portal-col"><span class="val-good">Anlık İzleme</span></td>
-                    </tr>
-                    <tr>
-                        <td>Raporlama</td>
-                        <td class="geleneksel-col"><span class="val-bad">Manuel Tablolar</span></td>
-                        <td class="portal-col"><span class="val-good">Otomatik Dashboard</span></td>
-                    </tr>
-                    <tr>
-                        <td>Coğrafi Kapsam</td>
-                        <td class="geleneksel-col"><span class="val-bad">Sınırlı</span></td>
-                        <td class="portal-col"><span class="val-good">81 İl</span></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</section>
-
-<!-- KULLANICI YORUMLARI -->
-<section class="nportal-section nportal-section-alt">
-    <div class="nportal-container">
-        <div class="nportal-section-header nportal-header-center">
-            <div class="nportal-section-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                </svg>
-            </div>
-            <h2>Kullanıcılarımız Ne Diyor?</h2>
-        </div>
-
-        <div class="yorum-grid">
-            <div class="yorum-card">
-                <div class="yorum-stars">★★★★★</div>
-                <p>"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent commodo cursus magna, vel scelerisque nisl consectetur et. Donec sed odio dui."</p>
-                <div class="yorum-author">
-                    <div class="yorum-avatar">AY</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 relative">
+                <!-- Adım 1 -->
+                <div class="relative bg-white rounded-2xl p-5 sm:p-7 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-blue-300 transition-all flex flex-col justify-between group">
                     <div>
-                        <div class="yorum-name">Ahmet Yılmaz</div>
-                        <div class="yorum-role">Satın Alma Müdürü - ABC Holding</div>
+                        <div class="flex items-center justify-between mb-4 sm:mb-5">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white text-xs font-bold shadow-md shadow-blue-500/20">
+                                1
+                            </span>
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-user-plus text-lg sm:text-xl"></i>
+                            </div>
+                        </div>
+                        <h4 class="text-base sm:text-lg font-bold text-slate-900 mb-1.5 sm:mb-2">Ücretsiz Kayıt Olun</h4>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent commodo cursus magna vel scelerisque nisl.
+                        </p>
+                    </div>
+                    <div class="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-slate-100 text-xs font-semibold text-blue-600 flex items-center gap-1.5">
+                        <span>Hemen Başlayın</span>
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
                     </div>
                 </div>
-            </div>
-            <div class="yorum-card">
-                <div class="yorum-stars">★★★★★</div>
-                <p>"Nullam quis risus eget urna mollis ornare vel eu leo. Cras mattis consectetur purus sit amet fermentum. Vivamus sagittis lacus vel augue."</p>
-                <div class="yorum-author">
-                    <div class="yorum-avatar">FK</div>
+
+                <!-- Adım 2 -->
+                <div class="relative bg-white rounded-2xl p-5 sm:p-7 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-sky-300 transition-all flex flex-col justify-between group">
                     <div>
-                        <div class="yorum-name">Fatma Kaya</div>
-                        <div class="yorum-role">Genel Müdür - XYZ Sanayi</div>
+                        <div class="flex items-center justify-between mb-4 sm:mb-5">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-sky-600 text-white text-xs font-bold shadow-md shadow-sky-500/20">
+                                2
+                            </span>
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-magnifying-glass text-lg sm:text-xl"></i>
+                            </div>
+                        </div>
+                        <h4 class="text-base sm:text-lg font-bold text-slate-900 mb-1.5 sm:mb-2">Ürün &amp; Tedarikçi Arayın</h4>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                            Donec sed odio dui. Nullam quis risus eget urna mollis ornare vel eu leo cras mattis consectetur purus sit amet.
+                        </p>
+                    </div>
+                    <div class="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-slate-100 text-xs font-semibold text-sky-600 flex items-center gap-1.5">
+                        <span>Geniş Portföy</span>
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
                     </div>
                 </div>
-            </div>
-            <div class="yorum-card">
-                <div class="yorum-stars">★★★★★</div>
-                <p>"Maecenas faucibus mollis interdum. Aenean lacinia bibendum nulla sed consectetur. Etiam porta sem malesuada magna mollis euismod."</p>
-                <div class="yorum-author">
-                    <div class="yorum-avatar">MÖ</div>
+
+                <!-- Adım 3 -->
+                <div class="relative bg-white rounded-2xl p-5 sm:p-7 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all flex flex-col justify-between group">
                     <div>
-                        <div class="yorum-name">Mehmet Özdemir</div>
-                        <div class="yorum-role">Tedarik Zinciri Direktörü - DEF Ltd.</div>
+                        <div class="flex items-center justify-between mb-4 sm:mb-5">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white text-xs font-bold shadow-md shadow-indigo-500/20">
+                                3
+                            </span>
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-file-invoice-dollar text-lg sm:text-xl"></i>
+                            </div>
+                        </div>
+                        <h4 class="text-base sm:text-lg font-bold text-slate-900 mb-1.5 sm:mb-2">Teklif Alın &amp; Karşılaştırın</h4>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                            Maecenas faucibus mollis interdum. Aenean lacinia bibendum nulla sed consectetur etiam porta sem malesuada.
+                        </p>
+                    </div>
+                    <div class="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-slate-100 text-xs font-semibold text-indigo-600 flex items-center gap-1.5">
+                        <span>Şeffaf Teklifler</span>
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </div>
+                </div>
+
+                <!-- Adım 4 -->
+                <div class="relative bg-white rounded-2xl p-5 sm:p-7 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-center justify-between mb-4 sm:mb-5">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-600 text-white text-xs font-bold shadow-md shadow-emerald-500/20">
+                                4
+                            </span>
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-circle-check text-lg sm:text-xl"></i>
+                            </div>
+                        </div>
+                        <h4 class="text-base sm:text-lg font-bold text-slate-900 mb-1.5 sm:mb-2">Siparişi Tamamlayın</h4>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                            Vivamus sagittis lacus vel augue laoreet rutrum faucibus dolor auctor fusce dapibus tellus cursus commodo.
+                        </p>
+                    </div>
+                    <div class="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-slate-100 text-xs font-semibold text-emerald-600 flex items-center gap-1.5">
+                        <span>Güvenli Teslimat</span>
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- RAKAMLAR BANDI -->
-<section class="nportal-stats-band">
-    <div class="nportal-container">
-        <div class="nportal-stats-row">
-            <div class="nportal-stat-item">
-                <div class="nportal-stat-value">%40</div>
-                <div class="nportal-stat-label">Maliyet Tasarrufu</div>
+    <!-- ==================== BÖLÜM 4: KARŞILAŞTIRMA TABLOSU ==================== -->
+    <section id="karsilastirma" class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div class="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 mb-3">
+                <i class="fa-solid fa-code-compare text-indigo-600 text-xs"></i>
+                <span>Detaylı Analiz</span>
             </div>
-            <div class="nportal-stat-divider"></div>
-            <div class="nportal-stat-item">
-                <div class="nportal-stat-value">%75</div>
-                <div class="nportal-stat-label">Daha Hızlı Tedarik</div>
-            </div>
-            <div class="nportal-stat-divider"></div>
-            <div class="nportal-stat-item">
-                <div class="nportal-stat-value">%98</div>
-                <div class="nportal-stat-label">Müşteri Memnuniyeti</div>
-            </div>
-            <div class="nportal-stat-divider"></div>
-            <div class="nportal-stat-item">
-                <div class="nportal-stat-value">7/24</div>
-                <div class="nportal-stat-label">Destek Hizmeti</div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- SSS -->
-<section class="nportal-section">
-    <div class="nportal-container">
-        <div class="nportal-section-header nportal-header-center">
-            <div class="nportal-section-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                </svg>
-            </div>
-            <h2>Sıkça Sorulan Sorular</h2>
+            <h2 class="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                Geleneksel Yöntem vs. Tedarik Portalı
+            </h2>
+            <p class="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg text-slate-600 leading-relaxed font-normal px-2">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Klasik satın alma süreçleri ile dijital satın almanın farkını görün.
+            </p>
         </div>
 
-        <div class="sss-list">
-            <details class="sss-item">
-                <summary>
-                    <span>Portala kayıt olmak ücretsiz mi?</span>
-                    <svg class="sss-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                </summary>
-                <div class="sss-answer">
-                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
+        <!-- ==================== MOBİL GÖRÜNÜM: KARŞILAŞTIRMA KARTLARI (< md) ==================== -->
+        <div class="block md:hidden space-y-3 max-w-xl mx-auto">
+            <!-- Kriter 1 -->
+            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
+                <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+                    <span class="w-1.5 h-4 rounded-full bg-blue-600 shrink-0"></span>
+                    <h4 class="text-sm font-bold text-slate-900">Tedarikçi Bulma Süresi</h4>
                 </div>
-            </details>
-            <details class="sss-item">
-                <summary>
-                    <span>Tedarikçiler nasıl doğrulanıyor?</span>
-                    <svg class="sss-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                </summary>
-                <div class="sss-answer">
-                    <p>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium.</p>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div class="p-2.5 rounded-xl bg-rose-50/70 border border-rose-100 flex flex-col justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-500 flex items-center gap-1 mb-1">
+                            <i class="fa-solid fa-xmark text-[10px]"></i> Geleneksel
+                        </span>
+                        <span class="text-xs font-semibold text-rose-900">Günler / Haftalar</span>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-emerald-50/90 border border-emerald-200/80 flex flex-col justify-between shadow-xs">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1 mb-1">
+                            <i class="fa-solid fa-check text-[10px]"></i> Tedarik Portalı
+                        </span>
+                        <span class="text-xs font-bold text-emerald-950">Dakikalar İçinde</span>
+                    </div>
                 </div>
-            </details>
-            <details class="sss-item">
-                <summary>
-                    <span>Minimum sipariş tutarı var mı?</span>
-                    <svg class="sss-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                </summary>
-                <div class="sss-answer">
-                    <p>Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.</p>
-                </div>
-            </details>
-            <details class="sss-item">
-                <summary>
-                    <span>Hangi ödeme yöntemleri kabul ediliyor?</span>
-                    <svg class="sss-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                </summary>
-                <div class="sss-answer">
-                    <p>At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.</p>
-                </div>
-            </details>
-            <details class="sss-item">
-                <summary>
-                    <span>İade ve garanti politikası nedir?</span>
-                    <svg class="sss-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                </summary>
-                <div class="sss-answer">
-                    <p>Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat.</p>
-                </div>
-            </details>
-        </div>
-    </div>
-</section>
+            </div>
 
-<!-- CTA SECTION -->
-<section class="nportal-cta-section">
-    <div class="nportal-container">
-        <div class="nportal-cta-card">
-            <div class="nportal-cta-content">
-                <h2>Hemen Başlayın</h2>
-                <p>Ücretsiz hesap oluşturun ve tedarik süreçlerinizi dijitalleştirmenin avantajlarından yararlanın.</p>
+            <!-- Kriter 2 -->
+            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
+                <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+                    <span class="w-1.5 h-4 rounded-full bg-blue-600 shrink-0"></span>
+                    <h4 class="text-sm font-bold text-slate-900">Teklif Karşılaştırma</h4>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div class="p-2.5 rounded-xl bg-rose-50/70 border border-rose-100 flex flex-col justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-500 flex items-center gap-1 mb-1">
+                            <i class="fa-solid fa-xmark text-[10px]"></i> Geleneksel
+                        </span>
+                        <span class="text-xs font-semibold text-rose-900">Manuel &amp; Dağınık Tablolar</span>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-emerald-50/90 border border-emerald-200/80 flex flex-col justify-between shadow-xs">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1 mb-1">
+                            <i class="fa-solid fa-check text-[10px]"></i> Tedarik Portalı
+                        </span>
+                        <span class="text-xs font-bold text-emerald-950">Otomatik &amp; Tek Ekranda</span>
+                    </div>
+                </div>
             </div>
-            <div class="nportal-cta-buttons">
-                <a asp-controller="Account" asp-action="Register" class="nportal-cta-btn-primary">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="8.5" cy="7" r="4"></circle>
-                        <line x1="20" y1="8" x2="20" y2="14"></line>
-                        <line x1="23" y1="11" x2="17" y2="11"></line>
-                    </svg>
-                    Ücretsiz Kayıt Ol
-                </a>
-                <a asp-controller="Home" asp-action="Iletisim" class="nportal-cta-btn-secondary">
-                    Bize Ulaşın →
-                </a>
+
+            <!-- Kriter 3 -->
+            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
+                <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+                    <span class="w-1.5 h-4 rounded-full bg-blue-600 shrink-0"></span>
+                    <h4 class="text-sm font-bold text-slate-900">Fiyat Şeffaflığı</h4>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div class="p-2.5 rounded-xl bg-rose-50/70 border border-rose-100 flex flex-col justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-500 flex items-center gap-1 mb-1">
+                            <i class="fa-solid fa-xmark text-[10px]"></i> Geleneksel
+                        </span>
+                        <span class="text-xs font-semibold text-rose-900">Opak ve Değişken</span>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-emerald-50/90 border border-emerald-200/80 flex flex-col justify-between shadow-xs">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1 mb-1">
+                            <i class="fa-solid fa-check text-[10px]"></i> Tedarik Portalı
+                        </span>
+                        <span class="text-xs font-bold text-emerald-950">Tam Şeffaflık &amp; Rekabetçi</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kriter 4 -->
+            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
+                <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+                    <span class="w-1.5 h-4 rounded-full bg-blue-600 shrink-0"></span>
+                    <h4 class="text-sm font-bold text-slate-900">Tedarikçi Güvenilirliği</h4>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div class="p-2.5 rounded-xl bg-rose-50/70 border border-rose-100 flex flex-col justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-500 flex items-center gap-1 mb-1">
+                            <i class="fa-solid fa-xmark text-[10px]"></i> Geleneksel
+                        </span>
+                        <span class="text-xs font-semibold text-rose-900">Belirsiz ve Riskli</span>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-emerald-50/90 border border-emerald-200/80 flex flex-col justify-between shadow-xs">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1 mb-1">
+                            <i class="fa-solid fa-check text-[10px]"></i> Tedarik Portalı
+                        </span>
+                        <span class="text-xs font-bold text-emerald-950">Doğrulanmış &amp; Onaylı</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kriter 5 -->
+            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
+                <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+                    <span class="w-1.5 h-4 rounded-full bg-blue-600 shrink-0"></span>
+                    <h4 class="text-sm font-bold text-slate-900">Süreç ve Sipariş Takibi</h4>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div class="p-2.5 rounded-xl bg-rose-50/70 border border-rose-100 flex flex-col justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-500 flex items-center gap-1 mb-1">
+                            <i class="fa-solid fa-xmark text-[10px]"></i> Geleneksel
+                        </span>
+                        <span class="text-xs font-semibold text-rose-900">Telefon &amp; E-posta Trafiği</span>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-emerald-50/90 border border-emerald-200/80 flex flex-col justify-between shadow-xs">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1 mb-1">
+                            <i class="fa-solid fa-check text-[10px]"></i> Tedarik Portalı
+                        </span>
+                        <span class="text-xs font-bold text-emerald-950">Uçtan Uca Anlık İzleme</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kriter 6 -->
+            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
+                <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+                    <span class="w-1.5 h-4 rounded-full bg-blue-600 shrink-0"></span>
+                    <h4 class="text-sm font-bold text-slate-900">Raporlama ve Analiz</h4>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div class="p-2.5 rounded-xl bg-rose-50/70 border border-rose-100 flex flex-col justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-500 flex items-center gap-1 mb-1">
+                            <i class="fa-solid fa-xmark text-[10px]"></i> Geleneksel
+                        </span>
+                        <span class="text-xs font-semibold text-rose-900">Manuel ve Gecikmeli</span>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-emerald-50/90 border border-emerald-200/80 flex flex-col justify-between shadow-xs">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1 mb-1">
+                            <i class="fa-solid fa-check text-[10px]"></i> Tedarik Portalı
+                        </span>
+                        <span class="text-xs font-bold text-emerald-950">Gerçek Zamanlı Analitik</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kriter 7 -->
+            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
+                <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+                    <span class="w-1.5 h-4 rounded-full bg-blue-600 shrink-0"></span>
+                    <h4 class="text-sm font-bold text-slate-900">Coğrafi Kapsam</h4>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div class="p-2.5 rounded-xl bg-rose-50/70 border border-rose-100 flex flex-col justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-500 flex items-center gap-1 mb-1">
+                            <i class="fa-solid fa-xmark text-[10px]"></i> Geleneksel
+                        </span>
+                        <span class="text-xs font-semibold text-rose-900">Sadece Yerel Çevre</span>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-emerald-50/90 border border-emerald-200/80 flex flex-col justify-between shadow-xs">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1 mb-1">
+                            <i class="fa-solid fa-check text-[10px]"></i> Tedarik Portalı
+                        </span>
+                        <span class="text-xs font-bold text-emerald-950">81 İl &amp; Geniş Tedarik Ağı</span>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</section>
+
+        <!-- ==================== MASAÜSTÜ & TABLET GÖRÜNÜMÜ: TABLO (md+) ==================== -->
+        <div class="hidden md:block max-w-5xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-200 bg-slate-50/90 text-xs sm:text-sm tracking-wider">
+                            <th class="py-3.5 sm:py-4 px-4 sm:px-6 font-bold uppercase text-slate-600 w-[34%]">
+                                Kriter
+                            </th>
+                            <th class="py-3.5 sm:py-4 px-4 sm:px-6 font-bold text-center uppercase text-slate-500 w-[32%]">
+                                <span class="inline-flex items-center justify-center gap-1.5">
+                                    <i class="fa-solid fa-clock-rotate-left text-slate-400 text-xs"></i>
+                                    Geleneksel Yöntem
+                                </span>
+                            </th>
+                            <th class="py-3.5 sm:py-4 px-4 sm:px-6 font-extrabold text-center text-blue-700 w-[32%]">
+                                <span class="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-blue-700 text-xs font-bold uppercase">
+                                    <i class="fa-solid fa-circle-check text-blue-600 text-xs"></i>
+                                    Tedarik Portalı (Dijital)
+                                </span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-xs sm:text-sm md:text-base">
+                        <!-- Satır 1 -->
+                        <tr class="hover:bg-slate-50/60 transition-colors">
+                            <td class="py-3.5 px-6 font-semibold text-slate-900">
+                                Tedarikçi Bulma Süresi
+                            </td>
+                            <td class="py-3.5 px-6 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-100">
+                                    <i class="fa-solid fa-xmark text-[10px]"></i>
+                                    Günler / Haftalar
+                                </span>
+                            </td>
+                            <td class="py-3.5 px-6 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-xs">
+                                    <i class="fa-solid fa-check text-[10px]"></i>
+                                    Dakikalar İçinde
+                                </span>
+                            </td>
+                        </tr>
+
+                        <!-- Satır 2 -->
+                        <tr class="hover:bg-slate-50/60 transition-colors">
+                            <td class="py-3.5 px-6 font-semibold text-slate-900">
+                                Teklif Karşılaştırma
+                            </td>
+                            <td class="py-3.5 px-6 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-100">
+                                    <i class="fa-solid fa-xmark text-[10px]"></i>
+                                    Manuel & Dağınık Tablolar
+                                </span>
+                            </td>
+                            <td class="py-3.5 px-6 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-xs">
+                                    <i class="fa-solid fa-check text-[10px]"></i>
+                                    Otomatik & Tek Ekranda
+                                </span>
+                            </td>
+                        </tr>
+
+                        <!-- Satır 3 -->
+                        <tr class="hover:bg-slate-50/60 transition-colors">
+                            <td class="py-3.5 px-6 font-semibold text-slate-900">
+                                Fiyat Şeffaflığı
+                            </td>
+                            <td class="py-3.5 px-6 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-100">
+                                    <i class="fa-solid fa-xmark text-[10px]"></i>
+                                    Opak ve Değişken
+                                </span>
+                            </td>
+                            <td class="py-3.5 px-6 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-xs">
+                                    <i class="fa-solid fa-check text-[10px]"></i>
+                                    Tam Şeffaflık & Rekabetçi
+                                </span>
+                            </td>
+                        </tr>
+
+                        <!-- Satır 4 -->
+                        <tr class="hover:bg-slate-50/60 transition-colors">
+                            <td class="py-3.5 px-6 font-semibold text-slate-900">
+                                Tedarikçi Güvenilirliği
+                            </td>
+                            <td class="py-3.5 px-6 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-100">
+                                    <i class="fa-solid fa-xmark text-[10px]"></i>
+                                    Belirsiz ve Riskli
+                                </span>
+                            </td>
+                            <td class="py-3.5 px-6 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-xs">
+                                    <i class="fa-solid fa-check text-[10px]"></i>
+                                    Doğrulanmış & Onaylı
+                                </span>
+                            </td>
+                        </tr>
+
+                        <!-- Satır 5 -->
+                        <tr class="hover:bg-slate-50/60 transition-colors">
+                            <td class="py-3.5 px-6 font-semibold text-slate-900">
+                                Süreç ve Sipariş Takibi
+                            </td>
+                            <td class="py-3.5 px-6 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-100">
+                                    <i class="fa-solid fa-xmark text-[10px]"></i>
+                                    Telefon & E-posta Trafiği
+                                </span>
+                            </td>
+                            <td class="py-3.5 px-6 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-xs">
+                                    <i class="fa-solid fa-check text-[10px]"></i>
+                                    Uçtan Uca Anlık İzleme
+                                </span>
+                            </td>
+                        </tr>
+
+                        <!-- Satır 6 -->
+                        <tr class="hover:bg-slate-50/60 transition-colors">
+                            <td class="py-3.5 px-6 font-semibold text-slate-900">
+                                Raporlama ve Analiz
+                            </td>
+                            <td class="py-3.5 px-6 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-100">
+                                    <i class="fa-solid fa-xmark text-[10px]"></i>
+                                    Manuel ve Gecikmeli
+                                </span>
+                            </td>
+                            <td class="py-3.5 px-6 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-xs">
+                                    <i class="fa-solid fa-check text-[10px]"></i>
+                                    Gerçek Zamanlı Analitik
+                                </span>
+                            </td>
+                        </tr>
+
+                        <!-- Satır 7 -->
+                        <tr class="hover:bg-slate-50/60 transition-colors">
+                            <td class="py-3.5 px-6 font-semibold text-slate-900">
+                                Coğrafi Kapsam
+                            </td>
+                            <td class="py-3.5 px-6 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-100">
+                                    <i class="fa-solid fa-xmark text-[10px]"></i>
+                                    Sadece Yerel Çevre
+                                </span>
+                            </td>
+                            <td class="py-3.5 px-6 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-xs">
+                                    <i class="fa-solid fa-check text-[10px]"></i>
+                                    81 İl & Geniş Tedarik Ağı
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== BÖLÜM 5: KULLANICI YORUMLARI ==================== -->
+    <section class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 bg-slate-100/70 border-t border-slate-200/80">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 mb-3">
+                    <i class="fa-solid fa-comments text-amber-500 text-xs"></i>
+                    <span>Kullanıcı Deneyimleri</span>
+                </div>
+                <h2 class="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                    Kullanıcılarımız Ne Diyor?
+                </h2>
+                <p class="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg text-slate-600 leading-relaxed font-normal px-2">
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Platformumuzu kullanan işletmelerin deneyimleri.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-8">
+                <!-- Yorum 1 -->
+                <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-1 text-amber-400 mb-3 sm:mb-4 text-xs sm:text-sm">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <p class="text-slate-700 text-xs sm:text-sm md:text-base leading-relaxed font-normal italic">
+                            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent commodo cursus magna, vel scelerisque nisl consectetur et. Donec sed odio dui. Cras mattis purus sit amet."
+                        </p>
+                    </div>
+                    <div class="mt-5 sm:mt-6 pt-4 sm:pt-6 border-t border-slate-100 flex items-center gap-3.5">
+                        <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-tr from-blue-600 to-sky-400 text-white font-bold text-xs sm:text-sm flex items-center justify-center shrink-0 shadow-sm">
+                            AY
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-900 text-xs sm:text-sm">Ahmet Yılmaz</div>
+                            <div class="text-[11px] sm:text-xs text-slate-500">Satın Alma Müdürü - ABC Holding</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Yorum 2 -->
+                <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-1 text-amber-400 mb-3 sm:mb-4 text-xs sm:text-sm">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <p class="text-slate-700 text-xs sm:text-sm md:text-base leading-relaxed font-normal italic">
+                            "Nullam quis risus eget urna mollis ornare vel eu leo. Cras mattis consectetur purus sit amet fermentum. Vivamus sagittis lacus vel augue laoreet rutrum faucibus dolor."
+                        </p>
+                    </div>
+                    <div class="mt-5 sm:mt-6 pt-4 sm:pt-6 border-t border-slate-100 flex items-center gap-3.5">
+                        <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 text-white font-bold text-xs sm:text-sm flex items-center justify-center shrink-0 shadow-sm">
+                            FK
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-900 text-xs sm:text-sm">Fatma Kaya</div>
+                            <div class="text-[11px] sm:text-xs text-slate-500">Genel Müdür - XYZ Sanayi</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Yorum 3 -->
+                <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-1 text-amber-400 mb-3 sm:mb-4 text-xs sm:text-sm">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <p class="text-slate-700 text-xs sm:text-sm md:text-base leading-relaxed font-normal italic">
+                            "Maecenas faucibus mollis interdum. Aenean lacinia bibendum nulla sed consectetur. Etiam porta sem malesuada magna mollis euismod. Vivamus sagittis lacus vel augue."
+                        </p>
+                    </div>
+                    <div class="mt-5 sm:mt-6 pt-4 sm:pt-6 border-t border-slate-100 flex items-center gap-3.5">
+                        <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-400 text-white font-bold text-xs sm:text-sm flex items-center justify-center shrink-0 shadow-sm">
+                            MÖ
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-900 text-xs sm:text-sm">Mehmet Özdemir</div>
+                            <div class="text-[11px] sm:text-xs text-slate-500">Tedarik Zinciri Direktörü - DEF Ltd.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== BÖLÜM 6: SIKÇA SORULAN SORULAR (S.S.S.) ==================== -->
+    <section id="sss" class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+        <div class="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200 mb-3">
+                <i class="fa-solid fa-circle-question text-sky-600 text-xs"></i>
+                <span>Merak Edilenler</span>
+            </div>
+            <h2 class="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                Sıkça Sorulan Sorular
+            </h2>
+            <p class="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg text-slate-600 leading-relaxed font-normal px-2">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Tedarik Portalı hakkında aklınıza gelebilecek tüm soruların yanıtları.
+            </p>
+        </div>
+
+        <div class="space-y-3.5 sm:space-y-4">
+            <!-- Soru 1 -->
+            <details class="group bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden transition-all duration-200 open:border-blue-400 open:ring-4 open:ring-blue-500/10">
+                <summary class="flex items-center justify-between p-4 sm:p-6 cursor-pointer select-none text-left font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <span class="text-sm sm:text-lg pr-4">Portala kayıt olmak ücretsiz mi?</span>
+                    <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-100 group-open:bg-blue-100 flex items-center justify-center shrink-0 text-slate-500 group-open:text-blue-600 transition-transform duration-300 group-open:rotate-180">
+                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                    </span>
+                </summary>
+                <div class="px-4 sm:px-6 pb-4 sm:pb-6 pt-1 text-slate-600 text-xs sm:text-sm md:text-base leading-relaxed font-normal border-t border-slate-100/80">
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </div>
+            </details>
+
+            <!-- Soru 2 -->
+            <details class="group bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden transition-all duration-200 open:border-blue-400 open:ring-4 open:ring-blue-500/10">
+                <summary class="flex items-center justify-between p-4 sm:p-6 cursor-pointer select-none text-left font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <span class="text-sm sm:text-lg pr-4">Tedarikçiler nasıl doğrulanıyor?</span>
+                    <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-100 group-open:bg-blue-100 flex items-center justify-center shrink-0 text-slate-500 group-open:text-blue-600 transition-transform duration-300 group-open:rotate-180">
+                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                    </span>
+                </summary>
+                <div class="px-4 sm:px-6 pb-4 sm:pb-6 pt-1 text-slate-600 text-xs sm:text-sm md:text-base leading-relaxed font-normal border-t border-slate-100/80">
+                    Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.
+                </div>
+            </details>
+
+            <!-- Soru 3 -->
+            <details class="group bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden transition-all duration-200 open:border-blue-400 open:ring-4 open:ring-blue-500/10">
+                <summary class="flex items-center justify-between p-4 sm:p-6 cursor-pointer select-none text-left font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <span class="text-sm sm:text-lg pr-4">Minimum sipariş veya teklif tutarı var mı?</span>
+                    <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-100 group-open:bg-blue-100 flex items-center justify-center shrink-0 text-slate-500 group-open:text-blue-600 transition-transform duration-300 group-open:rotate-180">
+                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                    </span>
+                </summary>
+                <div class="px-4 sm:px-6 pb-4 sm:pb-6 pt-1 text-slate-600 text-xs sm:text-sm md:text-base leading-relaxed font-normal border-t border-slate-100/80">
+                    Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet.
+                </div>
+            </details>
+
+            <!-- Soru 4 -->
+            <details class="group bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden transition-all duration-200 open:border-blue-400 open:ring-4 open:ring-blue-500/10">
+                <summary class="flex items-center justify-between p-4 sm:p-6 cursor-pointer select-none text-left font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <span class="text-sm sm:text-lg pr-4">Hangi ödeme ve teklif alma yöntemleri destekleniyor?</span>
+                    <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-100 group-open:bg-blue-100 flex items-center justify-center shrink-0 text-slate-500 group-open:text-blue-600 transition-transform duration-300 group-open:rotate-180">
+                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                    </span>
+                </summary>
+                <div class="px-4 sm:px-6 pb-4 sm:pb-6 pt-1 text-slate-600 text-xs sm:text-sm md:text-base leading-relaxed font-normal border-t border-slate-100/80">
+                    At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa.
+                </div>
+            </details>
+
+            <!-- Soru 5 -->
+            <details class="group bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden transition-all duration-200 open:border-blue-400 open:ring-4 open:ring-blue-500/10">
+                <summary class="flex items-center justify-between p-4 sm:p-6 cursor-pointer select-none text-left font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <span class="text-sm sm:text-lg pr-4">İade, teslimat ve güvence politikası nedir?</span>
+                    <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-100 group-open:bg-blue-100 flex items-center justify-center shrink-0 text-slate-500 group-open:text-blue-600 transition-transform duration-300 group-open:rotate-180">
+                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                    </span>
+                </summary>
+                <div class="px-4 sm:px-6 pb-4 sm:pb-6 pt-1 text-slate-600 text-xs sm:text-sm md:text-base leading-relaxed font-normal border-t border-slate-100/80">
+                    Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.
+                </div>
+            </details>
+        </div>
+    </section>
+
+    <!-- ==================== BÖLÜM 7: CTA SECTION ==================== -->
+    <section class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div class="relative overflow-hidden bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 text-white rounded-2xl sm:rounded-3xl p-6 sm:p-12 md:p-16 border border-slate-800 shadow-2xl text-center">
+            <!-- Arka Plan Radial Glow -->
+            <div class="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_50%,rgba(37,99,235,0.25),rgba(255,255,255,0))] pointer-events-none"></div>
+
+            <div class="relative max-w-3xl mx-auto">
+                <div class="inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-5 sm:mb-6">
+                    <i class="fa-solid fa-rocket text-blue-400 text-xs"></i>
+                    <span>Dijital Dönüşüme Başlayın</span>
+                </div>
+                <h2 class="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight leading-tight">
+                    Tedarik Operasyonlarınızı <br class="hidden sm:inline" />
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">
+                        Bugün Dijitalleştirin
+                    </span>
+                </h2>
+                <p class="mt-3 sm:mt-5 text-xs sm:text-base md:text-lg text-slate-300 font-normal leading-relaxed px-2">
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ücretsiz hesap oluşturarak hemen teklif toplamaya başlayın.
+                </p>
+
+                <div class="mt-6 sm:mt-10 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+                    <a asp-controller="Account" asp-action="Register" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 transition-all hover:scale-[1.02]">
+                        <i class="fa-solid fa-user-plus text-xs sm:text-sm"></i>
+                        <span>Ücretsiz Kayıt Ol</span>
+                    </a>
+                    <a asp-controller="Home" asp-action="Iletisim" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-medium bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700/80 hover:border-slate-600 transition-all hover:scale-[1.02]">
+                        <span>Bize Ulaşın</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>

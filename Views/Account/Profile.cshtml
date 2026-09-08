@@ -1,7 +1,8 @@
 @using satinalmaportali2.Helpers
 @model satinalmaportali2.Models.ProfileViewModel
 @{
-    ViewData["Title"] = "Hesabım";
+    ViewData["Title"] = "Hesabım & Profil";
+    Layout = "~/Views/Shared/_Layout.cshtml";
     
     var initials = "";
     if (!string.IsNullOrEmpty(Model.CompanyName))
@@ -24,59 +25,224 @@
     }
 }
 
-<section class="profile-hero">
-    <div class="profile-hero-inner">
+@section Styles {
+    <!-- Google Fonts Inter & Tailwind Play CDN -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                            950: '#082f49',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Tab Nav Button Active State */
+        .profile-nav-tab.active {
+            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 14px -2px rgba(37, 99, 235, 0.35) !important;
+            border-color: transparent !important;
+        }
+        .profile-nav-tab.active .tab-counter-badge {
+            background: rgba(255, 255, 255, 0.25) !important;
+            color: #ffffff !important;
+        }
+
+        /* Drag and Drop Active Ring */
+        .is-dragover {
+            border-color: #2563eb !important;
+            background-color: #eff6ff !important;
+            transform: scale(1.02);
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.18) !important;
+        }
+
+        /* Circular Cropper Viewport */
+        .crop-viewport-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px 0 20px 0;
+        }
+        .crop-viewport-container {
+            position: relative;
+            width: 240px;
+            height: 240px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: #0f172a;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), inset 0 0 0 2px rgba(255, 255, 255, 0.2);
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+        }
+        .crop-viewport-container.is-dragging {
+            cursor: grabbing;
+        }
+        #cropCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 240px;
+            height: 240px;
+        }
+        .crop-circular-mask {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            box-shadow: inset 0 0 0 3px rgba(37, 99, 235, 0.9);
+            pointer-events: none;
+        }
+        .crop-grid-overlay {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.15) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+            background-size: 80px 80px;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+        .crop-drag-hint {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(4px);
+            color: #ffffff;
+            font-size: 0.68rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 999px;
+            pointer-events: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+            transition: opacity 0.2s;
+        }
+
+        /* Avatar Sürükle-Bırak Efektleri */
+        .profile-avatar-circle.is-dragover {
+            outline: 4px dashed #38bdf8 !important;
+            outline-offset: 4px;
+            transform: scale(1.08) !important;
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.6) !important;
+        }
+        .profile-avatar-circle.is-dragover .avatar-hover-overlay {
+            opacity: 1 !important;
+        }
+        .avatar-mgmt-current-circle {
+            transition: transform 0.25s ease, box-shadow 0.25s ease, outline 0.2s ease;
+        }
+        .avatar-mgmt-current-circle:hover {
+            transform: scale(1.03);
+            box-shadow: 0 10px 28px rgba(37, 99, 235, 0.35);
+        }
+        .avatar-mgmt-current-circle.is-dragover {
+            outline: 4px dashed #2563eb !important;
+            outline-offset: 4px;
+            transform: scale(1.08) !important;
+            box-shadow: 0 0 25px rgba(37, 99, 235, 0.5) !important;
+        }
+    </style>
+}
+
+<!-- ==================== BÖLÜM 1: KOYU DEGRADE KAHRAMAN ALANI (HERO) ==================== -->
+<section class="relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white py-10 sm:py-12 px-4 sm:px-6 lg:px-8 border-b border-slate-800/80 font-sans">
+    <!-- Radial Glows & Grid Pattern -->
+    <div class="absolute -top-24 -left-24 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-25 pointer-events-none"></div>
+    
+    <div class="relative max-w-5xl mx-auto flex flex-col items-center text-center z-10">
         <!-- Avatar Wrapper with Interactive Camera / Cloudinary Trigger -->
-        <div class="profile-avatar-wrapper">
-            <div class="profile-avatar-circle" id="profileAvatarDisplay" onclick="triggerSinglePhotoSelect()" title="Profil fotoğrafını değiştirmek için tıklayın">
+        <div class="relative inline-block mb-3.5 sm:mb-4">
+            <div class="profile-avatar-circle w-24 h-24 sm:w-28 sm:h-28 rounded-full ring-4 ring-white/10 ring-offset-4 ring-offset-slate-950 shadow-2xl overflow-hidden cursor-pointer group relative bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center transition-all duration-300 hover:scale-105" id="profileAvatarDisplay" onclick="triggerSinglePhotoSelect()" title="Profil fotoğrafını değiştirmek için tıklayın">
                 @if (!string.IsNullOrWhiteSpace(Model.CompanyLogo))
                 {
-                    <img src="@Model.CompanyLogo" alt="@Model.CompanyName" class="avatar-uploaded-img" id="heroAvatarImg" />
+                    <img src="@Model.CompanyLogo" alt="@Model.CompanyName" class="avatar-uploaded-img w-full h-full object-cover" id="heroAvatarImg" />
                 }
                 else
                 {
-                    <span class="avatar-initials" id="heroAvatarInitials">@initials</span>
+                    <span class="avatar-initials text-2xl sm:text-3xl font-black text-white tracking-wider select-none" id="heroAvatarInitials">@initials</span>
                 }
                 
                 <!-- Hover Overlay -->
-                <div class="avatar-hover-overlay">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <div class="avatar-hover-overlay absolute inset-0 bg-slate-950/60 backdrop-blur-xs flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <svg class="w-5 h-5 mb-1 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                         <circle cx="12" cy="13" r="4"></circle>
                     </svg>
-                    <span class="avatar-overlay-text">Görsel Seç</span>
+                    <span class="text-[10px] font-bold tracking-wide">Görsel Seç</span>
                 </div>
             </div>
 
-            <!-- Floating Camera Badge Button -->
-            <button type="button" class="avatar-edit-badge" onclick="triggerSinglePhotoSelect()" title="Görsel Değiştir (Cloudinary)" aria-label="Görsel Değiştir">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <!-- Floating Camera Edit Badge Button -->
+            <button type="button" class="avatar-edit-badge absolute -bottom-0.5 -right-0.5 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center shadow-lg shadow-blue-600/40 border-2 border-slate-900 hover:scale-110 active:scale-95 transition-all cursor-pointer" onclick="triggerSinglePhotoSelect()" title="Görsel Değiştir (Cloudinary)" aria-label="Görsel Değiştir">
+                <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                     <circle cx="12" cy="13" r="4"></circle>
                 </svg>
             </button>
         </div>
 
-        <h1 class="profile-hero-name">@(Model.CompanyName ?? Model.CompanyOfficial ?? "Firma Adı Belirtilmemiş")</h1>
-        
-        <div class="profile-hero-badges">
-            <span class="profile-badge profile-badge-type">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <!-- Firma Adı & Yetkili -->
+        <h1 class="hero-company-name text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight">
+            @(Model.CompanyName ?? Model.CompanyOfficial ?? "Firma Adı Belirtilmemiş")
+        </h1>
+        @if (!string.IsNullOrEmpty(Model.CompanyOfficial) && !string.IsNullOrEmpty(Model.CompanyName))
+        {
+            <p class="hero-user-name text-xs sm:text-sm text-slate-400 mt-1 font-medium">
+                Yetkili: @Model.CompanyOfficial
+            </p>
+        }
+
+        <!-- Rozetler Şeridi -->
+        <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 mt-3.5">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-xs font-medium text-slate-200">
+                <svg class="w-3.5 h-3.5 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 Kurumsal Hesap (Alıcı &amp; Tedarikçi)
             </span>
-            <span class="profile-badge profile-badge-member">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/15 backdrop-blur-md border border-blue-400/30 text-xs font-semibold text-blue-300">
+                <svg class="w-3.5 h-3.5 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 @(Model.MembershipTypeName ?? "Standart Üyelik")
             </span>
-            <span class="profile-badge" style="background: rgba(245,158,11,0.1); color: #d97706; border: 1px solid rgba(245,158,11,0.25); cursor: pointer;" onclick="switchProfileTab('reviews')">
-                ★ @Model.BuyerScore.ToString("0.0") / 10 Güvenilirlik
-            </span>
+            <button type="button" class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-500/15 hover:bg-amber-500/25 backdrop-blur-md border border-amber-400/35 text-xs font-bold text-amber-300 transition-all cursor-pointer" onclick="switchProfileTab('reviews')">
+                <span class="text-amber-400">★</span> @Model.BuyerScore.ToString("0.0") / 10 Güvenilirlik
+            </button>
         </div>
 
-        <!-- Profil Düzenle Aksiyon Butonu -->
-        <div class="profile-hero-actions">
-            <button type="button" class="btn-profile-edit-toggle" id="btnToggleEditMode" onclick="toggleEditProfileMode()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <!-- Profil Düzenle Mod Butonu -->
+        <div class="mt-5">
+            <button type="button" class="btn-profile-edit-toggle inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-xs sm:text-sm shadow-lg shadow-blue-600/30 hover:shadow-blue-600/40 transition-all duration-200 active:scale-95 cursor-pointer" id="btnToggleEditMode" onclick="toggleEditProfileMode()">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 20h9"></path>
                     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                 </svg>
@@ -86,16 +252,17 @@
     </div>
 </section>
 
-<section class="profile-content-section">
-    <div class="profile-container">
+<main class="bg-slate-50 min-h-screen py-6 sm:py-8 pb-28 sm:pb-32 lg:pb-20 font-sans">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
 
+        <!-- Dinamik Bildirimler Kutusu -->
         <div id="dynamicAlertContainer"></div>
 
         @if (TempData["ProfileSuccess"] != null)
         {
-            <div class="profile-alert profile-alert-success" id="tempSuccessAlert">
-                <div class="alert-icon-box">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <div class="mb-6 flex items-center gap-3 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium shadow-sm animate-in fade-in duration-200" id="tempSuccessAlert">
+                <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                 </div>
                 <span>@TempData["ProfileSuccess"]</span>
             </div>
@@ -103,107 +270,122 @@
 
         @if (TempData["ProfileError"] != null)
         {
-            <div class="profile-alert profile-alert-error" id="tempErrorAlert">
-                <div class="alert-icon-box">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="mb-6 flex items-center gap-3 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm font-medium shadow-sm animate-in fade-in duration-200" id="tempErrorAlert">
+                <div class="w-8 h-8 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                 </div>
                 <span>@TempData["ProfileError"]</span>
             </div>
         }
 
-        <!-- Hesabım Üst Gezinme Sekmeleri -->
-        <div class="profile-tabs-carousel-container" style="justify-content: flex-start;">
-            <nav class="profile-nav-tabs-wrapper" id="profileNavTabsScroll" aria-label="Hesap Bölümleri" style="overflow-x: visible;">
-                <button type="button" class="profile-nav-tab @(Model.ActiveTab == "profile" || string.IsNullOrEmpty(Model.ActiveTab) || Model.ActiveTab == "orders" || Model.ActiveTab == "sales" || Model.ActiveTab == "purchased-items" ? "active" : "")" data-tab="profile" onclick="switchProfileTab('profile', this)">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <!-- Üst Gezinme Sekmeleri -->
+        <div class="mb-6 sm:mb-8">
+            <div class="grid grid-cols-2 sm:inline-flex p-1 sm:p-1.5 bg-white rounded-2xl border border-slate-200/90 shadow-sm gap-1 sm:gap-1.5 w-full sm:w-auto" id="profileNavTabsScroll" role="tablist">
+                <button type="button" class="profile-nav-tab inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 transition-all duration-200 cursor-pointer text-center @(Model.ActiveTab == "profile" || string.IsNullOrEmpty(Model.ActiveTab) || Model.ActiveTab == "orders" || Model.ActiveTab == "sales" || Model.ActiveTab == "purchased-items" ? "active" : "")" data-tab="profile" onclick="switchProfileTab('profile', this)">
+                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
                     <span>Firma Bilgilerim</span>
                 </button>
-                <button type="button" class="profile-nav-tab @(Model.ActiveTab == "reviews" ? "active" : "")" data-tab="reviews" onclick="switchProfileTab('reviews', this)">
-                    <span style="color: #f59e0b; font-size: 0.95rem;">★</span>
-                    <span>Değerlendirmeler &amp; Karne</span>
-                    <span class="tab-counter-badge tab-counter-badge-amber">@Model.ReceivedReviews.Count</span>
+                <button type="button" class="profile-nav-tab inline-flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 transition-all duration-200 cursor-pointer text-center @(Model.ActiveTab == "reviews" ? "active" : "")" data-tab="reviews" onclick="switchProfileTab('reviews', this)">
+                    <span class="text-amber-500 font-bold shrink-0">★</span>
+                    <span>
+                        <span class="hidden sm:inline">Değerlendirmeler &amp; Karne</span>
+                        <span class="sm:hidden">Değerlendirmeler</span>
+                    </span>
+                    <span class="tab-counter-badge px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-amber-100 text-amber-800 shrink-0">@Model.ReceivedReviews.Count</span>
                 </button>
-            </nav>
+            </div>
         </div>
 
         <!-- ==================== SEKME 1: FİRMA & HESAP BİLGİLERİM ==================== -->
-        <div id="profileTabPanel-profile" class="profile-tab-panel" style="@(Model.ActiveTab == "profile" ? "display: block;" : "display: none;")">
+        <div id="profileTabPanel-profile" class="profile-tab-panel" style="@(Model.ActiveTab == "profile" || string.IsNullOrEmpty(Model.ActiveTab) || Model.ActiveTab == "orders" || Model.ActiveTab == "sales" || Model.ActiveTab == "purchased-items" ? "display: block;" : "display: none;")">
+            
             <!-- Profil Fotoğrafı & Logo Yönetimi Kartı -->
-            <div class="profile-card profile-card-avatar-mgmt">
-            <div class="profile-card-header">
-                <div class="profile-card-icon profile-card-icon-blue">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 sm:p-6 mb-6 transition-shadow hover:shadow-md">
+                <!-- Kart Başlığı -->
+                <div class="flex items-center gap-3 pb-4 border-b border-slate-100">
+                    <div class="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200/60 text-blue-600 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-base sm:text-lg font-bold text-slate-900">Profil Fotoğrafı &amp; Logo Yönetimi</h2>
+                        <span class="text-xs text-slate-500">Cloudinary CDN altyapısıyla güvenli, yüksek hızlı ve optimize görsel saklama</span>
+                    </div>
                 </div>
-                <div class="profile-header-text">
-                    <h2>Profil Fotoğrafı & Logo Yönetimi</h2>
-                    <span class="profile-header-subtitle">Cloudinary CDN altyapısıyla güvenli, yüksek hızlı ve optimize görsel saklama</span>
-                </div>
-            </div>
-            <div class="profile-card-body">
-                <div class="avatar-mgmt-panel">
-                    <div class="avatar-mgmt-preview-col">
-                        <div class="avatar-mgmt-current-circle" id="cardAvatarDisplay" onclick="triggerSinglePhotoSelect()" style="cursor: pointer;" title="Fotoğraf değiştirmek için tıklayın veya yeni fotoğrafı buraya sürükleyin">
+
+                <!-- Kart Gövdesi: 2 Sütunlu Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-start mt-5">
+                    <!-- Sol Sütun: Önizleme Dairesi & Durum -->
+                    <div class="col-span-12 md:col-span-4 lg:col-span-3 flex flex-col items-center text-center p-4 sm:p-5 bg-slate-50/70 rounded-2xl border border-slate-100">
+                        <div class="avatar-mgmt-current-circle w-24 h-24 sm:w-28 sm:h-28 rounded-full ring-4 ring-white shadow-md overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center relative cursor-pointer group transition-all duration-300 hover:scale-105" id="cardAvatarDisplay" onclick="triggerSinglePhotoSelect()" title="Fotoğraf değiştirmek için tıklayın veya yeni fotoğrafı buraya sürükleyin">
                             @if (!string.IsNullOrWhiteSpace(Model.CompanyLogo))
                             {
-                                <img src="@Model.CompanyLogo" alt="Profil Fotoğrafı" class="avatar-mgmt-img" id="cardAvatarImg" />
+                                <img src="@Model.CompanyLogo" alt="Profil Fotoğrafı" class="avatar-mgmt-img w-full h-full object-cover" id="cardAvatarImg" />
                             }
                             else
                             {
-                                <span class="avatar-mgmt-initials" id="cardAvatarInitials">@initials</span>
+                                <span class="avatar-mgmt-initials text-2xl sm:text-3xl font-black text-white tracking-wider" id="cardAvatarInitials">@initials</span>
                             }
                         </div>
-                        <div class="avatar-mgmt-status" id="avatarStatusBadge">
+                        <div class="mt-3.5" id="avatarStatusBadge">
                             @if (!string.IsNullOrWhiteSpace(Model.CompanyLogo))
                             {
-                                <span class="avatar-status-pill status-active">
-                                    <span class="tag-dot"></span> Cloudinary Aktif
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Cloudinary Aktif
                                 </span>
                             }
                             else
                             {
-                                <span class="avatar-status-pill status-default">
-                                    <span class="tag-dot"></span> Varsayılan Baş Harfler
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 text-xs font-semibold">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Varsayılan Baş Harfler
                                 </span>
                             }
                         </div>
                     </div>
 
-                    <div class="avatar-mgmt-controls-col">
-                        <div class="avatar-rules-box">
-                            <div class="rules-header">
-                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                                <strong>Görsel Yükleme Kuralları</strong>
+                    <!-- Sağ Sütun: Kurallar, Dropzone & Aksiyonlar -->
+                    <div class="col-span-12 md:col-span-8 lg:col-span-9 space-y-3.5">
+                        <!-- Kurallar Kutusu -->
+                        <div class="bg-blue-50/70 border border-blue-100 rounded-xl p-3.5 text-xs text-blue-900">
+                            <div class="flex items-center gap-2 font-bold text-blue-950 mb-1.5">
+                                <svg class="w-4 h-4 text-blue-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                <span>Görsel Yükleme Kuralları</span>
                             </div>
-                            <ul class="rules-list">
-                                <li><strong>Tekil Seçim:</strong> Sadece <strong>tek bir görsel</strong> dosyası seçebilirsiniz.</li>
-                                <li><strong>Desteklenen Formatlar:</strong> JPG, JPEG, PNG, WEBP, GIF.</li>
-                                <li><strong>Maksimum Boyut:</strong> 5 MB.</li>
+                            <ul class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-blue-800">
+                                <li class="flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                    <span><strong>Tekil Seçim:</strong> Tek görsel.</span>
+                                </li>
+                                <li class="flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                    <span><strong>Formatlar:</strong> JPG, PNG, WEBP, GIF.</span>
+                                </li>
+                                <li class="flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                    <span><strong>Maksimum:</strong> 5 MB.</span>
+                                </li>
                             </ul>
                         </div>
 
-                        <!-- Sürükle & Bırak Profil Fotoğrafı Dropzone -->
-                        <div class="profile-photo-dropzone" id="profilePhotoDropzone" onclick="triggerSinglePhotoSelect()" title="Fotoğraf seçmek veya sürükleyip bırakmak için tıklayın">
-                            <div class="photo-dropzone-inner">
-                                <div class="photo-dropzone-icon">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                        <polyline points="17 8 12 3 7 8"></polyline>
-                                        <line x1="12" y1="3" x2="12" y2="15"></line>
-                                    </svg>
-                                </div>
-                                <div class="photo-dropzone-content">
-                                    <strong>Fotoğrafınızı buraya sürükleyip bırakın</strong>
-                                    <span>veya dosya seçmek için tıklayın (Maks 5 MB - JPG, PNG, WEBP, GIF)</span>
-                                </div>
+                        <!-- Sürükle & Bırak Dropzone -->
+                        <div class="profile-photo-dropzone border-2 border-dashed border-slate-300 hover:border-blue-500 bg-slate-50/60 hover:bg-blue-50/40 rounded-xl p-5 transition-all duration-200 cursor-pointer flex flex-col items-center justify-center text-center group" id="profilePhotoDropzone" onclick="triggerSinglePhotoSelect()" title="Fotoğraf seçmek veya sürükleyip bırakmak için tıklayın">
+                            <div class="w-10 h-10 rounded-xl bg-blue-100/80 text-blue-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
                             </div>
+                            <strong class="text-sm font-bold text-slate-800">Fotoğrafınızı buraya sürükleyip bırakın</strong>
+                            <span class="text-xs text-slate-500 mt-0.5">veya cihazınızdan dosya seçmek için tıklayın (Maks 5 MB)</span>
                         </div>
 
-                        <div class="avatar-mgmt-buttons">
-                            <button type="button" class="btn-avatar-upload" onclick="triggerSinglePhotoSelect()">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <!-- Butonlar -->
+                        <div class="avatar-mgmt-buttons flex flex-wrap items-center gap-2.5 pt-0.5">
+                            <button type="button" class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold shadow-sm shadow-blue-600/20 transition-all active:scale-95 cursor-pointer" onclick="triggerSinglePhotoSelect()">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                     <polyline points="17 8 12 3 7 8"></polyline>
                                     <line x1="12" y1="3" x2="12" y2="15"></line>
@@ -213,9 +395,9 @@
 
                             @if (!string.IsNullOrWhiteSpace(Model.CompanyLogo))
                             {
-                                <form asp-controller="Account" asp-action="DeleteProfilePhoto" method="post" class="d-inline" id="deletePhotoForm" onsubmit="handleDeletePhoto(event); return false;">
-                                    <button type="submit" class="btn-avatar-delete" title="Mevcut fotoğrafı kaldır">
-                                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                <form asp-controller="Account" asp-action="DeleteProfilePhoto" method="post" class="inline-block" id="deletePhotoForm" onsubmit="handleDeletePhoto(event); return false;">
+                                    <button type="submit" class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs sm:text-sm font-semibold transition-all active:scale-95 cursor-pointer" title="Mevcut fotoğrafı kaldır">
+                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                                             <polyline points="3 6 5 6 21 6"></polyline>
                                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                                             <line x1="10" y1="11" x2="10" y2="17"></line>
@@ -229,211 +411,228 @@
                     </div>
                 </div>
             </div>
-        </div>
 
         <!-- ========================================================================= -->
         <!-- 1. GÖRÜNTÜLEME MODU (VIEW MODE)                                           -->
         <!-- ========================================================================= -->
-        <div id="profileViewMode" class="profile-mode-section">
+        <div id="profileViewMode" class="space-y-5">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                
+                <!-- Kart 1: Firma & Yetkili Bilgileri -->
+                <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 sm:p-6 hover:shadow-md transition-shadow flex flex-col">
+                    <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                            </div>
+                            <h2 class="text-base font-bold text-slate-900">Firma &amp; Yetkili Bilgileri</h2>
+                        </div>
+                        <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 transition cursor-pointer" onclick="toggleEditProfileMode()" title="Bilgileri Düzenle">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                            <span>Düzenle</span>
+                        </button>
+                    </div>
 
-            <!-- Firma & Yetkili Bilgileri -->
-            <div class="profile-card">
-                <div class="profile-card-header">
-                    <div class="profile-card-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                    </div>
-                    <div class="profile-header-text">
-                        <h2>Firma & Yetkili Bilgileri</h2>
-                    </div>
-                    <button type="button" class="btn-card-edit-shortcut" onclick="toggleEditProfileMode()" title="Bilgileri Düzenle">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                        <span>Düzenle</span>
-                    </button>
-                </div>
-                <div class="profile-card-body">
-                    <div class="profile-info-grid">
-                        <div class="profile-info-item">
-                            <span class="info-label">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                        <div>
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                                <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                                 Firma Yetkilisi / Ad Soyad
                             </span>
-                            <span class="info-value font-semibold">@(Model.CompanyOfficial ?? "—")</span>
+                            <span class="text-sm font-bold text-slate-900">@(Model.CompanyOfficial ?? "—")</span>
                         </div>
-                        <div class="profile-info-item">
-                            <span class="info-label">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        <div>
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                                <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                                 Firma / Kurum Adı
                             </span>
-                            <span class="info-value">@(Model.CompanyName ?? "—")</span>
+                            <span class="text-sm font-semibold text-slate-900">@(Model.CompanyName ?? "—")</span>
                         </div>
-                        <div class="profile-info-item">
-                            <span class="info-label">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                        <div>
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                                <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                                 Firma Türü
                             </span>
-                            <span class="info-value">Kurumsal Hesap (Alıcı &amp; Tedarikçi)</span>
+                            <span class="text-sm font-semibold text-slate-800">Kurumsal Hesap (Alıcı &amp; Tedarikçi)</span>
                         </div>
-                        <div class="profile-info-item">
-                            <span class="info-label">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <div>
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                                <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                                 Üyelik Tipi
                             </span>
-                            <span class="info-value">@(Model.MembershipTypeName ?? "Standart Üyelik")</span>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                @(Model.MembershipTypeName ?? "Standart Üyelik")
+                            </span>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- İletişim Bilgileri -->
-            <div class="profile-card">
-                <div class="profile-card-header">
-                    <div class="profile-card-icon profile-card-icon-green">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                <!-- Kart 2: İletişim Bilgileri -->
+                <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 sm:p-6 hover:shadow-md transition-shadow flex flex-col">
+                    <div class="flex items-center gap-3 pb-4 border-b border-slate-100 mb-4">
+                        <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        </div>
+                        <h2 class="text-base font-bold text-slate-900">İletişim Bilgileri</h2>
                     </div>
-                    <div class="profile-header-text">
-                        <h2>İletişim Bilgileri</h2>
-                    </div>
-                </div>
-                <div class="profile-card-body">
-                    <div class="profile-info-grid">
-                        <div class="profile-info-item">
-                            <span class="info-label">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                        <div>
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                                <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                                 E-posta Adresi
                             </span>
-                            <span class="info-value info-value-mail">@(Model.CompanyMail ?? "—")</span>
+                            <span class="text-sm font-semibold text-blue-600 break-all">@(Model.CompanyMail ?? "—")</span>
                         </div>
-                        <div class="profile-info-item">
-                            <span class="info-label">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        <div>
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                                <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                                 Telefon Numarası
                             </span>
-                            <span class="info-value">@(Model.CompanyPhone ?? "—")</span>
+                            <span class="text-sm font-semibold text-slate-900">@(Model.CompanyPhone ?? "—")</span>
+                        </div>
+                        <div>
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                                <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                Hesap Doğrulama
+                            </span>
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <svg class="w-3 h-3 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                                E-Posta Doğrulandı
+                            </span>
+                        </div>
+                        <div>
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                                <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                                Bildirim Tercihi
+                            </span>
+                            <span class="text-sm font-medium text-slate-800">E-Posta &amp; Sistem Bildirimleri</span>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Resmi & Vergi Bilgileri -->
-            <div class="profile-card">
-                <div class="profile-card-header">
-                    <div class="profile-card-icon profile-card-icon-amber">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                <!-- Kart 3: Resmi & Vergi Bilgileri -->
+                <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 sm:p-6 hover:shadow-md transition-shadow flex flex-col">
+                    <div class="flex items-center gap-3 pb-4 border-b border-slate-100 mb-4">
+                        <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        </div>
+                        <h2 class="text-base font-bold text-slate-900">Resmi &amp; Vergi Bilgileri</h2>
                     </div>
-                    <div class="profile-header-text">
-                        <h2>Resmi & Vergi Bilgileri</h2>
-                    </div>
-                </div>
-                <div class="profile-card-body">
-                    <div class="profile-info-grid">
-                        <div class="profile-info-item">
-                            <span class="info-label">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                        <div>
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                                <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                                 TC Kimlik No / Vergi No
                             </span>
-                            <span class="info-value info-value-mono">@(Model.TCNO ?? "—")</span>
+                            <span class="inline-block font-mono text-sm font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg">@(Model.TCNO ?? "—")</span>
                         </div>
-                        <div class="profile-info-item">
-                            <span class="info-label">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        <div>
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                                <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                                 Vergi Dairesi
                             </span>
-                            <span class="info-value">@(Model.TaxOffice ?? "—")</span>
+                            <span class="text-sm font-semibold text-slate-900">@(Model.TaxOffice ?? "—")</span>
+                        </div>
+                        <div>
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                                <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/></svg>
+                                Kurumsal Fatura
+                            </span>
+                            <span class="text-sm font-medium text-slate-800">E-Fatura &amp; E-Arşiv</span>
+                        </div>
+                        <div>
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                                <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                Mükellef Durumu
+                            </span>
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                Faal Mükellef
+                            </span>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Adres Bilgileri -->
-            <div class="profile-card">
-                <div class="profile-card-header">
-                    <div class="profile-card-icon profile-card-icon-purple">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <!-- Kart 4: Adres & Lokasyon Bilgileri -->
+                <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 sm:p-6 hover:shadow-md transition-shadow flex flex-col">
+                    <div class="flex items-center gap-3 pb-4 border-b border-slate-100 mb-4">
+                        <div class="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        </div>
+                        <h2 class="text-base font-bold text-slate-900">Adres &amp; Lokasyon Bilgileri</h2>
                     </div>
-                    <div class="profile-header-text">
-                        <h2>Adres & Lokasyon Bilgileri</h2>
-                    </div>
-                </div>
-                <div class="profile-card-body">
-                    <div class="profile-info-grid">
-                        <div class="profile-info-item profile-info-item-full">
-                            <span class="info-label">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+
+                    <div class="space-y-3.5 flex-1">
+                        <div>
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                                <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                                 Açık Adres
                             </span>
-                            <span class="info-value">@(Model.AddressText ?? "—")</span>
+                            <p class="text-sm text-slate-800 leading-relaxed font-medium bg-slate-50 p-2.5 rounded-xl border border-slate-100">@(Model.AddressText ?? "—")</p>
                         </div>
-                        <div class="profile-info-item">
-                            <span class="info-label">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                                Ülke
-                            </span>
-                            <span class="info-value">@(Model.CountryName ?? "Türkiye")</span>
-                        </div>
-                        <div class="profile-info-item">
-                            <span class="info-label">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                                Şehir / İl
-                            </span>
-                            <span class="info-value">@(Model.TownName ?? "—")</span>
-                        </div>
-                        <div class="profile-info-item">
-                            <span class="info-label">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                                İlçe
-                            </span>
-                            <span class="info-value">@(Model.DistrictName ?? "—")</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Firma Açıklaması -->
-            <div class="profile-card">
-                <div class="profile-card-header">
-                    <div class="profile-card-icon profile-card-icon-teal">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
-                    </div>
-                    <div class="profile-header-text">
-                        <h2>Firma / Profil Açıklaması</h2>
-                    </div>
-                </div>
-                <div class="profile-card-body">
-                    <p class="profile-detail-text">@(string.IsNullOrWhiteSpace(Model.CompanyDetailText) ? "Henüz bir açıklama eklenmemiş. 'Bilgileri Düzenle' butonunu kullanarak firmanız hakkında detaylı bilgi ekleyebilirsiniz." : Model.CompanyDetailText)</p>
-                </div>
-            </div>
-
-            <!-- Tedarikçilerden Alınan 10 Yıldızlı Değerlendirmeler & Alıcı Güvenilirlik Karnesi -->
-            <div class="profile-card">
-                <div class="profile-card-header">
-                    <div class="profile-card-icon" style="background: rgba(16, 185, 129, 0.12); color: #059669;">
-                        <span style="font-size: 1.25rem;">★</span>
-                    </div>
-                    <div class="profile-header-text">
-                        <h2>Tedarikçi Değerlendirmeleri &amp; Alıcı Güvenilirlik Skoru</h2>
-                        <span class="profile-header-subtitle">Sipariş verdiğiniz kurumsal tedarikçilerin firmanız hakkında verdiği 10 yıldızlı değerlendirmeler</span>
-                    </div>
-                </div>
-                <div class="profile-card-body">
-                    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 20px 24px; margin-bottom: 20px;">
-                        <div>
-                            <div style="font-size: 0.78rem; color: #059669; font-weight: 700; text-transform: uppercase;">10 Yıldız Üzerinden Alıcı Skoru</div>
-                            <div style="font-size: 2.3rem; font-weight: 900; color: #0f172a; line-height: 1.1; margin: 4px 0;">
-                                ★ @Model.BuyerScore.ToString("0.0") <small style="font-size: 1rem; color: #64748b; font-weight: 600;">/ 10</small>
+                        <div class="grid grid-cols-3 gap-2.5">
+                            <div>
+                                <span class="text-[11px] font-semibold text-slate-400 uppercase">Ülke</span>
+                                <div class="text-xs sm:text-sm font-bold text-slate-900 truncate">@(Model.CountryName ?? "Türkiye")</div>
                             </div>
-                            <div style="display: inline-flex; gap: 3px; margin-bottom: 4px;">
+                            <div>
+                                <span class="text-[11px] font-semibold text-slate-400 uppercase">Şehir / İl</span>
+                                <div class="text-xs sm:text-sm font-bold text-slate-900 truncate">@(Model.TownName ?? "—")</div>
+                            </div>
+                            <div>
+                                <span class="text-[11px] font-semibold text-slate-400 uppercase">İlçe</span>
+                                <div class="text-xs sm:text-sm font-bold text-slate-900 truncate">@(Model.DistrictName ?? "—")</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kart 5: Firma Açıklaması (Geniş 2 Sütun) -->
+                <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 sm:p-6 hover:shadow-md transition-shadow">
+                    <div class="flex items-center gap-3 pb-4 border-b border-slate-100 mb-4">
+                        <div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+                        </div>
+                        <h2 class="text-base font-bold text-slate-900">Firma / Profil Açıklaması</h2>
+                    </div>
+                    <p class="text-sm text-slate-700 leading-relaxed bg-slate-50/70 p-4 rounded-xl border border-slate-100 italic">
+                        @(string.IsNullOrWhiteSpace(Model.CompanyDetailText) ? "Henüz bir açıklama eklenmemiş. 'Bilgileri Düzenle' butonunu kullanarak firmanız hakkında detaylı bilgi ekleyebilirsiniz." : Model.CompanyDetailText)
+                    </p>
+                </div>
+
+                <!-- Kart 6: Tedarikçilerden Alınan 10 Yıldızlı Değerlendirmeler & Alıcı Güvenilirlik Karnesi -->
+                <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 sm:p-6 hover:shadow-md transition-shadow">
+                    <div class="flex items-center gap-3 pb-4 border-b border-slate-100 mb-4">
+                        <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 font-bold text-base">
+                            ★
+                        </div>
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900">Tedarikçi Değerlendirmeleri &amp; Alıcı Güvenilirlik Skoru</h2>
+                            <span class="text-xs text-slate-500">Sipariş verdiğiniz kurumsal tedarikçilerin firmanız hakkında verdiği 10 yıldızlı değerlendirmeler</span>
+                        </div>
+                    </div>
+
+                    <!-- Skor Özet Panosu -->
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-200/60 mb-5">
+                        <div>
+                            <div class="text-xs font-bold text-emerald-700 uppercase tracking-wider">10 Yıldız Üzerinden Alıcı Skoru</div>
+                            <div class="text-3xl sm:text-4xl font-black text-slate-900 my-1">
+                                ★ @Model.BuyerScore.ToString("0.0") <span class="text-base font-bold text-slate-400">/ 10</span>
+                            </div>
+                            <div class="inline-flex gap-1 text-base my-1">
                                 @for (int i = 1; i <= 10; i++)
                                 {
                                     var filled = i <= Math.Round(Model.BuyerScore);
-                                    <span style="font-size: 1rem; color: @(filled ? "#10b981" : "#cbd5e1");">★</span>
+                                    <span class="@(filled ? "text-emerald-500" : "text-slate-300")">★</span>
                                 }
                             </div>
-                            <div style="font-size: 0.8rem; color: #64748b;">@Model.BuyerReviewCount Tedarikçi Değerlendirmesine Dayanıyor</div>
+                            <div class="text-xs text-slate-500">@Model.BuyerReviewCount Tedarikçi Değerlendirmesine Dayanıyor</div>
                         </div>
-
-                        <div style="text-align: right;">
-                            <span class="profile-badge" style="background: #ecfdf5; color: #059669; border: 1px solid rgba(16,185,129,0.3); padding: 8px 16px; font-size: 0.88rem; font-weight: 700; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <div>
+                            <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-emerald-100 text-emerald-800 text-xs sm:text-sm font-bold border border-emerald-200 shadow-xs">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                 Onaylı &amp; Güvenilir Kurumsal Alıcı
                             </span>
                         </div>
@@ -441,465 +640,486 @@
 
                     @if (!Model.ReceivedReviews.Any())
                     {
-                        <div style="padding: 24px; text-align: center; color: #64748b; font-size: 0.88rem; background: rgba(0,0,0,0.01); border-radius: 8px;">
+                        <div class="p-8 text-center text-slate-500 text-sm bg-slate-50/70 rounded-2xl border border-dashed border-slate-200">
                             🛒 Sipariş verdiğiniz tedarikçiler mal kabul ve ödeme süreçlerinizi değerlendirdikçe 10 yıldızlı puanlarınız ve yorumlar burada listelenecektir.
                         </div>
                     }
                     else
                     {
-                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div class="space-y-3">
                             @foreach (var r in Model.ReceivedReviews)
                             {
-                                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                        <div>
-                                            <strong style="color: #0f172a; font-size: 0.92rem;">🏢 @r.ReviewerName</strong>
-                                            <span style="font-size: 0.75rem; color: #64748b; margin-left: 8px;">📅 @r.ReviewDate.ToString("dd.MM.yyyy")</span>
-                                            @if (!string.IsNullOrWhiteSpace(r.OrderNumber))
-                                            {
-                                                <small style="color: #2563eb; margin-left: 6px;">(Sipariş: @r.OrderNumber)</small>
-                                            }
+                                <div class="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-xs hover:border-slate-300 transition border-l-4 border-l-emerald-500">
+                                    <div class="flex items-start justify-between gap-3 pb-3 border-b border-slate-100 mb-3">
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <strong class="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-1.5">
+                                                    <span>🏢</span>
+                                                    <span class="truncate">@r.ReviewerName</span>
+                                                </strong>
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-emerald-100 text-emerald-800 shrink-0">
+                                                    📦 Tedarikçi Değerlendirmesi
+                                                </span>
+                                            </div>
+                                            <div class="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-slate-400 mt-1">
+                                                <span class="flex items-center gap-1">
+                                                    <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                                    <span>@r.ReviewDate.ToString("dd.MM.yyyy HH:mm")</span>
+                                                </span>
+                                                @if (!string.IsNullOrWhiteSpace(r.OrderNumber))
+                                                {
+                                                    <span class="text-blue-600 font-semibold font-mono">
+                                                        • Sipariş: @r.OrderNumber
+                                                    </span>
+                                                }
+                                            </div>
                                         </div>
-                                        <span style="background: rgba(16,185,129,0.1); color: #059669; font-weight: 800; padding: 3px 10px; border-radius: 6px; font-size: 0.85rem;">
-                                            ★ @r.ReviewScore.ToString("0.0") / 10
-                                        </span>
+                                        <div class="shrink-0">
+                                            <span class="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-xl bg-emerald-50 text-emerald-700 font-black text-xs sm:text-sm border border-emerald-200 shadow-xs">
+                                                <span class="text-emerald-500">★</span> @r.ReviewScore.ToString("0.0") <span class="text-[10px] text-emerald-600/70 font-semibold">/ 10</span>
+                                            </span>
+                                        </div>
                                     </div>
                                     @if (!string.IsNullOrWhiteSpace(r.ReviewText))
                                     {
-                                        <p style="font-size: 0.88rem; color: #334155; margin: 0; line-height: 1.5;">
-                                            "@r.ReviewText"
-                                        </p>
+                                        <div class="p-3 sm:p-4 rounded-xl bg-slate-50/90 border border-slate-100 text-xs sm:text-sm text-slate-700 leading-relaxed italic flex items-start gap-2.5">
+                                            <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/></svg>
+                                            <span class="flex-1">&ldquo;@r.ReviewText&rdquo;</span>
+                                        </div>
                                     }
                                 </div>
                             }
                         </div>
                     }
                 </div>
-            </div>
 
+            </div>
         </div>
 
         <!-- ========================================================================= -->
         <!-- 2. DÜZENLEME FORMU (EDIT MODE)                                            -->
         <!-- ========================================================================= -->
-        <div id="profileEditMode" class="profile-mode-section" style="display: none;">
-            <form asp-controller="Account" asp-action="UpdateProfile" method="post" id="updateProfileForm" onsubmit="handleUpdateProfile(event); return false;">
+        <div id="profileEditMode" style="display: none;">
+            <form asp-controller="Account" asp-action="UpdateProfile" method="post" id="updateProfileForm" onsubmit="handleUpdateProfile(event); return false;" class="space-y-5">
                 @Html.AntiForgeryToken()
 
-                <!-- Kişi ve Firma Bilgileri Düzenleme -->
-                <div class="profile-card profile-card-editing">
-                    <div class="profile-card-header">
-                        <div class="profile-card-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+                    <!-- Düzenle Kart 1: Kişi ve Firma Bilgileri -->
+                    <div class="bg-white rounded-2xl border border-blue-200 shadow-sm p-5 sm:p-6">
+                        <div class="flex items-center gap-3 pb-4 border-b border-slate-100 mb-4">
+                            <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            </div>
+                            <div>
+                                <h2 class="text-base font-bold text-slate-900">Kişi &amp; Firma Bilgilerini Düzenle</h2>
+                                <span class="text-xs text-slate-500">Yetkili ad soyad ve resmi unvan</span>
+                            </div>
                         </div>
-                        <div class="profile-header-text">
-                            <h2>Kişi & Firma Bilgilerini Düzenle</h2>
-                            <span class="profile-header-subtitle">Ad, soyad, firma unvanı ve hesap türü ayarlarınız</span>
-                        </div>
-                    </div>
-                    <div class="profile-card-body">
-                        <div class="form-inputs-grid">
-                            <div class="form-group-item">
-                                <label class="form-item-label" for="editCompanyOfficial">
-                                    <span>Firma Yetkilisi / Kişi Ad Soyad</span>
-                                    <strong class="required-star">*</strong>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5" for="editCompanyOfficial">
+                                    Firma Yetkilisi / Kişi Ad Soyad <span class="text-rose-500">*</span>
                                 </label>
-                                <div class="form-input-wrap">
-                                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                    <input type="text" id="editCompanyOfficial" name="companyOfficial" value="@Model.CompanyOfficial" class="profile-form-control" placeholder="Örn: Ahmet Yılmaz" required />
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    </div>
+                                    <input type="text" id="editCompanyOfficial" name="companyOfficial" value="@Model.CompanyOfficial" class="block w-full pl-10 pr-4 py-2.5 text-sm sm:text-base bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition shadow-xs placeholder:text-slate-400" placeholder="Örn: Ahmet Yılmaz" required />
                                 </div>
                             </div>
 
-                            <div class="form-group-item">
-                                <label class="form-item-label" for="editCompanyName">
-                                    <span>Firma / Kurum Adı</span>
-                                    <strong class="required-star">*</strong>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5" for="editCompanyName">
+                                    Firma / Kurum Adı <span class="text-rose-500">*</span>
                                 </label>
-                                <div class="form-input-wrap">
-                                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                                    <input type="text" id="editCompanyName" name="companyName" value="@Model.CompanyName" class="profile-form-control" placeholder="Örn: Yılmaz Sanayi A.Ş." required />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- İletişim Bilgileri Düzenleme -->
-                <div class="profile-card profile-card-editing">
-                    <div class="profile-card-header">
-                        <div class="profile-card-icon profile-card-icon-green">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                        </div>
-                        <div class="profile-header-text">
-                            <h2>İletişim Bilgilerini Düzenle</h2>
-                            <span class="profile-header-subtitle">E-posta ve irtibat telefon numaranız</span>
-                        </div>
-                    </div>
-                    <div class="profile-card-body">
-                        <div class="form-inputs-grid">
-                            <div class="form-group-item">
-                                <label class="form-item-label" for="editCompanyMail">
-                                    <span>E-posta Adresi</span>
-                                    <strong class="required-star">*</strong>
-                                </label>
-                                <div class="form-input-wrap">
-                                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                                    <input type="email" id="editCompanyMail" name="companyMail" value="@Model.CompanyMail" class="profile-form-control" placeholder="ad@firma.com" required />
-                                </div>
-                                <span class="form-field-hint">Giriş yaparken ve bildirim alırken bu e-posta kullanılır.</span>
-                            </div>
-
-                            <div class="form-group-item">
-                                <label class="form-item-label" for="editCompanyPhone">
-                                    <span>Telefon Numarası</span>
-                                </label>
-                                <div class="form-input-wrap">
-                                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                                    <input type="tel" id="editCompanyPhone" name="companyPhone" value="@Model.CompanyPhone" class="profile-form-control" placeholder="05XX XXX XX XX" />
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                    </div>
+                                    <input type="text" id="editCompanyName" name="companyName" value="@Model.CompanyName" class="block w-full pl-10 pr-4 py-2.5 text-sm sm:text-base bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition shadow-xs placeholder:text-slate-400" placeholder="Örn: Yılmaz Sanayi A.Ş." required />
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Resmi & Vergi Bilgileri Düzenleme -->
-                <div class="profile-card profile-card-editing">
-                    <div class="profile-card-header">
-                        <div class="profile-card-icon profile-card-icon-amber">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                        </div>
-                        <div class="profile-header-text">
-                            <h2>Resmi & Vergi Bilgilerini Düzenle</h2>
-                            <span class="profile-header-subtitle">Vergi kimlik numarası ve vergi dairesi kaydı</span>
-                        </div>
-                    </div>
-                    <div class="profile-card-body">
-                        <div class="form-inputs-grid">
-                            <div class="form-group-item">
-                                <label class="form-item-label" for="editTCNO">
-                                    <span>TC Kimlik No / Vergi No</span>
-                                </label>
-                                <div class="form-input-wrap">
-                                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                    <input type="text" id="editTCNO" name="tcno" value="@Model.TCNO" class="profile-form-control font-mono" placeholder="10 veya 11 haneli numara" maxlength="11" />
-                                </div>
+                    <!-- Düzenle Kart 2: İletişim Bilgileri -->
+                    <div class="bg-white rounded-2xl border border-blue-200 shadow-sm p-5 sm:p-6">
+                        <div class="flex items-center gap-3 pb-4 border-b border-slate-100 mb-4">
+                            <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                             </div>
-
-                            <div class="form-group-item">
-                                <label class="form-item-label" for="editTaxOffice">
-                                    <span>Vergi Dairesi</span>
-                                </label>
-                                <div class="form-input-wrap">
-                                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                                    <input type="text" id="editTaxOffice" name="taxOffice" value="@Model.TaxOffice" class="profile-form-control" placeholder="Örn: Beşiktaş Vergi Dairesi" />
-                                </div>
+                            <div>
+                                <h2 class="text-base font-bold text-slate-900">İletişim Bilgilerini Düzenle</h2>
+                                <span class="text-xs text-slate-500">E-posta ve irtibat telefonu</span>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Adres & Lokasyon Bilgileri Düzenleme -->
-                <div class="profile-card profile-card-editing">
-                    <div class="profile-card-header">
-                        <div class="profile-card-icon profile-card-icon-purple">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                        </div>
-                        <div class="profile-header-text">
-                            <h2>Adres & Lokasyon Bilgilerini Düzenle</h2>
-                            <span class="profile-header-subtitle">Şirket / teslimat adresinizi güncelleyin</span>
-                        </div>
-                    </div>
-                    <div class="profile-card-body">
-                        <div class="form-inputs-grid">
-                            <div class="form-group-item">
-                                <label class="form-item-label" for="editCountryName">
-                                    <span>Ülke</span>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5" for="editCompanyMail">
+                                    E-posta Adresi <span class="text-rose-500">*</span>
                                 </label>
-                                <div class="form-input-wrap">
-                                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                                    <input type="text" id="editCountryName" name="countryName" value="@(Model.CountryName ?? "Türkiye")" class="profile-form-control" placeholder="Türkiye" />
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                                    </div>
+                                    <input type="email" id="editCompanyMail" name="companyMail" value="@Model.CompanyMail" class="block w-full pl-10 pr-4 py-2.5 text-sm sm:text-base bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition shadow-xs placeholder:text-slate-400" placeholder="ad@firma.com" required />
                                 </div>
+                                <span class="text-[11px] text-slate-500 mt-1 block">Giriş yaparken ve bildirim alırken bu e-posta kullanılır.</span>
                             </div>
 
-                            <div class="form-group-item">
-                                <label class="form-item-label" for="editTownName">
-                                    <span>Şehir / İl</span>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5" for="editCompanyPhone">
+                                    Telefon Numarası
                                 </label>
-                                <div class="form-input-wrap">
-                                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                                    <input type="text" id="editTownName" name="townName" value="@Model.TownName" class="profile-form-control" placeholder="Örn: İstanbul" />
-                                </div>
-                            </div>
-
-                            <div class="form-group-item">
-                                <label class="form-item-label" for="editDistrictName">
-                                    <span>İlçe</span>
-                                </label>
-                                <div class="form-input-wrap">
-                                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                                    <input type="text" id="editDistrictName" name="districtName" value="@Model.DistrictName" class="profile-form-control" placeholder="Örn: Kadıköy" />
-                                </div>
-                            </div>
-
-                            <div class="form-group-item form-group-full">
-                                <label class="form-item-label" for="editAddressText">
-                                    <span>Açık Adres (Cadde, Mahalle, Sokak, No, Daire)</span>
-                                </label>
-                                <div class="form-input-wrap">
-                                    <textarea id="editAddressText" name="addressText" rows="3" class="profile-form-control profile-textarea" placeholder="Örn: Barbaros Bulvarı No:12 D:4 Beşiktaş">@Model.AddressText</textarea>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                                    </div>
+                                    <input type="tel" id="editCompanyPhone" name="companyPhone" value="@Model.CompanyPhone" class="block w-full pl-10 pr-4 py-2.5 text-sm sm:text-base bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition shadow-xs placeholder:text-slate-400" placeholder="05XX XXX XX XX" />
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Firma Açıklaması Düzenleme -->
-                <div class="profile-card profile-card-editing">
-                    <div class="profile-card-header">
-                        <div class="profile-card-icon profile-card-icon-teal">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+                    <!-- Düzenle Kart 3: Resmi & Vergi Bilgileri -->
+                    <div class="bg-white rounded-2xl border border-blue-200 shadow-sm p-5 sm:p-6">
+                        <div class="flex items-center gap-3 pb-4 border-b border-slate-100 mb-4">
+                            <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                            </div>
+                            <div>
+                                <h2 class="text-base font-bold text-slate-900">Resmi &amp; Vergi Bilgilerini Düzenle</h2>
+                                <span class="text-xs text-slate-500">Vergi kimlik numarası ve dairesi</span>
+                            </div>
                         </div>
-                        <div class="profile-header-text">
-                            <h2>Firma / Profil Açıklaması Düzenle</h2>
-                            <span class="profile-header-subtitle">Firmanızın faaliyetleri, uzmanlıkları veya tedarik notları</span>
-                        </div>
-                    </div>
-                    <div class="profile-card-body">
-                        <div class="form-inputs-grid">
-                            <div class="form-group-item form-group-full">
-                                <label class="form-item-label" for="editCompanyDetailText">
-                                    <span>Firma Hakkında Detaylı Bilgi</span>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5" for="editTCNO">
+                                    TC Kimlik No / Vergi No
                                 </label>
-                                <div class="form-input-wrap">
-                                    <textarea id="editCompanyDetailText" name="companyDetailText" rows="4" class="profile-form-control profile-textarea" placeholder="Firmanızın hizmet verdiği sektörler, ürün yelpazesi veya genel çalışma prensipleri...">@Model.CompanyDetailText</textarea>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                    </div>
+                                    <input type="text" id="editTCNO" name="tcno" value="@Model.TCNO" class="block w-full pl-10 pr-4 py-2.5 text-sm sm:text-base font-mono bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition shadow-xs placeholder:text-slate-400" placeholder="10 veya 11 haneli numara" maxlength="11" />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5" for="editTaxOffice">
+                                    Vergi Dairesi
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                    </div>
+                                    <input type="text" id="editTaxOffice" name="taxOffice" value="@Model.TaxOffice" class="block w-full pl-10 pr-4 py-2.5 text-sm sm:text-base bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition shadow-xs placeholder:text-slate-400" placeholder="Örn: Beşiktaş Vergi Dairesi" />
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Form Alt Aksiyon Butonları -->
-                <div class="profile-edit-actions-bar">
-                    <button type="button" class="btn-edit-cancel" onclick="toggleEditProfileMode()">
-                        <span>İptal / Vazgeç</span>
-                    </button>
-                    <button type="submit" class="btn-edit-save">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
-                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                            <polyline points="7 3 7 8 15 8"></polyline>
-                        </svg>
-                        <span>Değişiklikleri Kaydet</span>
-                    </button>
+                    <!-- Düzenle Kart 4: Adres & Lokasyon Bilgileri -->
+                    <div class="bg-white rounded-2xl border border-blue-200 shadow-sm p-5 sm:p-6">
+                        <div class="flex items-center gap-3 pb-4 border-b border-slate-100 mb-4">
+                            <div class="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            </div>
+                            <div>
+                                <h2 class="text-base font-bold text-slate-900">Adres &amp; Lokasyon Bilgilerini Düzenle</h2>
+                                <span class="text-xs text-slate-500">Şirket ve teslimat adresiniz</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1" for="editCountryName">Ülke</label>
+                                    <input type="text" id="editCountryName" name="countryName" value="@(Model.CountryName ?? "Türkiye")" class="block w-full px-3.5 py-2 text-xs sm:text-sm bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition" placeholder="Türkiye" />
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1" for="editTownName">Şehir / İl</label>
+                                    <input type="text" id="editTownName" name="townName" value="@Model.TownName" class="block w-full px-3.5 py-2 text-xs sm:text-sm bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition" placeholder="Örn: İstanbul" />
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1" for="editDistrictName">İlçe</label>
+                                    <input type="text" id="editDistrictName" name="districtName" value="@Model.DistrictName" class="block w-full px-3.5 py-2 text-xs sm:text-sm bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition" placeholder="Örn: Kadıköy" />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5" for="editAddressText">
+                                    Açık Adres (Cadde, Mahalle, Sokak, No, Daire)
+                                </label>
+                                <textarea id="editAddressText" name="addressText" rows="3" class="block w-full p-3 text-sm sm:text-base bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition shadow-xs placeholder:text-slate-400" placeholder="Örn: Barbaros Bulvarı No:12 D:4 Beşiktaş">@Model.AddressText</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Düzenle Kart 5: Firma Açıklaması (Geniş 2 Sütun) -->
+                    <div class="lg:col-span-2 bg-white rounded-2xl border border-blue-200 shadow-sm p-5 sm:p-6">
+                        <div class="flex items-center gap-3 pb-4 border-b border-slate-100 mb-4">
+                            <div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+                            </div>
+                            <div>
+                                <h2 class="text-base font-bold text-slate-900">Firma / Profil Açıklaması Düzenle</h2>
+                                <span class="text-xs text-slate-500">Firmanızın faaliyetleri, uzmanlıkları ve tedarik prensipleri</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5" for="editCompanyDetailText">
+                                Firma Hakkında Detaylı Bilgi
+                            </label>
+                            <textarea id="editCompanyDetailText" name="companyDetailText" rows="4" class="block w-full p-3 text-sm sm:text-base bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition shadow-xs placeholder:text-slate-400" placeholder="Firmanızın hizmet verdiği sektörler, ürün yelpazesi veya genel çalışma prensipleri...">@Model.CompanyDetailText</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Form Aksiyon Butonları Şeridi -->
+                    <div class="lg:col-span-2 flex items-center justify-end gap-3 p-4 bg-white rounded-2xl border border-slate-200 shadow-xs">
+                        <button type="button" class="px-5 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 font-semibold text-xs sm:text-sm transition cursor-pointer" onclick="toggleEditProfileMode()">
+                            <span>İptal / Vazgeç</span>
+                        </button>
+                        <button type="submit" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/25 transition active:scale-95 cursor-pointer">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                <polyline points="7 3 7 8 15 8"></polyline>
+                            </svg>
+                            <span>Değişiklikleri Kaydet</span>
+                        </button>
+                    </div>
+
                 </div>
             </form>
         </div>
 
         <!-- ========================================================================= -->
-        <!-- 3. GÜVENLİK & ŞİFRE YÖNETİMİ                                              -->
+        <!-- 3. GÜVENLİK & ŞİFRE YÖNETİMİ KARTI                                         -->
         <!-- ========================================================================= -->
-        <div class="profile-card">
-            <div class="profile-card-header">
-                <div class="profile-card-icon profile-card-icon-red">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 sm:p-6 mt-6 hover:shadow-md transition-shadow">
+            <div class="flex items-center gap-3 pb-4 border-b border-slate-100 mb-5">
+                <div class="w-10 h-10 rounded-xl bg-rose-50 border border-rose-200/60 text-rose-600 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 </div>
-                <div class="profile-header-text">
-                    <h2>Güvenlik & Şifre Yönetimi</h2>
-                    <span class="profile-header-subtitle">Hesap şifrenizi ve e-posta doğrulama bağlantınızı yönetin</span>
+                <div>
+                    <h2 class="text-base sm:text-lg font-bold text-slate-900">Güvenlik &amp; Şifre Yönetimi</h2>
+                    <span class="text-xs text-slate-500">Hesap şifrenizi ve e-posta doğrulama bağlantınızı yönetin</span>
                 </div>
             </div>
-            <div class="profile-card-body">
-                <div class="security-grid-panel">
-                    <!-- Sol: Mevcut Şifre Durumu -->
-                    <div class="security-item-card">
-                        <div class="security-item-top">
-                            <div class="security-item-icon">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                            </div>
-                            <span class="security-item-title">Mevcut Şifre</span>
-                        </div>
-                        <div class="security-item-value-box">
-                            <span class="security-dots">••••••••••••</span>
-                            <span class="security-status-tag">
-                                <span class="tag-dot"></span> Korumalı
-                            </span>
-                        </div>
-                        <span class="security-item-hint">Şifreniz Salted SHA-256 algoritmasıyla şifrelenmiştir</span>
-                    </div>
 
-                    <!-- Sağ: Doğrulama E-Postası -->
-                    <div class="security-item-card">
-                        <div class="security-item-top">
-                            <div class="security-item-icon security-icon-blue">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                            </div>
-                            <span class="security-item-title">Kayıtlı Güvenlik E-Postası</span>
-                        </div>
-                        <div class="security-item-value-box">
-                            <span class="security-mail-value">@(Model.CompanyMail ?? "—")</span>
-                        </div>
-                        <span class="security-item-hint">Şifre sıfırlama bağlantısı bu adrese gönderilir</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                <!-- Sol: Mevcut Şifre Durumu -->
+                <div class="p-4 rounded-xl bg-slate-50/80 border border-slate-100 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Mevcut Şifre Durumu</span>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Korumalı
+                        </span>
                     </div>
+                    <div class="font-mono text-xl text-slate-700 tracking-widest my-1.5">••••••••••••</div>
+                    <span class="text-[11px] text-slate-400">Şifreniz Salted SHA-256 algoritmasıyla şifrelenmiştir</span>
                 </div>
 
-                <!-- Alt Aksiyon Kutusu -->
-                <div class="security-action-banner">
-                    <div class="security-notice-left">
-                        <div class="security-shield-icon">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                        </div>
-                        <div class="security-notice-text">
-                            <strong>Şifrenizi Değiştirmek mi İstiyorsunuz?</strong>
-                            <p>Şifre güvenliğiniz için e-posta adresinize tek kullanımlık şifre sıfırlama linki gönderilir.</p>
-                        </div>
+                <!-- Sağ: Kayıtlı Güvenlik E-Postası -->
+                <div class="p-4 rounded-xl bg-slate-50/80 border border-slate-100 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Kayıtlı Güvenlik E-Postası</span>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[11px] font-bold">
+                            Doğrulanmış
+                        </span>
                     </div>
-                    <form asp-controller="Account" asp-action="RequestPasswordReset" method="post" class="security-action-form" onsubmit="handleRequestPasswordReset(event); return false;">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn-security-reset">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                                <polyline points="22,6 12,13 2,6"></polyline>
-                            </svg>
-                            <span>Şifre Sıfırlama Bağlantısı Gönder</span>
-                        </button>
-                    </form>
+                    <div class="text-sm sm:text-base font-bold text-slate-900 break-all my-1.5">@(Model.CompanyMail ?? "—")</div>
+                    <span class="text-[11px] text-slate-400">Şifre sıfırlama bağlantısı bu adrese iletilir</span>
                 </div>
+            </div>
+
+            <!-- Şifre Sıfırlama Aksiyon Şeridi -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 p-4 rounded-xl bg-blue-50/60 border border-blue-100">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <div>
+                        <strong class="text-xs sm:text-sm font-bold text-blue-950 block">Şifrenizi Değiştirmek mi İstiyorsunuz?</strong>
+                        <p class="text-xs text-blue-800 mt-0.5">Şifre güvenliğiniz için e-posta adresinize tek kullanımlık şifre sıfırlama linki gönderilir.</p>
+                    </div>
+                </div>
+                <form asp-controller="Account" asp-action="RequestPasswordReset" method="post" onsubmit="handleRequestPasswordReset(event); return false;" class="shrink-0 w-full sm:w-auto">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs sm:text-sm shadow-sm shadow-blue-600/20 transition active:scale-95 cursor-pointer">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        <span>Şifre Sıfırlama Bağlantısı Gönder</span>
+                    </button>
+                </form>
             </div>
         </div>
         </div> <!-- /profileTabPanel-profile -->
 
         <!-- ==================== SEKME: DEĞERLENDİRMELER & İTİBAR KARNESİ ==================== -->
         <div id="profileTabPanel-reviews" class="profile-tab-panel" style="@(Model.ActiveTab == "reviews" ? "display: block;" : "display: none;")">
-            <div class="profile-card">
-                <div class="profile-card-header">
-                    <div class="profile-card-icon" style="background: rgba(245, 158, 11, 0.12); color: #d97706;">
-                        <span style="font-size: 1.25rem;">★</span>
+            <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 sm:p-6 hover:shadow-md transition-shadow">
+                <!-- Header -->
+                <div class="flex items-center gap-3 pb-4 border-b border-slate-100 mb-5">
+                    <div class="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200/60 text-amber-600 flex items-center justify-center shrink-0">
+                        <span class="text-lg">★</span>
                     </div>
-                    <div class="profile-header-text">
-                        <h2>Firma İtibar Karnesi &amp; 10 Yıldızlı Değerlendirmeler</h2>
-                        <span class="profile-header-subtitle">Alıcı ve tedarikçi iş ortaklarınızın firmanız hakkında paylaştığı doğrulanmış 10★ puanlar</span>
+                    <div>
+                        <h2 class="text-base sm:text-lg font-bold text-slate-900">Firma İtibar Karnesi &amp; 10 Yıldızlı Değerlendirmeler</h2>
+                        <span class="text-xs text-slate-500">Alıcı ve tedarikçi iş ortaklarınızın firmanız hakkında paylaştığı doğrulanmış 10★ puanlar</span>
                     </div>
                 </div>
-                <div class="profile-card-body">
-                    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 12px; padding: 20px 24px; margin-bottom: 20px;">
-                        <div>
-                            <div style="font-size: 0.78rem; color: #d97706; font-weight: 700; text-transform: uppercase;">Genel İtibar &amp; Memnuniyet Skoru</div>
-                            <div style="font-size: 2.3rem; font-weight: 900; color: #0f172a; line-height: 1.1; margin: 4px 0;">
-                                ★ @Model.OverallScore.ToString("0.0") <small style="font-size: 1rem; color: #64748b; font-weight: 600;">/ 10</small>
-                            </div>
-                            <div style="display: inline-flex; gap: 3px; margin-bottom: 4px;">
-                                @for (int i = 1; i <= 10; i++)
-                                {
-                                    var filled = i <= Math.Round(Model.OverallScore);
-                                    <span style="font-size: 1rem; color: @(filled ? "#f59e0b" : "#cbd5e1");">★</span>
-                                }
-                            </div>
-                            <div style="font-size: 0.8rem; color: #64748b;">Toplam @Model.ReceivedReviews.Count Doğrulanmış Değerlendirmeye Dayanıyor</div>
-                        </div>
 
-                        <div style="display: flex; flex-direction: column; gap: 6px; text-align: right;">
-                            <span class="profile-badge" style="background: #ecfdf5; color: #059669; border: 1px solid rgba(16,185,129,0.3); padding: 6px 14px; font-size: 0.82rem; font-weight: 700; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                Onaylı B2B Portal Üyesi
-                            </span>
-                            <a href="/Seller/@Model.CompanyID" target="_blank" style="font-size: 0.78rem; font-weight: 700; color: #2563eb; text-decoration: none;">
-                                Herkese Açık Satıcı Sayfasını Gör ↗
-                            </a>
+                <!-- Scorecard Banner -->
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-xl bg-gradient-to-br from-amber-500/10 via-amber-50/60 to-orange-500/5 border border-amber-200/60 mb-5">
+                    <div>
+                        <span class="text-xs font-bold text-amber-700 uppercase tracking-wider block">Genel İtibar &amp; Memnuniyet Skoru</span>
+                        <div class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight my-1 flex items-baseline gap-2">
+                            <span class="text-amber-500">★</span> @Model.OverallScore.ToString("0.0")
+                            <span class="text-sm sm:text-base font-bold text-slate-400">/ 10</span>
                         </div>
+                        <div class="flex items-center gap-1 my-1.5">
+                            @for (int i = 1; i <= 10; i++)
+                            {
+                                var filled = i <= Math.Round(Model.OverallScore);
+                                <span class="text-lg sm:text-xl @(filled ? "text-amber-500" : "text-slate-200") select-none">★</span>
+                            }
+                        </div>
+                        <span class="text-xs text-slate-500">Toplam @Model.ReceivedReviews.Count Doğrulanmış Değerlendirmeye Dayanıyor</span>
                     </div>
 
-                    @if (!Model.ReceivedReviews.Any())
-                    {
-                        <div class="profile-orders-empty-state">
-                            <div class="empty-icon-circle" style="background: rgba(245, 158, 11, 0.1);">
-                                <span style="font-size: 2rem; color: #d97706;">★</span>
-                            </div>
-                            <h3>Henüz Değerlendirmeniz Bulunmamaktadır</h3>
-                            <p>Tamamlanan satışlarınız veya satın alımlarınız sonrasında iş ortaklarınız değerlendirme yaptıkça 10 yıldızlı puanlar ve yorumlar burada listelenecektir.</p>
+                    <div class="flex flex-col sm:items-end gap-2.5 shrink-0">
+                        <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200/60 shadow-xs">
+                            <svg class="w-4 h-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            Onaylı B2B Portal Üyesi
+                        </span>
+                        <a href="/Seller/@Model.CompanyID" target="_blank" class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-blue-600 hover:text-blue-700 hover:underline transition">
+                            <span>Herkese Açık Satıcı Sayfasını Gör</span>
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        </a>
+                    </div>
+                </div>
+
+                @if (!Model.ReceivedReviews.Any())
+                {
+                    <div class="p-8 sm:p-12 rounded-2xl bg-slate-50/70 border-2 border-dashed border-slate-200 text-center flex flex-col items-center justify-center">
+                        <div class="w-16 h-16 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-3xl mb-4 shadow-inner">
+                            ★
                         </div>
-                    }
-                    else
-                    {
-                        <div style="display: flex; flex-direction: column; gap: 14px;">
-                            @foreach (var r in Model.ReceivedReviews)
-                            {
-                                var isBuyerToSeller = r.ReviewType == "BuyerToSeller";
-                                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); border-left: 4px solid @(isBuyerToSeller ? "#f59e0b" : "#2563eb");">
-                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
-                                        <div>
-                                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                                <strong style="color: #0f172a; font-size: 0.95rem;">🏢 @r.ReviewerName</strong>
-                                                <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 4px; font-weight: 700; background: @(isBuyerToSeller ? "rgba(245,158,11,0.12)" : "rgba(37,99,235,0.1)"); color: @(isBuyerToSeller ? "#d97706" : "#2563eb");">
-                                                    @(isBuyerToSeller ? "🛒 Alıcıdan Gelen Değerlendirme (Satışınız İçin)" : "📦 Tedarikçiden Gelen Değerlendirme (Alımınız İçin)")
-                                                </span>
-                                            </div>
-                                            <div style="font-size: 0.76rem; color: #64748b; margin-top: 3px;">
-                                                <span>📅 @r.ReviewDate.ToString("dd.MM.yyyy HH:mm")</span>
-                                                @if (!string.IsNullOrWhiteSpace(r.OrderNumber))
-                                                {
-                                                    <span style="color: #2563eb; font-weight: 600; margin-left: 8px;">• Sipariş: @r.OrderNumber</span>
-                                                }
-                                            </div>
-                                        </div>
-                                        <div style="display: flex; align-items: center; gap: 6px;">
-                                            <span style="background: rgba(245,158,11,0.15); color: #d97706; font-weight: 800; padding: 4px 12px; border-radius: 8px; font-size: 0.95rem;">
-                                                ★ @r.ReviewScore.ToString("0.0") / 10
+                        <h3 class="text-base sm:text-lg font-bold text-slate-800 mb-1.5">Henüz Değerlendirmeniz Bulunmamaktadır</h3>
+                        <p class="text-xs sm:text-sm text-slate-500 max-w-md">Tamamlanan satışlarınız veya satın alımlarınız sonrasında iş ortaklarınız değerlendirme yaptıkça 10 yıldızlı puanlar ve yorumlar burada listelenecektir.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="space-y-4">
+                        @foreach (var r in Model.ReceivedReviews)
+                        {
+                            var isBuyerToSeller = r.ReviewType == "BuyerToSeller";
+                            <div class="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-6 shadow-xs hover:shadow-md transition-all border-l-4 @(isBuyerToSeller ? "border-l-amber-500" : "border-l-blue-600")">
+                                <!-- Üst Satır: Firma / Yetkili & Sağda 10 Yıldız Rozeti -->
+                                <div class="flex items-start justify-between gap-3 pb-3 border-b border-slate-100 mb-3">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-1.5">
+                                                <span class="text-base">🏢</span>
+                                                <span class="truncate">@r.ReviewerName</span>
                                             </span>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold shrink-0 @(isBuyerToSeller ? "bg-amber-100 text-amber-800" : "bg-blue-100 text-blue-800")">
+                                                @(isBuyerToSeller ? "🛒 Alıcı Değerlendirmesi" : "📦 Tedarikçi Değerlendirmesi")
+                                            </span>
+                                        </div>
+                                        <div class="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-slate-400 mt-1.5">
+                                            <span class="flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                                <span>@r.ReviewDate.ToString("dd.MM.yyyy HH:mm")</span>
+                                            </span>
+                                            @if (!string.IsNullOrWhiteSpace(r.OrderNumber))
+                                            {
+                                                <span class="text-blue-600 font-semibold font-mono">
+                                                    • Sipariş: @r.OrderNumber
+                                                </span>
+                                            }
                                         </div>
                                     </div>
 
-                                    @if (!string.IsNullOrWhiteSpace(r.ReviewText))
-                                    {
-                                        <p style="font-size: 0.9rem; color: #334155; margin: 10px 0 0 0; line-height: 1.5; background: #f8fafc; padding: 10px 14px; border-radius: 6px; border: 1px solid #f1f5f9;">
-                                            "@r.ReviewText"
-                                        </p>
-                                    }
+                                    <!-- 10 Yıldız Rozeti -->
+                                    <div class="shrink-0">
+                                        <div class="flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 font-extrabold text-xs sm:text-sm shadow-xs">
+                                            <span class="text-amber-500">★</span>
+                                            <span>@r.ReviewScore.ToString("0.0")</span>
+                                            <span class="text-[10px] text-amber-600/70 font-semibold">/ 10</span>
+                                        </div>
+                                    </div>
                                 </div>
-                            }
-                        </div>
-                    }
-                </div>
+
+                                <!-- Yorum Metni -->
+                                @if (!string.IsNullOrWhiteSpace(r.ReviewText))
+                                {
+                                    <div class="p-3 sm:p-4 rounded-xl bg-slate-50/90 border border-slate-100 text-xs sm:text-sm text-slate-700 leading-relaxed italic flex items-start gap-2.5">
+                                        <svg class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/></svg>
+                                        <span class="flex-1">&ldquo;@r.ReviewText&rdquo;</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
             </div>
         </div>
 
     </div>
-</section>
+</main>
 
 <!-- Modal: Sipariş Detayı (Hesabım) -->
-<div id="profileOrderDetailModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this)closeProfileOrderModal()">
-    <div class="ty-modal-box" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; width: 100%; max-width: 520px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+<div id="profileOrderDetailModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 transition-opacity duration-200" style="display: none;" onclick="if(event.target===this)closeProfileOrderModal()">
+    <div class="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-2xl w-full max-w-lg p-6 sm:p-8">
+        <div class="flex items-start justify-between pb-4 border-b border-slate-100 mb-5">
             <div>
-                <span class="status-badge badge-emerald" style="font-size: 0.72rem; padding: 2px 8px;">SİPARİŞ AYRINTILARI</span>
-                <h3 id="pModalOrderNo" style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-top: 6px; margin-bottom: 4px;"></h3>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-extrabold uppercase tracking-wider">Sipariş Ayrıntıları</span>
+                <h3 id="pModalOrderNo" class="text-xl sm:text-2xl font-black text-slate-900 mt-2"></h3>
             </div>
-            <button type="button" onclick="closeProfileOrderModal()" style="border: none; background: transparent; font-size: 1.3rem; cursor: pointer; color: #64748b;">✕</button>
+            <button type="button" onclick="closeProfileOrderModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition cursor-pointer" aria-label="Kapat">
+                ✕
+            </button>
         </div>
 
-        <div style="background: rgba(0,0,0,0.02); border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 16px; font-size: 0.85rem; display: flex; flex-direction: column; gap: 8px;">
-            <div><strong>Durum:</strong> <span id="pModalOrderStatus"></span></div>
-            <div><strong>Toplam Tutar:</strong> <span id="pModalGrandTotal" style="font-weight: 700; color: #059669;"></span></div>
-            <div><strong>Ödeme Yöntemi:</strong> <span id="pModalPaymentMethod"></span></div>
-            <div><strong>Teslimat Adresi:</strong> <span id="pModalDeliveryAddress"></span></div>
-            <div id="pModalTrackingWrap" style="display: none;"><strong>Kargo Takip:</strong> <span id="pModalTracking"></span></div>
+        <div class="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-100 space-y-2.5 text-xs sm:text-sm text-slate-600 mb-6">
+            <div class="flex justify-between py-1 border-b border-slate-200/60"><strong class="text-slate-800">Durum:</strong> <span id="pModalOrderStatus" class="font-medium text-slate-900"></span></div>
+            <div class="flex justify-between py-1 border-b border-slate-200/60"><strong class="text-slate-800">Toplam Tutar:</strong> <span id="pModalGrandTotal" class="font-bold text-emerald-600 text-sm sm:text-base"></span></div>
+            <div class="flex justify-between py-1 border-b border-slate-200/60"><strong class="text-slate-800">Ödeme Yöntemi:</strong> <span id="pModalPaymentMethod" class="text-slate-700"></span></div>
+            <div class="flex flex-col sm:flex-row sm:justify-between py-1 border-b border-slate-200/60 gap-1"><strong class="text-slate-800 shrink-0">Teslimat Adresi:</strong> <span id="pModalDeliveryAddress" class="text-slate-700 text-right"></span></div>
+            <div id="pModalTrackingWrap" class="justify-between py-1" style="display: none;"><strong class="text-slate-800">Kargo Takip:</strong> <span id="pModalTracking" class="font-mono text-blue-600"></span></div>
         </div>
 
-        <div style="display: flex; justify-content: flex-end;">
-            <button type="button" class="btn-cancel" onclick="closeProfileOrderModal()">Kapat</button>
+        <div class="flex justify-end">
+            <button type="button" onclick="closeProfileOrderModal()" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm transition cursor-pointer">
+                Kapat
+            </button>
         </div>
     </div>
 </div>
 
 <!-- Modal: Satıcı Değerlendirme Modalı (Hesabım) -->
-<div id="profileRateModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.7); backdrop-filter: blur(5px); z-index: 99999; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this)closeProfileRateModal()">
-    <div class="ty-modal-box" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; width: 100%; max-width: 520px; padding: 26px; box-shadow: 0 25px 35px -5px rgba(0,0,0,0.25);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+<div id="profileRateModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 transition-opacity duration-200" style="display: none;" onclick="if(event.target===this)closeProfileRateModal()">
+    <div class="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-2xl w-full max-w-lg p-6 sm:p-8 overflow-y-auto max-h-[90vh]">
+        <div class="flex items-start justify-between pb-4 border-b border-slate-100 mb-5">
             <div>
-                <span class="status-badge badge-emerald" style="font-size: 0.72rem; padding: 2px 8px;">DOĞRULANMIŞ SATIN ALIM</span>
-                <h3 id="profileRateModalTitle" style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-top: 6px; margin-bottom: 2px;">Satıcıyı Değerlendir</h3>
-                <small style="color: #64748b; font-size: 0.8rem;">Bu değerlendirme satıcının onaylı kurumsal profiline ve karne istatistiklerine yansıyacaktır.</small>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-extrabold uppercase tracking-wider">Doğrulanmış Satın Alım</span>
+                <h3 id="profileRateModalTitle" class="text-xl sm:text-2xl font-black text-slate-900 mt-2 mb-1">Satıcıyı Değerlendir</h3>
+                <p class="text-xs text-slate-500">Bu değerlendirme satıcının onaylı kurumsal profiline ve karne istatistiklerine yansıyacaktır.</p>
             </div>
-            <button type="button" onclick="closeProfileRateModal()" style="border: none; background: transparent; font-size: 1.3rem; cursor: pointer; color: #64748b;">&times;</button>
+            <button type="button" onclick="closeProfileRateModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition cursor-pointer" aria-label="Kapat">
+                &times;
+            </button>
         </div>
 
         <form id="profileRateForm" onsubmit="submitProfileRate(event)">
@@ -907,42 +1127,42 @@
             <input type="hidden" id="pRateScore" value="10" />
 
             <!-- 10 Yıldız Seçici -->
-            <div style="text-align: center; margin-bottom: 16px; background: rgba(245,158,11,0.05); padding: 14px; border-radius: 10px; border: 1px solid rgba(245,158,11,0.15);">
-                <label style="display: block; font-size: 0.84rem; font-weight: 700; color: #0f172a; margin-bottom: 6px;">Satıcı Genel Memnuniyet Puanı (10 Yıldız)</label>
-                <div style="display: flex; justify-content: center; gap: 4px;" id="profileStarPickerWrap">
+            <div class="p-5 rounded-2xl bg-amber-50/70 border border-amber-200/60 text-center mb-5">
+                <label class="block text-xs sm:text-sm font-bold text-slate-800 mb-2">Satıcı Genel Memnuniyet Puanı (10 Yıldız)</label>
+                <div class="flex items-center justify-center gap-1 sm:gap-2 my-2" id="profileStarPickerWrap">
                     @for (int i = 1; i <= 10; i++)
                     {
-                        <button type="button" class="btn-profile-star-pick" data-val="@i" onclick="pickProfileScore(@i)" onmouseenter="previewProfileScore(@i)" onmouseleave="restoreProfileScore()" style="background: none; border: none; font-size: 1.8rem; color: #f59e0b; cursor: pointer; padding: 2px; transition: transform 0.15s;">★</button>
+                        <button type="button" class="btn-profile-star-pick text-2xl sm:text-3xl text-amber-500 hover:scale-125 active:scale-95 transition-transform p-0.5 cursor-pointer bg-transparent border-none" data-val="@i" onclick="pickProfileScore(@i)" onmouseenter="previewProfileScore(@i)" onmouseleave="restoreProfileScore()">★</button>
                     }
                 </div>
-                <div id="profileScoreText" style="font-size: 1.05rem; font-weight: 800; color: #d97706; margin-top: 6px;">★ 10.0 / 10 - Mükemmel</div>
+                <div id="profileScoreText" class="text-sm sm:text-base font-extrabold text-amber-700 mt-2">★ 10.0 / 10 - Mükemmel</div>
             </div>
 
             <!-- Alt Kriterler (10 Üzerinden) -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
                 <div>
-                    <label style="font-size: 0.74rem; font-weight: 700; display: block; margin-bottom: 4px;">🚚 Teslimat Hızı</label>
-                    <input type="number" id="pRateDelivery" class="form-control" value="10" min="1" max="10" step="0.5" style="font-size: 0.85rem; padding: 6px 10px;" />
+                    <label class="text-xs font-bold text-slate-700 block mb-1">🚚 Teslimat Hızı</label>
+                    <input type="number" id="pRateDelivery" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none" value="10" min="1" max="10" step="0.5" />
                 </div>
                 <div>
-                    <label style="font-size: 0.74rem; font-weight: 700; display: block; margin-bottom: 4px;">📦 Ürün Kalitesi</label>
-                    <input type="number" id="pRateQuality" class="form-control" value="10" min="1" max="10" step="0.5" style="font-size: 0.85rem; padding: 6px 10px;" />
+                    <label class="text-xs font-bold text-slate-700 block mb-1">📦 Ürün Kalitesi</label>
+                    <input type="number" id="pRateQuality" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none" value="10" min="1" max="10" step="0.5" />
                 </div>
                 <div>
-                    <label style="font-size: 0.74rem; font-weight: 700; display: block; margin-bottom: 4px;">💬 İletişim / Süreç</label>
-                    <input type="number" id="pRateComm" class="form-control" value="10" min="1" max="10" step="0.5" style="font-size: 0.85rem; padding: 6px 10px;" />
+                    <label class="text-xs font-bold text-slate-700 block mb-1">💬 İletişim / Süreç</label>
+                    <input type="number" id="pRateComm" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none" value="10" min="1" max="10" step="0.5" />
                 </div>
             </div>
 
             <!-- Yorum -->
-            <div class="form-group" style="margin-bottom: 18px;">
-                <label style="font-size: 0.82rem; font-weight: 700; display: block; margin-bottom: 4px;">Yorumunuz (Opsiyonel)</label>
-                <textarea id="pRateComment" class="form-control" rows="3" placeholder="Teslimat süreci, ambalaj ve şartnameye uygunluk nasıldı?" style="font-size: 0.85rem;"></textarea>
+            <div class="mb-6">
+                <label class="text-xs font-bold text-slate-700 block mb-1">Yorumunuz (Opsiyonel)</label>
+                <textarea id="pRateComment" rows="3" placeholder="Teslimat süreci, ambalaj ve şartnameye uygunluk nasıldı?" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none resize-none"></textarea>
             </div>
 
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button type="button" class="btn-cancel" onclick="closeProfileRateModal()">Vazgeç</button>
-                <button type="submit" class="btn-primary" style="padding: 10px 20px; font-weight: 700; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none;">
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <button type="button" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm transition cursor-pointer" onclick="closeProfileRateModal()">Vazgeç</button>
+                <button type="submit" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-amber-500/20 transition active:scale-95 cursor-pointer">
                     Değerlendir &amp; Gönder
                 </button>
             </div>
@@ -954,12 +1174,12 @@
 <input type="file" id="profilePhotoInput" accept="image/jpeg, image/png, image/webp, image/gif, image/jpg" style="display: none;" onchange="handleSingleFileSelected(this)" />
 
 <!-- Live Interactive Adjust & Upload Modal -->
-<div id="photoPreviewModal" class="blur-modal-overlay" style="display: none;">
-    <div class="blur-modal-box photo-preview-modal-box photo-adjust-modal-box">
-        <div class="blur-modal-tag blur-tag-login">FOTOĞRAFI AYARLA & KIRP</div>
+<div id="photoPreviewModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 transition-opacity duration-200" style="display: none;">
+    <div class="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-2xl w-full max-w-md p-6 sm:p-7 relative overflow-hidden">
+        <div class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[11px] font-extrabold uppercase tracking-wider mb-2">FOTOĞRAFI AYARLA &amp; KIRP</div>
         
-        <h3 class="blur-modal-title">Profil Fotoğrafını Konumlandır</h3>
-        <p class="blur-modal-desc">Görseli daire içinde sürükleyerek hizalayabilir, yakınlaştırma ve döndürme araçlarıyla mükemmel açıyı ayarlayabilirsiniz.</p>
+        <h3 class="text-xl sm:text-2xl font-black text-slate-900 mb-1">Profil Fotoğrafını Konumlandır</h3>
+        <p class="text-xs text-slate-500 mb-4">Görseli daire içinde sürükleyerek hizalayabilir, yakınlaştırma ve döndürme araçlarıyla mükemmel açıyı ayarlayabilirsiniz.</p>
 
         <!-- Interactive Circular Cropper Viewport -->
         <div class="crop-viewport-wrapper">
@@ -975,61 +1195,52 @@
         </div>
 
         <!-- Adjust Toolbar (Zoom Slider & Rotate / Reset) -->
-        <div class="crop-toolbar">
-            <div class="crop-zoom-group">
-                <button type="button" class="btn-crop-tool" onclick="adjustZoom(-0.15)" title="Uzaklaştır">
+        <div class="mb-4">
+            <div class="flex items-center justify-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100 mb-3">
+                <button type="button" class="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-300 flex items-center justify-center transition shadow-xs cursor-pointer" onclick="adjustZoom(-0.15)" title="Uzaklaştır">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </button>
-                <input type="range" id="cropZoomSlider" min="1" max="3.5" step="0.01" value="1" oninput="onZoomSliderChanged(this.value)" class="crop-slider" title="Yakınlaştırma" />
-                <button type="button" class="btn-crop-tool" onclick="adjustZoom(0.15)" title="Yakınlaştır">
+                <input type="range" id="cropZoomSlider" min="1" max="3.5" step="0.01" value="1" oninput="onZoomSliderChanged(this.value)" class="w-full accent-blue-600 cursor-pointer h-2 bg-slate-200 rounded-lg appearance-none" title="Yakınlaştırma" />
+                <button type="button" class="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-300 flex items-center justify-center transition shadow-xs cursor-pointer" onclick="adjustZoom(0.15)" title="Yakınlaştır">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </button>
             </div>
 
-            <div class="crop-actions-row">
-                <button type="button" class="btn-crop-action" onclick="rotateCropImage(90)" title="90° Saat Yönünde Döndür">
+            <div class="grid grid-cols-2 gap-2">
+                <button type="button" class="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer" onclick="rotateCropImage(90)" title="90° Saat Yönünde Döndür">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
                     <span>90° Döndür</span>
                 </button>
-                <button type="button" class="btn-crop-action" onclick="resetCropTransform()" title="Varsayılan Konuma ve Boyuta Dön">
+                <button type="button" class="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer" onclick="resetCropTransform()" title="Varsayılan Konuma ve Boyuta Dön">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
                     <span>Sıfırla</span>
                 </button>
             </div>
         </div>
 
-        <div class="photo-file-details">
-            <div class="file-detail-item">
-                <span class="file-detail-label">Dosya Adı:</span>
-                <span class="file-detail-value" id="previewFileName">—</span>
-            </div>
-            <div class="file-detail-item">
-                <span class="file-detail-label">Orijinal Boyut:</span>
-                <span class="file-detail-value" id="previewFileSize">—</span>
-            </div>
-            <div class="file-detail-item">
-                <span class="file-detail-label">Kayıt:</span>
-                <span class="file-detail-value detail-value-cdn">Ayarlanmış Görsel (Cloudinary CDN)</span>
-            </div>
+        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 text-[11px] text-slate-600 space-y-1.5 mb-5">
+            <div class="flex justify-between items-center"><span class="text-slate-400 font-medium">Dosya Adı:</span> <span class="font-bold text-slate-700 truncate max-w-[200px]" id="previewFileName">—</span></div>
+            <div class="flex justify-between items-center"><span class="text-slate-400 font-medium">Orijinal Boyut:</span> <span class="font-bold text-slate-700" id="previewFileSize">—</span></div>
+            <div class="flex justify-between items-center"><span class="text-slate-400 font-medium">Kayıt:</span> <span class="font-bold text-blue-600">Ayarlanmış Görsel (Cloudinary CDN)</span></div>
         </div>
 
         <!-- Uploading Spinner Animation State -->
-        <div id="uploadProgressBox" class="upload-progress-box" style="display: none;">
-            <div class="upload-spinner-ring"></div>
-            <span class="upload-progress-text">Görsel kırpılıyor, Cloudinary CDN'e aktarılıyor...</span>
+        <div id="uploadProgressBox" class="p-6 rounded-2xl bg-blue-50/70 border border-blue-100 flex flex-col items-center justify-center gap-3 text-center my-2" style="display: none;">
+            <div class="w-8 h-8 rounded-full border-3 border-blue-600 border-t-transparent animate-spin"></div>
+            <span class="text-xs sm:text-sm font-bold text-blue-900">Görsel kırpılıyor, Cloudinary CDN'e aktarılıyor...</span>
         </div>
 
-        <div class="photo-modal-actions" id="modalActionsGroup">
-            <button type="button" class="btn-modal-cancel" onclick="closePhotoModal()">
+        <div class="flex items-center justify-end gap-3" id="modalActionsGroup">
+            <button type="button" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm transition cursor-pointer" onclick="closePhotoModal()">
                 Vazgeç
             </button>
-            <button type="button" class="btn-modal-upload-confirm" id="btnConfirmUpload" onclick="submitAdjustedProfilePhoto()">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <button type="button" id="btnConfirmUpload" onclick="submitAdjustedProfilePhoto()" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-600/25 transition active:scale-95 cursor-pointer">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="17 8 12 3 7 8"></polyline>
                     <line x1="12" y1="3" x2="12" y2="15"></line>
                 </svg>
-                <span>Fotoğrafı Yükle & Kaydet</span>
+                <span>Fotoğrafı Yükle &amp; Kaydet</span>
             </button>
         </div>
     </div>
@@ -1052,13 +1263,13 @@
 
         if (isEditMode) {
             viewSec.style.display = 'none';
-            editSec.style.display = 'flex';
+            editSec.style.display = 'block';
             toggleBtn.classList.add('is-editing');
             toggleText.textContent = 'Görüntüleme Modu';
             editSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else {
             editSec.style.display = 'none';
-            viewSec.style.display = 'flex';
+            viewSec.style.display = 'block';
             toggleBtn.classList.remove('is-editing');
             toggleText.textContent = 'Bilgileri Düzenle';
         }
@@ -1560,14 +1771,16 @@
         if (tempError) tempError.remove();
 
         const container = document.getElementById('dynamicAlertContainer');
-        const alertClass = type === 'success' ? 'profile-alert-success' : 'profile-alert-error';
-        const iconSvg = type === 'success'
-            ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`
-            : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+        const isSuccess = (type === 'success');
+        const bgClass = isSuccess ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800';
+        const iconBg = isSuccess ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600';
+        const iconSvg = isSuccess
+            ? `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`
+            : `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
 
         const alertHtml = `
-            <div class="profile-alert ${alertClass}">
-                <div class="alert-icon-box">
+            <div class="mb-6 flex items-center gap-3 p-4 rounded-2xl border ${bgClass} text-sm font-medium shadow-sm animate-in fade-in duration-200">
+                <div class="w-8 h-8 rounded-xl ${iconBg} flex items-center justify-center shrink-0">
                     ${iconSvg}
                 </div>
                 <span>${message}</span>
@@ -1797,32 +2010,6 @@
         }
     }
 
-    function scrollProfileTabs(offset) {
-        const container = document.getElementById('profileNavTabsScroll');
-        if (container) {
-            container.scrollBy({ left: offset, behavior: 'smooth' });
-            setTimeout(updateTabScrollButtons, 300);
-        }
-    }
-
-    function updateTabScrollButtons() {
-        const container = document.getElementById('profileNavTabsScroll');
-        const btnLeft = document.getElementById('btnScrollTabsLeft');
-        const btnRight = document.getElementById('btnScrollTabsRight');
-        if (!container || !btnLeft || !btnRight) return;
-
-        const maxScroll = container.scrollWidth - container.clientWidth;
-        if (maxScroll <= 5) {
-            btnLeft.style.display = 'none';
-            btnRight.style.display = 'none';
-        } else {
-            btnLeft.style.display = 'flex';
-            btnRight.style.display = 'flex';
-            btnLeft.disabled = container.scrollLeft <= 5;
-            btnRight.disabled = container.scrollLeft >= maxScroll - 5;
-        }
-    }
-
     document.addEventListener('DOMContentLoaded', function () {
         const urlParams = new URLSearchParams(window.location.search);
         const tabParam = urlParams.get('tab');
@@ -1838,13 +2025,6 @@
             switchProfileTab('purchased-items');
         } else if (hash === 'degerlendirmeler' || hash === 'reviews') {
             switchProfileTab('reviews');
-        }
-
-        const tabScrollWrap = document.getElementById('profileNavTabsScroll');
-        if (tabScrollWrap) {
-            tabScrollWrap.addEventListener('scroll', updateTabScrollButtons);
-            window.addEventListener('resize', updateTabScrollButtons);
-            setTimeout(updateTabScrollButtons, 100);
         }
 
         setupProfileDropzones();
@@ -1895,419 +2075,3 @@
 </script>
 }
 
-<style>
-    /* ==================== HESABIM SEKMELERİ (BUTTON CAROUSEL & PILL STYLES) ==================== */
-    .profile-tabs-carousel-container {
-        position: relative;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 24px;
-        background: #ffffff;
-        padding: 6px;
-        border-radius: 14px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
-    }
-    .profile-nav-tabs-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex: 1;
-        overflow-x: auto;
-        scroll-behavior: smooth;
-        scrollbar-width: none; /* Firefox */
-        -ms-overflow-style: none; /* IE/Edge */
-        padding: 2px 4px;
-    }
-    .profile-nav-tabs-wrapper::-webkit-scrollbar {
-        display: none; /* Chrome, Safari, Edge */
-        width: 0;
-        height: 0;
-    }
-    .btn-tab-scroll {
-        width: 34px;
-        height: 34px;
-        min-width: 34px;
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-        background: #f8fafc;
-        color: #475569;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        padding: 0;
-        flex-shrink: 0;
-    }
-    .btn-tab-scroll:hover {
-        background: #2563eb;
-        color: #ffffff;
-        border-color: #2563eb;
-        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
-    }
-    .btn-tab-scroll:disabled {
-        opacity: 0.3;
-        cursor: not-allowed;
-        pointer-events: none;
-    }
-    .profile-nav-tab {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 9px 16px;
-        border-radius: 8px;
-        border: 1px solid transparent;
-        background: #f8fafc;
-        color: #475569;
-        font-size: 0.86rem;
-        font-weight: 700;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-    .profile-nav-tab:hover {
-        color: #0f172a;
-        background: #f1f5f9;
-        border-color: #cbd5e1;
-    }
-    .profile-nav-tab.active {
-        background: #2563eb;
-        color: #ffffff;
-        border-color: #2563eb;
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
-    }
-    .tab-counter-badge {
-        background: #e2e8f0;
-        color: #334155;
-        font-size: 0.72rem;
-        padding: 2px 7px;
-        border-radius: 999px;
-        font-weight: 800;
-    }
-    .profile-nav-tab.active .tab-counter-badge {
-        background: rgba(255,255,255,0.25);
-        color: #ffffff;
-    }
-    .tab-counter-badge-emerald {
-        background: rgba(16, 185, 129, 0.15);
-        color: #059669;
-    }
-    .tab-counter-badge-amber {
-        background: rgba(245, 158, 11, 0.15);
-        color: #d97706;
-    }
-
-    /* Sipariş Kartı */
-    .profile-order-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .profile-order-card:hover {
-        box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-    }
-    .profile-order-card-header {
-        padding: 16px 20px;
-        background: #f8fafc;
-        border-bottom: 1px solid #e2e8f0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 12px;
-    }
-    .profile-order-items-wrap {
-        padding: 12px 20px;
-    }
-    .profile-order-item-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 0;
-        border-bottom: 1px solid #f1f5f9;
-    }
-    .profile-order-item-row:last-child {
-        border-bottom: none;
-    }
-    .item-icon-box {
-        width: 38px;
-        height: 38px;
-        border-radius: 8px;
-        background: #f1f5f9;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-    }
-    .profile-order-cargo-info {
-        background: #f0fdf4;
-        border: 1px dashed #86efac;
-        padding: 8px 16px;
-        margin: 0 20px 12px 20px;
-        border-radius: 6px;
-        font-size: 0.8rem;
-        color: #166534;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-    .profile-order-card-footer {
-        padding: 14px 20px;
-        background: #ffffff;
-        border-top: 1px solid #f1f5f9;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 12px;
-    }
-
-    /* Filtre Çipleri ve Arama Girişi */
-    .order-status-filter-bar {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 18px;
-        flex-wrap: wrap;
-    }
-    .btn-status-chip {
-        padding: 6px 14px;
-        border-radius: 999px;
-        border: 1px solid #e2e8f0;
-        background: #ffffff;
-        font-size: 0.78rem;
-        font-weight: 600;
-        color: #64748b;
-        cursor: pointer;
-        transition: all 0.15s;
-    }
-    .btn-status-chip:hover, .btn-status-chip.active {
-        background: #0f172a;
-        color: #ffffff;
-        border-color: #0f172a;
-    }
-    .profile-filter-input {
-        padding: 8px 14px;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 0.84rem;
-        width: 240px;
-        transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .profile-filter-input:focus {
-        border-color: #2563eb;
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
-    }
-
-    /* Önceden Alınan Ürünler Kartları Grid */
-    .purchased-items-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 18px;
-    }
-    .purchased-product-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-        display: flex;
-        flex-direction: column;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .purchased-product-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 22px rgba(0,0,0,0.06);
-    }
-    .purchased-card-top {
-        padding: 12px 14px 6px 14px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .purchased-category-chip {
-        font-size: 0.7rem;
-        color: #64748b;
-        font-weight: 700;
-        text-transform: uppercase;
-        background: #f1f5f9;
-        padding: 2px 8px;
-        border-radius: 4px;
-    }
-    .purchased-sku-chip {
-        font-size: 0.72rem;
-        font-family: monospace;
-        color: #94a3b8;
-    }
-    .purchased-card-body {
-        padding: 10px 14px;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-    .purchased-icon-wrap {
-        width: 48px;
-        height: 48px;
-        border-radius: 10px;
-        background: #f8fafc;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 10px;
-    }
-    .purchased-title {
-        font-size: 0.92rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin: 0 0 6px 0;
-        line-height: 1.35;
-    }
-    .purchased-supplier-line {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 12px;
-    }
-    .purchased-metrics-bar {
-        background: #f8fafc;
-        border-radius: 8px;
-        padding: 8px 12px;
-        display: flex;
-        justify-content: space-between;
-        margin-top: auto;
-    }
-    .purchased-metric-col {
-        display: flex;
-        flex-direction: column;
-    }
-    .p-met-label {
-        font-size: 0.68rem;
-        color: #64748b;
-        font-weight: 600;
-    }
-    .p-met-val {
-        font-size: 0.85rem;
-        color: #0f172a;
-    }
-    .purchased-card-footer {
-        padding: 10px 14px;
-        background: #ffffff;
-        border-top: 1px solid #f1f5f9;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 8px;
-    }
-    .btn-reorder {
-        flex: 1;
-        padding: 7px 12px;
-        font-size: 0.78rem;
-        font-weight: 700;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        border-radius: 6px;
-    }
-
-    /* Boş Durum Kutusu */
-    .empty-state-box {
-        text-align: center;
-        padding: 48px 24px;
-        background: #f8fafc;
-        border: 1px dashed #cbd5e1;
-        border-radius: 12px;
-    }
-    .empty-icon {
-        font-size: 2.8rem;
-        margin-bottom: 12px;
-    }
-
-    /* ==================== PROFİL FOTOĞRAFI SÜRÜKLE-BIRAK (DROPZONE) ==================== */
-    .profile-photo-dropzone {
-        border: 2px dashed #cbd5e1;
-        border-radius: 12px;
-        padding: 14px 18px;
-        background: #f8fafc;
-        cursor: pointer;
-        transition: all 0.25s ease;
-        margin-bottom: 14px;
-        user-select: none;
-    }
-    .profile-photo-dropzone:hover,
-    .profile-photo-dropzone.is-dragover {
-        border-color: #2563eb;
-        background: #eff6ff;
-        box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
-        transform: translateY(-1px);
-    }
-    .photo-dropzone-inner {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-    }
-    .photo-dropzone-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 10px;
-        background: #e0e7ff;
-        color: #2563eb;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease;
-    }
-    .profile-photo-dropzone:hover .photo-dropzone-icon,
-    .profile-photo-dropzone.is-dragover .photo-dropzone-icon {
-        transform: scale(1.1);
-        background: #2563eb;
-        color: #ffffff;
-    }
-    .photo-dropzone-content {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-    }
-    .photo-dropzone-content strong {
-        font-size: 0.88rem;
-        color: #0f172a;
-        font-weight: 700;
-    }
-    .photo-dropzone-content span {
-        font-size: 0.76rem;
-        color: #64748b;
-    }
-
-    /* Avatar Daireleri Sürükle-Bırak Efekti */
-    .profile-avatar-circle.is-dragover {
-        outline: 4px dashed #38bdf8 !important;
-        outline-offset: 4px;
-        transform: scale(1.08) !important;
-        box-shadow: 0 0 25px rgba(56, 189, 248, 0.6) !important;
-    }
-    .profile-avatar-circle.is-dragover .avatar-hover-overlay {
-        opacity: 1 !important;
-    }
-    .avatar-mgmt-current-circle {
-        transition: transform 0.25s ease, box-shadow 0.25s ease, outline 0.2s ease;
-    }
-    .avatar-mgmt-current-circle:hover {
-        transform: scale(1.03);
-        box-shadow: 0 10px 28px rgba(37, 99, 235, 0.35);
-    }
-    .avatar-mgmt-current-circle.is-dragover {
-        outline: 4px dashed #2563eb !important;
-        outline-offset: 4px;
-        transform: scale(1.08) !important;
-        box-shadow: 0 0 25px rgba(37, 99, 235, 0.5) !important;
-    }
-</style>

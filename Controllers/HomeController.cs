@@ -209,8 +209,75 @@ namespace satinalmaportali2.Controllers {
             return View();
         }
 
-        public IActionResult UrunKategorileri() {
-            return View();
+        public async Task<IActionResult> UrunKategorileri() {
+            try {
+                var dbCategories = await _context.Category.AsNoTracking().ToListAsync();
+                var activeItems = await _context.Items.AsNoTracking().Where(i => !i.IsDeleted).ToListAsync();
+                var totalSuppliers = await _context.Companies.CountAsync(c => c.CompanyTypeID == 1 || c.CompanyTypeID == 3);
+                var totalRequests = await _context.Requests.CountAsync(r => r.Status != "Kaldırıldı");
+
+                // Ürün sayılarını kategoriye göre eşle
+                var directProductCounts = activeItems
+                    .Where(i => i.CategoryID.HasValue && i.CategoryID.Value > 0)
+                    .GroupBy(i => i.CategoryID!.Value)
+                    .ToDictionary(g => g.Key, g => g.Count());
+
+                CategoryDirectoryNodeViewModel BuildNode(Category cat, int level)
+                {
+                    var directCount = directProductCounts.TryGetValue(cat.CategoryID, out var direct) ? direct : 0;
+                    var childCategories = dbCategories
+                        .Where(c => c.ParentCategoryID == cat.CategoryID)
+                        .OrderBy(c => c.CategoryName)
+                        .ToList();
+
+                    var childNodes = new List<CategoryDirectoryNodeViewModel>();
+                    int totalDescendants = childCategories.Count;
+                    int totalProducts = directCount;
+
+                    foreach (var child in childCategories)
+                    {
+                        var childNode = BuildNode(child, level + 1);
+                        childNodes.Add(childNode);
+                        totalDescendants += childNode.TotalDescendantsCount;
+                        totalProducts += childNode.ProductCount;
+                    }
+
+                    return new CategoryDirectoryNodeViewModel
+                    {
+                        CategoryID = cat.CategoryID,
+                        CategoryName = cat.CategoryName?.Trim() ?? ("Kategori #" + cat.CategoryID),
+                        ParentCategoryID = cat.ParentCategoryID,
+                        Icon = !string.IsNullOrWhiteSpace(cat.Icon) ? cat.Icon.Trim() : (level == 0 ? "fa-solid fa-folder-tree" : null),
+                        Level = level,
+                        ProductCount = totalProducts,
+                        DirectProductCount = directCount,
+                        TotalDescendantsCount = totalDescendants,
+                        Children = childNodes
+                    };
+                }
+
+                var rootNodes = dbCategories
+                    .Where(c => !c.ParentCategoryID.HasValue || c.ParentCategoryID.Value == 0)
+                    .OrderBy(c => c.CategoryID)
+                    .Select(r => BuildNode(r, 0))
+                    .ToList();
+
+                var viewModel = new UrunKategorileriViewModel
+                {
+                    RootCategories = rootNodes,
+                    TotalRootCategories = rootNodes.Count,
+                    TotalCategories = dbCategories.Count,
+                    TotalProducts = activeItems.Count,
+                    TotalSuppliers = totalSuppliers > 0 ? totalSuppliers : 22,
+                    TotalRequests = totalRequests
+                };
+
+                return View(viewModel);
+            }
+            catch (Exception ex) {
+                Console.WriteLine("UrunKategorileri Load Error: " + ex.Message);
+                return View(new UrunKategorileriViewModel());
+            }
         }
 
         public IActionResult NedenPortal() {

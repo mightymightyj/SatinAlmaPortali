@@ -4,684 +4,819 @@
     var currentTier = Model?.CurrentMembershipTypeId ?? 1;
 }
 
-<!-- HERO SECTION -->
-<section class="fiyat-hero">
-    <div class="fiyat-hero-inner">
-        <div class="fiyat-badge">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="1" x2="12" y2="23"></line>
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-            </svg>
-            <span>B2B Üyelik Seviyeleri</span>
-        </div>
-        <h1 class="fiyat-hero-title">İşletmenize Uygun <span class="highlight-dot">Üyelik Planları</span></h1>
-        <p class="fiyat-hero-desc">
-            Tedarik ve satış hacminize göre dilediğiniz üyelik planını seçin.
-            Üyelik satın alımlarında fiziksel kargo veya <strong>adres bilgisi gerekmez</strong>; üyeliğiniz anında aktifleştirilir.
-        </p>
-        @if (Model != null && Model.IsAuthenticated)
-        {
-            <div style="display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; background: rgba(2,132,199,0.12); border: 1px solid rgba(2,132,199,0.3); padding: 8px 18px; border-radius: 9999px; font-size: 0.88rem;">
-                <span style="color: #0284c7; font-weight: 700;">🏢 @Model.CurrentCompanyName</span>
-                <span style="color: #64748b;">— Aktif Planınız:</span>
-                <strong style="color: #0f172a; background: #fff; padding: 2px 10px; border-radius: 9999px; border: 1px solid #cbd5e1;">@Model.CurrentMembershipTypeName</strong>
-            </div>
+@section Styles {
+    <!-- Tailwind CSS (Play CDN) & Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                            950: '#082f49',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        html {
+            scroll-behavior: smooth;
         }
-    </div>
-</section>
+    </style>
+}
 
-<!-- FİYAT PLANLARI -->
-<section class="fiyat-section">
-    <div class="fiyat-container">
-        <div class="fiyat-plans-grid">
+<div class="font-sans antialiased bg-slate-50 text-slate-800 selection:bg-blue-500 selection:text-white pb-20 sm:pb-24 lg:pb-12">
+
+    <!-- ==================== BÖLÜM 1: HERO SECTION ==================== -->
+    <section class="relative overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white pt-12 sm:pt-20 pb-16 sm:pb-28 px-4 sm:px-6 lg:px-8 border-b border-slate-800/80">
+        <!-- Radial Glow Efekti -->
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(37,99,235,0.30),rgba(255,255,255,0))] pointer-events-none"></div>
+
+        <div class="relative max-w-4xl mx-auto text-center">
+            <!-- Rozet -->
+            <div class="inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-5 sm:mb-6 backdrop-blur-sm shadow-sm">
+                <i class="fa-solid fa-tags text-blue-400 text-xs sm:text-sm"></i>
+                <span>B2B Üyelik Seviyeleri</span>
+            </div>
+
+            <!-- Ana Başlık -->
+            <h1 class="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.18] sm:leading-[1.15]">
+                İşletmenize Uygun <br class="hidden sm:inline" />
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">
+                    Üyelik Planları
+                </span>
+            </h1>
+
+            <!-- Açıklama Metni -->
+            <p class="mt-4 sm:mt-6 text-sm sm:text-base md:text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed font-normal px-2">
+                Tedarik ve satış hacminize göre dilediğiniz üyelik planını seçin. Üyelik satın alımlarında fiziksel kargo veya <strong>adres bilgisi gerekmez</strong>; üyeliğiniz anında aktifleştirilir.
+            </p>
+
+            @if (Model != null && Model.IsAuthenticated)
+            {
+                <div class="mt-5 sm:mt-6 inline-flex flex-wrap items-center justify-center gap-2 px-4 sm:px-5 py-2 rounded-full bg-blue-500/10 border border-blue-500/30 text-xs sm:text-sm backdrop-blur-sm shadow-sm">
+                    <span class="text-blue-400 font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-building"></i>
+                        @Model.CurrentCompanyName
+                    </span>
+                    <span class="text-slate-400">— Aktif Planınız:</span>
+                    <span class="px-2.5 py-0.5 rounded-full bg-white text-slate-900 font-extrabold text-xs shadow-xs">
+                        @Model.CurrentMembershipTypeName
+                    </span>
+                </div>
+            }
+
+            <!-- Hızlı Gezinme Butonları -->
+            <div class="mt-6 sm:mt-10 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
+                <a href="#planlar" class="inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 transition-all hover:scale-[1.02]">
+                    <i class="fa-solid fa-cubes text-xs"></i>
+                    <span>Paketleri İncele</span>
+                </a>
+                <a href="#karsilastirma" class="inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700/80 hover:border-slate-600 transition-all hover:scale-[1.02]">
+                    <i class="fa-solid fa-scale-balanced text-xs"></i>
+                    <span>Özellik Karşılaştırması</span>
+                </a>
+                <a href="#sss" class="inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700/80 hover:border-slate-600 transition-all hover:scale-[1.02]">
+                    <i class="fa-solid fa-circle-question text-xs"></i>
+                    <span>S.S.S.</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== BÖLÜM 2: FİYAT PLANLARI ==================== -->
+    <section id="planlar" class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div class="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 mb-3">
+                <i class="fa-solid fa-layer-group text-blue-600 text-xs"></i>
+                <span>Esnek Çözümler</span>
+            </div>
+            <h2 class="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                Her Ölçekten İşletmeye Uygun Seviyeler
+            </h2>
+            <p class="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg text-slate-600 leading-relaxed font-normal px-2">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. İhtiyacınıza en uygun paketi hemen seçin.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
 
             <!-- 1. BEDAVA PLAN -->
-            <div class="fiyat-plan-card @(currentTier == 1 ? "current-tier-card" : "")">
+            <div class="relative bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-9 border @(currentTier == 1 ? "border-2 border-slate-600 shadow-lg" : "border-slate-200/90 shadow-sm") hover:shadow-xl hover:border-slate-300 transition-all duration-300 flex flex-col justify-between">
                 @if (currentTier == 1)
                 {
-                    <div class="fiyat-recommended-badge" style="background: #64748b; color: #fff;">Mevcut Planınız</div>
-                }
-                <div class="fiyat-plan-header">
-                    <div class="fiyat-plan-icon fiyat-icon-starter">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                        </svg>
+                    <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-slate-700 text-white text-xs font-bold tracking-wide uppercase shadow-sm">
+                        Mevcut Planınız
                     </div>
-                    <h3 class="fiyat-plan-name">Bedava</h3>
-                    <p class="fiyat-plan-desc">Yeni başlayan işletmeler ve temel satın alma/satış operasyonları için.</p>
-                </div>
-                <div class="fiyat-price">
-                    <span class="fiyat-currency">₺</span>
-                    <span class="fiyat-amount">0</span>
-                    <span class="fiyat-period">/ ay</span>
-                </div>
-                <ul class="fiyat-features">
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span><strong>Aynı anda 10 adet</strong> aktif talep</span>
-                    </li>
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span><strong>Aynı anda 10 adet</strong> ürün satışı</span>
-                    </li>
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Her ürün için <strong>en fazla 3 resim</strong></span>
-                    </li>
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Standart B2B tedarikçi vitrini</span>
-                    </li>
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Teklif alma &amp; verme</span>
-                    </li>
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>E-posta desteği</span>
-                    </li>
-                </ul>
+                }
+                <div>
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-700 shadow-xs">
+                            <i class="fa-solid fa-shield-halved text-2xl"></i>
+                        </div>
+                        <span class="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-600">Başlangıç</span>
+                    </div>
 
-                @if (Model != null && Model.IsAuthenticated)
-                {
-                    if (currentTier == 1)
+                    <h3 class="text-2xl font-bold text-slate-900 mb-2">Bedava</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed mb-6 font-normal">
+                        Yeni başlayan işletmeler ve temel satın alma &amp; satış operasyonları için.
+                    </p>
+
+                    <div class="flex items-baseline gap-1 mb-8 pb-6 border-b border-slate-100">
+                        <span class="text-4xl sm:text-5xl font-extrabold text-slate-900">₺0</span>
+                        <span class="text-slate-500 text-sm font-medium">/ ay</span>
+                    </div>
+
+                    <ul class="space-y-3.5 text-sm text-slate-600 font-normal">
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base shrink-0 mt-0.5"></i>
+                            <span><strong class="font-bold text-slate-800">Aynı anda 10 adet</strong> aktif talep</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base shrink-0 mt-0.5"></i>
+                            <span><strong class="font-bold text-slate-800">Aynı anda 10 adet</strong> ürün satışı</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base shrink-0 mt-0.5"></i>
+                            <span>Her ürün için <strong class="font-bold text-slate-800">en fazla 3 resim</strong></span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base shrink-0 mt-0.5"></i>
+                            <span>Standart B2B tedarikçi vitrini</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base shrink-0 mt-0.5"></i>
+                            <span>Teklif alma &amp; verme imkanı</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base shrink-0 mt-0.5"></i>
+                            <span>Temel e-posta desteği</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-slate-100">
+                    @if (Model != null && Model.IsAuthenticated)
                     {
-                        <button type="button" class="fiyat-cta-btn fiyat-cta-btn-outline" disabled style="opacity: 0.7; cursor: default;">
-                            ✓ Aktif Planınız
-                        </button>
+                        if (currentTier == 1)
+                        {
+                            <button type="button" class="w-full py-3.5 px-4 rounded-xl text-sm font-semibold bg-slate-100 text-slate-500 cursor-default" disabled>
+                                ✓ Aktif Planınız
+                            </button>
+                        }
+                        else
+                        {
+                            <span class="block w-full py-3.5 px-4 rounded-xl text-sm font-semibold bg-slate-100 text-slate-400 text-center cursor-default">
+                                Temel Seviye
+                            </span>
+                        }
                     }
                     else
                     {
-                        <span class="fiyat-cta-btn fiyat-cta-btn-outline" style="opacity: 0.6; cursor: default; text-align: center;">
-                            Temel Seviye
-                        </span>
+                        <a href="/Account/Register" class="block w-full py-3.5 px-4 rounded-xl text-sm font-semibold bg-slate-900 hover:bg-slate-800 text-white text-center transition-all shadow-sm hover:shadow">
+                            Ücretsiz Kayıt Ol
+                        </a>
                     }
-                }
-                else
-                {
-                    <a href="/Account/Register" class="fiyat-cta-btn fiyat-cta-btn-outline">Ücretsiz Kayıt Ol</a>
-                }
+                </div>
             </div>
 
             <!-- 2. PRO PLAN (ÖNERİLEN) -->
-            <div class="fiyat-plan-card fiyat-recommended @(currentTier == 2 ? "current-tier-card" : "")">
-                <div class="fiyat-recommended-badge">
-                    @(currentTier == 2 ? "Mevcut Planınız" : "En Çok Tercih Edilen")
+            <div class="relative bg-white rounded-3xl p-8 sm:p-9 border-2 @(currentTier == 2 ? "border-emerald-600 shadow-2xl" : "border-blue-600 shadow-xl shadow-blue-500/10") transition-all duration-300 flex flex-col justify-between lg:-translate-y-2">
+                <!-- En Çok Tercih Edilen Rozeti -->
+                <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-blue-600 via-sky-600 to-indigo-600 text-white text-xs font-extrabold tracking-wide uppercase shadow-md flex items-center gap-1.5">
+                    <i class="fa-solid fa-fire text-[11px]"></i>
+                    <span>@(currentTier == 2 ? "Mevcut Planınız" : "En Çok Tercih Edilen")</span>
                 </div>
-                <div class="fiyat-plan-header">
-                    <div class="fiyat-plan-icon fiyat-icon-pro">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                        </svg>
-                    </div>
-                    <h3 class="fiyat-plan-name">Pro</h3>
-                    <p class="fiyat-plan-desc">Büyüyen ve satış/tedarik hacmini hızlandırmak isteyen aktif firmalar için.</p>
-                </div>
-                <div class="fiyat-price">
-                    <span class="fiyat-currency">₺</span>
-                    <span class="fiyat-amount">990</span>
-                    <span class="fiyat-period">/ ay</span>
-                </div>
-                <ul class="fiyat-features">
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span><strong>Aynı anda 100 adet</strong> aktif talep</span>
-                    </li>
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span><strong>Aynı anda 100 adet</strong> ürün satışı</span>
-                    </li>
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Her ürün için <strong>20 resim hakkı</strong></span>
-                    </li>
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>B2B Vitrinde öne çıkarılan ürünler</span>
-                    </li>
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Hızlı teklif verme &amp; anlık bildirimler</span>
-                    </li>
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>7/24 Öncelikli destek</span>
-                    </li>
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Detaylı talep ve teklif analitiği</span>
-                    </li>
-                </ul>
 
-                @if (Model != null && Model.IsAuthenticated)
-                {
-                    if (currentTier == 2)
+                <div>
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-xs">
+                            <i class="fa-solid fa-bolt-lightning text-2xl"></i>
+                        </div>
+                        <span class="text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60">Popüler</span>
+                    </div>
+
+                    <h3 class="text-2xl font-bold text-slate-900 mb-2">Pro</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed mb-6 font-normal">
+                        Büyüyen ve satış &amp; tedarik hacmini hızlandırmak isteyen aktif firmalar için.
+                    </p>
+
+                    <div class="flex items-baseline gap-1 mb-8 pb-6 border-b border-slate-100">
+                        <span class="text-4xl sm:text-5xl font-extrabold text-slate-900">₺990</span>
+                        <span class="text-slate-500 text-sm font-medium">/ ay</span>
+                    </div>
+
+                    <ul class="space-y-3.5 text-sm text-slate-600 font-normal">
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base shrink-0 mt-0.5"></i>
+                            <span><strong class="font-bold text-slate-900">Aynı anda 100 adet</strong> aktif talep</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base shrink-0 mt-0.5"></i>
+                            <span><strong class="font-bold text-slate-900">Aynı anda 100 adet</strong> ürün satışı</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base shrink-0 mt-0.5"></i>
+                            <span>Her ürün için <strong class="font-bold text-slate-900">20 resim hakkı</strong></span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base shrink-0 mt-0.5"></i>
+                            <span>B2B Vitrinde öne çıkarılan ürünler</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base shrink-0 mt-0.5"></i>
+                            <span>Hızlı teklif verme &amp; anlık bildirimler</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base shrink-0 mt-0.5"></i>
+                            <span>7/24 Öncelikli müşteri desteği</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base shrink-0 mt-0.5"></i>
+                            <span>Detaylı talep ve teklif analitiği</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-slate-100">
+                    @if (Model != null && Model.IsAuthenticated)
                     {
-                        <button type="button" class="fiyat-cta-btn fiyat-cta-btn-primary" disabled style="opacity: 0.8; cursor: default;">
-                            ✓ Aktif Planınız
-                        </button>
+                        if (currentTier == 2)
+                        {
+                            <button type="button" class="w-full py-3.5 px-4 rounded-xl text-sm font-semibold bg-blue-50 text-blue-700 border border-blue-200 cursor-default" disabled>
+                                ✓ Aktif Planınız
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button" onclick="openMembershipCheckoutModal(2, 'Pro', 990)" class="w-full py-3.5 px-4 rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 transition-all hover:scale-[1.02]">
+                                Pro Plana Geç →
+                            </button>
+                        }
                     }
                     else
                     {
-                        <button type="button" onclick="openMembershipCheckoutModal(2, 'Pro', 990)" class="fiyat-cta-btn fiyat-cta-btn-primary">
-                            Pro Plana Geç →
-                        </button>
+                        <a href="/Account/Login?returnUrl=/Home/Fiyatlandirma" class="block w-full py-3.5 px-4 rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-500 text-white text-center shadow-lg shadow-blue-600/30 transition-all hover:scale-[1.02]">
+                            Giriş Yap &amp; Satın Al
+                        </a>
                     }
-                }
-                else
-                {
-                    <a href="/Account/Login?returnUrl=/Home/Fiyatlandirma" class="fiyat-cta-btn fiyat-cta-btn-primary">Giriş Yap &amp; Satın Al</a>
-                }
+                </div>
             </div>
 
             <!-- 3. KURUMSAL PLAN -->
-            <div class="fiyat-plan-card @(currentTier == 3 ? "current-tier-card" : "")">
+            <div class="relative bg-white rounded-3xl p-8 sm:p-9 border @(currentTier == 3 ? "border-2 border-purple-600 shadow-lg" : "border-slate-200/90 shadow-sm") hover:shadow-xl hover:border-purple-300 transition-all duration-300 flex flex-col justify-between">
                 @if (currentTier == 3)
                 {
-                    <div class="fiyat-recommended-badge" style="background: #0284c7; color: #fff;">Mevcut Planınız</div>
-                }
-                <div class="fiyat-plan-header">
-                    <div class="fiyat-plan-icon fiyat-icon-enterprise">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-                        </svg>
+                    <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-purple-700 text-white text-xs font-bold tracking-wide uppercase shadow-sm">
+                        Mevcut Planınız
                     </div>
-                    <h3 class="fiyat-plan-name">Kurumsal</h3>
-                    <p class="fiyat-plan-desc">Büyük ölçekli üretici, distribütör ve yüksek hacimli kurumlar için tam güç.</p>
-                </div>
-                <div class="fiyat-price">
-                    <span class="fiyat-currency">₺</span>
-                    <span class="fiyat-amount">2.990</span>
-                    <span class="fiyat-period">/ ay</span>
-                </div>
-                <ul class="fiyat-features">
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span><strong>Sınırsız</strong> talep oluşturma</span>
-                    </li>
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span><strong>Sınırsız</strong> ürün satışı ilanı</span>
-                    </li>
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Her ürün için <strong>sınırsız resim</strong></span>
-                    </li>
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>🛡️ Onaylı Kurumsal Tedarikçi Rozeti</span>
-                    </li>
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>En üst sırada vitrin listelemesi</span>
-                    </li>
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Özel B2B Müşteri Temsilcisi</span>
-                    </li>
-                    <li>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>SLA garantili 7/24 VIP destek</span>
-                    </li>
-                </ul>
+                }
+                <div>
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="w-14 h-14 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shadow-xs">
+                            <i class="fa-solid fa-crown text-2xl"></i>
+                        </div>
+                        <span class="text-xs font-bold px-3 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200/60">Kurumsal VIP</span>
+                    </div>
 
-                @if (Model != null && Model.IsAuthenticated)
-                {
-                    if (currentTier == 3)
+                    <h3 class="text-2xl font-bold text-slate-900 mb-2">Kurumsal</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed mb-6 font-normal">
+                        Büyük ölçekli üretici, distribütör ve yüksek hacimli kurumlar için tam güç.
+                    </p>
+
+                    <div class="flex items-baseline gap-1 mb-8 pb-6 border-b border-slate-100">
+                        <span class="text-4xl sm:text-5xl font-extrabold text-slate-900">₺2.990</span>
+                        <span class="text-slate-500 text-sm font-medium">/ ay</span>
+                    </div>
+
+                    <ul class="space-y-3.5 text-sm text-slate-600 font-normal">
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base shrink-0 mt-0.5"></i>
+                            <span><strong class="font-bold text-slate-900">Sınırsız</strong> talep oluşturma</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base shrink-0 mt-0.5"></i>
+                            <span><strong class="font-bold text-slate-900">Sınırsız</strong> ürün satışı ilanı</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base shrink-0 mt-0.5"></i>
+                            <span>Her ürün için <strong class="font-bold text-slate-900">sınırsız resim</strong></span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base shrink-0 mt-0.5"></i>
+                            <span>🛡️ Onaylı Kurumsal Tedarikçi Rozeti</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base shrink-0 mt-0.5"></i>
+                            <span>En üst sırada vitrin listelemesi</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base shrink-0 mt-0.5"></i>
+                            <span>Özel B2B Müşteri Temsilcisi</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base shrink-0 mt-0.5"></i>
+                            <span>SLA garantili 7/24 VIP destek</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-slate-100">
+                    @if (Model != null && Model.IsAuthenticated)
                     {
-                        <button type="button" class="fiyat-cta-btn fiyat-cta-btn-outline" disabled style="opacity: 0.8; cursor: default;">
-                            ✓ Aktif Planınız
-                        </button>
+                        if (currentTier == 3)
+                        {
+                            <button type="button" class="w-full py-3.5 px-4 rounded-xl text-sm font-semibold bg-purple-50 text-purple-700 border border-purple-200 cursor-default" disabled>
+                                ✓ Aktif Planınız
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button" onclick="openMembershipCheckoutModal(3, 'Kurumsal', 2990)" class="w-full py-3.5 px-4 rounded-xl text-sm font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-md transition-all hover:scale-[1.02]">
+                                Kurumsal Plana Geç →
+                            </button>
+                        }
                     }
                     else
                     {
-                        <button type="button" onclick="openMembershipCheckoutModal(3, 'Kurumsal', 2990)" class="fiyat-cta-btn fiyat-cta-btn-outline">
-                            Kurumsal Plana Geç →
-                        </button>
+                        <a href="/Account/Login?returnUrl=/Home/Fiyatlandirma" class="block w-full py-3.5 px-4 rounded-xl text-sm font-bold bg-slate-900 hover:bg-slate-800 text-white text-center shadow-md transition-all hover:scale-[1.02]">
+                            Giriş Yap &amp; Satın Al
+                        </a>
                     }
-                }
-                else
-                {
-                    <a href="/Account/Login?returnUrl=/Home/Fiyatlandirma" class="fiyat-cta-btn fiyat-cta-btn-outline">Giriş Yap &amp; Satın Al</a>
-                }
+                </div>
             </div>
 
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- KARŞILAŞTIRMA TABLOSU -->
-<section class="fiyat-section fiyat-section-alt">
-    <div class="fiyat-container">
-        <div class="blur-feature-card">
-            <div class="blur-card-header">
-                <div class="blur-icon-badge">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="7" height="7"></rect>
-                        <rect x="14" y="3" width="7" height="7"></rect>
-                        <rect x="14" y="14" width="7" height="7"></rect>
-                        <rect x="3" y="14" width="7" height="7"></rect>
-                    </svg>
+    <!-- ==================== BÖLÜM 3: KARŞILAŞTIRMA TABLOSU ==================== -->
+    <section id="karsilastirma" class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 bg-slate-100/70 border-y border-slate-200/80">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 mb-3">
+                    <i class="fa-solid fa-table-list text-indigo-600 text-xs"></i>
+                    <span>Limit &amp; Yetki Kıyaslaması</span>
                 </div>
-                <div class="blur-card-title-group">
-                    <span class="blur-card-tag">Limit &amp; Yetki Kıyaslaması</span>
-                    <h2 class="blur-card-title">Üyelik Planı Karşılaştırması</h2>
+                <h2 class="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                    Üyelik Planı Karşılaştırması
+                </h2>
+                <p class="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg text-slate-600 leading-relaxed font-normal px-2">
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Paketlerin tüm detaylarını tek ekranda inceleyin.
+                </p>
+            </div>
+
+        <!-- ==================== MOBİL GÖRÜNÜM: KARŞILAŞTIRMA KARTLARI (< md) ==================== -->
+        <div class="block md:hidden space-y-3 max-w-xl mx-auto">
+            <!-- Kriter 1 -->
+            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
+                <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+                    <span class="w-1.5 h-4 rounded-full bg-blue-600 shrink-0"></span>
+                    <h4 class="text-sm font-bold text-slate-900">Aynı Anda Aktif Talep Limiti</h4>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Bedava</span>
+                        <span class="text-xs font-bold text-slate-700 mt-1">10 Adet</span>
+                    </div>
+                    <div class="p-2 rounded-xl bg-blue-50/80 border border-blue-200 flex flex-col justify-between shadow-xs">
+                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-blue-700">Pro</span>
+                        <span class="text-xs font-black text-blue-950 mt-1">100 Adet</span>
+                    </div>
+                    <div class="p-2 rounded-xl bg-purple-50/80 border border-purple-200 flex flex-col justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-purple-700">Kurumsal</span>
+                        <span class="text-xs font-black text-emerald-600 mt-1">Sınırsız</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="blur-card-content">
-                <div class="fiyat-comparison-wrap">
-                    <table class="fiyat-comparison-table">
-                        <thead>
-                            <tr>
-                                <th class="fiyat-feature-col">Özellik / Yetki</th>
-                                <th class="fiyat-plan-col">Bedava</th>
-                                <th class="fiyat-plan-col fiyat-plan-col-highlight">Pro (Önerilen)</th>
-                                <th class="fiyat-plan-col">Kurumsal</th>
+            <!-- Kriter 2 -->
+            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
+                <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+                    <span class="w-1.5 h-4 rounded-full bg-blue-600 shrink-0"></span>
+                    <h4 class="text-sm font-bold text-slate-900">Aynı Anda Ürün Satış İlanı</h4>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Bedava</span>
+                        <span class="text-xs font-bold text-slate-700 mt-1">10 Adet</span>
+                    </div>
+                    <div class="p-2 rounded-xl bg-blue-50/80 border border-blue-200 flex flex-col justify-between shadow-xs">
+                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-blue-700">Pro</span>
+                        <span class="text-xs font-black text-blue-950 mt-1">100 Adet</span>
+                    </div>
+                    <div class="p-2 rounded-xl bg-purple-50/80 border border-purple-200 flex flex-col justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-purple-700">Kurumsal</span>
+                        <span class="text-xs font-black text-emerald-600 mt-1">Sınırsız</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kriter 3 -->
+            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
+                <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+                    <span class="w-1.5 h-4 rounded-full bg-blue-600 shrink-0"></span>
+                    <h4 class="text-sm font-bold text-slate-900">Ürün Başına Görsel Hakkı</h4>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Bedava</span>
+                        <span class="text-xs font-bold text-slate-700 mt-1">3 Resim</span>
+                    </div>
+                    <div class="p-2 rounded-xl bg-blue-50/80 border border-blue-200 flex flex-col justify-between shadow-xs">
+                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-blue-700">Pro</span>
+                        <span class="text-xs font-black text-blue-950 mt-1">20 Resim</span>
+                    </div>
+                    <div class="p-2 rounded-xl bg-purple-50/80 border border-purple-200 flex flex-col justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-purple-700">Kurumsal</span>
+                        <span class="text-xs font-black text-emerald-600 mt-1">Sınırsız</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kriter 4 -->
+            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
+                <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+                    <span class="w-1.5 h-4 rounded-full bg-blue-600 shrink-0"></span>
+                    <h4 class="text-sm font-bold text-slate-900">B2B Vitrinde Öne Çıkarılma</h4>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Bedava</span>
+                        <span class="text-xs font-medium text-slate-500 mt-1">Standart</span>
+                    </div>
+                    <div class="p-2 rounded-xl bg-blue-50/80 border border-blue-200 flex flex-col justify-between shadow-xs">
+                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-blue-700">Pro</span>
+                        <span class="text-xs font-bold text-blue-700 mt-1">Öncelikli</span>
+                    </div>
+                    <div class="p-2 rounded-xl bg-purple-50/80 border border-purple-200 flex flex-col justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-purple-700">Kurumsal</span>
+                        <span class="text-xs font-black text-purple-700 mt-1">En Üst Sıra</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kriter 5 -->
+            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
+                <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+                    <span class="w-1.5 h-4 rounded-full bg-blue-600 shrink-0"></span>
+                    <h4 class="text-sm font-bold text-slate-900">Teklif Karşılaştırma &amp; Değerlendirme</h4>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 flex flex-col items-center justify-center">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Bedava</span>
+                        <i class="fa-solid fa-circle-check text-emerald-500 text-sm"></i>
+                    </div>
+                    <div class="p-2 rounded-xl bg-blue-50/80 border border-blue-200 flex flex-col items-center justify-center shadow-xs">
+                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-blue-700 mb-1">Pro</span>
+                        <i class="fa-solid fa-circle-check text-emerald-500 text-sm"></i>
+                    </div>
+                    <div class="p-2 rounded-xl bg-purple-50/80 border border-purple-200 flex flex-col items-center justify-center">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-purple-700 mb-1">Kurumsal</span>
+                        <i class="fa-solid fa-circle-check text-emerald-500 text-sm"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kriter 6 -->
+            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
+                <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+                    <span class="w-1.5 h-4 rounded-full bg-blue-600 shrink-0"></span>
+                    <h4 class="text-sm font-bold text-slate-900">Kurumsal Onaylı Tedarikçi Rozeti</h4>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Bedava</span>
+                        <span class="text-slate-300 font-bold mt-1">—</span>
+                    </div>
+                    <div class="p-2 rounded-xl bg-blue-50/80 border border-blue-200 flex flex-col justify-between shadow-xs">
+                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-blue-700">Pro</span>
+                        <span class="text-slate-300 font-bold mt-1">—</span>
+                    </div>
+                    <div class="p-2 rounded-xl bg-purple-50/80 border border-purple-200 flex flex-col justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-purple-700">Kurumsal</span>
+                        <span class="inline-flex items-center justify-center gap-1 text-xs font-bold text-blue-700 mt-1">
+                            <i class="fa-solid fa-shield-check"></i> Aktif
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kriter 7 -->
+            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
+                <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+                    <span class="w-1.5 h-4 rounded-full bg-blue-600 shrink-0"></span>
+                    <h4 class="text-sm font-bold text-slate-900">Müşteri Temsilcisi Desteği</h4>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Bedava</span>
+                        <span class="text-[11px] text-slate-500 font-medium mt-1">E-posta</span>
+                    </div>
+                    <div class="p-2 rounded-xl bg-blue-50/80 border border-blue-200 flex flex-col justify-between shadow-xs">
+                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-blue-700">Pro</span>
+                        <span class="text-[11px] font-bold text-slate-800 mt-1">7/24 Öncelikli</span>
+                    </div>
+                    <div class="p-2 rounded-xl bg-purple-50/80 border border-purple-200 flex flex-col justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-purple-700">Kurumsal</span>
+                        <span class="text-[11px] font-extrabold text-purple-800 mt-1 leading-tight">VIP Danışman</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== MASAÜSTÜ & TABLET GÖRÜNÜMÜ: TABLO (md+) ==================== -->
+        <div class="hidden md:block max-w-5xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-200 bg-slate-50/90 text-xs sm:text-sm tracking-wider">
+                            <th class="py-3.5 sm:py-4 px-4 sm:px-6 font-bold uppercase text-slate-600 w-[34%]">
+                                    Özellik / Yetki
+                                </th>
+                                <th class="py-3.5 sm:py-4 px-4 sm:px-6 font-bold text-center uppercase text-slate-500 w-[22%]">
+                                    Bedava
+                                </th>
+                                <th class="py-3.5 sm:py-4 px-4 sm:px-6 font-extrabold text-center text-blue-700 w-[22%]">
+                                    <span class="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-blue-700 text-xs font-bold uppercase">
+                                        <i class="fa-solid fa-bolt text-blue-600 text-xs"></i>
+                                        Pro (Önerilen)
+                                    </span>
+                                </th>
+                                <th class="py-3.5 sm:py-4 px-4 sm:px-6 font-bold text-center uppercase text-purple-700 w-[22%]">
+                                    Kurumsal
+                                </th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td>Aynı Anda Aktif Talep Limiti</td>
-                                <td><strong>10 Adet</strong></td>
-                                <td><strong>100 Adet</strong></td>
-                                <td><span style="color: #16a34a; font-weight: 800;">Sınırsız</span></td>
+                        <tbody class="divide-y divide-slate-100 text-xs sm:text-sm md:text-base">
+                            <tr class="hover:bg-slate-50/60 transition-colors">
+                                <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900">Aynı Anda Aktif Talep Limiti</td>
+                                <td class="py-3.5 px-4 sm:px-6 text-center text-slate-700 font-bold">10 Adet</td>
+                                <td class="py-3.5 px-4 sm:px-6 text-center text-slate-900 font-extrabold">100 Adet</td>
+                                <td class="py-3.5 px-4 sm:px-6 text-center text-emerald-600 font-extrabold">Sınırsız</td>
                             </tr>
-                            <tr>
-                                <td>Aynı Anda Ürün Satış İlanı</td>
-                                <td><strong>10 Adet</strong></td>
-                                <td><strong>100 Adet</strong></td>
-                                <td><span style="color: #16a34a; font-weight: 800;">Sınırsız</span></td>
+                            <tr class="hover:bg-slate-50/60 transition-colors">
+                                <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900">Aynı Anda Ürün Satış İlanı</td>
+                                <td class="py-3.5 px-4 sm:px-6 text-center text-slate-700 font-bold">10 Adet</td>
+                                <td class="py-3.5 px-4 sm:px-6 text-center text-slate-900 font-extrabold">100 Adet</td>
+                                <td class="py-3.5 px-4 sm:px-6 text-center text-emerald-600 font-extrabold">Sınırsız</td>
                             </tr>
-                            <tr>
-                                <td>Ürün Başına Görsel Hakkı</td>
-                                <td><strong>3 Resim</strong></td>
-                                <td><strong>20 Resim</strong></td>
-                                <td><span style="color: #16a34a; font-weight: 800;">Sınırsız</span></td>
+                            <tr class="hover:bg-slate-50/60 transition-colors">
+                                <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900">Ürün Başına Görsel Hakkı</td>
+                                <td class="py-3.5 px-4 sm:px-6 text-center text-slate-700 font-bold">3 Resim</td>
+                                <td class="py-3.5 px-4 sm:px-6 text-center text-slate-900 font-extrabold">20 Resim</td>
+                                <td class="py-3.5 px-4 sm:px-6 text-center text-emerald-600 font-extrabold">Sınırsız</td>
                             </tr>
-                            <tr>
-                                <td>B2B Vitrinde Öne Çıkarılma</td>
-                                <td>Standart</td>
-                                <td>Öncelikli</td>
-                                <td>En Üst Sıra</td>
+                            <tr class="hover:bg-slate-50/60 transition-colors">
+                                <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900">B2B Vitrinde Öne Çıkarılma</td>
+                                <td class="py-3.5 px-4 sm:px-6 text-center text-slate-500 font-medium">Standart</td>
+                                <td class="py-3.5 px-4 sm:px-6 text-center text-blue-700 font-bold">Öncelikli</td>
+                                <td class="py-3.5 px-4 sm:px-6 text-center text-purple-700 font-extrabold">En Üst Sıra</td>
                             </tr>
-                            <tr>
-                                <td>Teklif Karşılaştırma &amp; Değerlendirme</td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <tr class="hover:bg-slate-50/60 transition-colors">
+                                <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900">Teklif Karşılaştırma &amp; Değerlendirme</td>
+                                <td class="py-3.5 px-4 sm:px-6 text-center">
+                                    <i class="fa-solid fa-circle-check text-emerald-500 text-base"></i>
                                 </td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                <td class="py-3.5 px-4 sm:px-6 text-center">
+                                    <i class="fa-solid fa-circle-check text-emerald-500 text-base"></i>
                                 </td>
-                                <td>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Kurumsal Onaylı Tedarikçi Rozeti</td>
-                                <td>—</td>
-                                <td>—</td>
-                                <td>
-                                    <span style="color: #0284c7; font-weight: 700;">🛡️ Onaylı Rozet</span>
+                                <td class="py-3.5 px-4 sm:px-6 text-center">
+                                    <i class="fa-solid fa-circle-check text-emerald-500 text-base"></i>
                                 </td>
                             </tr>
-                            <tr>
-                                <td>Fiziksel Kargo / Adres Gereksinimi</td>
-                                <td>Gerekmez (Dijital)</td>
-                                <td>Gerekmez (Dijital)</td>
-                                <td>Gerekmez (Dijital)</td>
+                            <tr class="hover:bg-slate-50/60 transition-colors">
+                                <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900">Kurumsal Onaylı Tedarikçi Rozeti</td>
+                                <td class="py-3.5 px-4 sm:px-6 text-center text-slate-300 font-bold">—</td>
+                                <td class="py-3.5 px-4 sm:px-6 text-center text-slate-300 font-bold">—</td>
+                                <td class="py-3.5 px-4 sm:px-6 text-center">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200/80 text-xs font-bold">
+                                        <i class="fa-solid fa-shield-check text-blue-600"></i>
+                                        Aktif
+                                    </span>
+                                </td>
                             </tr>
-                            <tr>
-                                <td>Destek Seviyesi</td>
-                                <td>E-posta Desteği</td>
-                                <td>7/24 Öncelikli Destek</td>
-                                <td>Özel Temsilci &amp; SLA</td>
+                            <tr class="hover:bg-slate-50/60 transition-colors">
+                                <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900">Müşteri Temsilcisi Desteği</td>
+                                <td class="py-3.5 px-4 sm:px-6 text-center text-slate-500 text-xs sm:text-sm">E-posta</td>
+                                <td class="py-3.5 px-4 sm:px-6 text-center text-slate-700 font-bold text-xs sm:text-sm">7/24 Öncelikli</td>
+                                <td class="py-3.5 px-4 sm:px-6 text-center text-purple-700 font-extrabold text-xs sm:text-sm">Birebir VIP Danışman</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- SSS -->
-<section class="fiyat-section">
-    <div class="fiyat-container">
-        <div class="blur-feature-card">
-            <div class="blur-card-header">
-                <div class="blur-icon-badge">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
-                </div>
-                <div class="blur-card-title-group">
-                    <span class="blur-card-tag">Yardım &amp; Destek</span>
-                    <h2 class="blur-card-title">Sıkça Sorulan Sorular</h2>
-                </div>
+    <!-- ==================== BÖLÜM 4: S.S.S. ==================== -->
+    <section id="sss" class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+        <div class="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200 mb-3">
+                <i class="fa-solid fa-circle-question text-sky-600 text-xs"></i>
+                <span>Sıkça Sorulan Sorular</span>
             </div>
+            <h2 class="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                Üyelik Paketleri Hakkında
+            </h2>
+            <p class="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg text-slate-600 leading-relaxed font-normal px-2">
+                Aklınıza takılan soruların yanıtlarını aşağıda bulabilirsiniz.
+            </p>
+        </div>
 
-            <div class="blur-card-content">
-                <div class="fiyat-sss-list">
-                    <details class="fiyat-sss-item">
-                        <summary>
-                            <span>Üyelik satın alırken adres girmem gerekir mi?</span>
-                            <svg class="fiyat-sss-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                        </summary>
-                        <div class="fiyat-sss-answer">
-                            <p>
-                                <strong>Hayır.</strong> Üyelik paketleri dijital abonelik statüsünde olduğu için kargo veya fiziksel adres bilgisi kesinlikle talep edilmez. Yalnızca kart bilgilerinizle ödemeyi tamamlayabilirsiniz; yeni planınız anında hesabınıza yansır.
-                            </p>
-                        </div>
-                    </details>
+        <div class="space-y-3.5 sm:space-y-4">
+            <!-- Soru 1 -->
+            <details class="group bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden transition-all duration-200 open:border-blue-400 open:ring-4 open:ring-blue-500/10">
+                <summary class="flex items-center justify-between p-4 sm:p-6 cursor-pointer select-none text-left font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <span class="text-sm sm:text-lg pr-4">Üyelik paketini satın alırken fatura veya adres gerekir mi?</span>
+                    <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-100 group-open:bg-blue-100 flex items-center justify-center shrink-0 text-slate-500 group-open:text-blue-600 transition-transform duration-300 group-open:rotate-180">
+                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                    </span>
+                </summary>
+                <div class="px-4 sm:px-6 pb-4 sm:pb-6 pt-1 text-slate-600 text-xs sm:text-sm md:text-base leading-relaxed font-normal border-t border-slate-100/80">
+                    Hayır. Üyelik yükseltme işlemleri tamamen dijital lisans niteliğinde olduğundan fiziksel kargo veya teslimat adresi talep edilmez. Sadece kart bilgilerinizi girerek saniyeler içinde paketinizi aktif edebilirsiniz.
+                </div>
+            </details>
 
-                    <details class="fiyat-sss-item">
-                        <summary>
-                            <span>Talep ve ürün satışı sınırlarına ulaştığımda ne olur?</span>
-                            <svg class="fiyat-sss-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                        </summary>
-                        <div class="fiyat-sss-answer">
-                            <p>
-                                Bedava planda aynı anda 10 talep ve 10 ürün satışı, Pro planda ise 100 talep ve 100 ürün satış hakkınız vardır. Sınıra ulaştığınızda mevcut taleplerinizi tamamlayabilir veya doğrudan Pro / Kurumsal plana geçerek kapasitenizi anında artırabilirsiniz.
-                            </p>
-                        </div>
-                    </details>
+            <!-- Soru 2 -->
+            <details class="group bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden transition-all duration-200 open:border-blue-400 open:ring-4 open:ring-blue-500/10">
+                <summary class="flex items-center justify-between p-4 sm:p-6 cursor-pointer select-none text-left font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <span class="text-sm sm:text-lg pr-4">İstediğim zaman paketimi iptal edebilir veya değiştirebilir miyim?</span>
+                    <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-100 group-open:bg-blue-100 flex items-center justify-center shrink-0 text-slate-500 group-open:text-blue-600 transition-transform duration-300 group-open:rotate-180">
+                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                    </span>
+                </summary>
+                <div class="px-4 sm:px-6 pb-4 sm:pb-6 pt-1 text-slate-600 text-xs sm:text-sm md:text-base leading-relaxed font-normal border-t border-slate-100/80">
+                    Evet. Panelinizden dilediğiniz an üyeliğinizi bir üst pakete yükseltebilir veya dönem sonunda yenilenmesini durdurabilirsiniz. Herhangi bir taahhüt zorunluluğu bulunmamaktadır.
+                </div>
+            </details>
 
-                    <details class="fiyat-sss-item">
-                        <summary>
-                            <span>Ürün başına görsel sınırı nasıl işler?</span>
-                            <svg class="fiyat-sss-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                        </summary>
-                        <div class="fiyat-sss-answer">
-                            <p>
-                                Bedava üyelikte her ürün ilanı için en fazla 3 görsel yüklenebilir. Pro üyeler ürün başına 20 görsel yükleyebilirken, Kurumsal üyelerimiz için herhangi bir görsel sınırı bulunmamaktadır.
-                            </p>
-                        </div>
-                    </details>
+            <!-- Soru 3 -->
+            <details class="group bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden transition-all duration-200 open:border-blue-400 open:ring-4 open:ring-blue-500/10">
+                <summary class="flex items-center justify-between p-4 sm:p-6 cursor-pointer select-none text-left font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <span class="text-sm sm:text-lg pr-4">Ürün başına görsel sınırı nasıl işler?</span>
+                    <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-100 group-open:bg-blue-100 flex items-center justify-center shrink-0 text-slate-500 group-open:text-blue-600 transition-transform duration-300 group-open:rotate-180">
+                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                    </span>
+                </summary>
+                <div class="px-4 sm:px-6 pb-4 sm:pb-6 pt-1 text-slate-600 text-xs sm:text-sm md:text-base leading-relaxed font-normal border-t border-slate-100/80">
+                    Bedava üyelikte her ürün ilanı için en fazla 3 görsel yüklenebilir. Pro üyeler ürün başına 20 görsel yükleyebilirken, Kurumsal üyelerimiz için herhangi bir görsel sınırı bulunmamaktadır.
+                </div>
+            </details>
 
-                    <details class="fiyat-sss-item">
-                        <summary>
-                            <span>Ödeme yapıldıktan sonra üyeliğim ne zaman aktif olur?</span>
-                            <svg class="fiyat-sss-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                        </summary>
-                        <div class="fiyat-sss-answer">
-                            <p>
-                                Kart onayının hemen ardından sistem veritabanınız anlık olarak güncellenir ve yeni yetkileriniz sayfa yenilenmeden geçerli hale gelir.
-                            </p>
-                        </div>
-                    </details>
+            <!-- Soru 4 -->
+            <details class="group bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden transition-all duration-200 open:border-blue-400 open:ring-4 open:ring-blue-500/10">
+                <summary class="flex items-center justify-between p-4 sm:p-6 cursor-pointer select-none text-left font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <span class="text-sm sm:text-lg pr-4">Ödeme yapıldıktan sonra üyeliğim ne zaman aktif olur?</span>
+                    <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-100 group-open:bg-blue-100 flex items-center justify-center shrink-0 text-slate-500 group-open:text-blue-600 transition-transform duration-300 group-open:rotate-180">
+                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                    </span>
+                </summary>
+                <div class="px-4 sm:px-6 pb-4 sm:pb-6 pt-1 text-slate-600 text-xs sm:text-sm md:text-base leading-relaxed font-normal border-t border-slate-100/80">
+                    Kart onayının hemen ardından sistem veritabanınız anlık olarak güncellenir ve yeni yetkileriniz sayfa yenilenmeden geçerli hale gelir.
+                </div>
+            </details>
+        </div>
+    </section>
+
+    <!-- ==================== BÖLÜM 5: CTA SECTION ==================== -->
+    <section class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div class="relative overflow-hidden bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 text-white rounded-2xl sm:rounded-3xl p-6 sm:p-12 md:p-16 border border-slate-800 shadow-2xl text-center">
+            <!-- Arka Plan Radial Glow -->
+            <div class="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_50%,rgba(37,99,235,0.25),rgba(255,255,255,0))] pointer-events-none"></div>
+
+            <div class="relative max-w-3xl mx-auto">
+                <div class="inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-5 sm:mb-6">
+                    <i class="fa-solid fa-headset text-blue-400 text-xs"></i>
+                    <span>Kurumsal Danışmanlık</span>
+                </div>
+                <h2 class="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight leading-tight">
+                    Özel Bir Plana mı <br class="hidden sm:inline" />
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">
+                        İhtiyacınız Var?
+                    </span>
+                </h2>
+                <p class="mt-3 sm:mt-5 text-xs sm:text-base md:text-lg text-slate-300 font-normal leading-relaxed px-2">
+                    Yüksek hacimli satın alma konsorsiyumları ve özel entegrasyonlar için kurumsal ekibimizle iletişime geçin.
+                </p>
+
+                <div class="mt-6 sm:mt-10 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+                    <a asp-controller="Home" asp-action="Iletisim" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 transition-all hover:scale-[1.02]">
+                        <i class="fa-solid fa-envelope text-xs sm:text-sm"></i>
+                        <span>Bize Ulaşın</span>
+                    </a>
+                    <a href="#planlar" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-medium bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700/80 hover:border-slate-600 transition-all hover:scale-[1.02]">
+                        <span>Planlara Geri Dön</span>
+                        <i class="fa-solid fa-arrow-up text-xs"></i>
+                    </a>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- ==================== ADRESSİZ ÜYELİK SATIN ALMA MODALI ==================== -->
-<div id="membershipCheckoutModal" class="mem-modal-overlay" style="display: none;" onclick="if(event.target===this)closeMembershipCheckoutModal()">
-    <div class="mem-modal-dialog">
-        <div class="mem-modal-header">
+</div>
+
+<!-- ==================== ADRESSİZ ÜYELİK SATIN ALMA MODALI (TAILWIND) ==================== -->
+<div id="membershipCheckoutModal" class="fixed inset-0 z-[100000] hidden items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm" onclick="if(event.target===this)closeMembershipCheckoutModal()">
+    <div class="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all max-h-[92vh] flex flex-col">
+        <!-- Modal Başlık -->
+        <div class="p-4 sm:p-6 bg-slate-50 border-b border-slate-200 flex items-start justify-between shrink-0">
             <div>
-                <span class="mem-badge-pill">DİJİTAL ÜYELİK PAKETİ</span>
-                <h3 id="memModalPlanTitle" class="mem-modal-title">Pro Üyelik Satın Al</h3>
-                <p class="mem-modal-subtitle">Adres gerekmeksizin doğrudan kart bilgilerinizle anında plan yükseltin.</p>
+                <span class="inline-block text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-md mb-1 sm:mb-1.5">
+                    Dijital Üyelik Paketi
+                </span>
+                <h3 id="memModalPlanTitle" class="text-lg sm:text-xl font-bold text-slate-900">Pro Üyelik Satın Al</h3>
+                <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-1">Adres gerekmeksizin kart bilgilerinizle anında plan yükseltin.</p>
             </div>
-            <button type="button" class="mem-close-btn" onclick="closeMembershipCheckoutModal()" title="Kapat">&times;</button>
+            <button type="button" class="w-8 h-8 rounded-full bg-slate-200/70 hover:bg-slate-300 text-slate-500 flex items-center justify-center text-lg leading-none transition-colors shrink-0" onclick="closeMembershipCheckoutModal()" title="Kapat">
+                &times;
+            </button>
         </div>
 
-        <form id="membershipPurchaseForm" onsubmit="submitMembershipPurchase(event); return false;">
+        <form id="membershipPurchaseForm" onsubmit="submitMembershipPurchase(event); return false;" class="flex-1 overflow-y-auto flex flex-col">
             <input type="hidden" id="memTargetTierId" value="2" />
             <input type="hidden" id="memPlanPrice" value="990" />
 
-            <div class="mem-modal-body">
+            <div class="p-4 sm:p-6 space-y-3.5 sm:space-y-4 flex-1">
                 <!-- Paket Özet Şeridi -->
-                <div class="mem-plan-summary-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-200">
+                    <div class="flex justify-between items-center">
                         <div>
-                            <span style="font-size: 0.76rem; color: #64748b; display: block;">Seçilen Plan:</span>
-                            <strong id="memSummaryPlanName" style="font-size: 1.15rem; color: #0f172a;">Pro Plan</strong>
+                            <span class="text-[11px] sm:text-xs text-slate-500 block">Seçilen Plan:</span>
+                            <strong id="memSummaryPlanName" class="text-sm sm:text-base font-bold text-slate-900">Pro Plan</strong>
                         </div>
-                        <div style="text-align: right;">
-                            <span style="font-size: 0.76rem; color: #64748b; display: block;">Aylık Tutar:</span>
-                            <strong id="memSummaryPlanPrice" style="font-size: 1.25rem; color: #0284c7; font-weight: 900;">990 ₺</strong>
+                        <div class="text-right">
+                            <span class="text-[11px] sm:text-xs text-slate-500 block">Aylık Tutar:</span>
+                            <strong id="memSummaryPlanPrice" class="text-base sm:text-lg font-black text-blue-600">990 ₺</strong>
                         </div>
                     </div>
-                    <div id="memSummaryFeatures" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #cbd5e1; font-size: 0.8rem; color: #475569;">
+                    <div id="memSummaryFeatures" class="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t border-dashed border-slate-200 text-[11px] sm:text-xs text-slate-600">
                         ✓ 100 Aktif Talep &bull; 100 Ürün Satışı &bull; Ürün Başı 20 Resim
                     </div>
                 </div>
 
                 <!-- Bilgilendirme Notu: Adres Sorulmaz -->
-                <div class="mem-info-banner">
-                    <span style="font-size: 1.2rem;">ℹ️</span>
+                <div class="p-3 sm:p-3.5 rounded-xl bg-blue-50 border border-blue-200 flex items-start gap-2.5 sm:gap-3 text-xs text-blue-900">
+                    <i class="fa-solid fa-circle-info text-blue-600 text-sm sm:text-base shrink-0 mt-0.5"></i>
                     <div>
-                        <strong>Fiziksel Adres Bilgisi Gerekmez</strong><br />
-                        Bu üyelik dijital lisans paketidir. Kargo, ambar veya açık adres doldurmanız gerekmez.
+                        <strong class="font-bold">Fiziksel Adres Bilgisi Gerekmez</strong><br />
+                        Bu üyelik dijital lisans paketidir. Kargo, ambar veya adres doldurmanız gerekmez.
                     </div>
                 </div>
 
                 <!-- Kart Bilgileri Alanı -->
-                <div class="mem-card-fields-wrap">
-                    <div class="mem-field-group">
-                        <label class="mem-label" for="memCardHolder">Kart Üzerindeki İsim *</label>
-                        <input type="text" id="memCardHolder" class="mem-input" placeholder="AD SOYAD VEYA ŞİRKET ÜNVANI" required style="text-transform: uppercase;" />
+                <div class="space-y-3 pt-1">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1" for="memCardHolder">Kart Üzerindeki İsim *</label>
+                        <input type="text" id="memCardHolder" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-slate-900 text-xs sm:text-sm uppercase placeholder:text-slate-400" placeholder="AD SOYAD VEYA ŞİRKET ÜNVANI" required />
                     </div>
 
-                    <div class="mem-field-group">
-                        <label class="mem-label" for="memCardNumber">Kart Numarası (16 Hane) *</label>
-                        <input type="text" id="memCardNumber" class="mem-input" placeholder="5528 7900 0000 0008" maxlength="19" inputmode="numeric" oninput="formatCardNum(this)" required style="font-family: monospace; font-weight: 700; letter-spacing: 0.05em;" />
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1" for="memCardNumber">Kart Numarası (16 Hane) *</label>
+                        <input type="text" id="memCardNumber" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-slate-900 text-xs sm:text-sm font-mono font-bold tracking-wider placeholder:text-slate-400" placeholder="5528 7900 0000 0008" maxlength="19" inputmode="numeric" oninput="formatCardNum(this)" required />
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                        <div class="mem-field-group">
-                            <label class="mem-label" for="memCardExpiry">Son Kullanma (AA/YY) *</label>
-                            <input type="text" id="memCardExpiry" class="mem-input" placeholder="12/28" maxlength="5" inputmode="numeric" oninput="formatExp(this)" required style="font-family: monospace; text-align: center;" />
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1" for="memCardExpiry">Son Kullanma (AA/YY) *</label>
+                            <input type="text" id="memCardExpiry" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-slate-900 text-xs sm:text-sm font-mono text-center placeholder:text-slate-400" placeholder="12/28" maxlength="5" inputmode="numeric" oninput="formatExp(this)" required />
                         </div>
-                        <div class="mem-field-group">
-                            <label class="mem-label" for="memCardCvv">CVC / CVV (3 Hane) *</label>
-                            <input type="password" id="memCardCvv" class="mem-input" placeholder="***" maxlength="3" inputmode="numeric" required style="font-family: monospace; text-align: center;" />
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1" for="memCardCvv">CVC / CVV (3 Hane) *</label>
+                            <input type="password" id="memCardCvv" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-slate-900 text-xs sm:text-sm font-mono text-center placeholder:text-slate-400" placeholder="***" maxlength="3" inputmode="numeric" required />
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="mem-modal-footer">
-                <button type="button" class="mem-btn-cancel" onclick="closeMembershipCheckoutModal()">Vazgeç</button>
-                <button type="submit" id="btnSubmitMembership" class="mem-btn-confirm">
+            <div class="p-4 sm:p-6 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 shrink-0">
+                <button type="button" class="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 transition-colors" onclick="closeMembershipCheckoutModal()">
+                    Vazgeç
+                </button>
+                <button type="submit" id="btnSubmitMembership" class="w-full sm:w-auto px-5 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/30 flex items-center justify-center gap-2 transition-all">
                     <span>✓</span> <span id="memBtnSubmitText">990 ₺ Ödemeyi Tamamla ve Yükselt</span>
                 </button>
             </div>
         </form>
     </div>
 </div>
-
-<style>
-    .current-tier-card {
-        border: 2px solid #0284c7 !important;
-        box-shadow: 0 10px 25px rgba(2,132,199,0.15) !important;
-    }
-
-    /* MODAL STİLLERİ */
-    .mem-modal-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 23, 42, 0.7);
-        backdrop-filter: blur(5px);
-        z-index: 100000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-    }
-
-    .mem-modal-dialog {
-        background: #ffffff;
-        border-radius: 16px;
-        max-width: 480px;
-        width: 100%;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
-        overflow: hidden;
-        animation: memModalFadeIn 0.25s ease-out;
-    }
-
-    @@keyframes memModalFadeIn {
-        from { opacity: 0; transform: translateY(16px) scale(0.97); }
-        to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    .mem-modal-header {
-        padding: 20px 24px;
-        background: #f8fafc;
-        border-bottom: 1px solid #e2e8f0;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-    }
-
-    .mem-badge-pill {
-        display: inline-block;
-        font-size: 0.68rem;
-        font-weight: 800;
-        letter-spacing: 0.05em;
-        background: #e0f2fe;
-        color: #0284c7;
-        padding: 2px 8px;
-        border-radius: 4px;
-        margin-bottom: 4px;
-    }
-
-    .mem-modal-title {
-        font-size: 1.25rem;
-        font-weight: 800;
-        color: #0f172a;
-        margin: 0;
-    }
-
-    .mem-modal-subtitle {
-        font-size: 0.8rem;
-        color: #64748b;
-        margin: 3px 0 0 0;
-    }
-
-    .mem-close-btn {
-        background: transparent;
-        border: none;
-        font-size: 1.5rem;
-        line-height: 1;
-        color: #94a3b8;
-        cursor: pointer;
-        padding: 0 4px;
-    }
-
-    .mem-close-btn:hover { color: #0f172a; }
-
-    .mem-modal-body {
-        padding: 20px 24px;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-    }
-
-    .mem-plan-summary-card {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 14px 16px;
-    }
-
-    .mem-info-banner {
-        background: #eff6ff;
-        border: 1px solid #bfdbfe;
-        border-radius: 8px;
-        padding: 10px 14px;
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        font-size: 0.78rem;
-        color: #1e40af;
-        line-height: 1.4;
-    }
-
-    .mem-card-fields-wrap {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .mem-field-group {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .mem-label {
-        font-size: 0.78rem;
-        font-weight: 700;
-        color: #334155;
-    }
-
-    .mem-input {
-        width: 100%;
-        padding: 10px 12px;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        color: #0f172a;
-        outline: none;
-        transition: border-color 0.15s, box-shadow 0.15s;
-    }
-
-    .mem-input:focus {
-        border-color: #0284c7;
-        box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
-    }
-
-    .mem-modal-footer {
-        padding: 16px 24px;
-        background: #f8fafc;
-        border-top: 1px solid #e2e8f0;
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-    }
-
-    .mem-btn-cancel {
-        padding: 10px 18px;
-        border: 1px solid #cbd5e1;
-        background: #fff;
-        color: #475569;
-        font-weight: 600;
-        font-size: 0.88rem;
-        border-radius: 8px;
-        cursor: pointer;
-    }
-
-    .mem-btn-confirm {
-        padding: 10px 20px;
-        border: none;
-        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-        color: #fff;
-        font-weight: 700;
-        font-size: 0.88rem;
-        border-radius: 8px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        box-shadow: 0 2px 8px rgba(2,132,199,0.3);
-    }
-
-    .mem-btn-confirm:hover {
-        background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
-    }
-
-    .mem-btn-confirm:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-</style>
 
 @section Scripts {
     <script>
@@ -700,11 +835,15 @@
                 feats.innerHTML = '✓ Sınırsız Talep &bull; Sınırsız Ürün Satışı &bull; Sınırsız Resim &bull; Onaylı Rozet';
             }
 
-            document.getElementById('membershipCheckoutModal').style.display = 'flex';
+            const modal = document.getElementById('membershipCheckoutModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
         }
 
         function closeMembershipCheckoutModal() {
-            document.getElementById('membershipCheckoutModal').style.display = 'none';
+            const modal = document.getElementById('membershipCheckoutModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
         }
 
         function formatCardNum(input) {

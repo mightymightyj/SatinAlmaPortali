@@ -2,358 +2,596 @@
     ViewData["Title"] = "Medya & Duyurular";
 }
 
-<!-- MEDYA HERO SECTION -->
-<section class="medya-hero">
-    <div class="medya-hero-inner">
-        <div class="medya-badge">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1m2 13a2 2 0 0 1-2-2V7m2 13a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
-            </svg>
-            <span>Medya Merkezi</span>
-        </div>
-        <h1 class="medya-hero-title">Medya & <span class="highlight-dot">Duyurular</span></h1>
-        <p class="medya-hero-desc">
-            Tedarik Portalı'nın en güncel haberleri, basın bültenleri ve etkinlik duyurularını takip edin.
-            Sektördeki gelişmelerden anında haberdar olun.
-        </p>
-    </div>
-</section>
+@section Styles {
+    <!-- Tailwind CSS (Play CDN) & Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                            950: '#082f49',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+}
 
-<!-- FEATURED / PINNED ANNOUNCEMENT -->
-<section class="medya-section">
-    <div class="medya-container">
-        <div class="section-header">
-            <div class="section-icon-badge">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                </svg>
+<div class="font-sans antialiased bg-slate-50 text-slate-800 selection:bg-blue-500 selection:text-white pb-20 sm:pb-24 lg:pb-12">
+
+    <!-- ==================== BÖLÜM 1: HERO SECTION ==================== -->
+    <section class="relative overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white pt-12 sm:pt-20 md:pt-24 pb-14 sm:pb-24 md:pb-28 px-4 sm:px-6 lg:px-8 border-b border-slate-800/80">
+        <!-- Radial Glow Efekti -->
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(37,99,235,0.30),rgba(255,255,255,0))] pointer-events-none"></div>
+
+        <div class="relative max-w-4xl mx-auto text-center">
+            <!-- Rozet -->
+            <div class="inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-4 sm:mb-6 backdrop-blur-sm shadow-sm">
+                <i class="fa-solid fa-newspaper text-blue-400 text-xs sm:text-sm"></i>
+                <span>Medya &amp; Basın Merkezi</span>
             </div>
-            <h2>Öne Çıkan Duyuru</h2>
-        </div>
-        <div class="medya-featured-card">
-            <div class="medya-featured-date">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                <span>12 Ağustos 2026</span>
-            </div>
-            <h3 class="medya-featured-title">Tedarik Portalı, Yeni Nesil Yapay Zeka Destekli Tedarik Eşleştirme Sistemini Duyurdu</h3>
-            <p class="medya-featured-text">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure
-                dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
-                proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit
-                voluptatem accusantium doloremque laudantium.
+
+            <!-- Ana Başlık -->
+            <h1 class="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.15]">
+                Haberler &amp; <br class="hidden sm:inline" />
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">
+                    Kurumsal Duyurular
+                </span>
+            </h1>
+
+            <!-- Açıklama Metni -->
+            <p class="mt-4 sm:mt-6 text-sm sm:text-base md:text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed font-normal">
+                Tedarik Portalı'nın en güncel haberleri, basın bültenleri ve etkinlik duyurularını takip edin. Sektördeki yeniliklerden ve platform gelişmelerinden anında haberdar olun.
             </p>
-            <a href="#" class="medya-featured-link">
-                Devamını Oku
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
-                </svg>
-            </a>
-        </div>
-    </div>
-</section>
 
-<!-- SON HABERLER SECTION -->
-<section class="medya-section medya-section-alt">
-    <div class="medya-container">
-        <div class="section-header">
-            <div class="section-icon-badge">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                </svg>
+            <!-- Hızlı Gezinme Butonları -->
+            <div class="mt-6 sm:mt-10 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+                <a href="#one-cikan" class="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 transition-all hover:scale-[1.02]">
+                    <i class="fa-solid fa-bullhorn text-[11px] sm:text-xs"></i>
+                    <span>Öne Çıkan</span>
+                </a>
+                <a href="#haberler" class="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700/80 hover:border-slate-600 transition-all hover:scale-[1.02]">
+                    <i class="fa-solid fa-newspaper text-[11px] sm:text-xs"></i>
+                    <span>Son Haberler</span>
+                </a>
+                <a href="#bultenler" class="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700/80 hover:border-slate-600 transition-all hover:scale-[1.02]">
+                    <i class="fa-solid fa-file-lines text-[11px] sm:text-xs"></i>
+                    <span>Basın Bültenleri</span>
+                </a>
+                <a href="#etkinlikler" class="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700/80 hover:border-slate-600 transition-all hover:scale-[1.02]">
+                    <i class="fa-solid fa-calendar-days text-[11px] sm:text-xs"></i>
+                    <span>Etkinlikler</span>
+                </a>
             </div>
-            <h2>Son Haberler</h2>
         </div>
-        <div class="medya-news-grid">
-            <!-- Haber 1 -->
-            <div class="medya-news-card">
-                <div class="medya-news-meta">
-                    <span class="medya-news-date">12 Ağustos 2026</span>
-                    <span class="medya-news-tag medya-tag-duyuru">Duyuru</span>
+    </section>
+
+    <!-- ==================== BÖLÜM 2: ÖNE ÇIKAN DUYURU ==================== -->
+    <section id="one-cikan" class="py-10 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div class="text-center max-w-3xl mx-auto mb-8 sm:mb-12">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 mb-2 sm:mb-3">
+                <i class="fa-solid fa-star text-blue-600 text-xs"></i>
+                <span>Gündem</span>
+            </div>
+            <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
+                Öne Çıkan Duyuru
+            </h2>
+        </div>
+
+        <div class="relative bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-12 border border-slate-200 shadow-xl overflow-hidden group hover:border-blue-300 transition-all">
+            <div class="absolute top-0 right-0 w-60 sm:w-80 h-60 sm:h-80 bg-blue-50 rounded-full blur-3xl opacity-50 -z-10 pointer-events-none"></div>
+
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <span class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-bold bg-blue-600 text-white shadow-xs">
+                    <i class="fa-solid fa-thumbtack text-[10px]"></i>
+                    Sabitlenmiş
+                </span>
+                <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 sm:px-3 py-1 rounded-full">
+                    <i class="fa-solid fa-calendar-day text-slate-400"></i>
+                    12 Ağustos 2026
+                </span>
+                <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 sm:px-3 py-1 rounded-full border border-emerald-100">
+                    <i class="fa-solid fa-microchip"></i>
+                    Platform Güncellemesi
+                </span>
+            </div>
+
+            <h3 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-slate-900 leading-tight mb-3 sm:mb-4 group-hover:text-blue-600 transition-colors">
+                Tedarik Portalı, Yeni Nesil Yapay Zeka Destekli Tedarik Eşleştirme Sistemini Duyurdu
+            </h3>
+
+            <p class="text-slate-600 text-xs sm:text-sm md:text-base leading-relaxed font-normal mb-6 sm:mb-8 max-w-5xl">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-5 sm:pt-6 border-t border-slate-100">
+                <a href="#" class="inline-flex items-center gap-2 text-sm sm:text-base font-bold text-blue-600 hover:text-blue-700 group/link">
+                    <span>Duyuru Detayını İncele</span>
+                    <i class="fa-solid fa-arrow-right transition-transform group-hover/link:translate-x-1"></i>
+                </a>
+                <span class="text-xs text-slate-400 font-medium">Okuma süresi: 3 dk</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== BÖLÜM 3: SON HABERLER ==================== -->
+    <section id="haberler" class="py-12 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-slate-100/70 border-y border-slate-200/80">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 mb-2 sm:mb-3">
+                    <i class="fa-solid fa-rss text-emerald-600 text-xs"></i>
+                    <span>Son Gelişmeler</span>
                 </div>
-                <h3 class="medya-news-title">Dijital Tedarik Zinciri Yönetiminde Yeni Dönem Başlıyor</h3>
-                <p class="medya-news-excerpt">
+                <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
+                    Son Haberler
+                </h2>
+                <p class="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg text-slate-600 leading-relaxed font-normal">
                     Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                 </p>
-                <a href="#" class="medya-news-link">Devamını Oku →</a>
             </div>
-            <!-- Haber 2 -->
-            <div class="medya-news-card">
-                <div class="medya-news-meta">
-                    <span class="medya-news-date">5 Ağustos 2026</span>
-                    <span class="medya-news-tag medya-tag-basin">Basın</span>
-                </div>
-                <h3 class="medya-news-title">Tedarik Portalı 10.000 Aktif Tedarikçi Sayısına Ulaştı</h3>
-                <p class="medya-news-excerpt">
-                    Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                </p>
-                <a href="#" class="medya-news-link">Devamını Oku →</a>
-            </div>
-            <!-- Haber 3 -->
-            <div class="medya-news-card">
-                <div class="medya-news-meta">
-                    <span class="medya-news-date">28 Temmuz 2026</span>
-                    <span class="medya-news-tag medya-tag-etkinlik">Etkinlik</span>
-                </div>
-                <h3 class="medya-news-title">B2B Tedarik Zirvesi 2026 Kayıtları Açıldı</h3>
-                <p class="medya-news-excerpt">
-                    Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-                </p>
-                <a href="#" class="medya-news-link">Devamını Oku →</a>
-            </div>
-            <!-- Haber 4 -->
-            <div class="medya-news-card">
-                <div class="medya-news-meta">
-                    <span class="medya-news-date">20 Temmuz 2026</span>
-                    <span class="medya-news-tag medya-tag-duyuru">Duyuru</span>
-                </div>
-                <h3 class="medya-news-title">Yeni Kategori Eklendi: Yenilenebilir Enerji Ekipmanları</h3>
-                <p class="medya-news-excerpt">
-                    Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-                </p>
-                <a href="#" class="medya-news-link">Devamını Oku →</a>
-            </div>
-            <!-- Haber 5 -->
-            <div class="medya-news-card">
-                <div class="medya-news-meta">
-                    <span class="medya-news-date">15 Temmuz 2026</span>
-                    <span class="medya-news-tag medya-tag-basin">Basın</span>
-                </div>
-                <h3 class="medya-news-title">Sürdürülebilir Tedarik Programı İle Çevreci Adımlar</h3>
-                <p class="medya-news-excerpt">
-                    Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium totam rem aperiam.
-                </p>
-                <a href="#" class="medya-news-link">Devamını Oku →</a>
-            </div>
-            <!-- Haber 6 -->
-            <div class="medya-news-card">
-                <div class="medya-news-meta">
-                    <span class="medya-news-date">8 Temmuz 2026</span>
-                    <span class="medya-news-tag medya-tag-etkinlik">Etkinlik</span>
-                </div>
-                <h3 class="medya-news-title">Tedarikçi Eğitim Webinarları Serisi Başladı</h3>
-                <p class="medya-news-excerpt">
-                    Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit sed quia consequuntur magni dolores.
-                </p>
-                <a href="#" class="medya-news-link">Devamını Oku →</a>
-            </div>
-        </div>
-    </div>
-</section>
 
-<!-- BASIN BÜLTENLERİ SECTION -->
-<section class="medya-section">
-    <div class="medya-container">
-        <div class="section-header">
-            <div class="section-icon-badge">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                    <polyline points="10 9 9 9 8 9"></polyline>
-                </svg>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-8">
+                <!-- Haber 1 -->
+                <div class="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-7 md:p-8 border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-center justify-between mb-4 sm:mb-5">
+                            <span class="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                                <i class="fa-solid fa-calendar text-slate-400 text-xs"></i>
+                                12 Ağustos 2026
+                            </span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200/60">
+                                Duyuru
+                            </span>
+                        </div>
+                        <h3 class="text-base sm:text-lg md:text-xl font-bold text-slate-900 mb-2 sm:mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
+                            Dijital Tedarik Zinciri Yönetiminde Yeni Dönem Başlıyor
+                        </h3>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                        </p>
+                    </div>
+                    <div class="mt-5 sm:mt-6 pt-4 sm:pt-5 border-t border-slate-100">
+                        <a href="#" class="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 group-hover:text-blue-700">
+                            <span>Devamını Oku</span>
+                            <i class="fa-solid fa-arrow-right text-[10px] transition-transform group-hover:translate-x-1"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Haber 2 -->
+                <div class="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-7 md:p-8 border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-sky-300 transition-all duration-300 flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-center justify-between mb-4 sm:mb-5">
+                            <span class="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                                <i class="fa-solid fa-calendar text-slate-400 text-xs"></i>
+                                5 Ağustos 2026
+                            </span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200/60">
+                                Basın
+                            </span>
+                        </div>
+                        <h3 class="text-base sm:text-lg md:text-xl font-bold text-slate-900 mb-2 sm:mb-3 group-hover:text-sky-600 transition-colors line-clamp-2">
+                            Tedarik Portalı B2B Ağını Türkiye Çapında Büyütüyor
+                        </h3>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                            Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                        </p>
+                    </div>
+                    <div class="mt-5 sm:mt-6 pt-4 sm:pt-5 border-t border-slate-100">
+                        <a href="#" class="inline-flex items-center gap-1.5 text-xs font-bold text-sky-600 group-hover:text-sky-700">
+                            <span>Devamını Oku</span>
+                            <i class="fa-solid fa-arrow-right text-[10px] transition-transform group-hover:translate-x-1"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Haber 3 -->
+                <div class="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-7 md:p-8 border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-purple-300 transition-all duration-300 flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-center justify-between mb-4 sm:mb-5">
+                            <span class="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                                <i class="fa-solid fa-calendar text-slate-400 text-xs"></i>
+                                28 Temmuz 2026
+                            </span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200/60">
+                                Etkinlik
+                            </span>
+                        </div>
+                        <h3 class="text-base sm:text-lg md:text-xl font-bold text-slate-900 mb-2 sm:mb-3 group-hover:text-purple-600 transition-colors line-clamp-2">
+                            B2B Tedarik Zirvesi 2026 Kayıtları Açıldı
+                        </h3>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                            Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+                        </p>
+                    </div>
+                    <div class="mt-5 sm:mt-6 pt-4 sm:pt-5 border-t border-slate-100">
+                        <a href="#" class="inline-flex items-center gap-1.5 text-xs font-bold text-purple-600 group-hover:text-purple-700">
+                            <span>Devamını Oku</span>
+                            <i class="fa-solid fa-arrow-right text-[10px] transition-transform group-hover:translate-x-1"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Haber 4 -->
+                <div class="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-7 md:p-8 border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-emerald-300 transition-all duration-300 flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-center justify-between mb-4 sm:mb-5">
+                            <span class="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                                <i class="fa-solid fa-calendar text-slate-400 text-xs"></i>
+                                20 Temmuz 2026
+                            </span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                                Duyuru
+                            </span>
+                        </div>
+                        <h3 class="text-base sm:text-lg md:text-xl font-bold text-slate-900 mb-2 sm:mb-3 group-hover:text-emerald-600 transition-colors line-clamp-2">
+                            Yeni Kategori Eklendi: Yenilenebilir Enerji Ekipmanları
+                        </h3>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                            Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                        </p>
+                    </div>
+                    <div class="mt-5 sm:mt-6 pt-4 sm:pt-5 border-t border-slate-100">
+                        <a href="#" class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 group-hover:text-emerald-700">
+                            <span>Devamını Oku</span>
+                            <i class="fa-solid fa-arrow-right text-[10px] transition-transform group-hover:translate-x-1"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Haber 5 -->
+                <div class="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-7 md:p-8 border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-teal-300 transition-all duration-300 flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-center justify-between mb-4 sm:mb-5">
+                            <span class="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                                <i class="fa-solid fa-calendar text-slate-400 text-xs"></i>
+                                15 Temmuz 2026
+                            </span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200/60">
+                                Basın
+                            </span>
+                        </div>
+                        <h3 class="text-base sm:text-lg md:text-xl font-bold text-slate-900 mb-2 sm:mb-3 group-hover:text-teal-600 transition-colors line-clamp-2">
+                            Sürdürülebilir Tedarik Programı İle Çevreci Adımlar
+                        </h3>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                            Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium totam rem aperiam.
+                        </p>
+                    </div>
+                    <div class="mt-5 sm:mt-6 pt-4 sm:pt-5 border-t border-slate-100">
+                        <a href="#" class="inline-flex items-center gap-1.5 text-xs font-bold text-teal-600 group-hover:text-teal-700">
+                            <span>Devamını Oku</span>
+                            <i class="fa-solid fa-arrow-right text-[10px] transition-transform group-hover:translate-x-1"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Haber 6 -->
+                <div class="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-7 md:p-8 border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-indigo-300 transition-all duration-300 flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-center justify-between mb-4 sm:mb-5">
+                            <span class="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                                <i class="fa-solid fa-calendar text-slate-400 text-xs"></i>
+                                8 Temmuz 2026
+                            </span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+                                Etkinlik
+                            </span>
+                        </div>
+                        <h3 class="text-base sm:text-lg md:text-xl font-bold text-slate-900 mb-2 sm:mb-3 group-hover:text-indigo-600 transition-colors line-clamp-2">
+                            Tedarikçi Eğitim Webinarları Serisi Başladı
+                        </h3>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                            Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit sed quia consequuntur magni dolores.
+                        </p>
+                    </div>
+                    <div class="mt-5 sm:mt-6 pt-4 sm:pt-5 border-t border-slate-100">
+                        <a href="#" class="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 group-hover:text-indigo-700">
+                            <span>Devamını Oku</span>
+                            <i class="fa-solid fa-arrow-right text-[10px] transition-transform group-hover:translate-x-1"></i>
+                        </a>
+                    </div>
+                </div>
             </div>
-            <h2>Basın Bültenleri</h2>
         </div>
-        <div class="medya-basin-list">
+    </section>
+
+    <!-- ==================== BÖLÜM 4: BASIN BÜLTENLERİ ==================== -->
+    <section id="bultenler" class="py-12 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+        <div class="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200 mb-2 sm:mb-3">
+                <i class="fa-solid fa-file-invoice text-sky-600 text-xs"></i>
+                <span>Resmi Duyurular</span>
+            </div>
+            <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
+                Basın Bültenleri
+            </h2>
+            <p class="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg text-slate-600 leading-relaxed font-normal">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Medya mensupları ve iş ortaklarımız için hazırlanan resmi açıklamalar.
+            </p>
+        </div>
+
+        <div class="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden divide-y divide-slate-100">
             <!-- Bülten 1 -->
-            <div class="medya-basin-item">
-                <div class="medya-basin-date-col">
-                    <span class="medya-basin-day">10</span>
-                    <span class="medya-basin-month">Ağu 2026</span>
+            <div class="p-4 sm:p-6 md:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 hover:bg-slate-50/70 transition-colors group">
+                <div class="flex items-start sm:items-center gap-3.5 sm:gap-5">
+                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-blue-50 border border-blue-100 text-blue-700 flex flex-col items-center justify-center shrink-0 shadow-xs">
+                        <span class="text-base sm:text-lg font-black leading-none">10</span>
+                        <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-blue-600">Ağu</span>
+                    </div>
+                    <div>
+                        <h4 class="text-sm sm:text-base md:text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                            Tedarik Portalı, Avrupa Pazarına Açılma Planlarını Açıkladı
+                        </h4>
+                        <p class="text-xs sm:text-sm text-slate-500 mt-1 line-clamp-1 font-normal">
+                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.
+                        </p>
+                    </div>
                 </div>
-                <div class="medya-basin-content">
-                    <h4 class="medya-basin-title">Tedarik Portalı, Avrupa Pazarına Açılma Planlarını Açıkladı</h4>
-                    <p class="medya-basin-desc">
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam.
-                    </p>
-                </div>
-                <a href="#" class="medya-basin-link">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                        <polyline points="12 5 19 12 12 19"></polyline>
-                    </svg>
+                <a href="#" class="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-600 hover:text-white transition-all shrink-0">
+                    <span>Bülteni İncele</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[11px]"></i>
                 </a>
             </div>
+
             <!-- Bülten 2 -->
-            <div class="medya-basin-item">
-                <div class="medya-basin-date-col">
-                    <span class="medya-basin-day">02</span>
-                    <span class="medya-basin-month">Ağu 2026</span>
+            <div class="p-4 sm:p-6 md:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 hover:bg-slate-50/70 transition-colors group">
+                <div class="flex items-start sm:items-center gap-3.5 sm:gap-5">
+                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-blue-50 border border-blue-100 text-blue-700 flex flex-col items-center justify-center shrink-0 shadow-xs">
+                        <span class="text-base sm:text-lg font-black leading-none">02</span>
+                        <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-blue-600">Ağu</span>
+                    </div>
+                    <div>
+                        <h4 class="text-sm sm:text-base md:text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                            2026 İkinci Çeyrek Sonuçları: Büyüme Trendi Kararlılıkla Sürüyor
+                        </h4>
+                        <p class="text-xs sm:text-sm text-slate-500 mt-1 line-clamp-1 font-normal">
+                            Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                        </p>
+                    </div>
                 </div>
-                <div class="medya-basin-content">
-                    <h4 class="medya-basin-title">2026 İkinci Çeyrek Sonuçları: Rekor Büyüme Devam Ediyor</h4>
-                    <p class="medya-basin-desc">
-                        Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat duis aute irure dolor.
-                    </p>
-                </div>
-                <a href="#" class="medya-basin-link">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                        <polyline points="12 5 19 12 12 19"></polyline>
-                    </svg>
+                <a href="#" class="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-600 hover:text-white transition-all shrink-0">
+                    <span>Bülteni İncele</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[11px]"></i>
                 </a>
             </div>
+
             <!-- Bülten 3 -->
-            <div class="medya-basin-item">
-                <div class="medya-basin-date-col">
-                    <span class="medya-basin-day">22</span>
-                    <span class="medya-basin-month">Tem 2026</span>
+            <div class="p-4 sm:p-6 md:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 hover:bg-slate-50/70 transition-colors group">
+                <div class="flex items-start sm:items-center gap-3.5 sm:gap-5">
+                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-blue-50 border border-blue-100 text-blue-700 flex flex-col items-center justify-center shrink-0 shadow-xs">
+                        <span class="text-base sm:text-lg font-black leading-none">22</span>
+                        <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-blue-600">Tem</span>
+                    </div>
+                    <div>
+                        <h4 class="text-sm sm:text-base md:text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                            Yapay Zeka Tabanlı Fiyat Analiz Aracı Kullanıma Sunuldu
+                        </h4>
+                        <p class="text-xs sm:text-sm text-slate-500 mt-1 line-clamp-1 font-normal">
+                            Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+                        </p>
+                    </div>
                 </div>
-                <div class="medya-basin-content">
-                    <h4 class="medya-basin-title">Yapay Zeka Tabanlı Fiyat Analiz Aracı Kullanıma Sunuldu</h4>
-                    <p class="medya-basin-desc">
-                        Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur excepteur sint occaecat cupidatat.
-                    </p>
-                </div>
-                <a href="#" class="medya-basin-link">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                        <polyline points="12 5 19 12 12 19"></polyline>
-                    </svg>
+                <a href="#" class="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-600 hover:text-white transition-all shrink-0">
+                    <span>Bülteni İncele</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[11px]"></i>
                 </a>
             </div>
+
             <!-- Bülten 4 -->
-            <div class="medya-basin-item">
-                <div class="medya-basin-date-col">
-                    <span class="medya-basin-day">14</span>
-                    <span class="medya-basin-month">Tem 2026</span>
+            <div class="p-4 sm:p-6 md:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 hover:bg-slate-50/70 transition-colors group">
+                <div class="flex items-start sm:items-center gap-3.5 sm:gap-5">
+                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-blue-50 border border-blue-100 text-blue-700 flex flex-col items-center justify-center shrink-0 shadow-xs">
+                        <span class="text-base sm:text-lg font-black leading-none">14</span>
+                        <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-blue-600">Tem</span>
+                    </div>
+                    <div>
+                        <h4 class="text-sm sm:text-base md:text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                            Stratejik İş Ortaklığı: Sanayi Odaları ile Protokol İmzalandı
+                        </h4>
+                        <p class="text-xs sm:text-sm text-slate-500 mt-1 line-clamp-1 font-normal">
+                            Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                        </p>
+                    </div>
                 </div>
-                <div class="medya-basin-content">
-                    <h4 class="medya-basin-title">Stratejik İş Ortaklığı: Türkiye Sanayi Odaları ile Protokol İmzalandı</h4>
-                    <p class="medya-basin-desc">
-                        Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum sed ut perspiciatis.
-                    </p>
-                </div>
-                <a href="#" class="medya-basin-link">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                        <polyline points="12 5 19 12 12 19"></polyline>
-                    </svg>
+                <a href="#" class="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-600 hover:text-white transition-all shrink-0">
+                    <span>Bülteni İncele</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[11px]"></i>
                 </a>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- YAKLAŞAN ETKİNLİKLER SECTION -->
-<section class="medya-section medya-section-alt">
-    <div class="medya-container">
-        <div class="section-header">
-            <div class="section-icon-badge">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
+    <!-- ==================== BÖLÜM 5: YAKLAŞAN ETKİNLİKLER ==================== -->
+    <section id="etkinlikler" class="py-12 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-slate-100/70 border-t border-slate-200/80">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 mb-2 sm:mb-3">
+                    <i class="fa-solid fa-calendar-check text-purple-600 text-xs"></i>
+                    <span>Takvim</span>
+                </div>
+                <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
+                    Yaklaşan Etkinlikler
+                </h2>
+                <p class="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg text-slate-600 leading-relaxed font-normal">
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fiziksel zirveler, webinarlar ve sektörel buluşmalar.
+                </p>
             </div>
-            <h2>Yaklaşan Etkinlikler</h2>
-        </div>
-        <div class="medya-etkinlik-grid">
-            <!-- Etkinlik 1 -->
-            <div class="medya-etkinlik-card">
-                <div class="medya-etkinlik-date-badge">
-                    <span class="medya-etkinlik-day">25</span>
-                    <span class="medya-etkinlik-month">Eylül</span>
-                </div>
-                <div class="medya-etkinlik-details">
-                    <h4 class="medya-etkinlik-title">B2B Tedarik Zirvesi 2026</h4>
-                    <div class="medya-etkinlik-location">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                            <circle cx="12" cy="10" r="3"></circle>
-                        </svg>
-                        <span>İstanbul Kongre Merkezi, İstanbul</span>
-                    </div>
-                    <p class="medya-etkinlik-desc">
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                    </p>
-                </div>
-            </div>
-            <!-- Etkinlik 2 -->
-            <div class="medya-etkinlik-card">
-                <div class="medya-etkinlik-date-badge">
-                    <span class="medya-etkinlik-day">10</span>
-                    <span class="medya-etkinlik-month">Ekim</span>
-                </div>
-                <div class="medya-etkinlik-details">
-                    <h4 class="medya-etkinlik-title">Dijital Tedarik Webinar Serisi</h4>
-                    <div class="medya-etkinlik-location">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                            <circle cx="12" cy="10" r="3"></circle>
-                        </svg>
-                        <span>Online (Zoom), Türkiye</span>
-                    </div>
-                    <p class="medya-etkinlik-desc">
-                        Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                    </p>
-                </div>
-            </div>
-            <!-- Etkinlik 3 -->
-            <div class="medya-etkinlik-card">
-                <div class="medya-etkinlik-date-badge">
-                    <span class="medya-etkinlik-day">18</span>
-                    <span class="medya-etkinlik-month">Kasım</span>
-                </div>
-                <div class="medya-etkinlik-details">
-                    <h4 class="medya-etkinlik-title">Tedarikçi Buluşma Günleri</h4>
-                    <div class="medya-etkinlik-location">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                            <circle cx="12" cy="10" r="3"></circle>
-                        </svg>
-                        <span>Ankara Ticaret Odası, Ankara</span>
-                    </div>
-                    <p class="medya-etkinlik-desc">
-                        Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
 
-<!-- NEWSLETTER SUBSCRIPTION CTA -->
-<section class="medya-newsletter">
-    <div class="medya-container">
-        <div class="blur-feature-card">
-            <div class="blur-card-header">
-                <div class="blur-icon-badge">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                        <polyline points="22,6 12,13 2,6"></polyline>
-                    </svg>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-8">
+                <!-- Etkinlik 1 -->
+                <div class="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-7 md:p-8 border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-purple-300 transition-all duration-300 flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+                            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-500 text-white flex flex-col items-center justify-center shrink-0 shadow-md shadow-purple-500/20">
+                                <span class="text-xl sm:text-2xl font-black leading-none">25</span>
+                                <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider mt-0.5">Eylül</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-purple-600 bg-purple-50 px-2 sm:px-2.5 py-0.5 rounded-md border border-purple-200/60">
+                                    Fiziksel Zirve
+                                </span>
+                                <div class="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                                    <i class="fa-solid fa-location-dot text-slate-400"></i>
+                                    İstanbul
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4 class="text-lg sm:text-xl font-bold text-slate-900 mb-2 group-hover:text-purple-600 transition-colors">
+                            B2B Tedarik Zirvesi 2026
+                        </h4>
+                        <div class="text-xs text-slate-500 mb-3 sm:mb-4 flex items-center gap-1.5 font-medium">
+                            <i class="fa-solid fa-building text-slate-400"></i>
+                            İstanbul Kongre Merkezi
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                        </p>
+                    </div>
+
+                    <div class="mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-slate-100">
+                        <a href="#" class="inline-flex items-center justify-center w-full py-2.5 sm:py-3 px-4 rounded-xl text-xs font-bold bg-slate-100 hover:bg-purple-600 hover:text-white text-slate-700 transition-all shadow-xs">
+                            Kayıt Ol &amp; Detaylar
+                        </a>
+                    </div>
                 </div>
-                <div class="blur-card-title-group">
-                    <span class="blur-card-tag">E-Bülten Aboneliği</span>
-                    <h2 class="blur-card-title">Güncel Kalın</h2>
+
+                <!-- Etkinlik 2 -->
+                <div class="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-7 md:p-8 border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-sky-300 transition-all duration-300 flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+                            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-sky-600 to-blue-500 text-white flex flex-col items-center justify-center shrink-0 shadow-md shadow-sky-500/20">
+                                <span class="text-xl sm:text-2xl font-black leading-none">10</span>
+                                <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider mt-0.5">Ekim</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-sky-600 bg-sky-50 px-2 sm:px-2.5 py-0.5 rounded-md border border-sky-200/60">
+                                    Canlı Webinar
+                                </span>
+                                <div class="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                                    <i class="fa-solid fa-video text-slate-400"></i>
+                                    Online (Zoom)
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4 class="text-lg sm:text-xl font-bold text-slate-900 mb-2 group-hover:text-sky-600 transition-colors">
+                            Dijital Tedarik Webinar Serisi
+                        </h4>
+                        <div class="text-xs text-slate-500 mb-3 sm:mb-4 flex items-center gap-1.5 font-medium">
+                            <i class="fa-solid fa-clock text-slate-400"></i>
+                            14:00 - 16:30 (TSİ)
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                            Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                        </p>
+                    </div>
+
+                    <div class="mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-slate-100">
+                        <a href="#" class="inline-flex items-center justify-center w-full py-2.5 sm:py-3 px-4 rounded-xl text-xs font-bold bg-slate-100 hover:bg-sky-600 hover:text-white text-slate-700 transition-all shadow-xs">
+                            Ücretsiz Katıl
+                        </a>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="blur-card-content">
-                <p class="blur-card-desc">En son haberler, duyurular ve etkinlik davetleri için bültenimize abone olun. Sektördeki gelişmeleri kaçırmayın.</p>
-                
-                <div class="blur-newsletter-form">
-                    <div class="blur-input-wrap">
-                        <svg class="blur-input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                            <polyline points="22,6 12,13 2,6"></polyline>
-                        </svg>
-                        <input type="email" class="blur-input-field" placeholder="E-posta adresinizi girin" />
-                        <button class="blur-submit-btn">Abone Ol</button>
+
+                <!-- Etkinlik 3 -->
+                <div class="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-7 md:p-8 border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-emerald-300 transition-all duration-300 flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+                            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex flex-col items-center justify-center shrink-0 shadow-md shadow-emerald-500/20">
+                                <span class="text-xl sm:text-2xl font-black leading-none">18</span>
+                                <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider mt-0.5">Kasım</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 sm:px-2.5 py-0.5 rounded-md border border-emerald-200/60">
+                                    Networking
+                                </span>
+                                <div class="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                                    <i class="fa-solid fa-location-dot text-slate-400"></i>
+                                    Ankara
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4 class="text-lg sm:text-xl font-bold text-slate-900 mb-2 group-hover:text-emerald-600 transition-colors">
+                            Tedarikçi Buluşma Günleri
+                        </h4>
+                        <div class="text-xs text-slate-500 mb-3 sm:mb-4 flex items-center gap-1.5 font-medium">
+                            <i class="fa-solid fa-building text-slate-400"></i>
+                            Ankara Ticaret Odası
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                            Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+                        </p>
+                    </div>
+
+                    <div class="mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-slate-100">
+                        <a href="#" class="inline-flex items-center justify-center w-full py-2.5 sm:py-3 px-4 rounded-xl text-xs font-bold bg-slate-100 hover:bg-emerald-600 hover:text-white text-slate-700 transition-all shadow-xs">
+                            Kayıt Ol &amp; Detaylar
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
+
+    <!-- ==================== BÖLÜM 6: E-BÜLTEN ABONELİĞİ (CTA) ==================== -->
+    <section id="ebulten" class="py-10 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div class="relative overflow-hidden bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 text-white rounded-2xl sm:rounded-3xl p-6 sm:p-10 md:p-16 border border-slate-800 shadow-2xl text-center">
+            <!-- Arka Plan Radial Glow -->
+            <div class="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_50%,rgba(37,99,235,0.25),rgba(255,255,255,0))] pointer-events-none"></div>
+
+            <div class="relative max-w-3xl mx-auto">
+                <div class="inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-4 sm:mb-6">
+                    <i class="fa-solid fa-envelope-open-text text-blue-400 text-xs"></i>
+                    <span>E-Bülten Aboneliği</span>
+                </div>
+                <h2 class="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
+                    En Son Gelişmelerden <br class="hidden sm:inline" />
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">
+                        İlk Sizin Haberiniz Olsun
+                    </span>
+                </h2>
+                <p class="mt-3 sm:mt-5 text-xs sm:text-base md:text-lg text-slate-300 font-normal leading-relaxed">
+                    Sektörel analizler, platform yenilikleri ve etkinlik davetleri için bültenimize kaydolun.
+                </p>
+
+                <div class="mt-6 sm:mt-10 max-w-md mx-auto">
+                    <form onsubmit="event.preventDefault(); alert('Bülten kaydınız başarıyla alındı!');" class="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
+                        <input type="email" required placeholder="Kurumsal e-posta adresiniz" class="flex-1 px-4 py-3 sm:py-3.5 rounded-xl border border-slate-700 bg-slate-900/90 text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-500" />
+                        <button type="submit" class="px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 transition-all hover:scale-[1.02] shrink-0">
+                            Abone Ol
+                        </button>
+                    </form>
+                    <p class="text-[10px] sm:text-[11px] text-slate-400 mt-2 sm:mt-2.5">Dilediğiniz zaman tek tıkla abonelikten çıkabilirsiniz. Spam göndermeyiz.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>
