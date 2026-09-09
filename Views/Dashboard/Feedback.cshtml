@@ -13,21 +13,23 @@
     }
 
     .fb-header {
-        background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
-        border-radius: 14px;
-        padding: 24px 28px;
-        color: #FFFFFF;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        padding: 22px 26px;
+        color: #0F172A;
         display: flex;
         align-items: center;
         justify-content: space-between;
         flex-wrap: wrap;
         gap: 16px;
-        box-shadow: 0 4px 15px -3px rgba(15, 23, 42, 0.15);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     }
 
     .fb-header-info h1 {
         font-size: 1.45rem;
-        font-weight: 700;
+        font-weight: 800;
+        color: #0F172A;
         margin: 0 0 6px 0;
         display: flex;
         align-items: center;
@@ -38,7 +40,7 @@
     .fb-header-info p {
         margin: 0;
         font-size: 0.86rem;
-        color: #94A3B8;
+        color: #64748B;
         display: flex;
         align-items: center;
         gap: 8px;
@@ -131,34 +133,90 @@
     }
 
     .fb-rating-group {
-        display: flex;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
         gap: 8px;
-        align-items: center;
+        align-items: stretch;
+    }
+
+    @@media (max-width: 480px) {
+        .fb-rating-group {
+            gap: 5px;
+        }
     }
 
     .fb-rating-btn {
-        flex: 1;
-        padding: 9px 6px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 60px;
+        height: 100%;
+        padding: 8px 4px;
         text-align: center;
-        border: 1px solid #E2E8F0;
+        border: 1.5px solid #E2E8F0;
         background: #F8FAFC;
-        border-radius: 8px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #475569;
+        border-radius: 10px;
         cursor: pointer;
-        transition: all 0.15s ease;
+        transition: all 0.18s ease;
+        box-sizing: border-box;
+    }
+
+    .fb-rating-num {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: #0F172A;
+        line-height: 1;
+        transition: color 0.15s ease;
+    }
+
+    .fb-rating-text {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #64748B;
+        line-height: 1.15;
+        margin-top: 4px;
+        white-space: nowrap;
+        transition: color 0.15s ease;
+    }
+
+    @@media (max-width: 480px) {
+        .fb-rating-btn {
+            min-height: 52px;
+            padding: 6px 2px;
+            border-radius: 8px;
+        }
+        .fb-rating-num {
+            font-size: 1rem;
+        }
+        .fb-rating-text {
+            font-size: 0.62rem;
+            letter-spacing: -0.02em;
+            margin-top: 2px;
+        }
     }
 
     .fb-rating-btn:hover {
-        background: #F1F5F9;
-        border-color: #CBD5E1;
+        background: #EFF6FF;
+        border-color: #93C5FD;
+        transform: translateY(-1px);
+    }
+
+    .fb-rating-btn:hover .fb-rating-num,
+    .fb-rating-btn:hover .fb-rating-text {
+        color: #2563EB;
     }
 
     .fb-rating-btn.active {
-        background: #2563EB;
-        color: #FFFFFF;
-        border-color: #1D4ED8;
+        background: #2563EB !important;
+        border-color: #1D4ED8 !important;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
+        transform: scale(1.02);
+    }
+
+    .fb-rating-btn.active .fb-rating-num,
+    .fb-rating-btn.active .fb-rating-text {
+        color: #FFFFFF !important;
     }
 
     .fb-submit-btn {
@@ -366,11 +424,26 @@
                     <label class="fb-label">Platform Deneyimi / Memnuniyet Puanı (İsteğe Bağlı)</label>
                     <div class="fb-rating-group">
                         <input type="hidden" id="ratingInput" name="Rating" value="" />
-                        <button type="button" class="fb-rating-btn" onclick="selectRating(1)">1 - Çok Düşük</button>
-                        <button type="button" class="fb-rating-btn" onclick="selectRating(2)">2 - Düşük</button>
-                        <button type="button" class="fb-rating-btn" onclick="selectRating(3)">3 - Orta</button>
-                        <button type="button" class="fb-rating-btn" onclick="selectRating(4)">4 - İyi</button>
-                        <button type="button" class="fb-rating-btn" onclick="selectRating(5)">5 - Mükemmel</button>
+                        <button type="button" class="fb-rating-btn" onclick="selectRating(1)">
+                            <span class="fb-rating-num">1</span>
+                            <span class="fb-rating-text">Çok Düşük</span>
+                        </button>
+                        <button type="button" class="fb-rating-btn" onclick="selectRating(2)">
+                            <span class="fb-rating-num">2</span>
+                            <span class="fb-rating-text">Düşük</span>
+                        </button>
+                        <button type="button" class="fb-rating-btn" onclick="selectRating(3)">
+                            <span class="fb-rating-num">3</span>
+                            <span class="fb-rating-text">Orta</span>
+                        </button>
+                        <button type="button" class="fb-rating-btn" onclick="selectRating(4)">
+                            <span class="fb-rating-num">4</span>
+                            <span class="fb-rating-text">İyi</span>
+                        </button>
+                        <button type="button" class="fb-rating-btn" onclick="selectRating(5)">
+                            <span class="fb-rating-num">5</span>
+                            <span class="fb-rating-text">Mükemmel</span>
+                        </button>
                     </div>
                 </div>
 
@@ -474,10 +547,14 @@
 
 <script>
     function selectRating(val) {
-        document.getElementById('ratingInput').value = val;
+        const ratingInput = document.getElementById('ratingInput');
+        const isCurrent = ratingInput.value === String(val);
+        const nextVal = isCurrent ? '' : val;
+        ratingInput.value = nextVal;
+
         const btns = document.querySelectorAll('.fb-rating-btn');
         btns.forEach((b, idx) => {
-            if (idx + 1 === val) {
+            if (!isCurrent && idx + 1 === val) {
                 b.classList.add('active');
             } else {
                 b.classList.remove('active');

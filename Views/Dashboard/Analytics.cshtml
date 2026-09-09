@@ -5,7 +5,7 @@
     ViewData["Title"] = "Sistem Analitiği & İş Zekası (BI)";
     Layout = "~/Views/Dashboard/_DashboardLayout.cshtml";
 
-    // Ciddi kurumsal renk paleti
+    // Kurumsal renk paleti
     var palette = new[] { "#2563EB", "#059669", "#D97706", "#7C3AED", "#DB2777", "#0891B2", "#475569" };
 
     var periods = Model.TrendPeriods;
@@ -15,277 +15,25 @@
     var vendors = Model.Vendors;
     var brands = Model.Brands;
     var regions = Model.Regions;
-    var companyMix = Model.CompanyMix;
-    var compTypes = Model.CompanyTypeNames;
-    var memberships = Model.MembershipNames;
 
     var typeTotal = types.Sum(t => t.RequestCount);
 }
 
-<link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-    /* =========================================================================
-       SİSTEM ANALİTİĞİ & BI RAPORLAMA STİLLERİ (CİDDİ VE EMOJİSİZ KURUMSAL ARAYÜZ)
-       ========================================================================= */
-    .analytics-container {
-        display: flex;
-        flex-direction: column;
-        gap: 22px;
-        color: #0F172A;
-    }
-
-    /* Üst Başlık & Eylem Çubuğu */
-    .bi-header {
-        background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
-        border-radius: 14px;
-        padding: 22px 26px;
-        color: #FFFFFF;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 16px;
-        box-shadow: 0 4px 15px -3px rgba(15, 23, 42, 0.15);
-    }
-    .bi-header-info h1 {
-        font-size: 1.45rem;
-        font-weight: 700;
-        margin: 0 0 6px 0;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        letter-spacing: -0.01em;
-    }
-    .bi-header-info p {
-        margin: 0;
-        font-size: 0.84rem;
-        color: #94A3B8;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .bi-status-dot {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #10B981;
-    }
-
-    .bi-actions {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-    .bi-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 7px 13px;
-        border-radius: 8px;
-        font-size: 0.81rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        border: 1px solid rgba(255, 255, 255, 0.16);
-        background: rgba(255, 255, 255, 0.08);
-        color: #FFFFFF;
-        text-decoration: none;
-    }
-    .bi-btn:hover {
-        background: rgba(255, 255, 255, 0.18);
-        color: #FFFFFF;
-    }
-    .bi-btn.is-active {
-        background: #2563EB;
-        border-color: #2563EB;
-        color: #FFFFFF;
-    }
-    .bi-btn-export {
-        background: #059669;
-        border-color: #059669;
-    }
-    .bi-btn-export:hover {
-        background: #047857;
-    }
-
-    /* Hızlı Gezinti Sekmeleri */
-    .bi-nav-tabs {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        overflow-x: auto;
-        padding: 2px;
-        scrollbar-width: none;
-    }
-    .bi-nav-tabs::-webkit-scrollbar { display: none; }
-    .bi-tab-btn {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 8px;
-        padding: 8px 16px;
-        font-size: 0.82rem;
-        font-weight: 600;
-        color: #475569;
-        cursor: pointer;
-        white-space: nowrap;
-        transition: all 0.15s ease;
-        display: flex;
-        align-items: center;
-        gap: 7px;
-    }
-    .bi-tab-btn svg {
-        width: 15px;
-        height: 15px;
-        stroke: currentColor;
-    }
-    .bi-tab-btn:hover {
-        background: #F8FAFC;
-        color: #2563EB;
-        border-color: #CBD5E1;
-    }
-    .bi-tab-btn.is-active {
-        background: #2563EB;
-        color: #FFFFFF;
-        border-color: #2563EB;
-    }
-    .bi-tab-btn.is-active svg {
-        stroke: #FFFFFF;
-    }
-
-    /* KPI Kartları Grid */
-    .bi-kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 16px;
-    }
-    .bi-kpi-card {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        padding: 18px 20px;
-        position: relative;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-    }
-    .bi-kpi-top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 12px;
-    }
-    .bi-kpi-title {
-        font-size: 0.78rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: #64748B;
-    }
-    .bi-kpi-icon {
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .bi-kpi-icon svg {
-        width: 18px;
-        height: 18px;
-    }
-    .bi-kpi-icon.blue { background: #EFF6FF; color: #2563EB; }
-    .bi-kpi-icon.emerald { background: #ECFDF5; color: #059669; }
-    .bi-kpi-icon.amber { background: #FFFBEB; color: #D97706; }
-    .bi-kpi-icon.purple { background: #FAF5FF; color: #7C3AED; }
-
-    .bi-kpi-num {
-        font-size: 1.75rem;
-        font-weight: 800;
-        color: #0F172A;
-        line-height: 1.1;
-        margin: 0 0 6px 0;
-        letter-spacing: -0.02em;
-    }
-    .bi-kpi-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 0.74rem;
-        font-weight: 600;
-        padding: 2px 8px;
-        border-radius: 6px;
-    }
-    .bi-badge-good { background: #ECFDF5; color: #059669; }
-    .bi-badge-bad { background: #FEF2F2; color: #DC2626; }
-    .bi-badge-neutral { background: #F1F5F9; color: #475569; }
-
-    /* Kart & Grid Tasarımı */
-    .bi-section-card {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        padding: 20px;
-    }
-    .bi-card-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 18px;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-    .bi-card-title {
-        font-size: 1.05rem;
-        font-weight: 700;
-        color: #0F172A;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .bi-card-title svg {
-        width: 18px;
-        height: 18px;
-        color: #2563EB;
-    }
-    .bi-card-desc {
-        font-size: 0.79rem;
-        color: #64748B;
-        margin: 2px 0 0 0;
-    }
-
-    .bi-grid-2 {
-        display: grid;
-        grid-template-columns: 2fr 1.2fr;
-        gap: 18px;
-    }
-    .bi-grid-equal {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 18px;
-    }
-    @@media (max-width: 992px) {
-        .bi-grid-2, .bi-grid-equal {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    /* Donut & Dağılım Çubukları */
-    .donut-layout {
-        display: flex;
-        flex-direction: column;
-        gap: 18px;
-        align-items: center;
-    }
+    /* Donut Grafik İçi Merkez İstatistik */
     .donut-canvas-wrap {
         position: relative;
-        width: 210px;
-        height: 210px;
+        width: 180px;
+        height: 180px;
+        margin: 0 auto;
+    }
+    @@media (max-width: 640px) {
+        .donut-canvas-wrap {
+            width: 150px;
+            height: 150px;
+        }
     }
     .donut-center-stat {
         position: absolute;
@@ -295,362 +43,192 @@
         text-align: center;
         pointer-events: none;
     }
-    .donut-stat-num {
-        font-size: 1.55rem;
-        font-weight: 800;
-        color: #0F172A;
-        display: block;
-        line-height: 1;
-    }
-    .donut-stat-label {
-        font-size: 0.70rem;
-        font-weight: 600;
-        color: #64748B;
-        text-transform: uppercase;
-        margin-top: 2px;
+
+    /* Mobil Tablo ve Liste İyileştirmeleri */
+    @@media (max-width: 767.98px) {
+        .dash-table {
+            font-size: 11px;
+        }
     }
 
-    .type-breakdown-list {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    .type-row-item {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        font-size: 0.81rem;
-    }
-    .type-row-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .type-row-left {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-weight: 600;
-        color: #1E293B;
-    }
-    .type-row-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 2px;
-    }
-    .type-progress-bg {
-        width: 100%;
-        height: 5px;
-        background: #F1F5F9;
-        border-radius: 4px;
-        overflow: hidden;
-    }
-    .type-progress-bar {
-        height: 100%;
-        border-radius: 4px;
-        transition: width 0.6s ease;
-    }
-
-    /* Tedarikçi Karnesi Tablosu */
-    .scorecard-search-box {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background: #F8FAFC;
-        border: 1px solid #CBD5E1;
-        border-radius: 8px;
-        padding: 6px 12px;
-        width: 250px;
-    }
-    .scorecard-search-input {
-        border: none;
-        background: transparent;
-        font-size: 0.81rem;
-        width: 100%;
-        outline: none;
-        color: #0F172A;
-    }
-    .score-badge {
-        font-weight: 700;
-        color: #0F172A;
-        font-size: 0.85rem;
-    }
-
-    /* Marka Sıralama Rozetleri */
-    .rank-badge {
-        font-weight: 700;
-        font-size: 0.76rem;
-        color: #475569;
-        background: #E2E8F0;
-        padding: 2px 7px;
-        border-radius: 5px;
-        display: inline-block;
-        min-width: 24px;
-        text-align: center;
-    }
-    .rank-badge.top-1 { background: #FEF3C7; color: #B45309; }
-    .rank-badge.top-2 { background: #E2E8F0; color: #334155; }
-    .rank-badge.top-3 { background: #FFEDD5; color: #C2410C; }
-
-    /* Baskı Ayarları */
+    /* Yazdırma / PDF Ayarları */
     @@media print {
-        .app-sidebar, .app-topbar, .bi-actions, .bi-nav-tabs, .year-filter, .scorecard-search-box {
+        .app-sidebar, .app-topbar, .bi-actions, .bi-nav-tabs, .year-filter {
             display: none !important;
         }
-        .app-main { padding: 0 !important; }
-        .analytics-container { gap: 14px; }
-        .bi-header { background: #0F172A !important; color: #FFFFFF !important; }
-        .bi-section-card { box-shadow: none !important; border: 1px solid #CBD5E1 !important; page-break-inside: avoid; }
+        .app-shell { margin-left: 0 !important; }
+        .card { box-shadow: none !important; border: 1px solid #CBD5E1 !important; page-break-inside: avoid; }
     }
 </style>
 
-<div class="analytics-container">
+<div class="analytics-container space-y-6">
 
-    <!-- 1. ÜST BAŞLIK & İŞ ZEKASI KONTROL ÇUBUĞU -->
-    <header class="bi-header">
-        <div class="bi-header-info">
-            <h1>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <line x1="18" y1="20" x2="18" y2="10"></line>
-                    <line x1="12" y1="20" x2="12" y2="4"></line>
-                    <line x1="6" y1="20" x2="6" y2="14"></line>
-                </svg>
-                Sistem Analitiği &amp; İş Zekası (BI) Raporu
+    <!-- ==================== 1. SAYFA BAŞLIĞI ==================== -->
+    <div class="page-head pb-1">
+        <div class="flex items-center justify-between gap-3">
+            <h1 class="text-xl sm:text-2xl font-black tracking-tight text-slate-900 leading-tight">
+                Sistem Analitiği &amp; BI
             </h1>
-            <p>
-                <span class="bi-status-dot"></span>
-                @if (Model.State == DataState.Ok) {
-                    <span>@Model.SelectedYear Dönemi Raporu · Veritabanı ile Gerçek Zamanlı Senkronize</span>
-                } else {
-                    <span>Veri kaynağı bağlı değil</span>
-                }
-            </p>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs whitespace-nowrap shrink-0">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Canlı Veri
+            </span>
         </div>
-
-        <div class="bi-actions">
-            <!-- Yıl Seçimi -->
-            @if (Model.State == DataState.Ok && Model.AvailableYears.Count > 0) {
-                <div style="display: flex; gap: 4px; background: rgba(0,0,0,0.25); padding: 3px; border-radius: 8px;">
-                    @foreach (var year in Model.AvailableYears) {
-                        <a class="bi-btn @(year == Model.SelectedYear ? "is-active" : "")"
-                           asp-action="Analytics" asp-route-yil="@year"
-                           style="padding: 5px 12px; font-size: 0.80rem;">@year</a>
-                    }
-                </div>
-            }
-
-            <!-- CSV / Excel Dışa Aktar -->
-            <button type="button" class="bi-btn bi-btn-export" onclick="exportAnalyticsCsv()" title="Tedarikçi ve Kategori Verilerini CSV Olarak İndir">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                <span>CSV İndir</span>
-            </button>
-
-            <!-- Yazdır / PDF -->
-            <button type="button" class="bi-btn" onclick="window.print()" title="Bu Raporu Yazdır veya PDF Kaydet">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
-                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-                    <rect x="6" y="14" width="12" height="8"></rect>
-                </svg>
-                <span>Yazdır / PDF</span>
-            </button>
-
-            <!-- Yenile -->
-            <a href="javascript:window.location.reload()" class="bi-btn" title="Verileri Yenile">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <polyline points="23 4 23 10 17 10"></polyline>
-                    <polyline points="1 20 1 14 7 14"></polyline>
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                </svg>
-            </a>
-        </div>
-    </header>
+        <p class="text-xs text-slate-500 mt-1 font-medium">
+            Gerçek zamanlı satın alma performansı, ihale ve tedarikçi dinamikleri
+        </p>
+    </div>
 
     @if (Model.State != DataState.Ok) {
-        <section class="card state-card is-@(Model.State == DataState.NotConfigured ? "setup" : "error")">
-            <h2>@(Model.State == DataState.NotConfigured ? "Veritabanı bağlantısı tanımlı değil" : "Veriye ulaşılamadı")</h2>
-            <p>@Model.StateMessage</p>
+        <section class="card bg-white border border-rose-200 rounded-2xl p-6 shadow-xs text-center">
+            <h2 class="text-base font-bold text-rose-700">@(Model.State == DataState.NotConfigured ? "Veritabanı bağlantısı tanımlı değil" : "Veriye ulaşılamadı")</h2>
+            <p class="text-xs text-slate-500 mt-1">@Model.StateMessage</p>
             @if (!string.IsNullOrEmpty(Model.StateDetail)) {
-                <div class="code-block"><pre>@Model.StateDetail</pre></div>
+                <div class="mt-3 p-3 bg-slate-50 rounded-lg text-left text-xs font-mono text-slate-700 overflow-x-auto"><pre>@Model.StateDetail</pre></div>
             }
         </section>
     } else if (Model.IsEmpty) {
-        <section class="card state-card is-setup">
-            <h2>Bağlantı aktif, ancak gösterilecek kayıt bulunamadı</h2>
-            <p>
-                Veritabanına erişildi fakat @Model.SelectedYear yılı için sistemde henüz talep, ürün veya
+        <section class="card bg-white border border-slate-200/90 rounded-2xl p-8 shadow-xs text-center">
+            <h2 class="text-base font-bold text-slate-800">Bağlantı aktif, ancak gösterilecek kayıt bulunamadı</h2>
+            <p class="text-xs text-slate-500 mt-2 max-w-md mx-auto">
+                Veritabanına erişildi fakat sistemde henüz talep, ürün veya
                 değerlendirme kaydı bulunmuyor. Yeni talepler açıldıkça bu ekran otomatik olarak güncellenecektir.
             </p>
         </section>
     } else {
 
-        <!-- 2. HIZLI BÖLÜM GEZİNTİ ÇUBUĞU (SEKMELER) -->
-        <nav class="bi-nav-tabs" aria-label="Analitik Bölümleri">
-            <button type="button" class="bi-tab-btn is-active" onclick="filterSection('all', this)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                Tüm Rapor (Genel Bakış)
-            </button>
-            <button type="button" class="bi-tab-btn" onclick="filterSection('sec-trend', this)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-                Talep &amp; Trend Analitiği
-            </button>
-            <button type="button" class="bi-tab-btn" onclick="filterSection('sec-catalog', this)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
-                Katalog, Kategori &amp; Markalar
-            </button>
-            <button type="button" class="bi-tab-btn" onclick="filterSection('sec-vendors', this)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
-                Tedarikçi Karnesi
-            </button>
-            <button type="button" class="bi-tab-btn" onclick="filterSection('sec-corporate', this)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
-                Kurumsal &amp; Bölgesel Dağılım
-            </button>
-        </nav>
-
-        <!-- 3. STRATEJİK KPI KARTLARI (EMOJİSİZ & VEKTÖREL SİMGELİ) -->
-        <section class="bi-kpi-grid bi-section-el" id="sec-kpis">
+        <!-- ==================== 2. 4 STRATEJİK KPI KARTI ==================== -->
+        <section class="kpi-row grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4 bi-section-el" id="sec-kpis">
             <!-- Toplam Talep -->
-            <article class="bi-kpi-card">
-                <div>
-                    <div class="bi-kpi-top">
-                        <span class="bi-kpi-title">Toplam Satın Alma Talebi</span>
-                        <div class="bi-kpi-icon blue">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14 2 14 8 20 8"></polyline>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="bi-kpi-num">@Model.Summary.CurrentRequests.ToString("N0", ChartHelper.Tr)</div>
+            <article class="card kpi-card bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
+                <div class="kpi-top flex items-center justify-between">
+                    <span class="kpi-label text-xs font-bold text-slate-500 uppercase tracking-wider">Toplam Satın Alma Talebi</span>
+                    <span class="kpi-icon w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-xs">
+                        <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                    </span>
                 </div>
-                <div>
+                <p class="kpi-value text-2xl sm:text-3xl font-black tracking-tight text-slate-900 my-2">@Model.Summary.CurrentRequests.ToString("N0", ChartHelper.Tr)</p>
+                <p class="kpi-delta text-xs font-medium flex items-center gap-1.5">
                     @if (Model.Summary.RequestChangePercent is decimal change) {
-                        var cls = change > 0 ? "bi-badge-good" : change < 0 ? "bi-badge-bad" : "bi-badge-neutral";
-                        var icon = change > 0 ? "▲" : change < 0 ? "▼" : "■";
-                        <span class="bi-kpi-badge @cls">
-                            <span>@icon</span>
+                        var isGood = change > 0;
+                        var isBad = change < 0;
+                        <span class="@(isGood ? "text-emerald-600 font-semibold" : isBad ? "text-rose-600 font-semibold" : "text-slate-500") flex items-center gap-1">
+                            <span>@(isGood ? "▲" : isBad ? "▼" : "■")</span>
                             <span>@ChartHelper.SignedPercent(change)</span>
-                            <span style="font-weight: 400; opacity: 0.85;">önceki döneme kıyasla</span>
+                            <span class="text-slate-400 font-normal">önceki döneme kıyasla</span>
                         </span>
                     } else {
-                        <span class="bi-kpi-badge bi-badge-neutral">Karşılaştırma verisi yok</span>
+                        <span class="text-slate-400 font-normal">karşılaştırma verisi yok</span>
                     }
-                </div>
+                </p>
             </article>
 
             <!-- Tedarikçi Memnuniyeti -->
-            <article class="bi-kpi-card">
-                <div>
-                    <div class="bi-kpi-top">
-                        <span class="bi-kpi-title">Tedarikçi Memnuniyet Skoru</span>
-                        <div class="bi-kpi-icon emerald">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12 6 12 12 16 14"></polyline>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="bi-kpi-num">
-                        @(Model.Summary.AvgScore is decimal s ? ChartHelper.Score((double)s) : "—")
-                        <span style="font-size: 1rem; color: #94A3B8; font-weight: 500;">/ 5.0</span>
-                    </div>
-                </div>
-                <div>
-                    <span class="bi-kpi-badge bi-badge-good">
-                        <span>@Model.Summary.ReviewCount.ToString("N0", ChartHelper.Tr) Değerlendirme</span>
+            <article class="card kpi-card bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
+                <div class="kpi-top flex items-center justify-between">
+                    <span class="kpi-label text-xs font-bold text-slate-500 uppercase tracking-wider">Tedarikçi Memnuniyet Skoru</span>
+                    <span class="kpi-icon w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-xs">
+                        <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
                     </span>
                 </div>
+                <p class="kpi-value text-2xl sm:text-3xl font-black tracking-tight text-slate-900 my-2">
+                    @(Model.Summary.AvgScore is decimal s ? ChartHelper.Score((double)s) : "—")
+                    <span class="text-base font-semibold text-slate-400">/ 5.0</span>
+                </p>
+                <p class="kpi-delta text-xs font-medium text-emerald-600 flex items-center gap-1">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-semibold border border-emerald-100">
+                        @Model.Summary.ReviewCount.ToString("N0", ChartHelper.Tr) Değerlendirme
+                    </span>
+                </p>
             </article>
 
-            <!-- Katalog Stok Portföy Değeri -->
-            <article class="bi-kpi-card">
-                <div>
-                    <div class="bi-kpi-top">
-                        <span class="bi-kpi-title">Katalog &amp; Stok Hacmi</span>
-                        <div class="bi-kpi-icon amber">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="bi-kpi-num">@(Model.Summary.StockValue is decimal v ? ChartHelper.Compact(v) : "—")</div>
-                </div>
-                <div>
-                    <span class="bi-kpi-badge bi-badge-neutral">
-                        <span>@Model.Summary.ItemCount.ToString("N0", ChartHelper.Tr) Aktif Ürün</span>
+            <!-- Katalog Stok Hacmi -->
+            <article class="card kpi-card bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
+                <div class="kpi-top flex items-center justify-between">
+                    <span class="kpi-label text-xs font-bold text-slate-500 uppercase tracking-wider">Katalog &amp; Stok Hacmi</span>
+                    <span class="kpi-icon w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-xs">
+                        <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        </svg>
                     </span>
                 </div>
+                <p class="kpi-value text-2xl sm:text-3xl font-black tracking-tight text-slate-900 my-2">@(Model.Summary.StockValue is decimal v ? ChartHelper.Compact(v) : "—")</p>
+                <p class="kpi-delta text-xs font-medium text-slate-500 flex items-center gap-1">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold">
+                        @Model.Summary.ItemCount.ToString("N0", ChartHelper.Tr) Aktif Ürün
+                    </span>
+                </p>
             </article>
 
             <!-- Kayıtlı Kurumsal Firma -->
-            <article class="bi-kpi-card">
-                <div>
-                    <div class="bi-kpi-top">
-                        <span class="bi-kpi-title">Kayıtlı Kurumsal Firma</span>
-                        <div class="bi-kpi-icon purple">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9" cy="7" r="4"></circle>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="bi-kpi-num">@Model.Summary.CompanyCount.ToString("N0", ChartHelper.Tr)</div>
-                </div>
-                <div>
-                    <span class="bi-kpi-badge bi-badge-neutral">
-                        <span>Paket Dağılımı: @(Model.Summary.TopMembershipName ?? "Bedava") (@Model.Summary.TopMembershipCount)</span>
+            <article class="card kpi-card bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
+                <div class="kpi-top flex items-center justify-between">
+                    <span class="kpi-label text-xs font-bold text-slate-500 uppercase tracking-wider">Kayıtlı Kurumsal Firma</span>
+                    <span class="kpi-icon w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shadow-xs">
+                        <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                        </svg>
                     </span>
                 </div>
+                <p class="kpi-value text-2xl sm:text-3xl font-black tracking-tight text-slate-900 my-2">@Model.Summary.CompanyCount.ToString("N0", ChartHelper.Tr)</p>
+                <p class="kpi-delta text-xs font-medium text-slate-500 flex items-center gap-1">
+                    <span class="text-slate-500">Lider Paket: <strong class="text-slate-800 font-bold">@(Model.Summary.TopMembershipName ?? "Bedava")</strong> (@Model.Summary.TopMembershipCount)</span>
+                </p>
             </article>
         </section>
 
-        <!-- 4. TALEP & TREND ANALİTİĞİ (ÇİZGİ GRAFİK + DOUGHNUT) -->
-        <section class="bi-grid-2 bi-section-el" id="sec-trend">
+        <!-- ==================== 3. TALEP & TREND ANALİTİĞİ ==================== -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 bi-section-el" id="sec-trend">
 
             <!-- SOL: AYLIK TALEP TRENDİ (CHART.JS) -->
-            <article class="bi-section-card">
-                <div class="bi-card-head">
+            <article class="lg:col-span-7 card bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+                <div class="flex items-center justify-between pb-3 mb-3 sm:mb-4 border-b border-slate-100">
                     <div>
-                        <h2 class="bi-card-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-                            Aylık Talep ve İhale Dinamikleri
-                        </h2>
-                        <p class="bi-card-desc">@Model.SelectedYear dönemi aylık talep yoğunluğu ve talep türlerine göre hacim dağılımı</p>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-blue-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                                <span>Aylık Talep ve İhale Dinamikleri</span>
+                            </h2>
+                            <span class="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-bold text-[11px]">@Model.SelectedYear</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">@Model.SelectedYear dönemi aylık talep yoğunluğu ve yöntemlere göre hacim dağılımı</p>
                     </div>
                 </div>
 
-                <div style="position: relative; width: 100%; height: 310px;">
+                <!-- Grafik Alanı (Mobilde Yükseklik ve Boyut Optimize Edildi) -->
+                <div class="w-full h-64 sm:h-72 md:h-80 relative">
                     <canvas id="trendChartCanvas"></canvas>
                 </div>
 
                 <!-- Detaylı Veri Tablosu (Açılır/Kapanır) -->
-                <details class="table-view" style="margin-top: 14px;">
-                    <summary style="font-weight: 600; color: #2563EB; cursor: pointer; font-size: 0.82rem;">
-                        Sayısal Tablo Görünümünü Aç / Kapat
+                <details class="mt-4 pt-3 border-t border-slate-100 group">
+                    <summary class="text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer flex items-center gap-1.5 list-none">
+                        <span class="transition-transform group-open:rotate-90">▶</span>
+                        <span>Sayısal Tablo Görünümünü Aç / Kapat</span>
                     </summary>
-                    <div class="table-scroll" style="margin-top: 8px;">
-                        <table class="data-table">
-                            <thead>
+                    <div class="overflow-x-auto mt-2 border border-slate-200/80 rounded-xl">
+                        <table class="dash-table w-full text-left text-xs" style="min-width: 440px;">
+                            <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
                                 <tr>
-                                    <th>Dönem</th>
+                                    <th class="py-2.5 px-3">Dönem</th>
                                     @foreach (var line in trendSeries) {
-                                        <th class="num">@line.Name</th>
+                                        <th class="py-2.5 px-3 text-right">@line.Name</th>
                                     }
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody class="divide-y divide-slate-100 text-slate-700 font-medium">
                                 @for (var i = 0; i < periods.Count; i++) {
-                                    <tr>
-                                        <td><strong>@ChartHelper.MonthYear(DateOnly.FromDateTime(periods[i]))</strong></td>
+                                    <tr class="hover:bg-slate-50/80 transition-colors">
+                                        <td class="py-2.5 px-3 font-semibold text-slate-900">@ChartHelper.MonthYear(DateOnly.FromDateTime(periods[i]))</td>
                                         @foreach (var line in trendSeries) {
-                                            <td class="num">@(i < line.Values.Count ? line.Values[i] : 0)</td>
+                                            <td class="py-2.5 px-3 text-right">@(i < line.Values.Count ? line.Values[i] : 0)</td>
                                         }
                                     </tr>
                                 }
@@ -661,47 +239,45 @@
             </article>
 
             <!-- SAĞ: TALEP TÜRÜ DAĞILIMI (DOUGHNUT) -->
-            <article class="bi-section-card">
-                <div class="bi-card-head">
+            <article class="lg:col-span-5 card bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+                <div class="flex items-center justify-between pb-3 mb-3 sm:mb-4 border-b border-slate-100">
                     <div>
-                        <h2 class="bi-card-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 1 10 10h-10z"></path></svg>
-                            Talep Türü &amp; Metot Dağılımı
+                        <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-blue-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 1 10 10h-10z"></path></svg>
+                            <span>Talep Türü &amp; Metot Dağılımı</span>
                         </h2>
-                        <p class="bi-card-desc">Taleplerin satın alma ve ihale yöntemlerine göre oransal ağırlığı</p>
+                        <p class="text-xs text-slate-500 mt-0.5">Taleplerin yöntemlerine göre oransal ağırlığı</p>
                     </div>
                 </div>
 
-                <div class="donut-layout">
+                <div class="flex flex-col items-center gap-4">
                     <div class="donut-canvas-wrap">
                         <canvas id="typeDonutCanvas"></canvas>
                         <div class="donut-center-stat">
-                            <span class="donut-stat-num">@typeTotal.ToString("N0", ChartHelper.Tr)</span>
-                            <span class="donut-stat-label">Toplam Talep</span>
+                            <span class="block text-lg sm:text-xl font-extrabold text-slate-900">@typeTotal.ToString("N0", ChartHelper.Tr)</span>
+                            <span class="text-[10px] sm:text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Toplam Talep</span>
                         </div>
                     </div>
 
-                    <div class="type-breakdown-list">
+                    <div class="w-full space-y-2 mt-2">
                         @for (var i = 0; i < types.Count; i++) {
                             var row = types[i];
                             var color = palette[i % palette.Length];
                             var label = string.IsNullOrWhiteSpace(row.RequestType) ? "Belirtilmemiş" : row.RequestType;
 
-                            <div class="type-row-item">
-                                <div class="type-row-header">
-                                    <div class="type-row-left">
-                                        <span class="type-row-dot" style="background: @color;"></span>
-                                        <span>@label</span>
+                            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                                <div class="flex items-center justify-between text-xs mb-1">
+                                    <div class="flex items-center gap-2 font-semibold text-slate-700 min-w-0">
+                                        <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background: @color;"></span>
+                                        <span class="truncate">@label</span>
                                     </div>
-                                    <div style="font-weight: 700; color: #0F172A;">
+                                    <div class="font-bold text-slate-900 shrink-0 ml-2">
                                         @row.RequestCount.ToString("N0", ChartHelper.Tr)
-                                        <span style="font-size: 0.74rem; color: #64748B; font-weight: 500; margin-left: 4px;">
-                                            (@ChartHelper.Percent((double)row.SharePercent, 1))
-                                        </span>
+                                        <span class="text-[11px] font-normal text-slate-400 ml-1">(@ChartHelper.Percent((double)row.SharePercent, 1))</span>
                                     </div>
                                 </div>
-                                <div class="type-progress-bg">
-                                    <div class="type-progress-bar" style="width: @((double)row.SharePercent)%; background: @color;"></div>
+                                <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                    <div class="h-full rounded-full transition-all" style="width: @((double)row.SharePercent)%; background: @color;"></div>
                                 </div>
                             </div>
                         }
@@ -710,66 +286,103 @@
             </article>
         </section>
 
-        <!-- 5. KATALOG, KATEGORİ & MARKA ANALİZİ -->
-        <section class="bi-grid-2 bi-section-el" id="sec-catalog">
+        <!-- ==================== 4. KATALOG, KATEGORİ & MARKA ANALİZİ ==================== -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 bi-section-el" id="sec-catalog">
 
             <!-- SOL: KATEGORİ KIRILIMI & FİYAT ANALİZİ -->
-            <article class="bi-section-card">
-                <div class="bi-card-head">
+            <article class="lg:col-span-7 card bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+                <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
                     <div>
-                        <h2 class="bi-card-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
-                            Kategori Bazında Portföy &amp; Fiyat İstatistikleri
+                        <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-blue-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                            <span>Kategori Bazında Portföy &amp; Fiyat İstatistikleri</span>
                         </h2>
-                        <p class="bi-card-desc">Kategorilerin stok değerleri, listelenen ürün sayıları ve birim fiyat aralıkları</p>
+                        <p class="text-xs text-slate-500 mt-0.5">Kategorilerin stok değerleri, ürün adetleri ve fiyat aralıkları</p>
                     </div>
                 </div>
 
-                <div class="table-scroll">
-                    <table class="data-table" id="categoriesAnalyticsTable">
-                        <thead>
+                <!-- Masaüstü Tablo Görünümü (>= 768px) -->
+                <div class="hidden md:block overflow-x-auto border border-slate-200/80 rounded-xl">
+                    <table class="dash-table w-full text-left text-xs" id="categoriesAnalyticsTable">
+                        <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
                             <tr>
-                                <th>Kategori</th>
-                                <th class="num">Ürün Çeşidi</th>
-                                <th class="num">Stok Hacmi</th>
-                                <th class="num">Ortalama Fiyat</th>
-                                <th class="num">Portföy Değeri</th>
+                                <th class="py-3 px-3.5">Kategori</th>
+                                <th class="py-3 px-3.5 text-right">Ürün Çeşidi</th>
+                                <th class="py-3 px-3.5 text-right">Stok Hacmi</th>
+                                <th class="py-3 px-3.5 text-right">Ortalama Fiyat</th>
+                                <th class="py-3 px-3.5 text-right">Portföy Değeri</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="divide-y divide-slate-100 text-slate-700">
                             @foreach (var cat in categories) {
-                                <tr>
-                                    <td>
-                                        <strong style="color: #1E293B;">@cat.CategoryName</strong>
-                                    </td>
-                                    <td class="num">
-                                        <span class="status-chip is-neutral" style="font-weight: 700;">
+                                <tr class="hover:bg-slate-50/80 transition-colors">
+                                    <td class="py-3 px-3.5 font-bold text-slate-900">@cat.CategoryName</td>
+                                    <td class="py-3 px-3.5 text-right">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold text-[11px]">
                                             @cat.ItemCount.ToString("N0", ChartHelper.Tr) Ürün
                                         </span>
                                     </td>
-                                    <td class="num">@((cat.TotalQuantity ?? 0).ToString("N0", ChartHelper.Tr)) Adet</td>
-                                    <td class="num" style="color: #2563EB; font-weight: 600;">@ChartHelper.Money(cat.AvgPrice ?? 0)</td>
-                                    <td class="num" style="font-weight: 700; color: #059669;">@ChartHelper.Money(cat.StockValue ?? 0)</td>
+                                    <td class="py-3 px-3.5 text-right font-medium">@((cat.TotalQuantity ?? 0).ToString("N0", ChartHelper.Tr)) Adet</td>
+                                    <td class="py-3 px-3.5 text-right font-semibold text-blue-600">@ChartHelper.Money(cat.AvgPrice ?? 0)</td>
+                                    <td class="py-3 px-3.5 text-right font-bold text-emerald-600">@ChartHelper.Money(cat.StockValue ?? 0)</td>
                                 </tr>
                             }
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Mobil Kompakt Liste Görünümü (< 768px - Sadece Ayırt Edici Bilgiler) -->
+                <div class="block md:hidden space-y-2" id="categoriesMobileList">
+                    @foreach (var cat in categories) {
+                        <div class="category-mobile-card p-3 rounded-xl bg-slate-50 hover:bg-blue-50/50 border border-slate-200/80 transition-all cursor-pointer active:scale-[0.99]"
+                             onclick="openCategoryQuickModalFromEl(this)"
+                             data-cat-name="@cat.CategoryName"
+                             data-cat-items="@cat.ItemCount.ToString("N0", ChartHelper.Tr)"
+                             data-cat-qty="@((cat.TotalQuantity ?? 0).ToString("N0", ChartHelper.Tr))"
+                             data-cat-avg="@ChartHelper.Money(cat.AvgPrice ?? 0)"
+                             data-cat-val="@ChartHelper.Money(cat.StockValue ?? 0)">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <div class="w-8 h-8 rounded-lg bg-blue-100/80 text-blue-700 flex items-center justify-center shrink-0 text-sm font-bold">
+                                        📁
+                                    </div>
+                                    <div class="min-w-0">
+                                        <h3 class="text-xs font-bold text-slate-900 truncate">@cat.CategoryName</h3>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-200/70 text-slate-700 mt-0.5">
+                                            @cat.ItemCount.ToString("N0", ChartHelper.Tr) Çeşit
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <span class="block text-xs font-bold text-emerald-600">@ChartHelper.Money(cat.StockValue ?? 0)</span>
+                                    <span class="text-[10px] font-semibold text-blue-600 flex items-center justify-end gap-0.5 mt-0.5">
+                                        Detay <span>→</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    @if (categories.Count == 0) {
+                        <div class="p-4 text-center text-xs text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                            Kayıtlı kategori verisi bulunmuyor.
+                        </div>
+                    }
+                </div>
             </article>
 
             <!-- SAĞ: EN POPÜLER MARKALAR -->
-            <article class="bi-section-card">
-                <div class="bi-card-head">
+            <article class="lg:col-span-5 card bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+                <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
                     <div>
-                        <h2 class="bi-card-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
-                            Marka Dağılımı &amp; Lider Üreticiler
+                        <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-blue-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                            <span>Marka Dağılımı &amp; Lider Üreticiler</span>
                         </h2>
-                        <p class="bi-card-desc">Katalogdaki en yüksek ürün adedine sahip ilk @brands.Count marka</p>
+                        <p class="text-xs text-slate-500 mt-0.5">Katalogdaki en yüksek ürün adedine sahip ilk @brands.Count marka</p>
                     </div>
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div class="space-y-2.5">
                     @{
                         var maxBrandItems = brands.Count > 0 ? brands.Max(b => b.ItemCount) : 1;
                         if (maxBrandItems <= 0) maxBrandItems = 1;
@@ -777,21 +390,28 @@
                     @for (var i = 0; i < brands.Count; i++) {
                         var b = brands[i];
                         var pct = Math.Round((double)b.ItemCount / maxBrandItems * 100);
-                        var rankClass = i == 0 ? "top-1" : i == 1 ? "top-2" : i == 2 ? "top-3" : "";
+                        var rankBg = i == 0 ? "bg-amber-100 text-amber-800" : i == 1 ? "bg-slate-200 text-slate-800" : i == 2 ? "bg-orange-100 text-orange-800" : "bg-slate-100 text-slate-600";
+                        var brandName = string.IsNullOrWhiteSpace(b.Brand) ? "Markasız / Diğer" : b.Brand;
 
-                        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 14px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span class="rank-badge @rankClass">#@(i + 1)</span>
-                                    <strong style="color: #0F172A; font-size: 0.85rem;">@(string.IsNullOrWhiteSpace(b.Brand) ? "Markasız / Diğer" : b.Brand)</strong>
+                        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 hover:bg-slate-100/60 transition-colors cursor-pointer active:scale-[0.99]"
+                             onclick="openBrandQuickModalFromEl(this)"
+                             data-brand-name="@brandName"
+                             data-brand-rank="#@(i + 1)"
+                             data-brand-items="@b.ItemCount.ToString("N0", ChartHelper.Tr)"
+                             data-brand-val="@ChartHelper.Compact(b.StockValue ?? 0)"
+                             data-brand-pct="@pct">
+                            <div class="flex items-center justify-between text-xs mb-1.5">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-md text-[11px] font-extrabold shrink-0 @rankBg">#@(i + 1)</span>
+                                    <strong class="text-slate-900 font-bold truncate">@brandName</strong>
                                 </div>
-                                <div style="text-align: right;">
-                                    <span style="font-weight: 700; color: #2563EB; font-size: 0.85rem;">@b.ItemCount Adet</span>
-                                    <span style="font-size: 0.74rem; color: #64748B; margin-left: 6px;">(@ChartHelper.Compact(b.StockValue ?? 0))</span>
+                                <div class="text-right shrink-0">
+                                    <span class="font-bold text-blue-600">@b.ItemCount Adet</span>
+                                    <span class="text-[11px] text-slate-400 ml-1">(@ChartHelper.Compact(b.StockValue ?? 0))</span>
                                 </div>
                             </div>
-                            <div style="width: 100%; height: 5px; background: #E2E8F0; border-radius: 4px; overflow: hidden;">
-                                <div style="height: 100%; width: @pct%; background: #2563EB; border-radius: 4px;"></div>
+                            <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                <div class="h-full bg-blue-600 rounded-full transition-all" style="width: @pct%;"></div>
                             </div>
                         </div>
                     }
@@ -799,91 +419,83 @@
             </article>
         </section>
 
-        <!-- 6. TEDARİKÇİ KARNESİ -->
-        <section class="bi-section-card bi-section-el" id="sec-vendors">
-            <div class="bi-card-head">
+        <!-- ==================== 5. TEDARİKÇİ KARNESİ ==================== -->
+        <section class="card bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs bi-section-el" id="sec-vendors">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-4 border-b border-slate-100">
                 <div>
-                    <h2 class="bi-card-title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
-                        Tedarikçi Başarı Karnesi &amp; Güvenilirlik Skoru
+                    <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-blue-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+                        <span>Tedarikçi Başarı Karnesi &amp; Güvenilirlik Skoru</span>
                     </h2>
-                    <p class="bi-card-desc">
-                        Firmaların talep karşılama performansı, onaylı değerlendirme ortalamaları ve güvenilirlik durumu.
-                        En az @VendorScorecardRow.MinReviewsForRanking değerlendirmesi olmayanlar &quot;İnceleme Aşamasında&quot; olarak listelenir.
+                    <p class="text-xs text-slate-500 mt-0.5">
+                        Firmaların talep karşılama performansı, değerlendirme ortalamaları ve güvenilirlik durumu.
                     </p>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <div class="flex items-center gap-2 flex-wrap w-full sm:w-auto">
                     <!-- Arama Çubuğu -->
-                    <div class="scorecard-search-box">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                        <input type="text" id="vendorScoreSearchInput" placeholder="Tedarikçi firma ara..." class="scorecard-search-input" oninput="filterVendorTable(this.value)" />
+                    <div class="relative flex-1 sm:flex-initial">
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <input type="text" id="vendorScoreSearchInput" placeholder="Tedarikçi firma ara..." class="w-full sm:w-48 pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" oninput="filterVendorTable(this.value)" />
                     </div>
 
                     <!-- Güvenilirlik Filtresi -->
-                    <select id="vendorReliableFilter" onchange="filterVendorTable()" style="border: 1px solid #CBD5E1; border-radius: 8px; padding: 6px 10px; font-size: 0.81rem; font-weight: 600; background: #F8FAFC; color: #334155;">
+                    <select id="vendorReliableFilter" onchange="filterVendorTable()" class="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
                         <option value="all">Tüm Durumlar</option>
-                        <option value="reliable">Yeterli Veri (Güvenilir)</option>
-                        <option value="insufficient">İnceleme Aşamasında</option>
+                        <option value="reliable">Güvenilir</option>
+                        <option value="insufficient">İncelemede</option>
                     </select>
                 </div>
             </div>
 
-            <div class="table-scroll">
-                <table class="data-table" id="vendorScorecardTable">
-                    <thead>
+            <!-- Masaüstü Tablo (>= 768px) -->
+            <div class="hidden md:block overflow-x-auto border border-slate-200/80 rounded-xl">
+                <table class="dash-table w-full text-left text-xs" id="vendorScorecardTable">
+                    <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
                         <tr>
-                            <th>Firma Unvanı</th>
-                            <th>Kurumsal Tür</th>
-                            <th class="num">Alınan Talep</th>
-                            <th class="num">Puan Ortalaması</th>
-                            <th class="num">Değerlendirme</th>
-                            <th>Güvenilirlik Durumu</th>
+                            <th class="py-3 px-3.5">Firma Unvanı</th>
+                            <th class="py-3 px-3.5">Kurumsal Tür</th>
+                            <th class="py-3 px-3.5 text-right">Alınan Talep</th>
+                            <th class="py-3 px-3.5 text-right">Puan Ortalaması</th>
+                            <th class="py-3 px-3.5 text-right">Değerlendirme</th>
+                            <th class="py-3 px-3.5">Güvenilirlik Durumu</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-slate-100 text-slate-700">
                         @foreach (var row in vendors) {
-                            <tr class="vendor-data-row" data-name="@(row.CompanyName?.ToLowerInvariant() ?? "")" data-reliable="@(row.HasReliableScore ? "reliable" : "insufficient")">
-                                <td>
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <div style="width: 28px; height: 28px; border-radius: 6px; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.78rem;">
+                            <tr class="vendor-data-row hover:bg-slate-50/80 transition-colors" data-name="@(row.CompanyName?.ToLowerInvariant() ?? "")" data-reliable="@(row.HasReliableScore ? "reliable" : "insufficient")">
+                                <td class="py-3 px-3.5">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 font-extrabold text-xs flex items-center justify-center shrink-0">
                                             @((row.CompanyName?.Length > 0 ? row.CompanyName.Substring(0, 1).ToUpperInvariant() : "F"))
                                         </div>
-                                        <strong style="color: #0F172A;">@row.CompanyName</strong>
+                                        <strong class="text-slate-900 font-bold">@row.CompanyName</strong>
                                     </div>
                                 </td>
-                                <td>
-                                    <span style="color: #64748B; font-size: 0.80rem;">@(row.CompanyTypeName ?? "—")</span>
-                                </td>
-                                <td class="num">
-                                    <span style="font-weight: 700; color: #2563EB;">@row.ReceivedRequests.ToString("N0", ChartHelper.Tr)</span>
-                                </td>
-                                <td class="num">
+                                <td class="py-3 px-3.5 text-slate-500 font-medium">@(row.CompanyTypeName ?? "—")</td>
+                                <td class="py-3 px-3.5 text-right font-bold text-blue-600">@row.ReceivedRequests.ToString("N0", ChartHelper.Tr)</td>
+                                <td class="py-3 px-3.5 text-right">
                                     @if (row.AvgScore is decimal sc) {
-                                        <span class="score-badge">@ChartHelper.Score((double)sc) / 5.0</span>
-                                    } else {
-                                        <span style="color: #94A3B8;">—</span>
-                                    }
-                                </td>
-                                <td class="num">
-                                    @row.ReviewCount.ToString("N0", ChartHelper.Tr) Yorum
-                                </td>
-                                <td>
-                                    @if (row.HasReliableScore) {
-                                        <span class="status-chip is-approved" style="background: #ECFDF5; color: #059669; border-color: #A7F3D0;">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true" style="width: 12px; height: 12px;">
-                                                <polyline points="20 6 9 17 4 12"></polyline>
-                                            </svg>
-                                            Yeterli Veri (Güvenilir)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 font-bold text-[11px]">
+                                            ★ @ChartHelper.Score((double)sc) / 5.0
                                         </span>
                                     } else {
-                                        <span class="status-chip is-neutral" style="background: #F8FAFC; color: #64748B; border-color: #E2E8F0;">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true" style="width: 12px; height: 12px;">
-                                                <circle cx="12" cy="12" r="9"></circle>
-                                                <line x1="12" y1="8" x2="12" y2="13"></line>
-                                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                                            </svg>
-                                            İnceleme Aşamasında
+                                        <span class="text-slate-400">—</span>
+                                    }
+                                </td>
+                                <td class="py-3 px-3.5 text-right font-medium text-slate-600">
+                                    @row.ReviewCount.ToString("N0", ChartHelper.Tr) Yorum
+                                </td>
+                                <td class="py-3 px-3.5">
+                                    @if (row.HasReliableScore) {
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            <svg class="w-3 h-3 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                            Güvenilir
+                                        </span>
+                                    } else {
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                                            <svg class="w-3 h-3 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                            İncelemede
                                         </span>
                                     }
                                 </td>
@@ -892,87 +504,96 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Mobil Kompakt Kartlar (< 768px - Sadece Ayırt Edici Bilgiler) -->
+            <div class="block md:hidden space-y-2.5" id="vendorScorecardMobileList">
+                @foreach (var row in vendors) {
+                    <div class="vendor-mobile-card p-3 rounded-xl bg-slate-50 hover:bg-blue-50/50 border border-slate-200/80 transition-all cursor-pointer active:scale-[0.99]"
+                         data-name="@(row.CompanyName?.ToLowerInvariant() ?? "")"
+                         data-reliable="@(row.HasReliableScore ? "reliable" : "insufficient")"
+                         onclick="openVendorQuickModalFromEl(this)"
+                         data-vendor-name="@row.CompanyName"
+                         data-vendor-type="@(row.CompanyTypeName ?? "Belirtilmemiş")"
+                         data-vendor-requests="@row.ReceivedRequests.ToString("N0", ChartHelper.Tr)"
+                         data-vendor-score="@(row.AvgScore is decimal sc ? ChartHelper.Score((double)sc) : "—")"
+                         data-vendor-reviews="@row.ReviewCount.ToString("N0", ChartHelper.Tr)"
+                         data-vendor-reliable="@(row.HasReliableScore ? "true" : "false")">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <div class="w-8 h-8 rounded-lg bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
+                                    @((row.CompanyName?.Length > 0 ? row.CompanyName.Substring(0, 1).ToUpperInvariant() : "F"))
+                                </div>
+                                <div class="min-w-0">
+                                    <h3 class="text-xs font-bold text-slate-900 truncate">@row.CompanyName</h3>
+                                    <div class="flex items-center gap-1.5 mt-0.5">
+                                        @if (row.AvgScore is decimal sc2) {
+                                            <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                                ★ @ChartHelper.Score((double)sc2)
+                                            </span>
+                                        }
+                                        <span class="text-[10px] text-slate-400">@row.ReceivedRequests Talep</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-right shrink-0">
+                                @if (row.HasReliableScore) {
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        <svg class="w-2.5 h-2.5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        Güvenilir
+                                    </span>
+                                } else {
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                                        İncelemede
+                                    </span>
+                                }
+                                <span class="text-[10px] font-semibold text-blue-600 flex items-center justify-end gap-0.5 mt-1">
+                                    Detay <span>→</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                }
+                <div id="vendorMobileEmptyState" class="hidden p-4 text-center text-xs text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                    Arama kriterine uygun tedarikçi bulunamadı.
+                </div>
+            </div>
         </section>
 
-        <!-- 7. KURUMSAL & BÖLGESEL DAĞILIM (ŞİRKET TİPİ X ÜYELİK VE BÖLGE DAĞILIMI) -->
-        <section class="bi-grid-equal bi-section-el" id="sec-corporate">
-
-            <!-- SOL: ŞİRKET TİPİ VE ÜYELİK DAĞILIMI -->
-            <article class="bi-section-card">
-                <div class="bi-card-head">
+        <!-- ==================== 6. BÖLGESEL DAĞILIM ==================== -->
+        <section class="bi-section-el" id="sec-corporate">
+            <!-- BÖLGESEL / COĞRAFİ DAĞILIM -->
+            <article class="card bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+                <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
                     <div>
-                        <h2 class="bi-card-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
-                            Şirket Tipi &amp; Üyelik Dağılım Matrisi
+                        <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-blue-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            <span>Bölgesel &amp; Coğrafi Firma Dağılımı</span>
                         </h2>
-                        <p class="bi-card-desc">Firma türlerinin Bedava, Pro ve Kurumsal paket tercihleri</p>
+                        <p class="text-xs text-slate-500 mt-0.5">Platformda kayıtlı kurumsal firmaların şehir ve ülke bazındaki yoğunluğu</p>
                     </div>
                 </div>
 
-                <div class="table-scroll">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Şirket Türü</th>
-                                @foreach (var m in memberships) {
-                                    <th class="num">@m</th>
-                                }
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var t in compTypes) {
-                                <tr>
-                                    <td><strong style="color: #1E293B;">@t</strong></td>
-                                    @foreach (var m in memberships) {
-                                        var count = companyMix.FirstOrDefault(x => (x.CompanyTypeName ?? "—") == t && (x.MembershipTypeName ?? "—") == m)?.CompanyCount ?? 0;
-                                        <td class="num">
-                                            @if (count > 0) {
-                                                <span class="status-chip is-approved" style="font-weight: 700; padding: 2px 8px;">@count</span>
-                                            } else {
-                                                <span style="color: #CBD5E1;">0</span>
-                                            }
-                                        </td>
-                                    }
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </article>
-
-            <!-- SAĞ: BÖLGESEL / COĞRAFİ DAĞILIM -->
-            <article class="bi-section-card">
-                <div class="bi-card-head">
-                    <div>
-                        <h2 class="bi-card-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                            Bölgesel &amp; Coğrafi Firma Dağılımı
-                        </h2>
-                        <p class="bi-card-desc">Platformda kayıtlı alıcı ve satıcıların şehir ve ülke bazındaki yoğunluğu</p>
-                    </div>
-                </div>
-
-                <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div class="space-y-2">
                     @{
                         var topRegions = regions.Take(8).ToList();
                         var maxRegCount = topRegions.Count > 0 ? topRegions.Max(r => r.CompanyCount) : 1;
                         if (maxRegCount <= 0) maxRegCount = 1;
                     }
                     @if (topRegions.Count == 0) {
-                        <p style="color: #64748B; font-size: 0.85rem; text-align: center; padding: 20px;">Kayıtlı bölge verisi bulunamadı.</p>
+                        <p class="text-xs text-slate-400 text-center py-6">Kayıtlı bölge verisi bulunamadı.</p>
                     } else {
                         @foreach (var reg in topRegions) {
                             var pct = Math.Round((double)reg.CompanyCount / maxRegCount * 100);
-                            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 14px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                    <div style="display: flex; align-items: center; gap: 6px;">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                                        <strong style="color: #1E293B; font-size: 0.84rem;">@(string.IsNullOrWhiteSpace(reg.TownName) ? "Belirtilmemiş Şehir" : reg.TownName) · @(reg.CountryName ?? "Türkiye")</strong>
+                            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                                <div class="flex items-center justify-between text-xs mb-1">
+                                    <div class="flex items-center gap-1.5 font-semibold text-slate-800 min-w-0">
+                                        <svg class="w-3.5 h-3.5 text-blue-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                        <span class="truncate">@(string.IsNullOrWhiteSpace(reg.TownName) ? "Belirtilmemiş Şehir" : reg.TownName) · @(reg.CountryName ?? "Türkiye")</span>
                                     </div>
-                                    <span style="font-weight: 700; color: #2563EB; font-size: 0.84rem;">@reg.CompanyCount.ToString("N0", ChartHelper.Tr) Firma</span>
+                                    <span class="font-bold text-emerald-600 shrink-0 ml-2">@reg.CompanyCount.ToString("N0", ChartHelper.Tr) Firma</span>
                                 </div>
-                                <div style="width: 100%; height: 5px; background: #E2E8F0; border-radius: 4px; overflow: hidden;">
-                                    <div style="height: 100%; width: @pct%; background: #059669; border-radius: 4px;"></div>
+                                <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                    <div class="h-full bg-emerald-600 rounded-full transition-all" style="width: @pct%;"></div>
                                 </div>
                             </div>
                         }
@@ -983,12 +604,170 @@
     }
 </div>
 
+<!-- ==================== 7. MOBİL HIZLI DETAY MODALLARI ==================== -->
+
+<!-- 1. KATEGORİ DETAY MODALI -->
+<div id="analyticsCategoryQuickModal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs" onclick="if(event.target === this) closeCategoryQuickModal()">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-sm sm:max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <!-- Modal Başlık -->
+        <div class="flex items-center justify-between px-4 py-3.5 border-b border-slate-100 bg-slate-50/80">
+            <div class="flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold">📁</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Kategori Portföy Detayı</span>
+            </div>
+            <button type="button" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer" onclick="closeCategoryQuickModal()">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+
+        <!-- Modal Gövde -->
+        <div class="p-4 sm:p-5 space-y-4">
+            <h3 id="catModalName" class="text-base sm:text-lg font-black text-slate-900 leading-tight"></h3>
+
+            <div class="grid grid-cols-2 gap-2.5">
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ürün Çeşidi</span>
+                    <span id="catModalItems" class="text-sm font-extrabold text-slate-900 mt-0.5 block"></span>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Depo Stok Hacmi</span>
+                    <span id="catModalQty" class="text-sm font-extrabold text-slate-900 mt-0.5 block"></span>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ortalama Fiyat</span>
+                    <span id="catModalAvg" class="text-sm font-extrabold text-blue-600 mt-0.5 block"></span>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Portföy Değeri</span>
+                    <span id="catModalVal" class="text-sm font-extrabold text-emerald-600 mt-0.5 block"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Alt -->
+        <div class="p-3 bg-slate-50/80 border-t border-slate-100 flex justify-end">
+            <button type="button" class="w-full sm:w-auto px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition-all cursor-pointer" onclick="closeCategoryQuickModal()">
+                Kapat
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 2. TEDARİKÇİ KARNESİ DETAY MODALI -->
+<div id="analyticsVendorQuickModal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs" onclick="if(event.target === this) closeVendorQuickModal()">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-sm sm:max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <!-- Modal Başlık -->
+        <div class="flex items-center justify-between px-4 py-3.5 border-b border-slate-100 bg-slate-50/80">
+            <div class="flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-sm font-bold">🏅</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Tedarikçi Başarı Karnesi</span>
+            </div>
+            <button type="button" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer" onclick="closeVendorQuickModal()">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+
+        <!-- Modal Gövde -->
+        <div class="p-4 sm:p-5 space-y-4">
+            <div class="flex items-center gap-3">
+                <div id="vendorModalInitial" class="w-10 h-10 rounded-xl bg-blue-600 text-white font-black text-base flex items-center justify-center shrink-0 shadow-xs"></div>
+                <div class="min-w-0">
+                    <h3 id="vendorModalName" class="text-base font-bold text-slate-900 truncate"></h3>
+                    <span id="vendorModalType" class="text-xs text-slate-500"></span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5">
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Alınan Talep</span>
+                    <span id="vendorModalRequests" class="text-sm font-extrabold text-blue-600 mt-0.5 block"></span>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Memnuniyet Skoru</span>
+                    <span id="vendorModalScore" class="text-sm font-extrabold text-amber-600 mt-0.5 block"></span>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Değerlendirme</span>
+                    <span id="vendorModalReviews" class="text-sm font-extrabold text-slate-800 mt-0.5 block"></span>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex flex-col justify-center">
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Durum</span>
+                    <span id="vendorModalReliableBadge" class="self-start"></span>
+                </div>
+            </div>
+
+            <p id="vendorModalReliableDesc" class="text-xs text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100"></p>
+        </div>
+
+        <!-- Modal Alt -->
+        <div class="p-3 bg-slate-50/80 border-t border-slate-100 flex justify-end">
+            <button type="button" class="w-full sm:w-auto px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition-all cursor-pointer" onclick="closeVendorQuickModal()">
+                Kapat
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 3. MARKA DETAY MODALI -->
+<div id="analyticsBrandQuickModal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs" onclick="if(event.target === this) closeBrandQuickModal()">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-sm sm:max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <!-- Modal Başlık -->
+        <div class="flex items-center justify-between px-4 py-3.5 border-b border-slate-100 bg-slate-50/80">
+            <div class="flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-bold">🏷️</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Marka Analiz Özeti</span>
+            </div>
+            <button type="button" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer" onclick="closeBrandQuickModal()">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+
+        <!-- Modal Gövde -->
+        <div class="p-4 sm:p-5 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 id="brandModalName" class="text-base sm:text-lg font-black text-slate-900 leading-tight"></h3>
+                <span id="brandModalRank" class="px-2 py-0.5 rounded-lg text-xs font-extrabold bg-amber-100 text-amber-800"></span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5">
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Listelenen Ürün</span>
+                    <span id="brandModalItems" class="text-sm font-extrabold text-blue-600 mt-0.5 block"></span>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tahmini Stok Değeri</span>
+                    <span id="brandModalVal" class="text-sm font-extrabold text-emerald-600 mt-0.5 block"></span>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between text-xs text-slate-500 mb-1.5 font-semibold">
+                    <span>Pazar Hacmi Payı</span>
+                    <span id="brandModalPct" class="text-blue-600 font-bold"></span>
+                </div>
+                <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div id="brandModalBar" class="h-full bg-blue-600 rounded-full transition-all"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Alt -->
+        <div class="p-3 bg-slate-50/80 border-t border-slate-100 flex justify-end">
+            <button type="button" class="w-full sm:w-auto px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition-all cursor-pointer" onclick="closeBrandQuickModal()">
+                Kapat
+            </button>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         // =========================================================================
-        // CHART.JS GRAFİK BAŞLATMA
+        // CHART.JS GRAFİK BAŞLATMA (MOBİL VE DESKTOP UYUMLU)
         // =========================================================================
         document.addEventListener('DOMContentLoaded', function () {
+            var isMobile = window.innerWidth < 640;
+
             // 1. AYLIK TALEP TREND GRAFİĞİ
             var trendCanvas = document.getElementById('trendChartCanvas');
             if (trendCanvas) {
@@ -1011,9 +790,9 @@
                         backgroundColor: bgColors[idx % bgColors.length],
                         fill: true,
                         tension: 0.35,
-                        borderWidth: 2.2,
-                        pointRadius: 3,
-                        pointHoverRadius: 6,
+                        borderWidth: isMobile ? 1.8 : 2.2,
+                        pointRadius: isMobile ? 2 : 3,
+                        pointHoverRadius: 5,
                         pointBackgroundColor: colors[idx % colors.length]
                     };
                 });
@@ -1035,23 +814,37 @@
                             legend: {
                                 position: 'top',
                                 labels: {
-                                    boxWidth: 12,
-                                    font: { family: 'inherit', size: 12, weight: 600 },
+                                    boxWidth: isMobile ? 8 : 12,
+                                    padding: isMobile ? 6 : 10,
+                                    font: { family: 'inherit', size: isMobile ? 10 : 12, weight: 600 },
                                     color: '#475569'
                                 }
                             },
                             tooltip: {
                                 backgroundColor: '#0F172A',
-                                titleFont: { family: 'inherit', size: 13, weight: 700 },
-                                bodyFont: { family: 'inherit', size: 12 },
-                                padding: 12,
-                                cornerRadius: 8
+                                titleFont: { family: 'inherit', size: 12, weight: 700 },
+                                bodyFont: { family: 'inherit', size: 11 },
+                                padding: 10,
+                                cornerRadius: 8,
+                                callbacks: {
+                                    title: function (tooltipItems) {
+                                        var fullMonths = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+                                        var idx = tooltipItems[0].dataIndex;
+                                        return (fullMonths[idx] || tooltipItems[0].label) + ' @Model.SelectedYear';
+                                    }
+                                }
                             }
                         },
                         scales: {
                             x: {
                                 grid: { display: false },
-                                ticks: { color: '#64748B', font: { family: 'inherit', size: 11 } }
+                                ticks: {
+                                    color: '#64748B',
+                                    font: { family: 'inherit', size: isMobile ? 9 : 11 },
+                                    maxRotation: 45,
+                                    minRotation: isMobile ? 45 : 0,
+                                    autoSkip: false
+                                }
                             },
                             y: {
                                 beginAtZero: true,
@@ -1059,7 +852,7 @@
                                 ticks: {
                                     precision: 0,
                                     color: '#64748B',
-                                    font: { family: 'inherit', size: 11 }
+                                    font: { family: 'inherit', size: isMobile ? 9 : 11 }
                                 }
                             }
                         }
@@ -1112,104 +905,173 @@
         });
 
         // =========================================================================
-        // HIZLI BÖLÜM GEZİNTİSİ & FİLTRELEME
-        // =========================================================================
-        function filterSection(sectionId, btnEl) {
-            document.querySelectorAll('.bi-tab-btn').forEach(function (btn) {
-                btn.classList.remove('is-active');
-            });
-            if (btnEl) btnEl.classList.add('is-active');
-
-            var allSections = document.querySelectorAll('.bi-section-el');
-            if (sectionId === 'all') {
-                allSections.forEach(function (el) { el.style.display = ''; });
-            } else {
-                allSections.forEach(function (el) {
-                    if (el.id === sectionId || el.id === 'sec-kpis') {
-                        el.style.display = '';
-                    } else {
-                        el.style.display = 'none';
-                    }
-                });
-                var targetEl = document.getElementById(sectionId);
-                if (targetEl) {
-                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            }
-        }
-
-        // =========================================================================
         // TEDARİKÇİ KARNESİ CANLI ARAMA & GÜVENİLİRLİK FİLTRESİ
+        // (HEM MASAÜSTÜ TABLOYU HEM MOBİL KARTLARI FİLTRELER)
         // =========================================================================
         function filterVendorTable(searchTerm) {
             var searchVal = (searchTerm !== undefined ? searchTerm : document.getElementById('vendorScoreSearchInput')?.value || '').toLowerCase().trim();
             var reliableFilter = document.getElementById('vendorReliableFilter')?.value || 'all';
-            var rows = document.querySelectorAll('.vendor-data-row');
 
+            // 1. Masaüstü Tablo Satırları
+            var rows = document.querySelectorAll('.vendor-data-row');
             rows.forEach(function (row) {
                 var name = row.getAttribute('data-name') || '';
                 var rel = row.getAttribute('data-reliable') || '';
-
                 var matchName = !searchVal || name.includes(searchVal);
                 var matchRel = reliableFilter === 'all' || rel === reliableFilter;
+                row.style.display = (matchName && matchRel) ? '' : 'none';
+            });
 
+            // 2. Mobil Kartlar
+            var cards = document.querySelectorAll('.vendor-mobile-card');
+            var visibleCardCount = 0;
+            cards.forEach(function (card) {
+                var name = card.getAttribute('data-name') || '';
+                var rel = card.getAttribute('data-reliable') || '';
+                var matchName = !searchVal || name.includes(searchVal);
+                var matchRel = reliableFilter === 'all' || rel === reliableFilter;
                 if (matchName && matchRel) {
-                    row.style.display = '';
+                    card.style.display = '';
+                    visibleCardCount++;
                 } else {
-                    row.style.display = 'none';
+                    card.style.display = 'none';
                 }
             });
+
+            var emptyState = document.getElementById('vendorMobileEmptyState');
+            if (emptyState) {
+                emptyState.classList.toggle('hidden', visibleCardCount > 0);
+            }
         }
 
         // =========================================================================
-        // CSV DIŞA AKTARMA (TEDARİKÇİ VE KATEGORİ VERİLERİ)
+        // MOBİL HIZLI DETAY MODALLARI VE ETKİLEŞİM YÖNETİMİ
         // =========================================================================
-        function exportAnalyticsCsv() {
-            var rows = [
-                ['--- TEDARIKCI BASARI KARNESI ---'],
-                ['Firma Unvani', 'Sirket Turu', 'Alinan Talep', 'Puan Ortalamasi', 'Degerlendirme Sayisi', 'Guvenilirlik']
-            ];
 
-            document.querySelectorAll('#vendorScorecardTable tbody tr.vendor-data-row').forEach(function (tr) {
-                var tds = tr.querySelectorAll('td');
-                if (tds.length >= 6) {
-                    rows.push([
-                        '"' + tds[0].innerText.trim().replace(/"/g, '""') + '"',
-                        '"' + tds[1].innerText.trim().replace(/"/g, '""') + '"',
-                        tds[2].innerText.trim().replace(/\D/g, ''),
-                        tds[3].innerText.trim(),
-                        tds[4].innerText.trim().replace(/\D/g, ''),
-                        '"' + tds[5].innerText.trim().replace(/"/g, '""') + '"'
-                    ]);
-                }
-            });
+        // --- KATEGORİ MODALI ---
+        function openCategoryQuickModalFromEl(el) {
+            if (!el) return;
+            var name = el.getAttribute('data-cat-name') || '';
+            var items = el.getAttribute('data-cat-items') || '0';
+            var qty = el.getAttribute('data-cat-qty') || '0';
+            var avg = el.getAttribute('data-cat-avg') || '0';
+            var val = el.getAttribute('data-cat-val') || '0';
 
-            rows.push([]);
-            rows.push(['--- KATEGORI PORTFOY VE FIYAT ANALIZI ---']);
-            rows.push(['Kategori', 'Urun Cesidi', 'Stok Hacmi', 'Ortalama Fiyat', 'Portfoy Degeri']);
+            document.getElementById('catModalName').textContent = name;
+            document.getElementById('catModalItems').textContent = items + ' Ürün Çeşidi';
+            document.getElementById('catModalQty').textContent = qty + ' Adet Depoda';
+            document.getElementById('catModalAvg').textContent = avg;
+            document.getElementById('catModalVal').textContent = val;
 
-            document.querySelectorAll('#categoriesAnalyticsTable tbody tr').forEach(function (tr) {
-                var tds = tr.querySelectorAll('td');
-                if (tds.length >= 5) {
-                    rows.push([
-                        '"' + tds[0].innerText.trim().replace(/"/g, '""') + '"',
-                        '"' + tds[1].innerText.trim().replace(/"/g, '""') + '"',
-                        '"' + tds[2].innerText.trim().replace(/"/g, '""') + '"',
-                        '"' + tds[3].innerText.trim().replace(/"/g, '""') + '"',
-                        '"' + tds[4].innerText.trim().replace(/"/g, '""') + '"'
-                    ]);
-                }
-            });
-
-            var csvContent = '\uFEFF' + rows.map(function (e) { return e.join(';'); }).join('\r\n');
-            var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            var link = document.createElement('a');
-            var url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', 'Sistem_Analitigi_Raporu_' + new Date().toISOString().slice(0, 10) + '.csv');
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            var modal = document.getElementById('analyticsCategoryQuickModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.body.classList.add('overflow-hidden');
+                document.getElementById('dashboardBottomBar')?.classList.add('hidden');
+            }
         }
+
+        function closeCategoryQuickModal() {
+            var modal = document.getElementById('analyticsCategoryQuickModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.body.classList.remove('overflow-hidden');
+                document.getElementById('dashboardBottomBar')?.classList.remove('hidden');
+            }
+        }
+
+        // --- TEDARİKÇİ KARNESİ MODALI ---
+        function openVendorQuickModalFromEl(el) {
+            if (!el) return;
+            var name = el.getAttribute('data-vendor-name') || '';
+            var type = el.getAttribute('data-vendor-type') || '';
+            var reqs = el.getAttribute('data-vendor-requests') || '0';
+            var score = el.getAttribute('data-vendor-score') || '—';
+            var reviews = el.getAttribute('data-vendor-reviews') || '0';
+            var isRel = el.getAttribute('data-vendor-reliable') === 'true';
+
+            document.getElementById('vendorModalInitial').textContent = name.length > 0 ? name.charAt(0).toUpperCase() : 'F';
+            document.getElementById('vendorModalName').textContent = name;
+            document.getElementById('vendorModalType').textContent = type;
+            document.getElementById('vendorModalRequests').textContent = reqs + ' Satın Alma Talebi';
+            document.getElementById('vendorModalScore').textContent = '★ ' + score + ' / 5.0';
+            document.getElementById('vendorModalReviews').textContent = reviews + ' Onaylı Yorum';
+
+            var relBadge = document.getElementById('vendorModalReliableBadge');
+            var relDesc = document.getElementById('vendorModalReliableDesc');
+            if (isRel) {
+                relBadge.className = 'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200';
+                relBadge.innerHTML = '✓ Güvenilir Tedarikçi';
+                relDesc.textContent = 'Bu tedarikçi düzenli talep karşılama performansı ve yüksek müşteri memnuniyet skoruna sahiptir.';
+            } else {
+                relBadge.className = 'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200';
+                relBadge.innerHTML = '● İnceleme Aşamasında';
+                relDesc.textContent = 'Bu tedarikçi henüz değerlendirme eşiğine ulaşmamıştır; platform verileri biriktikçe güvenilirlik rozeti güncellenecektir.';
+            }
+
+            var modal = document.getElementById('analyticsVendorQuickModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.body.classList.add('overflow-hidden');
+                document.getElementById('dashboardBottomBar')?.classList.add('hidden');
+            }
+        }
+
+        function closeVendorQuickModal() {
+            var modal = document.getElementById('analyticsVendorQuickModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.body.classList.remove('overflow-hidden');
+                document.getElementById('dashboardBottomBar')?.classList.remove('hidden');
+            }
+        }
+
+        // --- MARKA ANALİZİ MODALI ---
+        function openBrandQuickModalFromEl(el) {
+            if (!el) return;
+            var brand = el.getAttribute('data-brand-name') || '';
+            var rank = el.getAttribute('data-brand-rank') || '';
+            var items = el.getAttribute('data-brand-items') || '0';
+            var val = el.getAttribute('data-brand-val') || '0';
+            var pct = el.getAttribute('data-brand-pct') || '0';
+
+            document.getElementById('brandModalName').textContent = brand;
+            document.getElementById('brandModalRank').textContent = rank + ' Sırada';
+            document.getElementById('brandModalItems').textContent = items + ' Çeşit Ürün';
+            document.getElementById('brandModalVal').textContent = val;
+            document.getElementById('brandModalPct').textContent = '%' + pct + ' Katalog Ağırlığı';
+            document.getElementById('brandModalBar').style.width = pct + '%';
+
+            var modal = document.getElementById('analyticsBrandQuickModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.body.classList.add('overflow-hidden');
+                document.getElementById('dashboardBottomBar')?.classList.add('hidden');
+            }
+        }
+
+        function closeBrandQuickModal() {
+            var modal = document.getElementById('analyticsBrandQuickModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.body.classList.remove('overflow-hidden');
+                document.getElementById('dashboardBottomBar')?.classList.remove('hidden');
+            }
+        }
+
+        // ESC Tuşu ile Modalları Kapatma
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeCategoryQuickModal();
+                closeVendorQuickModal();
+                closeBrandQuickModal();
+            }
+        });
     </script>
 }

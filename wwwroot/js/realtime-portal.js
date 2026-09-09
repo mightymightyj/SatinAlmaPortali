@@ -98,29 +98,75 @@
                     '<td>' + deadlineHtml + '</td>' +
                     '<td><div class="offers-cell-wrap"><button type="button" class="offers-interactive-pill is-empty" data-offer-pill-id="' + data.requestId + '" onclick="openDetailModal(' + data.requestId + ')" title="Talep Detayını İncele"><span class="pill-offer-count-text">Teklif Bekleniyor</span></button></div></td>' +
                     '<td><div class="status-cell-wrap" data-status-wrap-id="' + data.requestId + '"><span class="status-dot-badge is-pending" data-status-badge-id="' + data.requestId + '"><span class="status-dot"></span>' + escapeHtml(data.status || 'Beklemede') + '</span></div></td>' +
-                    '<td style="text-align: right;"><div class="actions-cluster" data-actions-cluster-id="' + data.requestId + '">' + actionBtn + '</div></td>';
+                    '<td style="text-align: left;"><div class="actions-cluster" data-actions-cluster-id="' + data.requestId + '">' + actionBtn + '</div></td>';
 
                 reqTbody.insertBefore(newTr, reqTbody.firstChild);
             }
 
-            // 2. Buyer Dashboard Tablosuna Ekle
+            // 2. Buyer Dashboard Tablosuna ve Mobil Listesine Ekle
             var buyerTbody = document.querySelector('#buyerRequestsTable tbody');
+            var statusCls = (data.status === 'Açık') ? 'bg-blue-50 text-blue-700 border border-blue-200/60' :
+                            (data.status === 'Beklemede') ? 'bg-amber-50 text-amber-700 border border-amber-200/60' :
+                            (data.status === 'Kazanıldı' || data.status === 'Onaylandı') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' :
+                            'bg-slate-100 text-slate-600 border border-slate-200/60';
+
             if (buyerTbody) {
                 var emptyBuyerRow = buyerTbody.querySelector('td[colspan]');
                 if (emptyBuyerRow) emptyBuyerRow.parentElement.remove();
 
                 var bTr = document.createElement('tr');
-                bTr.className = 'realtime-updated';
+                bTr.className = 'realtime-updated hover:bg-slate-50/80 transition-colors';
                 bTr.setAttribute('data-status', data.status || 'Beklemede');
                 bTr.innerHTML = 
-                    '<td><div class="req-title-cell"><span class="req-code">' + escapeHtml(data.requestCode) + '</span>' +
-                    '<strong class="req-name">' + escapeHtml(data.productName) + (data.itemCount > 1 ? ' (' + data.itemCount + ' Kalem)' : '') + '</strong>' +
-                    '<small class="req-date">' + escapeHtml(data.requestDate) + '</small></div></td>' +
-                    '<td><span class="category-tag">' + escapeHtml(data.category || 'Satın Alma') + '</span></td>' +
-                    '<td><strong class="budget-amount">' + (data.estimatedBudgetFormatted || 'Belirtilmedi') + '</strong></td>' +
-                    '<td><span class="status-badge badge-blue"><span class="status-dot"></span>' + escapeHtml(data.status || 'Açık') + '</span></td>' +
-                    '<td class="text-right"><a href="/Requests" class="btn-table-action">İncele</a></td>';
+                    '<td class="p-2.5"><div class="req-title-cell flex flex-col gap-0.5"><span class="req-code text-[11px] font-mono text-slate-400">' + escapeHtml(data.requestCode) + '</span>' +
+                    '<strong class="req-name text-xs font-bold text-slate-800 truncate max-w-xs" title="' + escapeHtml(data.productName) + '">' + escapeHtml(data.productName) + (data.itemCount > 1 ? ' (' + data.itemCount + ' Kalem)' : '') + '</strong>' +
+                    '<small class="req-date text-[11px] text-slate-400">' + escapeHtml(data.requestDate) + '</small></div></td>' +
+                    '<td class="p-2.5"><span class="category-tag px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700">' + escapeHtml(data.category || 'Satın Alma') + '</span></td>' +
+                    '<td class="p-2.5"><strong class="budget-amount text-xs font-bold text-slate-900">' + (data.estimatedBudgetFormatted || 'Belirtilmedi') + '</strong></td>' +
+                    '<td class="p-2.5"><span class="status-badge inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ' + statusCls + '"><span class="status-dot w-1.5 h-1.5 rounded-full bg-current"></span>' + escapeHtml(data.status || 'Açık') + '</span></td>' +
+                    '<td class="text-right p-2.5"><a href="/Requests" class="btn-table-action inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition shadow-2xs">İncele</a></td>';
                 buyerTbody.insertBefore(bTr, buyerTbody.firstChild);
+            }
+
+            var buyerMobileList = document.getElementById('buyerRequestsMobileList');
+            if (buyerMobileList) {
+                var emptyMobRow = buyerMobileList.querySelector('.text-center');
+                if (emptyMobRow) emptyMobRow.remove();
+
+                var bCard = document.createElement('div');
+                bCard.className = 'mobile-request-card p-3 rounded-xl border border-slate-200/90 bg-slate-50/50 hover:bg-blue-50/40 hover:border-blue-200 active:scale-[0.99] transition cursor-pointer flex items-center justify-between gap-3 realtime-updated';
+                bCard.setAttribute('data-status', data.status || 'Beklemede');
+                bCard.setAttribute('data-req-code', data.requestCode);
+                bCard.setAttribute('data-req-name', data.productName);
+                bCard.setAttribute('data-req-category', data.category || 'Satın Alma');
+                bCard.setAttribute('data-req-budget', data.estimatedBudgetFormatted || 'Belirtilmedi');
+                bCard.setAttribute('data-req-status', data.status || 'Beklemede');
+                bCard.setAttribute('data-req-status-cls', statusCls);
+                bCard.setAttribute('data-req-date', data.requestDate);
+                bCard.setAttribute('onclick', 'openBuyerRequestQuickModalFromEl(this)');
+                bCard.innerHTML = 
+                    '<div class="min-w-0 flex-1">' +
+                        '<div class="flex items-center gap-2 mb-1">' +
+                            '<span class="font-mono text-[11px] font-bold text-slate-500">' + escapeHtml(data.requestCode) + '</span>' +
+                            '<span class="text-[10px] text-slate-400">• ' + escapeHtml(data.requestDate) + '</span>' +
+                        '</div>' +
+                        '<div class="text-xs font-bold text-slate-800 truncate" title="' + escapeHtml(data.productName) + '">' +
+                            escapeHtml(data.productName) + (data.itemCount > 1 ? ' (' + data.itemCount + ' Kalem)' : '') +
+                        '</div>' +
+                        '<div class="text-[11px] text-slate-500 mt-0.5 truncate">' +
+                            escapeHtml(data.category || 'Satın Alma') +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="flex items-center gap-2 shrink-0">' +
+                        '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ' + statusCls + '">' +
+                            '<span class="w-1.5 h-1.5 rounded-full bg-current"></span>' +
+                            escapeHtml(data.status || 'Beklemede') +
+                        '</span>' +
+                        '<svg class="w-4 h-4 text-slate-400" viewBox="0 0 20 20" fill="currentColor">' +
+                            '<path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />' +
+                        '</svg>' +
+                    '</div>';
+                buyerMobileList.insertBefore(bCard, buyerMobileList.firstChild);
             }
 
             // 3. Supplier RFQ Tablosuna Ekle (Kendi talebi değilse)

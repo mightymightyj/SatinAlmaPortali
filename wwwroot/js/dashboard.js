@@ -391,22 +391,70 @@ async function handleCreateRequestSubmit(event) {
             if (tbody) tbody.innerHTML = '';
             showAppToast('✓ ' + (result.message || 'Talebiniz ve istenilenler listesi başarıyla yayınlandı!'), true);
 
-            // Tabloya dinamik olarak en üste satır ekle
+            // Tabloya ve Mobil Listeye dinamik olarak en üste ekle
             var table = document.getElementById('buyerRequestsTable');
+            var reqCode = 'REQ-' + (result.requestId ? ('000' + result.requestId).slice(-4) : 'YENI');
+            var budgetFormatted = totalBudget > 0 ? Number(totalBudget).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ₺' : 'Belirtilmedi';
+            var fullName = escapeHtml(name) + (items.length > 1 ? ' (' + items.length + ' Kalem)' : '');
+
             if (table) {
                 var tb = table.querySelector('tbody');
                 if (tb) {
+                    var emptyTr = tb.querySelector('td[colspan]');
+                    if (emptyTr) emptyTr.parentElement.remove();
+
                     var tr = document.createElement('tr');
                     tr.setAttribute('data-status', 'Açık');
                     tr.style.animation = 'fadeInRow 0.4s ease';
-                    var reqCode = 'REQ-' + (result.requestId ? ('000' + result.requestId).slice(-4) : 'YENI');
-                    tr.innerHTML = '<td><div class="req-title-cell"><span class="req-code">' + reqCode + '</span><strong class="req-name">' + escapeHtml(name) + ' (' + items.length + ' Kalem)</strong><small class="req-date">Bugün</small></div></td>' +
+                    tr.innerHTML = '<td><div class="req-title-cell"><span class="req-code">' + reqCode + '</span><strong class="req-name">' + fullName + '</strong><small class="req-date">Bugün</small></div></td>' +
                         '<td><span class="category-tag">' + escapeHtml(cat) + '</span></td>' +
-                        '<td><strong class="budget-amount">' + (totalBudget > 0 ? Number(totalBudget).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ₺' : 'Belirtilmedi') + '</strong></td>' +
-                        '<td><span class="status-badge badge-blue"><span class="status-dot"></span>Açık</span></td>' +
-                        '<td class="text-right"><a href="/Requests" class="btn-table-action">İncele</a></td>';
+                        '<td><strong class="budget-amount">' + budgetFormatted + '</strong></td>' +
+                        '<td><span class="status-badge inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/60"><span class="status-dot w-1.5 h-1.5 rounded-full bg-current"></span>Açık</span></td>' +
+                        '<td class="text-right p-2.5"><a href="/Requests" class="btn-table-action inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition shadow-2xs">İncele</a></td>';
                     tb.insertBefore(tr, tb.firstChild);
                 }
+            }
+
+            var mobileList = document.getElementById('buyerRequestsMobileList');
+            if (mobileList) {
+                var emptyMob = mobileList.querySelector('.text-center');
+                if (emptyMob) emptyMob.remove();
+
+                var mCard = document.createElement('div');
+                mCard.setAttribute('data-status', 'Açık');
+                mCard.setAttribute('data-req-code', reqCode);
+                mCard.setAttribute('data-req-name', escapeHtml(name));
+                mCard.setAttribute('data-req-category', escapeHtml(cat));
+                mCard.setAttribute('data-req-budget', budgetFormatted);
+                mCard.setAttribute('data-req-status', 'Açık');
+                mCard.setAttribute('data-req-status-cls', 'bg-blue-50 text-blue-700 border border-blue-200/60');
+                mCard.setAttribute('data-req-date', 'Bugün');
+                mCard.setAttribute('onclick', 'openBuyerRequestQuickModalFromEl(this)');
+                mCard.className = 'mobile-request-card p-3 rounded-xl border border-slate-200/90 bg-slate-50/50 hover:bg-blue-50/40 hover:border-blue-200 active:scale-[0.99] transition cursor-pointer flex items-center justify-between gap-3';
+                mCard.innerHTML = `
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-mono text-[11px] font-bold text-slate-500">${reqCode}</span>
+                            <span class="text-[10px] text-slate-400">• Bugün</span>
+                        </div>
+                        <div class="text-xs font-bold text-slate-800 truncate" title="${escapeHtml(name)}">
+                            ${fullName}
+                        </div>
+                        <div class="text-[11px] text-slate-500 mt-0.5 truncate">
+                            ${escapeHtml(cat)}
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
+                            Açık
+                        </span>
+                        <svg class="w-4 h-4 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                `;
+                mobileList.insertBefore(mCard, mobileList.firstChild);
             }
         } else {
             showAppToast('Hata: ' + (result.message || 'Talep kaydedilemedi.'), false);
@@ -921,18 +969,49 @@ function filterRequestTable(status, btn) {
         }
     }
 
+    // 1. Desktop Tablo
     var table = document.getElementById('buyerRequestsTable');
-    if (!table) return;
+    if (table) {
+        var rows = table.querySelectorAll('tbody tr');
+        rows.forEach(function (row) {
+            var rowStatus = row.getAttribute('data-status');
+            if (status === 'all' || rowStatus === status) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
 
-    var rows = table.querySelectorAll('tbody tr');
-    rows.forEach(function (row) {
-        var rowStatus = row.getAttribute('data-status');
-        if (status === 'all' || rowStatus === status) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
+    // 2. Mobil Liste Kartları
+    var mobileList = document.getElementById('buyerRequestsMobileList');
+    if (mobileList) {
+        var cards = mobileList.querySelectorAll('.mobile-request-card');
+        var mobVisibleCount = 0;
+        cards.forEach(function (card) {
+            var cardStatus = card.getAttribute('data-status');
+            if (status === 'all' || cardStatus === status) {
+                card.style.display = '';
+                mobVisibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        var emptyMobMsg = document.getElementById('buyerRequestsMobileEmptyFilterMsg');
+        if (cards.length > 0 && mobVisibleCount === 0) {
+            if (!emptyMobMsg) {
+                emptyMobMsg = document.createElement('div');
+                emptyMobMsg.id = 'buyerRequestsMobileEmptyFilterMsg';
+                emptyMobMsg.className = 'text-center py-6 text-slate-400 text-xs';
+                emptyMobMsg.textContent = 'Seçilen duruma uygun talep bulunamadı.';
+                mobileList.appendChild(emptyMobMsg);
+            }
+            emptyMobMsg.style.display = '';
+        } else if (emptyMobMsg) {
+            emptyMobMsg.style.display = 'none';
         }
-    });
+    }
 }
 
 function filterPurchasedTable(status, btn) {
@@ -944,34 +1023,67 @@ function filterPurchasedTable(status, btn) {
         }
     }
 
+    // 1. Desktop Tablo
     var table = document.getElementById('buyerPurchasedProductsTable');
-    if (!table) return;
+    if (table) {
+        var rows = table.querySelectorAll('tbody tr[data-status]');
+        var visibleCount = 0;
+        rows.forEach(function (row) {
+            var rowStatus = row.getAttribute('data-status') || '';
+            if (status === 'all' || status === 'Tümü' || rowStatus === status || 
+                (status === 'Kargoda' && (rowStatus === 'Kargoya Verildi' || rowStatus === 'Kargoda')) ||
+                (status === 'Teslim Edildi' && (rowStatus === 'Teslim Edildi' || rowStatus === 'Tamamlandı'))) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
 
-    var rows = table.querySelectorAll('tbody tr[data-status]');
-    var visibleCount = 0;
-    rows.forEach(function (row) {
-        var rowStatus = row.getAttribute('data-status') || '';
-        if (status === 'all' || status === 'Tümü' || rowStatus === status || 
-            (status === 'Kargoda' && (rowStatus === 'Kargoya Verildi' || rowStatus === 'Kargoda')) ||
-            (status === 'Teslim Edildi' && (rowStatus === 'Teslim Edildi' || rowStatus === 'Tamamlandı'))) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
+        var emptyRow = document.getElementById('buyerPurchasedEmptySearchRow');
+        if (rows.length > 0 && visibleCount === 0) {
+            if (!emptyRow) {
+                emptyRow = document.createElement('tr');
+                emptyRow.id = 'buyerPurchasedEmptySearchRow';
+                emptyRow.innerHTML = '<td colspan="8" style="text-align: center; padding: 32px 16px; color: #64748b;">Seçilen duruma uygun satın alınan ürün bulunamadı.</td>';
+                table.querySelector('tbody').appendChild(emptyRow);
+            }
+            emptyRow.style.display = '';
+        } else if (emptyRow) {
+            emptyRow.style.display = 'none';
         }
-    });
+    }
 
-    var emptyRow = document.getElementById('buyerPurchasedEmptySearchRow');
-    if (rows.length > 0 && visibleCount === 0) {
-        if (!emptyRow) {
-            emptyRow = document.createElement('tr');
-            emptyRow.id = 'buyerPurchasedEmptySearchRow';
-            emptyRow.innerHTML = '<td colspan="8" style="text-align: center; padding: 32px 16px; color: #64748b;">Seçilen duruma uygun satın alınan ürün bulunamadı.</td>';
-            table.querySelector('tbody').appendChild(emptyRow);
+    // 2. Mobil Liste Kartları
+    var mobileList = document.getElementById('buyerPurchasedMobileList');
+    if (mobileList) {
+        var cards = mobileList.querySelectorAll('.mobile-purchased-card');
+        var mobVisibleCount = 0;
+        cards.forEach(function (card) {
+            var cardStatus = card.getAttribute('data-status') || '';
+            if (status === 'all' || status === 'Tümü' || cardStatus === status || 
+                (status === 'Kargoda' && (cardStatus === 'Kargoya Verildi' || cardStatus === 'Kargoda')) ||
+                (status === 'Teslim Edildi' && (cardStatus === 'Teslim Edildi' || cardStatus === 'Tamamlandı'))) {
+                card.style.display = '';
+                mobVisibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        var emptyMobMsg = document.getElementById('buyerPurchasedMobileEmptyFilterMsg');
+        if (cards.length > 0 && mobVisibleCount === 0) {
+            if (!emptyMobMsg) {
+                emptyMobMsg = document.createElement('div');
+                emptyMobMsg.id = 'buyerPurchasedMobileEmptyFilterMsg';
+                emptyMobMsg.className = 'text-center py-6 text-slate-400 text-xs';
+                emptyMobMsg.textContent = 'Seçilen duruma uygun satın alınan ürün bulunamadı.';
+                mobileList.appendChild(emptyMobMsg);
+            }
+            emptyMobMsg.style.display = '';
+        } else if (emptyMobMsg) {
+            emptyMobMsg.style.display = 'none';
         }
-        emptyRow.style.display = '';
-    } else if (emptyRow) {
-        emptyRow.style.display = 'none';
     }
 }
 
@@ -1109,15 +1221,73 @@ function toggleNotificationDropdown() {
     showAppToast('🔔 2 yeni bildiriminiz bulunmaktadır: 1 yeni teklif onaylandı, 1 RFQ süresi dolmak üzere.');
 }
 
-// --- KLAVYE ESC TUŞU İLE MODAL KAPATMA ---
+// --- MOBİL KENAR ÇUBUĞU (OFF-CANVAS SIDEBAR DRAWER) ---
+function toggleDashboardSidebar() {
+    var sidebar = document.getElementById('dashboardSidebar');
+    if (!sidebar) return;
+
+    if (sidebar.classList.contains('is-open')) {
+        closeDashboardSidebar();
+    } else {
+        openDashboardSidebar();
+    }
+}
+
+function openDashboardSidebar() {
+    var sidebar = document.getElementById('dashboardSidebar');
+    var backdrop = document.getElementById('sidebarBackdrop');
+    if (!sidebar) return;
+
+    sidebar.classList.add('is-open', 'translate-x-0');
+    sidebar.classList.remove('-translate-x-full');
+
+    if (backdrop) {
+        backdrop.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+        backdrop.classList.add('is-open', 'opacity-100', 'pointer-events-auto');
+    }
+    document.body.classList.add('overflow-hidden', 'md:overflow-auto');
+}
+
+function closeDashboardSidebar() {
+    var sidebar = document.getElementById('dashboardSidebar');
+    var backdrop = document.getElementById('sidebarBackdrop');
+    if (!sidebar) return;
+
+    sidebar.classList.remove('is-open', 'translate-x-0');
+    sidebar.classList.add('-translate-x-full');
+
+    if (backdrop) {
+        backdrop.classList.remove('is-open', 'opacity-100', 'pointer-events-auto');
+        backdrop.classList.add('opacity-0', 'pointer-events-none');
+        setTimeout(function () {
+            if (!sidebar.classList.contains('is-open')) {
+                backdrop.classList.add('hidden');
+            }
+        }, 280);
+    }
+    document.body.classList.remove('overflow-hidden', 'md:overflow-auto');
+}
+
+// --- KLAVYE ESC TUŞU İLE MODAL VE MENÜ KAPATMA ---
 document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
+        if (typeof closeDashboardSidebar === 'function') closeDashboardSidebar();
         if (typeof closeRequestModal === 'function') closeRequestModal();
         if (typeof closePriceModal === 'function') closePriceModal();
-        var openModals = document.querySelectorAll('.app-modal.is-open, .custom-modal-backdrop.is-open');
+        if (typeof closeBidModal === 'function') closeBidModal();
+        if (typeof closeOrderDetailModal === 'function') closeOrderDetailModal();
+        if (typeof closeDisputeModal === 'function') closeDisputeModal();
+        if (typeof closeBuyerCancelModal === 'function') closeBuyerCancelModal();
+        if (typeof closeBuyerRateOrderModal === 'function') closeBuyerRateOrderModal();
+        if (typeof closeBuyerRequestQuickModal === 'function') closeBuyerRequestQuickModal();
+        if (typeof closeBuyerPurchasedQuickModal === 'function') closeBuyerPurchasedQuickModal();
+        var openModals = document.querySelectorAll('.app-modal.is-open, .custom-modal-backdrop.is-open, .ty-modal-overlay[style*="display: flex"], .ty-modal-overlay[style*="display: block"]');
         openModals.forEach(function (m) {
             m.classList.remove('is-open');
             m.setAttribute('aria-hidden', 'true');
+            if (m.classList.contains('ty-modal-overlay')) {
+                m.style.display = 'none';
+            }
         });
     }
 });

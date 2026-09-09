@@ -134,42 +134,42 @@
 </section>
 
 <!-- ==================== FİLTRE & ARAMA ALANI ==================== -->
-<div class="card" style="margin-bottom: 20px; padding: 16px 20px;">
-    <form method="get" asp-action="Orders" id="ordersFilterForm" onsubmit="event.preventDefault(); applyBuyerOrdersFilter(); return false;" style="display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between;">
-        <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; flex: 1; min-width: 300px;">
-            <div style="position: relative; flex: 1; min-width: 240px; max-width: 420px;">
-                <input type="text" name="search" id="buyerOrderSearchInput" value="@Model.SearchQuery" class="form-control" placeholder="Sipariş No, satıcı firma, ürün veya kargo takip no ara..." oninput="onBuyerOrderSearchInput(this.value)" style="padding-left: 36px; height: 40px; font-size: 0.88rem;" />
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" style="position: absolute; left: 12px; top: 12px; pointer-events: none;">
+<div class="card card-flush-mobile p-3 sm:p-4 mb-3 sm:mb-5">
+    <form method="get" asp-action="Orders" id="ordersFilterForm" onsubmit="event.preventDefault(); applyBuyerOrdersFilter(); return false;" class="flex flex-col sm:flex-row flex-wrap gap-3 items-stretch sm:items-center justify-between">
+        <div class="flex flex-wrap gap-2.5 items-center flex-1 min-w-0">
+            <div class="relative flex-1 min-w-0 w-full max-w-full sm:max-w-md">
+                <input type="text" name="search" id="buyerOrderSearchInput" value="@Model.SearchQuery" class="form-control w-full" placeholder="Sipariş No, satıcı firma, ürün veya kargo takip no ara..." oninput="onBuyerOrderSearchInput(this.value)" style="padding-left: 36px; height: 42px; font-size: 0.88rem;" />
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" style="position: absolute; left: 12px; top: 13px; pointer-events: none;">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
             </div>
         </div>
 
-        <nav class="year-filter" aria-label="Sipariş durumu filtresi">
+        <nav class="year-filter status-grid-2x2 grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto" aria-label="Sipariş durumu filtresi">
             <input type="hidden" name="status" id="selectedStatusInput" value="@(Model.SelectedStatus ?? "Tümü")" />
-            <button type="button" class="year-pill @(string.IsNullOrEmpty(Model.SelectedStatus) || Model.SelectedStatus == "Tümü" ? "is-active" : "")" 
+            <button type="button" class="year-pill w-full justify-center text-center @(string.IsNullOrEmpty(Model.SelectedStatus) || Model.SelectedStatus == "Tümü" ? "is-active" : "")" 
                     onclick="setStatusFilter('Tümü', this)">
                 <span>Tümü</span>
                 <span class="status-count-badge" id="buyerCountAll">@Model.TotalOrderCount</span>
             </button>
-            <button type="button" class="year-pill @(Model.SelectedStatus == "Onaylandı" ? "is-active" : "")" 
+            <button type="button" class="year-pill w-full justify-center text-center @(Model.SelectedStatus == "Onaylandı" ? "is-active" : "")" 
                     onclick="setStatusFilter('Onaylandı', this)">
                 <span class="status-indicator-dot dot-blue"></span>
                 <span>Onaylandı</span>
             </button>
-            <button type="button" class="year-pill @(Model.SelectedStatus == "Kargoya Verildi" ? "is-active" : "")" 
+            <button type="button" class="year-pill w-full justify-center text-center @(Model.SelectedStatus == "Kargoya Verildi" ? "is-active" : "")" 
                     onclick="setStatusFilter('Kargoya Verildi', this)">
                 <span class="status-indicator-dot dot-amber"></span>
                 <span>Kargoda</span>
             </button>
-            <button type="button" class="year-pill status-pill-in-stock @(Model.SelectedStatus == "Teslim Edildi" ? "is-active" : "")" 
+            <button type="button" class="year-pill status-pill-in-stock w-full justify-center text-center @(Model.SelectedStatus == "Teslim Edildi" ? "is-active" : "")" 
                     onclick="setStatusFilter('Teslim Edildi', this)">
                 <span class="status-indicator-dot dot-green"></span>
                 <span>Teslim Edildi</span>
             </button>
 
-            <button type="button" id="buyerClearFilterBtn" onclick="resetBuyerFilters()" class="btn-cancel" style="display: @(!string.IsNullOrWhiteSpace(Model.SearchQuery) || (!string.IsNullOrWhiteSpace(Model.SelectedStatus) && Model.SelectedStatus != "Tümü") ? "inline-flex" : "none"); padding: 7px 12px; font-size: 0.82rem; border-radius: 8px; align-items: center; gap: 4px; cursor: pointer;">
+            <button type="button" id="buyerClearFilterBtn" onclick="resetBuyerFilters()" class="btn-cancel col-span-2 sm:col-span-1 w-full sm:w-auto justify-center" style="display: @(!string.IsNullOrWhiteSpace(Model.SearchQuery) || (!string.IsNullOrWhiteSpace(Model.SelectedStatus) && Model.SelectedStatus != "Tümü") ? "inline-flex" : "none"); padding: 7px 12px; font-size: 0.82rem; border-radius: 8px; align-items: center; gap: 4px; cursor: pointer;">
                 Temizle
             </button>
         </nav>
@@ -177,8 +177,8 @@
 </div>
 
 <!-- ==================== SİPARİŞLER TABLOSU ==================== -->
-<article class="card">
-    <header class="card-head">
+<article class="card card-flush-mobile p-2 sm:p-5">
+    <header class="card-head px-2.5 pt-1.5 pb-2.5 sm:px-0 sm:pt-0 sm:pb-3 border-b sm:border-b-0 border-slate-100 mb-2 sm:mb-4">
         <div class="head-with-icon">
             <span class="blue-accent-x">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -187,11 +187,12 @@
                     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
                 </svg>
             </span>
-            <h2>Sipariş Geçmişi & Sevkiyat Takibi (@Model.Orders.Count)</h2>
+            <h2 class="text-sm sm:text-base font-bold text-slate-900">Sipariş Geçmişi & Sevkiyat Takibi (@Model.Orders.Count)</h2>
         </div>
     </header>
 
-    <div class="table-scroll-wrap">
+    <!-- Desktop Tablo Görünümü (md ve üzeri ekranlar) -->
+    <div class="hidden md:block table-scroll-wrap">
         <table class="dash-table">
             <thead>
                 <tr>
@@ -442,137 +443,262 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Mobil Kompakt Sipariş Listesi (Genişletilmiş liste elemanları, basıldığında detay modalı) -->
+    <div class="block md:hidden p-0 space-y-2.5" id="buyerOrdersMobileList">
+        @if (!Model.Orders.Any())
+        {
+            <div class="text-center py-10 px-4 text-slate-400">
+                <div class="mb-3 flex justify-center text-slate-300">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                </div>
+                <div class="text-sm font-bold text-slate-700 mb-1">Henüz verilmiş bir siparişiniz bulunmamaktadır</div>
+                <p class="text-xs text-slate-500 mb-3">B2B kurumsal vitrinimizdeki hazır stoklu ürünleri doğrudan sepetinize ekleyip satın alabilirsiniz.</p>
+                <a href="/#b2b-vitrin" class="btn-primary inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700">
+                    Vitrine Git &amp; Alışverişe Başla
+                </a>
+            </div>
+        }
+        else
+        {
+            @foreach (var o in Model.Orders)
+            {
+                var activeItems = o.OrderItems.Where(oi => oi.ItemStatus != "İptal" && oi.ItemStatus != "İptal Edildi").ToList();
+                bool allDelivered = (activeItems.Any() && activeItems.All(oi => oi.ItemStatus == "Teslim Edildi" || oi.ItemStatus == "Tamamlandı")) || o.OrderStatus == "Teslim Edildi";
+                var isShipped = o.OrderStatus == "Kargoya Verildi" || (activeItems.Any(oi => oi.ItemStatus == "Kargoya Verildi"));
+                var isCancelled = o.OrderStatus == "İptal" || o.OrderStatus == "İptal Edildi" || o.OrderStatus.Contains("İptal");
+                var searchableText = $"{o.OrderNumber} {o.SupplierCompanyName} {o.DeliveryCity} {o.TrackingNumber} {string.Join(" ", o.OrderItems.Select(oi => oi.ProductName))}".ToLowerInvariant();
+
+                var distinctSellers = o.OrderItems
+                    .Where(oi => !string.IsNullOrWhiteSpace(oi.SupplierCompanyName))
+                    .GroupBy(oi => (oi.SupplierCompanyID ?? 0, oi.SupplierCompanyName!.Trim()))
+                    .Select(g => new { CompanyId = g.Key.Item1, CompanyName = g.Key.Item2, ItemCount = g.Count() })
+                    .ToList();
+
+                if (!distinctSellers.Any() && !string.IsNullOrWhiteSpace(o.SupplierCompanyName))
+                {
+                    distinctSellers.Add(new { CompanyId = o.SupplierCompanyID ?? 0, CompanyName = o.SupplierCompanyName.Trim(), ItemCount = o.OrderItems.Count });
+                }
+
+                string sellerDisplay = distinctSellers.Count > 1 
+                    ? $"{distinctSellers.First().CompanyName} (+{distinctSellers.Count - 1} Satıcı)" 
+                    : (distinctSellers.FirstOrDefault()?.CompanyName ?? o.SupplierCompanyName ?? "Onaylı Tedarikçi");
+
+                var firstItem = o.OrderItems.FirstOrDefault();
+                int otherItemsCount = o.OrderItems.Count - 1;
+
+                var badgeClass = isCancelled ? "bg-rose-50 text-rose-700 border-rose-200/80"
+                    : (allDelivered ? "bg-emerald-50 text-emerald-700 border-emerald-200/80"
+                    : (isShipped ? "bg-amber-50 text-amber-700 border-amber-200/80"
+                    : "bg-blue-50 text-blue-700 border-blue-200/80"));
+
+                <div class="mobile-order-card w-full bg-white rounded-xl border border-slate-200/90 p-3.5 sm:p-4 shadow-2xs hover:border-blue-300 hover:shadow-xs active:scale-[0.99] transition cursor-pointer flex flex-col gap-2.5"
+                     id="buyer-mobile-order-@o.OrderID"
+                     data-order-id="@o.OrderID"
+                     data-status="@o.OrderStatus"
+                     data-search="@searchableText"
+                     onclick="showOrderDetailsModal(@o.OrderID)">
+                    
+                    <!-- 1. Satır: Sipariş No, Tarih & Durum Rozeti -->
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-1.5 min-w-0">
+                            <span class="font-mono text-xs sm:text-[13px] font-bold text-blue-600 truncate">@o.OrderNumber</span>
+                            <span class="text-[11px] text-slate-400 shrink-0">• @o.OrderDate.ToString("dd.MM.yyyy HH:mm")</span>
+                        </div>
+                        <span class="status-badge shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border @badgeClass">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
+                            @o.OrderStatus
+                        </span>
+                    </div>
+
+                    <!-- 2. Satır: Satıcı ve Kargo Takip Rozeti -->
+                    <div class="flex items-center justify-between gap-2 text-xs">
+                        <div class="flex items-center gap-1.5 min-w-0 text-slate-600">
+                            <span class="text-[11px] text-slate-400 shrink-0">Satıcı:</span>
+                            <strong class="text-slate-800 font-semibold truncate">@sellerDisplay</strong>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(o.TrackingNumber) && !isCancelled)
+                        {
+                            <span class="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/70 shrink-0 flex items-center gap-1">
+                                <span>📦</span> <span>Takipte</span>
+                            </span>
+                        }
+                    </div>
+
+                    <!-- 3. Satır: Kalem / Ürün Özeti -->
+                    @if (firstItem != null)
+                    {
+                        <div class="text-xs text-slate-600 truncate">
+                            <span class="font-semibold text-slate-800">• @firstItem.ProductName</span>
+                            <span class="text-slate-400 text-[11px]">(@firstItem.Quantity Adet)</span>
+                            @if (otherItemsCount > 0)
+                            {
+                                <span class="text-blue-600 font-semibold text-[11px]"> +@otherItemsCount diğer kalem</span>
+                            }
+                        </div>
+                    }
+
+                    <!-- 4. Satır: Toplam Tutar & Detay Butonu -->
+                    <div class="flex items-center justify-between pt-2.5 border-t border-slate-100 mt-0.5">
+                        <div class="flex items-baseline gap-1.5">
+                            <strong class="text-[15px] font-black text-emerald-600 tracking-tight">@o.GrandTotal.ToString("N2", ChartHelper.Tr) ₺</strong>
+                            <span class="text-[11px] text-slate-400 font-normal">(KDV Dahil)</span>
+                        </div>
+                        <span class="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50/60 px-2.5 py-1 rounded-lg">
+                            Detay Gör
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+            }
+
+            <div id="buyerOrdersMobileEmptySearch" style="display: none;" class="text-center py-8 text-slate-400 text-xs">
+                <strong class="text-slate-700 block mb-1">Arama veya filtre kriterinize uygun sipariş bulunamadı.</strong>
+                <span>Filtreyi temizleyebilir veya farklı bir arama kelimesi deneyebilirsiniz.</span>
+            </div>
+        }
+    </div>
 </article>
 
 <!-- Modal: Kapsamlı Sipariş Detayı (Her Ürünün ve Satıcının Durumu Ayrı) -->
-<div id="buyerOrderDetailModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.7); backdrop-filter: blur(5px); z-index: 99999; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this)closeOrderDetailModal()">
-    <div class="ty-modal-box" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; width: 100%; max-width: 680px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);">
+<div id="buyerOrderDetailModal" class="ty-modal-overlay fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 md:p-8 overflow-y-auto" style="display: none;" onclick="if(event.target===this)closeOrderDetailModal()">
+    <div class="ty-modal-box my-auto relative bg-white rounded-2xl shadow-2xl border border-slate-200/90 w-full max-w-2xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden transform transition-all">
         
         <!-- Modal Başlık Çubuğu -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; padding: 20px 24px; border-bottom: 1px solid #f1f5f9; background: #f8fafc;">
+        <div class="px-4 pt-4 pb-3.5 sm:px-7 sm:pt-7 sm:pb-5 border-b border-slate-100 flex items-start justify-between bg-slate-50/80">
             <div>
-                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <span class="status-badge badge-emerald" style="font-size: 0.72rem; padding: 3px 8px; font-weight: 800;">KURUMSAL SİPARİŞ</span>
-                    <span id="modalOverallBadge" class="status-badge badge-blue" style="font-size: 0.72rem; padding: 3px 8px; font-weight: 800;"></span>
+                <div class="flex items-center gap-2 flex-wrap mb-2">
+                    <span class="status-badge badge-emerald text-[11px] font-bold px-2 py-0.5 rounded-md">KURUMSAL SİPARİŞ</span>
+                    <span id="modalOverallBadge" class="status-badge badge-blue text-[11px] font-bold px-2 py-0.5 rounded-md"></span>
                 </div>
-                <h3 id="modalOrderNo" style="font-size: 1.25rem; font-weight: 850; color: #0f172a; margin-top: 6px; margin-bottom: 2px; font-family: monospace;"></h3>
-                <div style="font-size: 0.78rem; color: #64748b;" id="modalOrderDate"></div>
+                <h3 id="modalOrderNo" class="text-lg font-extrabold text-slate-900 font-mono tracking-tight"></h3>
+                <div class="text-xs text-slate-500 mt-1" id="modalOrderDate"></div>
             </div>
-            <button type="button" class="modal-close-btn" onclick="closeOrderDetailModal()" style="border: none; background: #e2e8f0; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; cursor: pointer; color: #475569; transition: background 0.15s;">✕</button>
+            <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer text-base leading-none shrink-0 ml-4 -mt-1 -mr-1" onclick="closeOrderDetailModal()" aria-label="Kapat">✕</button>
         </div>
 
         <!-- Modal Kaydırılabilir Gövde -->
-        <div style="padding: 20px 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px;">
+        <div class="p-4 sm:p-6 overflow-y-auto space-y-3.5 sm:space-y-4 text-xs">
             
             <!-- Çoklu Satıcı Bilgilendirme Kutusu -->
-            <div id="modalMultiSellerAlert" style="display: none; background: rgba(37,99,235,0.06); border: 1px solid rgba(37,99,235,0.2); border-radius: 10px; padding: 12px 16px; font-size: 0.82rem; color: #1e40af; line-height: 1.45;"></div>
+            <div id="modalMultiSellerAlert" class="hidden p-3.5 bg-blue-50/80 border border-blue-200/80 rounded-xl text-xs text-blue-900 leading-relaxed"></div>
 
             <!-- Ürünler ve Durumları Bölümü -->
             <div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <h4 style="font-size: 0.92rem; font-weight: 800; color: #0f172a; margin: 0;">
+                <div class="flex justify-between items-center mb-2.5">
+                    <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wide">
                         Sipariş Kalemleri &amp; Ürün Bazlı Durumlar
                     </h4>
-                    <span style="font-size: 0.75rem; color: #64748b;" id="modalItemCountText"></span>
+                    <span class="text-[11px] text-slate-500 font-medium" id="modalItemCountText"></span>
                 </div>
 
-                <div id="modalOrderItemsList" style="display: flex; flex-direction: column; gap: 10px;">
+                <div id="modalOrderItemsList" class="space-y-2.5">
                     <!-- JS Tarafından doldurulacak -->
                 </div>
             </div>
 
             <!-- iyzico B2B Güvenli Havuz (Escrow) ve Onay Kutusu -->
-            <div id="modalEscrowBox" style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 12px; padding: 16px 18px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 1.4rem;">🛡️</span>
+            <div id="modalEscrowBox" class="p-3.5 sm:p-4 bg-emerald-50/70 border border-emerald-200/80 rounded-xl space-y-3">
+                <div class="flex justify-between items-start flex-wrap gap-2">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-xl">🛡️</span>
                         <div>
-                            <strong style="font-size: 0.9rem; color: #166534; display: block;">iyzico Güvenli Havuz (Escrow) Durumu</strong>
-                            <span style="font-size: 0.76rem; color: #15803d;" id="modalEscrowStatusText">Ödeme güvence havuzunda bloke tutulmaktadır.</span>
+                            <strong class="text-xs font-bold text-emerald-900 block">iyzico Güvenli Havuz (Escrow) Durumu</strong>
+                            <span class="text-[11px] text-emerald-700 leading-tight block" id="modalEscrowStatusText">Ödeme güvence havuzunda bloke tutulmaktadır.</span>
                         </div>
                     </div>
-                    <span id="modalEscrowBadge" class="status-badge" style="background: #dcfce7; color: #166534; font-weight: 800; font-size: 0.76rem; padding: 4px 10px; border-radius: 6px;"></span>
+                    <span id="modalEscrowBadge" class="status-badge bg-emerald-100 text-emerald-800 font-bold text-[11px] px-2.5 py-1 rounded-md"></span>
                 </div>
 
-                <div id="modalEscrowActions" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #86efac;">
-                    <button type="button" id="btnReleaseEscrow" class="btn-primary" onclick="confirmReleaseEscrow()" style="background: #16a34a; border: none; padding: 8px 16px; font-size: 0.84rem; font-weight: 750; border-radius: 8px; color: #fff; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                <div id="modalEscrowActions" class="flex gap-2 flex-wrap pt-2.5 border-t border-dashed border-emerald-300/80">
+                    <button type="button" id="btnReleaseEscrow" class="btn-primary inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs shadow-emerald-600/20 transition cursor-pointer" onclick="confirmReleaseEscrow()">
                         <span>✓ Ürünü Teslim Aldım &amp; Ödemeyi Satıcıya Aktar</span>
                     </button>
-                    <button type="button" id="btnOpenDispute" class="btn-cancel" onclick="openDisputeModalFromDetail()" style="background: #fff; border: 1px solid #f87171; color: #dc2626; padding: 8px 14px; font-size: 0.82rem; font-weight: 700; border-radius: 8px; cursor: pointer;">
+                    <button type="button" id="btnOpenDispute" class="btn-cancel inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-white border border-rose-300 text-rose-700 hover:bg-rose-50 transition cursor-pointer" onclick="openDisputeModalFromDetail()">
                         <span>⚠️ İade / İtiraz Bildir</span>
                     </button>
-                    <button type="button" id="btnCancelFromDetail" class="btn-cancel" onclick="openBuyerCancelModalFromDetail()" style="background: #fff; border: 1px solid #fca5a5; color: #b91c1c; padding: 8px 14px; font-size: 0.82rem; font-weight: 700; border-radius: 8px; cursor: pointer; display: none;">
+                    <button type="button" id="btnCancelFromDetail" class="btn-cancel inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-white border border-rose-300 text-rose-700 hover:bg-rose-50 transition cursor-pointer hidden" onclick="openBuyerCancelModalFromDetail()">
                         <span>✕ Siparişi İptal Et</span>
                     </button>
                 </div>
             </div>
 
             <!-- Teslimat & İletişim Bilgileri -->
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px;">
-                <h4 style="font-size: 0.84rem; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">Teslimat ve Alıcı Bilgileri</h4>
-                <div style="font-size: 0.82rem; color: #334155; display: flex; flex-direction: column; gap: 4px;">
-                    <div><strong>Alıcı:</strong> <span id="modalReceiverInfo"></span></div>
-                    <div><strong>Teslimat Adresi:</strong> <span id="modalDeliveryAddress"></span></div>
-                    <div><strong>Ödeme Şekli:</strong> <span id="modalPaymentMethod"></span></div>
+            <div class="p-3.5 sm:p-4 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2">
+                <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wide">Teslimat ve Alıcı Bilgileri</h4>
+                <div class="text-xs text-slate-600 space-y-1">
+                    <div><strong class="font-semibold text-slate-800">Alıcı:</strong> <span id="modalReceiverInfo" class="text-slate-700"></span></div>
+                    <div><strong class="font-semibold text-slate-800">Teslimat Adresi:</strong> <span id="modalDeliveryAddress" class="text-slate-700"></span></div>
+                    <div><strong class="font-semibold text-slate-800">Ödeme Şekli:</strong> <span id="modalPaymentMethod" class="text-slate-700"></span></div>
                 </div>
             </div>
 
             <!-- Finansal Özet -->
-            <div style="background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.2); border-radius: 10px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">
+            <div class="p-3.5 sm:p-4 bg-emerald-50/50 border border-emerald-200/80 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                 <div>
-                    <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Toplam Ödenen Tutar (KDV Dahil)</span>
-                    <div id="modalGrandTotal" style="font-size: 1.25rem; font-weight: 900; color: #059669;"></div>
+                    <span class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Toplam Ödenen Tutar (KDV Dahil)</span>
+                    <div id="modalGrandTotal" class="text-xl font-black text-emerald-600 tracking-tight"></div>
                 </div>
-                <div style="text-align: right; font-size: 0.78rem; color: #64748b;">
-                    <div>Ara Toplam: <strong id="modalSubTotal" style="color: #0f172a;"></strong></div>
-                    <div>KDV (%20): <strong id="modalTaxTotal" style="color: #0f172a;"></strong></div>
+                <div class="sm:text-right text-xs text-slate-500 space-y-0.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-emerald-200/60">
+                    <div>Ara Toplam: <strong id="modalSubTotal" class="text-slate-800 font-bold"></strong></div>
+                    <div>KDV (%20): <strong id="modalTaxTotal" class="text-slate-800 font-bold"></strong></div>
                 </div>
             </div>
 
         </div>
 
         <!-- Modal Alt Çubuk -->
-        <div style="padding: 14px 24px; border-top: 1px solid #f1f5f9; background: #f8fafc; display: flex; justify-content: flex-end;">
-            <button type="button" class="btn-cancel" onclick="closeOrderDetailModal()" style="padding: 8px 20px; font-weight: 700;">Kapat</button>
+        <div class="px-4 sm:px-6 py-3 border-t border-slate-100 bg-slate-50/80 flex justify-end">
+            <button type="button" class="btn-cancel px-4 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition shadow-2xs cursor-pointer" onclick="closeOrderDetailModal()">Kapat</button>
         </div>
     </div>
 </div>
 
 <!-- Modal: İade ve Uyuşmazlık (Dispute) Bildirimi -->
-<div id="orderDisputeModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.75); backdrop-filter: blur(5px); z-index: 100001; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this)closeDisputeModal()">
-    <div class="ty-modal-box" style="background: #fff; border: 1px solid #fecaca; border-radius: 16px; width: 100%; max-width: 520px; padding: 26px; box-shadow: 0 25px 40px -5px rgba(0,0,0,0.3);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+<div id="orderDisputeModal" class="ty-modal-overlay fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 md:p-8 overflow-y-auto" style="display: none;" onclick="if(event.target===this)closeDisputeModal()">
+    <div class="ty-modal-box my-auto relative bg-white rounded-2xl shadow-2xl border border-slate-200/90 w-full max-w-lg max-h-[88vh] overflow-hidden transform transition-all">
+        <div class="px-6 pt-6 pb-5 sm:px-7 sm:pt-7 sm:pb-5 border-b border-slate-100 flex items-start justify-between bg-slate-50/80">
             <div>
-                <span class="status-badge" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-size: 0.72rem; padding: 3px 8px; font-weight: 800;">HAVUZ KORUMASI / İADE TALEBİ</span>
-                <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin-top: 6px; margin-bottom: 2px;">Sipariş İade &amp; İtiraz Talebi</h3>
-                <small style="color: #64748b; font-size: 0.8rem;">Talebiniz incelenene kadar havuzdaki ödeme satıcıya aktarılmaz, bloke devam eder.</small>
+                <div class="mb-2">
+                    <span class="status-badge bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-bold px-2 py-0.5 rounded-md">HAVUZ KORUMASI / İADE TALEBİ</span>
+                </div>
+                <h3 class="text-base font-extrabold text-slate-900">Sipariş İade &amp; İtiraz Talebi</h3>
+                <p class="text-xs text-slate-500 mt-1">Talebiniz incelenene kadar havuzdaki ödeme satıcıya aktarılmaz, bloke devam eder.</p>
             </div>
-            <button type="button" onclick="closeDisputeModal()" style="border: none; background: transparent; font-size: 1.3rem; cursor: pointer; color: #64748b;">&times;</button>
+            <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer text-base leading-none shrink-0 ml-4 -mt-1 -mr-1" onclick="closeDisputeModal()" aria-label="Kapat">✕</button>
         </div>
 
         <form id="disputeForm" onsubmit="submitDisputeForm(event)">
             <input type="hidden" id="disputeOrderID" />
             
-            <div style="margin-bottom: 14px;">
-                <label style="font-size: 0.82rem; font-weight: 750; color: #334155; display: block; margin-bottom: 4px;">İtiraz / İade Nedeni *</label>
-                <select id="disputeReason" class="form-control" style="font-size: 0.88rem; border-radius: 8px;" required>
-                    <option value="Ayıplı / Kusurlu Ürün">Ayıplı / Kusurlu Ürün</option>
-                    <option value="Yanlış Ürün Gönderimi">Yanlış Ürün Gönderimi</option>
-                    <option value="Eksik Adet / Parça Teslimatı">Eksik Adet / Parça Teslimatı</option>
-                    <option value="Kargo Hasarı">Kargo Sırasında Hasar Görmüş</option>
-                    <option value="Ürün Teslim Edilmedi">Kargo Ulaşmadı / Teslim Edilmedi</option>
-                    <option value="Diğer Şartname Uyumsuzluğu">Diğer Teknik Şartname Uyumsuzluğu</option>
-                </select>
+            <div class="p-6 space-y-4 text-xs">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5" for="disputeReason">İtiraz / İade Nedeni <span class="text-rose-500 font-bold">*</span></label>
+                    <select id="disputeReason" class="form-control w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" required>
+                        <option value="Ayıplı / Kusurlu Ürün">Ayıplı / Kusurlu Ürün</option>
+                        <option value="Yanlış Ürün Gönderimi">Yanlış Ürün Gönderimi</option>
+                        <option value="Eksik Adet / Parça Teslimatı">Eksik Adet / Parça Teslimatı</option>
+                        <option value="Kargo Hasarı">Kargo Sırasında Hasar Görmüş</option>
+                        <option value="Ürün Teslim Edilmedi">Kargo Ulaşmadı / Teslim Edilmedi</option>
+                        <option value="Diğer Şartname Uyumsuzluğu">Diğer Teknik Şartname Uyumsuzluğu</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5" for="disputeDescription">Detaylı Açıklama <span class="text-rose-500 font-bold">*</span></label>
+                    <textarea id="disputeDescription" class="form-control w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" rows="4" placeholder="Üründeki sorunu, sevk irsaliyesi veya hasar detayını açıklayınız..." required></textarea>
+                </div>
             </div>
 
-            <div style="margin-bottom: 18px;">
-                <label style="font-size: 0.82rem; font-weight: 750; color: #334155; display: block; margin-bottom: 4px;">Detaylı Açıklama *</label>
-                <textarea id="disputeDescription" class="form-control" rows="4" placeholder="Üründeki sorunu, sevk irsaliyesi veya hasar detayını açıklayınız..." style="font-size: 0.85rem; border-radius: 8px;" required></textarea>
-            </div>
-
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button type="button" class="btn-cancel" onclick="closeDisputeModal()">Vazgeç</button>
-                <button type="submit" id="btnSubmitDispute" class="btn-primary" style="padding: 10px 20px; font-weight: 750; background: #dc2626; border: none; border-radius: 8px; color: #fff; cursor: pointer;">
+            <div class="px-6 py-3.5 border-t border-slate-100 bg-slate-50/80 flex items-center justify-end gap-2.5">
+                <button type="button" class="btn-cancel px-4 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition shadow-2xs cursor-pointer" onclick="closeDisputeModal()">Vazgeç</button>
+                <button type="submit" id="btnSubmitDispute" class="btn-primary px-4.5 py-2 rounded-lg text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-xs shadow-rose-600/20 transition cursor-pointer">
                     İtirazı Kaydet &amp; Havuzu Dondur
                 </button>
             </div>
@@ -581,28 +707,32 @@
 </div>
 
 <!-- Modal: Alıcı Gerekçeli Sipariş İptali -->
-<div id="buyerCancelOrderModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(4px); z-index: 100002; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this)closeBuyerCancelModal()">
-    <div class="ty-modal-box" style="background: #fff; border: 1px solid #fecaca; border-radius: 14px; width: 100%; max-width: 460px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(220,38,38,0.2);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+<div id="buyerCancelOrderModal" class="ty-modal-overlay fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 md:p-8 overflow-y-auto" style="display: none;" onclick="if(event.target===this)closeBuyerCancelModal()">
+    <div class="ty-modal-box my-auto relative bg-white rounded-2xl shadow-2xl border border-slate-200/90 w-full max-w-md max-h-[88vh] overflow-hidden transform transition-all">
+        <div class="px-6 pt-6 pb-5 sm:px-7 sm:pt-7 sm:pb-5 border-b border-slate-100 flex items-start justify-between bg-slate-50/80">
             <div>
-                <span class="status-badge" style="background:#fef2f2; color:#991b1b; border:1px solid #fecaca; font-size: 0.72rem; padding: 2px 8px;">SİPARİŞ İPTAL TALEBİ</span>
-                <h3 id="buyerCancelOrderModalTitle" style="font-size: 1.15rem; font-weight: 800; color: #991b1b; margin-top: 6px; margin-bottom: 2px;">Siparişi İptal Et</h3>
-                <small style="color: #64748b; font-size: 0.78rem;">Siparişiniz henüz kargoya verilmediği için kesintisiz iptal edebilirsiniz.</small>
+                <div class="mb-2">
+                    <span class="status-badge bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-bold px-2 py-0.5 rounded-md">SİPARİŞ İPTAL TALEBİ</span>
+                </div>
+                <h3 id="buyerCancelOrderModalTitle" class="text-base font-extrabold text-slate-900">Siparişi İptal Et</h3>
+                <p class="text-xs text-slate-500 mt-1">Siparişiniz henüz kargoya verilmediği için kesintisiz iptal edebilirsiniz.</p>
             </div>
-            <button type="button" onclick="closeBuyerCancelModal()" style="border: none; background: transparent; font-size: 1.2rem; cursor: pointer; color: #64748b;">✕</button>
+            <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer text-base leading-none shrink-0 ml-4 -mt-1 -mr-1" onclick="closeBuyerCancelModal()" aria-label="Kapat">✕</button>
         </div>
 
         <form id="buyerCancelOrderForm" onsubmit="submitBuyerCancelOrder(event); return false;">
             <input type="hidden" id="buyerCancelOrderID" />
 
-            <div style="margin-bottom: 16px;">
-                <label style="display: block; font-size: 0.82rem; font-weight: 750; margin-bottom: 4px; color: #0f172a;">İptal Gerekçesi (Zorunlu) *</label>
-                <textarea id="buyerCancelOrderReason" class="form-control" rows="3" placeholder="Örn: Yanlış ürün seçimi yaptım / Satın almaktan vazgeçtim." style="font-size: 0.86rem;" required></textarea>
+            <div class="p-6 space-y-4 text-xs">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5" for="buyerCancelOrderReason">İptal Gerekçesi (Zorunlu) <span class="text-rose-500 font-bold">*</span></label>
+                    <textarea id="buyerCancelOrderReason" class="form-control w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" rows="3" placeholder="Örn: Yanlış ürün seçimi yaptım / Satın almaktan vazgeçtim." required></textarea>
+                </div>
             </div>
 
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button type="button" class="btn-cancel" onclick="closeBuyerCancelModal()">Vazgeç</button>
-                <button type="submit" id="btnSubmitBuyerCancel" class="btn-primary" style="padding: 10px 18px; font-weight: 750; background: #dc2626; border: none; box-shadow: 0 4px 12px rgba(220,38,38,0.35);">
+            <div class="px-6 py-3.5 border-t border-slate-100 bg-slate-50/80 flex items-center justify-end gap-2.5">
+                <button type="button" class="btn-cancel px-4 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition shadow-2xs cursor-pointer" onclick="closeBuyerCancelModal()">Vazgeç</button>
+                <button type="submit" id="btnSubmitBuyerCancel" class="btn-primary px-4.5 py-2 rounded-lg text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-xs shadow-rose-600/20 transition cursor-pointer">
                     Siparişi İptal Et &amp; İade Al
                 </button>
             </div>
@@ -611,15 +741,17 @@
 </div>
 
 <!-- Modal: 10 Yıldız Satıcı Değerlendirme Modalı (Alıcı -> Satıcı) -->
-<div id="buyerRateOrderModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.75); backdrop-filter: blur(5px); z-index: 100000; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this)closeBuyerRateOrderModal()">
-    <div class="ty-modal-box" style="background: var(--card-bg, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 14px; width: 100%; max-width: 520px; padding: 26px; box-shadow: 0 25px 35px -5px rgba(0,0,0,0.25);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+<div id="buyerRateOrderModal" class="ty-modal-overlay fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 md:p-8 overflow-y-auto" style="display: none;" onclick="if(event.target===this)closeBuyerRateOrderModal()">
+    <div class="ty-modal-box my-auto relative bg-white rounded-2xl shadow-2xl border border-slate-200/90 w-full max-w-lg max-h-[88vh] overflow-hidden transform transition-all">
+        <div class="px-6 pt-6 pb-5 sm:px-7 sm:pt-7 sm:pb-5 border-b border-slate-100 flex items-start justify-between bg-slate-50/80">
             <div>
-                <span class="status-badge badge-emerald" style="font-size: 0.72rem; padding: 2px 8px;">DOĞRULANMIŞ SATIN ALIM</span>
-                <h3 id="rateModalSellerTitle" style="font-size: 1.25rem; font-weight: 800; color: var(--text, #0f172a); margin-top: 6px; margin-bottom: 2px;">Satıcıyı Değerlendir</h3>
-                <small style="color: var(--muted); font-size: 0.8rem;">Bu değerlendirme satıcının onaylı profiline ve karne istatistiklerine yansıyacaktır.</small>
+                <div class="mb-2">
+                    <span class="status-badge badge-emerald text-[11px] font-bold px-2 py-0.5 rounded-md">DOĞRULANMIŞ SATIN ALIM</span>
+                </div>
+                <h3 id="rateModalSellerTitle" class="text-base font-extrabold text-slate-900">Satıcıyı Değerlendir</h3>
+                <p class="text-xs text-slate-500 mt-1">Bu değerlendirme satıcının onaylı profiline ve karne istatistiklerine yansıyacaktır.</p>
             </div>
-            <button type="button" onclick="closeBuyerRateOrderModal()" style="border: none; background: transparent; font-size: 1.3rem; cursor: pointer; color: var(--muted);">&times;</button>
+            <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer text-base leading-none shrink-0 ml-4 -mt-1 -mr-1" onclick="closeBuyerRateOrderModal()" aria-label="Kapat">✕</button>
         </div>
 
         <form id="buyerRateOrderForm" onsubmit="submitBuyerRateOrder(event)">
@@ -628,43 +760,45 @@
             <input type="hidden" id="rateModalSupplierCompanyName" />
             <input type="hidden" id="rateModalScore" value="10" />
 
-            <!-- 10 Yıldız Seçici -->
-            <div style="text-align: center; margin-bottom: 16px; background: rgba(245,158,11,0.05); padding: 14px; border-radius: 10px; border: 1px solid rgba(245,158,11,0.15);">
-                <label style="display: block; font-size: 0.84rem; font-weight: 700; color: var(--text); margin-bottom: 6px;">Satıcı Genel Memnuniyet Puanı (10 Yıldız)</label>
-                <div style="display: flex; justify-content: center; gap: 4px;" id="buyerStarPickerWrap">
-                    @for (int i = 1; i <= 10; i++)
-                    {
-                        <button type="button" class="btn-star-pick" data-val="@i" onclick="pickBuyerScore(@i)" onmouseenter="previewBuyerScore(@i)" onmouseleave="restoreBuyerScore()" style="background: none; border: none; font-size: 1.8rem; color: #f59e0b; cursor: pointer; padding: 2px; transition: transform 0.15s;">★</button>
-                    }
+            <div class="p-6 space-y-4 text-xs">
+                <!-- 10 Yıldız Seçici -->
+                <div class="text-center p-4 bg-amber-50/60 border border-amber-200/80 rounded-xl space-y-1.5">
+                    <label class="block text-xs font-bold text-slate-800">Satıcı Genel Memnuniyet Puanı (10 Yıldız)</label>
+                    <div class="flex justify-center gap-1 py-1" id="buyerStarPickerWrap">
+                        @for (int i = 1; i <= 10; i++)
+                        {
+                            <button type="button" class="btn-star-pick text-2xl text-amber-500 hover:scale-110 transition-transform p-0.5 cursor-pointer bg-transparent border-none leading-none" data-val="@i" onclick="pickBuyerScore(@i)" onmouseenter="previewBuyerScore(@i)" onmouseleave="restoreBuyerScore()">★</button>
+                        }
+                    </div>
+                    <div id="buyerScoreText" class="text-sm font-extrabold text-amber-600">★ 10.0 / 10 - Mükemmel</div>
                 </div>
-                <div id="buyerScoreText" style="font-size: 1.05rem; font-weight: 800; color: #d97706; margin-top: 6px;">★ 10.0 / 10 - Mükemmel</div>
+
+                <!-- Alt Kriterler (10 Üzerinden) -->
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1" for="rateModalDelivery">Teslimat Hızı</label>
+                        <input type="number" id="rateModalDelivery" class="form-control w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-semibold text-center" value="10" min="1" max="10" step="0.5" />
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1" for="rateModalQuality">Ürün Kalitesi</label>
+                        <input type="number" id="rateModalQuality" class="form-control w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-semibold text-center" value="10" min="1" max="10" step="0.5" />
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1" for="rateModalComm">İletişim &amp; Süreç</label>
+                        <input type="number" id="rateModalComm" class="form-control w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-semibold text-center" value="10" min="1" max="10" step="0.5" />
+                    </div>
+                </div>
+
+                <!-- Yorum -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1" for="rateModalComment">Yorumunuz (Opsiyonel)</label>
+                    <textarea id="rateModalComment" class="form-control w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" rows="3" placeholder="Teslimat süreci, ambalaj ve şartnameye uygunluk nasıldı?"></textarea>
+                </div>
             </div>
 
-            <!-- Alt Kriterler (10 Üzerinden) -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px;">
-                <div>
-                    <label style="font-size: 0.74rem; font-weight: 700; display: block; margin-bottom: 4px;">Teslimat Hızı</label>
-                    <input type="number" id="rateModalDelivery" class="form-control" value="10" min="1" max="10" step="0.5" style="font-size: 0.85rem; padding: 6px 10px;" />
-                </div>
-                <div>
-                    <label style="font-size: 0.74rem; font-weight: 700; display: block; margin-bottom: 4px;">Ürün Kalitesi</label>
-                    <input type="number" id="rateModalQuality" class="form-control" value="10" min="1" max="10" step="0.5" style="font-size: 0.85rem; padding: 6px 10px;" />
-                </div>
-                <div>
-                    <label style="font-size: 0.74rem; font-weight: 700; display: block; margin-bottom: 4px;">İletişim &amp; Süreç</label>
-                    <input type="number" id="rateModalComm" class="form-control" value="10" min="1" max="10" step="0.5" style="font-size: 0.85rem; padding: 6px 10px;" />
-                </div>
-            </div>
-
-            <!-- Yorum -->
-            <div class="form-group" style="margin-bottom: 18px;">
-                <label style="font-size: 0.82rem; font-weight: 700; display: block; margin-bottom: 4px;">Yorumunuz (Opsiyonel)</label>
-                <textarea id="rateModalComment" class="form-control" rows="3" placeholder="Teslimat süreci, ambalaj ve şartnameye uygunluk nasıldı?" style="font-size: 0.85rem;"></textarea>
-            </div>
-
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button type="button" class="btn-cancel" onclick="closeBuyerRateOrderModal()">Vazgeç</button>
-                <button type="submit" id="btnSubmitBuyerRate" class="btn-primary" style="padding: 10px 20px; font-weight: 700; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none;">
+            <div class="px-6 py-3.5 border-t border-slate-100 bg-slate-50/80 flex items-center justify-end gap-2.5">
+                <button type="button" class="btn-cancel px-4 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition shadow-2xs cursor-pointer" onclick="closeBuyerRateOrderModal()">Vazgeç</button>
+                <button type="submit" id="btnSubmitBuyerRate" class="btn-primary px-4.5 py-2 rounded-lg text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 shadow-xs shadow-amber-500/20 transition cursor-pointer">
                     Değerlendir &amp; Gönder
                 </button>
             </div>
@@ -833,34 +967,57 @@
             const search = (document.getElementById('buyerOrderSearchInput')?.value || '').trim().toLowerCase();
             const status = currentBuyerStatus || 'Tümü';
             const rows = document.querySelectorAll('tr[id^="buyer-order-row-"]');
+            const mobileCards = document.querySelectorAll('.mobile-order-card');
             let visibleCount = 0;
+
+            function isMatch(itemStatus, itemSearch) {
+                let matchStatus = false;
+                if (status === 'Tümü' || status === 'all' || !status) {
+                    matchStatus = true;
+                } else if (status === 'Onaylandı') {
+                    matchStatus = (itemStatus === 'Onaylandı' || itemStatus === 'Yeni');
+                } else if (status === 'Kargoya Verildi') {
+                    matchStatus = (itemStatus === 'Kargoya Verildi' || itemStatus === 'Hazırlanıyor');
+                } else if (status === 'Teslim Edildi') {
+                    matchStatus = (itemStatus === 'Teslim Edildi' || itemStatus === 'Tamamlandı');
+                } else {
+                    matchStatus = (itemStatus.toLowerCase() === status.toLowerCase());
+                }
+
+                const matchSearch = (!search || itemSearch.includes(search));
+                return matchStatus && matchSearch;
+            }
 
             rows.forEach(row => {
                 const rowStatus = row.getAttribute('data-status') || '';
                 const rowSearch = row.getAttribute('data-search') || '';
 
-                let matchStatus = false;
-                if (status === 'Tümü' || status === 'all' || !status) {
-                    matchStatus = true;
-                } else if (status === 'Onaylandı') {
-                    matchStatus = (rowStatus === 'Onaylandı' || rowStatus === 'Yeni');
-                } else if (status === 'Kargoya Verildi') {
-                    matchStatus = (rowStatus === 'Kargoya Verildi' || rowStatus === 'Hazırlanıyor');
-                } else if (status === 'Teslim Edildi') {
-                    matchStatus = (rowStatus === 'Teslim Edildi' || rowStatus === 'Tamamlandı');
-                } else {
-                    matchStatus = (rowStatus.toLowerCase() === status.toLowerCase());
-                }
-
-                const matchSearch = (!search || rowSearch.includes(search));
-
-                if (matchStatus && matchSearch) {
+                if (isMatch(rowStatus, rowSearch)) {
                     row.style.display = '';
                     visibleCount++;
                 } else {
                     row.style.display = 'none';
                 }
             });
+
+            // Mobil kartları da senkronize filtrele
+            mobileCards.forEach(card => {
+                const cardStatus = card.getAttribute('data-status') || '';
+                const cardSearch = card.getAttribute('data-search') || '';
+
+                if (isMatch(cardStatus, cardSearch)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            // Eğer masaüstü satır yoksa ama mobil kart varsa sayaç mobil kartlardan alınsın
+            if (rows.length === 0 && mobileCards.length > 0) {
+                let mobileVisible = 0;
+                mobileCards.forEach(c => { if (c.style.display !== 'none') mobileVisible++; });
+                visibleCount = mobileVisible;
+            }
 
             const titleHeader = document.querySelector('article.card .head-with-icon h2');
             if (titleHeader) {
@@ -872,6 +1029,7 @@
                 clearBtn.style.display = (search !== '' || (status !== 'Tümü' && status !== '')) ? 'inline-flex' : 'none';
             }
 
+            // Desktop boş arama durumu
             let emptySearchRow = document.getElementById('buyerOrdersEmptySearchRow');
             if (rows.length > 0 && visibleCount === 0) {
                 if (!emptySearchRow) {
@@ -884,6 +1042,12 @@
                 emptySearchRow.style.display = '';
             } else if (emptySearchRow) {
                 emptySearchRow.style.display = 'none';
+            }
+
+            // Mobil boş arama durumu
+            const mobileEmptySearch = document.getElementById('buyerOrdersMobileEmptySearch');
+            if (mobileEmptySearch) {
+                mobileEmptySearch.style.display = (mobileCards.length > 0 && visibleCount === 0) ? 'block' : 'none';
             }
 
             // URL state güncellemesi (sayfa yenilenmeden)
@@ -965,45 +1129,44 @@
                     let trackingHtml = '';
                     if (item.trackingNumber && item.trackingNumber.trim() !== '' && item.trackingNumber !== 'null') {
                         trackingHtml = `
-                            <div style="margin-top: 8px; padding: 6px 12px; background: #f0fdf4; border-radius: 6px; font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; border: 1px dashed #86efac;">
-                                <span style="color: #166534;"><strong>${item.shippingCarrier || 'Kargo'}:</strong> <code style="background: #fff; padding: 2px 6px; border-radius: 4px; font-weight: 700; border: 1px solid #bbf7d0;">${item.trackingNumber}</code></span>
-                                <span style="color: #15803d; font-weight: 750; font-size: 0.72rem;">Kargo Takipte</span>
+                            <div class="mt-2 p-2 bg-emerald-50/70 rounded-lg text-xs flex items-center justify-between border border-dashed border-emerald-300">
+                                <span class="text-emerald-800"><strong class="font-bold">${item.shippingCarrier || 'Kargo'}:</strong> <code class="bg-white px-1.5 py-0.5 rounded text-[11px] font-bold border border-emerald-200 text-emerald-900">${item.trackingNumber}</code></span>
+                                <span class="text-emerald-700 font-bold text-[11px]">Kargo Takipte</span>
                             </div>
                         `;
                     }
 
                     const itemCard = document.createElement('div');
-                    itemCard.className = 'order-detail-item-card';
-                    itemCard.style.cssText = 'background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);';
+                    itemCard.className = 'order-detail-item-card p-3.5 bg-white border border-slate-200/90 rounded-xl shadow-2xs space-y-2.5';
                     
                     itemCard.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #f8fafc; padding-bottom: 6px;">
-                            <div style="display: flex; align-items: center; gap: 6px;">
-                                <span style="font-size: 0.78rem; font-weight: 800; color: #1e293b;">Satıcı:</span>
-                                <a href="${sellerLink}" target="_blank" style="font-size: 0.8rem; font-weight: 750; color: #2563eb; text-decoration: none;" title="Satıcı Profilini İncele">
+                        <div class="flex justify-between items-start flex-wrap gap-2 pb-2 border-b border-slate-100">
+                            <div class="flex items-center gap-1.5 text-xs">
+                                <span class="font-bold text-slate-700">Satıcı:</span>
+                                <a href="${sellerLink}" target="_blank" class="font-semibold text-blue-600 hover:text-blue-700 hover:underline inline-flex items-center gap-0.5" title="Satıcı Profilini İncele">
                                     ${item.supplierName} ↗
                                 </a>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 6px;">
-                                <span class="status-badge ${badgeClass}" style="font-size: 0.72rem; padding: 2px 8px; font-weight: 800; border-radius: 999px;">
+                            <div class="flex items-center gap-1.5">
+                                <span class="status-badge ${badgeClass} text-[11px] font-bold px-2 py-0.5 rounded-md">
                                     ${item.status}
                                 </span>
-                                <button type="button" class="btn-primary" style="padding: 3px 8px; font-size: 0.72rem; font-weight: 750; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none; border-radius: 5px; cursor: pointer;" onclick="openBuyerReviewModalForOrder(${data.orderId}, '${(item.supplierName || '').replace(/'/g, "\\'")}', ${item.supplierCompanyId || 0})">
+                                <button type="button" class="px-2 py-1 text-[11px] font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-md shadow-2xs transition cursor-pointer" onclick="openBuyerReviewModalForOrder(${data.orderId}, '${(item.supplierName || '').replace(/'/g, "\\'")}', ${item.supplierCompanyId || 0})">
                                     ★ Satıcıyı Değerlendir
                                 </button>
                             </div>
                         </div>
 
-                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                        <div class="flex justify-between items-center gap-3">
                             <div>
-                                <div style="font-size: 0.9rem; font-weight: 800; color: #0f172a;">${item.productName}</div>
-                                <div style="font-size: 0.74rem; color: #64748b; margin-top: 2px;">
-                                    Stok Kodu: <span style="font-family: monospace; font-weight: 600; color: #334155;">${item.sku}</span> | Kategori: <span style="color: #475569;">${item.categoryName}</span>
+                                <div class="text-xs font-bold text-slate-900">${item.productName}</div>
+                                <div class="text-[11px] text-slate-500 mt-0.5">
+                                    Stok Kodu: <span class="font-mono font-semibold text-slate-700">${item.sku}</span> | Kategori: <span class="text-slate-600">${item.categoryName}</span>
                                 </div>
                             </div>
-                            <div style="text-align: right; white-space: nowrap;">
-                                <div style="font-size: 0.78rem; color: #64748b;">${item.quantity} Adet × ${item.unitPrice}</div>
-                                <strong style="font-size: 0.95rem; font-weight: 850; color: #059669;">= ${item.lineTotal}</strong>
+                            <div class="text-right whitespace-nowrap">
+                                <div class="text-[11px] text-slate-500">${item.quantity} Adet × ${item.unitPrice}</div>
+                                <strong class="text-xs font-extrabold text-emerald-600">= ${item.lineTotal}</strong>
                             </div>
                         </div>
 

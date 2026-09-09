@@ -210,14 +210,14 @@
     .req-table-card {
         background: var(--surface, #FFFFFF);
         border: 1px solid var(--grid, #E2E8F0);
-        border-radius: 14px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        border-radius: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
         overflow: hidden;
     }
 
     .req-table-header {
-        padding: 18px 20px;
-        border-bottom: 1px solid var(--hairline, #E2E8F0);
+        padding: 16px 22px;
+        border-bottom: 1px solid #F1F5F9;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -237,28 +237,49 @@
         color: #64748B;
     }
 
+    .table-scroll-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        scrollbar-width: thin;
+        scrollbar-color: #CBD5E1 #F8FAFC;
+    }
+
+    .table-scroll-wrap::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .table-scroll-wrap::-webkit-scrollbar-track {
+        background: #F8FAFC;
+    }
+
+    .table-scroll-wrap::-webkit-scrollbar-thumb {
+        background: #CBD5E1;
+        border-radius: 3px;
+    }
+
     .req-data-table {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        font-size: 0.84rem;
+        font-size: 0.83rem;
         text-align: left;
     }
 
     .req-data-table th {
         background: #F8FAFC;
         color: #64748B;
-        font-size: 0.72rem;
+        font-size: 0.70rem;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        padding: 12px 16px;
+        letter-spacing: 0.04em;
+        padding: 11px 13px;
         border-bottom: 1px solid #E2E8F0;
         white-space: nowrap;
     }
 
     .req-data-table td {
-        padding: 14px 16px;
+        padding: 12px 13px;
         border-bottom: 1px solid #F1F5F9;
         color: #334155;
         vertical-align: middle;
@@ -279,6 +300,7 @@
         display: flex;
         flex-direction: column;
         gap: 3px;
+        white-space: nowrap;
     }
 
     .req-id-badge {
@@ -286,37 +308,40 @@
         align-items: center;
         width: fit-content;
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-        font-size: 0.78rem;
+        font-size: 0.76rem;
         font-weight: 700;
         color: var(--blue, #2563EB);
         background: #EFF6FF;
         padding: 2px 7px;
         border-radius: 6px;
         border: 1px solid rgba(37, 99, 235, 0.2);
+        white-space: nowrap;
     }
 
     .req-date-text {
-        font-size: 0.74rem;
+        font-size: 0.72rem;
         color: #94A3B8;
         font-weight: 500;
+        white-space: nowrap;
     }
 
     .buyer-info-box {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 9px;
+        white-space: nowrap;
     }
 
     .buyer-avatar-circle {
-        width: 34px;
-        height: 34px;
-        border-radius: 9px;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
         background: #EFF6FF;
         color: #2563EB;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.82rem;
+        font-size: 0.80rem;
         font-weight: 700;
         flex: none;
         border: 1px solid rgba(37, 99, 235, 0.15);
@@ -325,24 +350,26 @@
     .buyer-name-title {
         font-weight: 600;
         color: var(--ink, #0F172A);
-        font-size: 0.85rem;
+        font-size: 0.83rem;
         display: block;
+        white-space: nowrap;
     }
 
     .buyer-tag-sub {
-        font-size: 0.72rem;
+        font-size: 0.70rem;
         color: #64748B;
+        white-space: nowrap;
     }
 
     .product-info-wrap {
         display: flex;
         flex-direction: column;
-        gap: 4px;
-        max-width: 260px;
+        gap: 3px;
+        min-width: 170px;
     }
 
     .product-name-text {
-        font-size: 0.88rem;
+        font-size: 0.86rem;
         font-weight: 600;
         color: var(--ink, #0F172A);
         line-height: 1.3;
@@ -351,63 +378,68 @@
     .product-meta-row {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
         flex-wrap: wrap;
     }
 
     .type-chip {
         display: inline-block;
-        font-size: 0.70rem;
+        font-size: 0.68rem;
         font-weight: 600;
         color: #475569;
         background: #F1F5F9;
-        padding: 2px 7px;
+        padding: 1.5px 6px;
         border-radius: 5px;
         border: 1px solid #E2E8F0;
+        white-space: nowrap;
     }
 
     .product-notes-snippet {
-        font-size: 0.75rem;
+        font-size: 0.73rem;
         color: #64748B;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 240px;
+        max-width: 300px;
     }
 
     .quantity-budget-wrap {
         display: flex;
         flex-direction: column;
-        gap: 3px;
+        gap: 2.5px;
+        white-space: nowrap;
     }
 
     .qty-chip {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        padding: 3px 8px;
+        gap: 3px;
+        padding: 2.5px 7px;
         border-radius: 6px;
         background: #F8FAFC;
         border: 1px solid #E2E8F0;
-        font-size: 0.80rem;
+        font-size: 0.78rem;
         font-weight: 700;
         color: var(--ink, #0F172A);
         width: fit-content;
+        white-space: nowrap;
     }
 
     .budget-amount {
-        font-size: 0.82rem;
+        font-size: 0.80rem;
         font-weight: 700;
         color: #059669;
+        white-space: nowrap;
     }
 
     .deadline-cell {
         display: flex;
         align-items: center;
-        gap: 6px;
-        font-size: 0.82rem;
+        gap: 5px;
+        font-size: 0.80rem;
         font-weight: 600;
         color: #334155;
+        white-space: nowrap;
     }
 
     .deadline-cell svg {
@@ -416,13 +448,21 @@
     }
 
     /* Teklifler Butonu / Rozeti */
+    .offers-cell-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 3px;
+        white-space: nowrap;
+    }
+
     .offers-interactive-pill {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
         padding: 5px 10px;
         border-radius: 7px;
-        font-size: 0.78rem;
+        font-size: 0.76rem;
         font-weight: 600;
         background: #EFF6FF;
         color: #2563EB;
@@ -430,6 +470,13 @@
         cursor: pointer;
         text-decoration: none;
         transition: all 0.15s ease;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .pill-offer-count-text,
+    .pill-best-price-text {
+        white-space: nowrap;
     }
 
     .offers-interactive-pill:hover {
@@ -443,6 +490,7 @@
         color: #94A3B8;
         border-color: #E2E8F0;
         cursor: pointer;
+        white-space: nowrap;
     }
     .offers-interactive-pill.is-empty:hover {
         background: #F1F5F9;
@@ -451,6 +499,9 @@
     }
 
     /* Durum Rozetleri */
+    .status-cell-wrap {
+        white-space: nowrap;
+    }
     .status-dot-badge {
         display: inline-flex;
         align-items: center;
@@ -500,8 +551,10 @@
     .actions-cluster {
         display: flex;
         align-items: center;
-        justify-content: flex-end;
+        justify-content: flex-start;
         gap: 6px;
+        white-space: nowrap;
+        flex-shrink: 0;
     }
 
     .btn-action-view {
@@ -895,15 +948,129 @@
         letter-spacing: -0.3px;
     }
 
-    /* Detay Modalındaki Kalemler Tablosu */
+    /* Detay Modalındaki Kart ve Tablo Düzenleri */
+    .detail-header-card {
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .detail-header-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .detail-code-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: #475569;
+        background: #FFFFFF;
+        border: 1px solid #CBD5E1;
+        padding: 2.5px 8px;
+        border-radius: 6px;
+    }
+    .detail-deadline-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: #B45309;
+        background: #FFFBEB;
+        border: 1px solid #FDE68A;
+        padding: 2.5px 8px;
+        border-radius: 6px;
+    }
+    .detail-header-body {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+    .detail-title-text {
+        margin: 0;
+        font-size: 1.10rem;
+        font-weight: 800;
+        color: #0F172A;
+        line-height: 1.35;
+    }
+    .detail-buyer-text {
+        font-size: 0.82rem;
+        color: #64748B;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .detail-header-footer {
+        display: flex;
+        align-items: center;
+    }
+    .detail-budget-strip {
+        width: 100%;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        padding: 7px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 0.83rem;
+        box-sizing: border-box;
+    }
+    .detail-budget-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .detail-items-container {
+        background: #F8FAFC;
+        padding: 12px 14px;
+        border-radius: 10px;
+        border: 1px solid #E2E8F0;
+    }
+    .detail-items-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        gap: 8px;
+    }
+    .detail-items-title {
+        margin: 0;
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #0F172A;
+    }
+    .detail-items-badge {
+        background: #EFF6FF;
+        color: #2563EB;
+        font-size: 0.76rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 9999px;
+        border: 1px solid #BFDBFE;
+        white-space: nowrap;
+    }
+    .detail-items-table-wrapper {
+        overflow-x: auto;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        background: #FFFFFF;
+    }
     .detail-items-table {
         width: 100%;
         border-collapse: collapse;
         font-size: 0.84rem;
         background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 9px;
-        overflow: hidden;
     }
     .detail-items-table th {
         background: #F8FAFC;
@@ -921,6 +1088,56 @@
     }
     .detail-items-table tr:last-child td {
         border-bottom: none;
+    }
+
+    .detail-notes-card {
+        background: #F8FAFC;
+        padding: 12px 14px;
+        border-radius: 10px;
+        border: 1px solid #E2E8F0;
+    }
+    .detail-notes-title {
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    .detail-notes-body {
+        margin: 4px 0 0 0;
+        font-size: 0.85rem;
+        color: #334155;
+        line-height: 1.5;
+    }
+
+    .detail-offers-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 6px;
+        gap: 8px;
+    }
+    .detail-offers-title {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #0F172A;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .detail-offers-badge {
+        background: #EFF6FF;
+        color: #2563EB;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 9999px;
+        border: 1px solid #BFDBFE;
+    }
+    .detail-offers-sub {
+        font-size: 0.78rem;
+        color: #64748B;
     }
 
     .custom-modal-backdrop.is-open .custom-modal-dialog {
@@ -1604,7 +1821,7 @@
         </button>
     </form>
 
-    <nav class="year-filter" aria-label="Talep durum filtresi" id="requestsStatusFilterNav">
+    <nav class="year-filter status-grid-2x2" aria-label="Talep durum filtresi" id="requestsStatusFilterNav">
         <button type="button" class="year-pill is-active"
            data-status="Tümü"
            onclick="window.RequestsManager.setStatus('Tümü', this)">Tümü</button>
@@ -1621,7 +1838,7 @@
 </div>
 
 <!-- ============ MEVCUT TALEPLER TABLO KARTI ============ -->
-<article class="req-table-card">
+<article class="req-table-card card-flush-mobile p-2 sm:p-5">
     <div class="req-table-header">
         <div>
             <h2>Talep Listesi</h2>
@@ -1631,18 +1848,18 @@
         </div>
     </div>
 
-    <div class="table-scroll-wrap">
+    <div class="hidden md:block table-scroll-wrap">
         <table class="req-data-table">
             <thead>
                 <tr>
-                    <th style="width: 140px;">Talep No & Tarih</th>
-                    <th>Alıcı Firma</th>
-                    <th>Aranan Ürün / Hizmet</th>
-                    <th style="width: 150px;">Miktar & Bütçe</th>
-                    <th style="width: 130px;">Termin Tarihi</th>
-                    <th style="width: 170px;">Gelen Teklifler</th>
-                    <th style="width: 140px;">Durum</th>
-                    <th style="text-align: right; width: 150px;">İşlemler</th>
+                    <th style="width: 125px; min-width: 120px;">Talep No &amp; Tarih</th>
+                    <th style="width: 135px; min-width: 125px;">Alıcı Firma</th>
+                    <th style="min-width: 200px;">Aranan Ürün / Hizmet</th>
+                    <th style="width: 110px; min-width: 100px;">Miktar &amp; Bütçe</th>
+                    <th style="width: 105px; min-width: 95px;">Termin Tarihi</th>
+                    <th style="width: 150px; min-width: 140px;">Gelen Teklifler</th>
+                    <th style="width: 115px; min-width: 105px;">Durum</th>
+                    <th style="text-align: left; width: 155px; min-width: 140px;">İşlemler</th>
                 </tr>
             </thead>
             <tbody id="requestsTableBody">
@@ -1832,7 +2049,7 @@
                                 </div>
                             </td>
 
-                            <td style="text-align: right;">
+                            <td style="text-align: left;">
                                 <div class="actions-cluster" data-actions-cluster-id="@item.RequestID">
                                     <!-- Fiyat Kıyaslama Butonu (Sadece Talebi Açan Kişi / Firma ve Teklif Varsa) -->
                                     @if (item.IsOwner && item.OfferCount > 0)
@@ -1865,6 +2082,10 @@
                                             else if (item.MyOfferStatus != "Kabul Edildi" && item.MyOfferStatus != "Onaylandı")
                                             {
                                                 <button type="button" class="btn-action-bid" data-bid-btn-id="@item.RequestID" onclick="openOfferModal(@item.RequestID, '@Html.Raw(item.ProductName.Replace("'", "\\'"))', '@(item.MyOfferPrice?.ToString() ?? "")', '@(item.MyOfferDeliveryDays?.ToString() ?? "7")', '@Html.Raw((item.MyOfferNotes ?? "").Replace("'", "\\'"))')">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                    </svg>
                                                     Teklifi Düzenle
                                                 </button>
                                             }
@@ -1872,6 +2093,10 @@
                                         else
                                         {
                                             <button type="button" class="btn-action-bid" data-bid-btn-id="@item.RequestID" onclick="openOfferModal(@item.RequestID, '@Html.Raw(item.ProductName.Replace("'", "\\'"))', '', '7', '')">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                                </svg>
                                                 Teklif Ver
                                             </button>
                                         }
@@ -1894,6 +2119,131 @@
                 }
             </tbody>
         </table>
+    </div>
+
+    <!-- Mobil Kompakt Talep Listesi (Sadece ayırt edici bilgiler, basıldığında detay modalı) -->
+    <div class="block md:hidden p-0 space-y-2.5" id="requestsMobileList">
+        @if (Model.Requests == null || !Model.Requests.Any())
+        {
+            <div class="text-center py-10 px-4 text-slate-400 bg-white rounded-xl border border-slate-200/90">
+                <div class="mb-3 flex justify-center text-blue-500">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>
+                </div>
+                <div class="text-sm font-bold text-slate-800 mb-1">Bu Kriterde Talep Bulunamadı</div>
+                <p class="text-xs text-slate-500 mb-3">Seçili sekme veya arama kriterinize uygun talep kaydı bulunmamaktadır.</p>
+                <button type="button" class="btn-primary inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 cursor-pointer" onclick="openCreateModal()">
+                    + Yeni Talep Oluştur
+                </button>
+            </div>
+        }
+        else
+        {
+            @foreach (var item in Model.Requests)
+            {
+                var searchableText = $"{item.RequestID} {item.BuyerInfo} {item.ProductName} {item.RequestType} {item.Notes} {(item.Items != null ? string.Join(" ", item.Items.Select(i => i.ItemName)) : "")}".ToLowerInvariant();
+
+                var statusBadgeClass = (item.Status == "Beklemede" || item.Status == "Açık" || item.Status == "Yeni") ? "bg-amber-50 text-amber-700 border-amber-200/80"
+                    : (item.Status == "Teklif Alındı" ? "bg-blue-50 text-blue-700 border-blue-200/80"
+                    : (item.Status == "Onaylandı" || item.Status == "Kabul Edildi" ? "bg-emerald-50 text-emerald-700 border-emerald-200/80"
+                    : "bg-slate-100 text-slate-700 border-slate-200"));
+
+                <div class="mobile-request-card w-full bg-white rounded-xl border border-slate-200/90 p-3.5 sm:p-4 shadow-2xs hover:border-blue-300 hover:shadow-xs active:scale-[0.99] transition cursor-pointer flex flex-col gap-2"
+                     id="mobile-req-@item.RequestID"
+                     data-request-id="@item.RequestID"
+                     data-is-owner="@(item.IsOwner ? "true" : "false")"
+                     data-has-my-offer="@(item.HasMyOffer ? "true" : "false")"
+                     data-offer-count="@item.OfferCount"
+                     data-status="@item.Status"
+                     data-search="@searchableText"
+                     onclick="openDetailModal(@item.RequestID)">
+                     
+                    <!-- 1. Satır: Talep No, Tarih & Durum Rozeti -->
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-1.5 min-w-0">
+                            <span class="font-mono text-xs sm:text-[13px] font-bold text-blue-600 truncate">#REQ-@item.RequestID.ToString("D4")</span>
+                            <span class="text-[11px] text-slate-400 shrink-0">• @item.RequestDate.ToString("dd.MM.yyyy HH:mm")</span>
+                        </div>
+                        <span class="status-badge shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border @statusBadgeClass">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
+                            @item.Status
+                        </span>
+                    </div>
+
+                    <!-- 2. Satır: Aranan Ürün / Hizmet Başlığı + Kalem Sayısı Rozeti -->
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0 flex-1">
+                            <h4 class="text-xs sm:text-[13px] font-extrabold text-slate-900 leading-snug line-clamp-2">@item.ProductName</h4>
+                        </div>
+                        @if (item.Items != null && item.Items.Count > 1)
+                        {
+                            <span class="shrink-0 text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md border border-indigo-200/70 flex items-center gap-1">
+                                <span>📋</span> @item.Items.Count Kalem
+                            </span>
+                        }
+                    </div>
+
+                    <!-- 3. Satır: Alıcı Firma + Varsa Benim Talebim Rozeti + Termin Tarihi -->
+                    <div class="flex items-center justify-between gap-2 text-xs text-slate-600">
+                        <div class="flex items-center gap-1.5 min-w-0">
+                            <span class="text-[11px] text-slate-400 shrink-0">Alıcı:</span>
+                            <strong class="text-slate-800 font-semibold truncate">@item.BuyerInfo</strong>
+                            @if (item.IsOwner)
+                            {
+                                <span class="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 shrink-0">Benim Talebim</span>
+                            }
+                        </div>
+                        <div class="shrink-0 text-[11px] text-slate-500 flex items-center gap-1">
+                            <span>📅</span>
+                            <span>@(item.TargetDeliveryDate.HasValue ? item.TargetDeliveryDate.Value.ToString("dd.MM.yyyy") : "Belirtilmedi")</span>
+                        </div>
+                    </div>
+
+                    <!-- 4. Satır: Miktar & Bütçe + Teklif Durumu + Detay Gör Butonu/Oku -->
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-100 mt-0.5">
+                        <div class="flex items-center gap-1.5 min-w-0 text-xs">
+                            <span class="font-bold text-slate-800">@item.Quantity.ToString("N0") Adet</span>
+                            <span class="text-slate-300">•</span>
+                            @if (item.EstimatedBudget.HasValue && item.EstimatedBudget.Value > 0)
+                            {
+                                <strong class="font-bold text-emerald-600">@item.EstimatedBudget.Value.ToString("N0") ₺</strong>
+                            }
+                            else
+                            {
+                                <span class="text-[11px] text-slate-400">Bütçe Açık</span>
+                            }
+                        </div>
+
+                        <div class="flex items-center gap-2 shrink-0">
+                            @if (item.OfferCount > 0)
+                            {
+                                <span class="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200/80 flex items-center gap-1">
+                                    <span>💬</span> @item.OfferCount Teklif
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-[11px] font-semibold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-200">
+                                    Teklif Bekleniyor
+                                </span>
+                            }
+                            <span class="text-xs font-bold text-blue-600 flex items-center gap-0.5 hover:underline">
+                                Detay <span class="text-sm">→</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        
+        <div id="requestsMobileEmptyState" style="display: none;" class="text-center py-10 px-4 bg-white rounded-xl border border-slate-200/90 text-slate-500">
+            <div class="text-3xl mb-2">🔍</div>
+            <strong class="text-sm font-bold text-slate-800 block mb-1">Bu kriterlere uygun talep bulunamadı</strong>
+            <p class="text-xs text-slate-500">Farklı bir sekme seçebilir veya filtreleri temizleyebilirsiniz.</p>
+        </div>
     </div>
 </article>
 
@@ -2051,7 +2401,7 @@
                                     <line x1="12" y1="5" x2="12" y2="19"></line>
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                 </svg>
-                                + Yeni Kalem Ekle
+                                Yeni Kalem Ekle
                             </button>
                         </div>
                     </div>
@@ -2135,27 +2485,27 @@
             <!-- Dinamik İçerik Konteyneri -->
             <div id="detailContent" style="display: none; display: flex; flex-direction: column; gap: 14px;">
                 <!-- Üst Bilgi Kartı -->
-                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; background: #F8FAFC; padding: 14px; border-radius: 10px; border: 1px solid #E2E8F0;">
-                    <div>
-                        <span class="req-meta" id="detailReqCode"></span>
-                        <h4 style="margin: 3px 0 0 0; color: #0F172A; font-size: 1.05rem;" id="detailProductName"></h4>
-                        <div style="margin-top: 4px; font-size: 0.82rem; color: #475569;" id="detailBuyerInfo"></div>
+                <div class="detail-header-card">
+                    <div class="detail-header-top">
+                        <span class="detail-code-pill" id="detailReqCode"></span>
+                        <span class="detail-deadline-pill" id="detailDeadline"></span>
                     </div>
-                    <div style="text-align: right;">
-                        <span class="req-meta">Toplam Miktar / Bütçe</span>
-                        <div style="font-weight: 700; color: #0F172A; font-size: 0.92rem;" id="detailQtyBudget"></div>
-                        <div style="font-size: 0.78rem; color: #64748B; margin-top: 3px;" id="detailDeadline"></div>
+                    <div class="detail-header-body">
+                        <h4 class="detail-title-text" id="detailProductName"></h4>
+                        <div class="detail-buyer-text" id="detailBuyerInfo"></div>
+                    </div>
+                    <div class="detail-header-footer">
+                        <div class="detail-budget-strip" id="detailQtyBudget"></div>
                     </div>
                 </div>
 
                 <!-- 📋 İstenilen Malzeme ve Hizmet Kalemleri Tablosu -->
-                <div id="detailItemsContainer" style="background: #F8FAFC; padding: 12px 14px; border-radius: 10px; border: 1px solid #E2E8F0;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                        <h5 style="margin: 0; font-size: 0.88rem; font-weight: 700; color: #0F172A; display: flex; align-items: center; gap: 6px;">
-                            📋 İstenilen Malzeme ve Hizmet Kalemleri (<span id="detailItemCountBadge">0 Kalem</span>)
-                        </h5>
+                <div id="detailItemsContainer" class="detail-items-container">
+                    <div class="detail-items-header">
+                        <h5 class="detail-items-title">📋 İstenilen Malzeme ve Hizmet Kalemleri</h5>
+                        <span class="detail-items-badge" id="detailItemCountBadge">0 Kalem</span>
                     </div>
-                    <div style="overflow-x: auto; border: 1px solid #E2E8F0; border-radius: 8px; background: #FFFFFF;">
+                    <div class="detail-items-table-wrapper">
                         <table class="detail-items-table">
                             <thead>
                                 <tr>
@@ -2175,17 +2525,18 @@
                 </div>
 
                 <!-- Şartname / Açıklama Notu -->
-                <div id="detailNotesContainer" style="background: #F8FAFC; padding: 12px 14px; border-radius: 9px; border: 1px solid #E2E8F0;">
-                    <span class="req-meta">Teknik Açıklama / Genel Notlar</span>
-                    <p id="detailNotesText" style="margin: 4px 0 0 0; font-size: 0.85rem; color: #475569; line-height: 1.5;"></p>
+                <div id="detailNotesContainer" class="detail-notes-card">
+                    <div class="detail-notes-title">📌 Teknik Açıklama / Genel Notlar</div>
+                    <p id="detailNotesText" class="detail-notes-body"></p>
                 </div>
 
                 <!-- Gelen Teklifler Başlığı -->
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px;">
-                    <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #0F172A;">
-                        Gelen Tedarikçi Teklifleri (<span id="detailOfferCount">0</span>)
+                <div class="detail-offers-header">
+                    <h4 class="detail-offers-title">
+                        <span>Gelen Tedarikçi Teklifleri</span>
+                        <span class="detail-offers-badge" id="detailOfferCount">0</span>
                     </h4>
-                    <span id="detailOfferHelpText" class="req-meta"></span>
+                    <span id="detailOfferHelpText" class="detail-offers-sub"></span>
                 </div>
 
                 <!-- Teklifler Listesi -->
@@ -2513,7 +2864,9 @@
 
             apply: function() {
                 const rows = document.querySelectorAll('#requestsTableBody tr[data-request-id]');
+                const cards = document.querySelectorAll('#requestsMobileList .mobile-request-card');
                 let visibleCount = 0;
+                let visibleCardCount = 0;
 
                 const isAllDefault = (this.tab === 'all') && (this.status === 'Tümü' || !this.status) && !this.search;
 
@@ -2570,6 +2923,60 @@
                     }
                 });
 
+                // Filter Mobile Cards
+                cards.forEach(card => {
+                    if (isAllDefault) {
+                        card.style.display = '';
+                        visibleCardCount++;
+                        return;
+                    }
+
+                    const isOwner = card.getAttribute('data-is-owner') === 'true';
+                    const hasMyOffer = card.getAttribute('data-has-my-offer') === 'true';
+                    const offerCount = parseInt(card.getAttribute('data-offer-count') || '0', 10);
+                    const rowStatus = (card.getAttribute('data-status') || '').trim();
+
+                    // 1. Tab Match
+                    let matchTab = false;
+                    if (this.tab === 'all') {
+                        matchTab = true;
+                    } else if (this.tab === 'my-requests') {
+                        matchTab = isOwner;
+                    } else if (this.tab === 'incoming-offers') {
+                        matchTab = (isOwner && offerCount > 0);
+                    } else if (this.tab === 'my-bids') {
+                        matchTab = hasMyOffer;
+                    }
+
+                    // 2. Status Match
+                    let matchStatus = false;
+                    if (this.status === 'Tümü' || !this.status) {
+                        matchStatus = true;
+                    } else if (this.status === 'Beklemede' || this.status === 'Bekleyenler') {
+                        matchStatus = (rowStatus === 'Beklemede' || rowStatus === 'Açık' || rowStatus === 'Yeni' || (offerCount === 0 && rowStatus !== 'İptal Edildi' && rowStatus !== 'Reddedildi' && rowStatus !== 'Onaylandı' && rowStatus !== 'Kabul Edildi'));
+                    } else if (this.status === 'Teklif Alındı' || this.status === 'Teklif Alınanlar') {
+                        matchStatus = (rowStatus === 'Teklif Alındı' || rowStatus === 'İncelemede' || rowStatus === 'Cevap Bekliyor' || offerCount > 0);
+                    } else if (this.status === 'Onaylandı' || this.status === 'Onaylananlar') {
+                        matchStatus = (rowStatus === 'Onaylandı' || rowStatus === 'Kabul Edildi' || rowStatus === 'Tamamlandı');
+                    } else {
+                        matchStatus = (rowStatus.toLowerCase() === this.status.toLowerCase());
+                    }
+
+                    // 3. Search Match
+                    let matchSearch = true;
+                    if (this.search) {
+                        const cardSearch = (card.getAttribute('data-search') || card.innerText || card.textContent || '').toLowerCase();
+                        matchSearch = cardSearch.includes(this.search);
+                    }
+
+                    if (matchTab && matchStatus && matchSearch) {
+                        card.style.display = '';
+                        visibleCardCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
                 const clearBtn = document.getElementById('reqClearFilterBtn');
                 if (clearBtn) {
                     clearBtn.style.display = isAllDefault ? 'none' : 'inline-flex';
@@ -2587,6 +2994,15 @@
                     emptyRow.style.display = '';
                 } else if (emptyRow) {
                     emptyRow.style.display = 'none';
+                }
+
+                const mobileEmpty = document.getElementById('requestsMobileEmptyState');
+                if (mobileEmpty) {
+                    if (cards.length > 0 && visibleCardCount === 0) {
+                        mobileEmpty.style.display = 'block';
+                    } else {
+                        mobileEmpty.style.display = 'none';
+                    }
                 }
             }
         };
@@ -3312,9 +3728,9 @@
 
                 document.getElementById('detailReqCode').textContent = data.requestCode + ' · ' + data.requestDate;
                 document.getElementById('detailProductName').textContent = data.productName;
-                document.getElementById('detailBuyerInfo').textContent = 'Alıcı: ' + data.buyerInfo + ' (' + data.requestType + ')';
-                document.getElementById('detailQtyBudget').textContent = 'Toplam ' + data.quantity.toLocaleString('tr-TR') + ' Birim · Bütçe: ' + data.estimatedBudgetFormatted;
-                document.getElementById('detailDeadline').textContent = 'Termin: ' + data.targetDeliveryDate;
+                document.getElementById('detailBuyerInfo').innerHTML = '🏢 <span>Alıcı: <strong>' + escapeHtml(data.buyerInfo) + '</strong> (' + escapeHtml(data.requestType) + ')</span>';
+                document.getElementById('detailQtyBudget').innerHTML = '<span class="detail-budget-item">📦 Toplam: <strong style="color: #0F172A;">' + Number(data.quantity).toLocaleString('tr-TR') + ' Birim</strong></span><span class="detail-budget-item">💰 Bütçe: <strong style="color: #059669;">' + escapeHtml(data.estimatedBudgetFormatted) + '</strong></span>';
+                document.getElementById('detailDeadline').innerHTML = '📅 Termin: <strong>' + escapeHtml(data.targetDeliveryDate) + '</strong>';
 
                 if (itemsBody && data.items && data.items.length > 0) {
                     if (itemCountBadge) itemCountBadge.textContent = data.items.length + ' Kalem';
@@ -3322,15 +3738,16 @@
                     data.items.forEach(function (it, idx) {
                         var unitPriceFmt = it.estimatedUnitPriceFormatted ? it.estimatedUnitPriceFormatted : '—';
                         var totalFmt = it.estimatedTotalPriceFormatted ? it.estimatedTotalPriceFormatted : '—';
-                        var desc = it.itemDescription ? escapeHtml(it.itemDescription) : '—';
+                        var rawDesc = it.itemDescription ? it.itemDescription.trim() : '';
+                        var desc = rawDesc ? escapeHtml(rawDesc) : '';
 
                         itemsHtml += '<tr>';
-                        itemsHtml += '  <td style="text-align: center; font-weight: 700; color: #64748B;">' + (it.itemOrder || (idx + 1)) + '</td>';
-                        itemsHtml += '  <td><strong style="color: #0F172A;">' + escapeHtml(it.itemName) + '</strong></td>';
-                        itemsHtml += '  <td><span style="font-weight: 700; color: #2563EB;">' + Number(it.quantity).toLocaleString('tr-TR') + '</span> ' + escapeHtml(it.unit) + '</td>';
-                        itemsHtml += '  <td style="color: #475569;">' + unitPriceFmt + '</td>';
-                        itemsHtml += '  <td><strong style="color: #059669;">' + totalFmt + '</strong></td>';
-                        itemsHtml += '  <td style="font-size: 0.78rem; color: #64748B;">' + desc + '</td>';
+                        itemsHtml += '  <td class="item-col-order" style="text-align: center; font-weight: 700; color: #64748B;">' + (it.itemOrder || (idx + 1)) + '</td>';
+                        itemsHtml += '  <td class="item-col-name"><strong style="color: #0F172A;">' + escapeHtml(it.itemName) + '</strong></td>';
+                        itemsHtml += '  <td class="item-col-qty"><span class="item-qty-val" style="font-weight: 700; color: #2563EB;">' + Number(it.quantity).toLocaleString('tr-TR') + '</span> <span class="item-qty-unit">' + escapeHtml(it.unit) + '</span></td>';
+                        itemsHtml += '  <td class="item-col-price" style="color: #475569;">' + unitPriceFmt + '</td>';
+                        itemsHtml += '  <td class="item-col-total"><strong style="color: #059669;">' + totalFmt + '</strong></td>';
+                        itemsHtml += '  <td class="item-col-desc ' + (desc ? 'has-desc' : 'no-desc') + '" style="font-size: 0.78rem; color: #64748B;">' + (desc || '—') + '</td>';
                         itemsHtml += '</tr>';
                     });
                     itemsBody.innerHTML = itemsHtml;
@@ -3955,6 +4372,12 @@
         // 6. E-POSTA VE DIŞ BAĞLANTILARDAN GELEN REQUEST_ID İLE OTOMATİK MODAL AÇMA
         // =========================================================================
         document.addEventListener('DOMContentLoaded', function () {
+            // Tablo yatay kaydırma konteynerinin her zaman sol baştan (0px) başlamasını sağla
+            var scrollWrap = document.querySelector('.table-scroll-wrap');
+            if (scrollWrap) {
+                scrollWrap.scrollLeft = 0;
+            }
+
             try {
                 var urlParams = new URLSearchParams(window.location.search);
                 var reqId = urlParams.get('requestId') || urlParams.get('reqId');
@@ -3965,7 +4388,7 @@
                         setTimeout(function () {
                             var targetRow = document.querySelector('tr[data-request-id="' + id + '"]');
                             if (targetRow) {
-                                targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                targetRow.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
                                 targetRow.style.outline = '2px solid #2563EB';
                                 targetRow.style.borderRadius = '8px';
                                 setTimeout(function () { targetRow.style.outline = 'none'; }, 3000);

@@ -177,43 +177,378 @@
     margin-top: 8px;
     width: 100%;
 }
+
+/* ==================== ÜRÜN İLANLARI BAŞLIK VE MODAL STİLLERİ ==================== */
+.page-head-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+.page-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.page-head-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text);
+    margin: 0;
+    line-height: 1.25;
+}
+.page-title-badges {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.page-head-subtitle {
+    margin: 2px 0 0 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+.page-head-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.btn-head-vitrin {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    font-size: 0.85rem;
+    padding: 9px 14px;
+}
+.btn-head-create {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+/* Detay Modalı Aksiyon Butonları */
+.listing-modal-footer-grid {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+}
+.listing-modal-footer-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+.btn-modal-foot-delete {
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #e11d48;
+    background: #ffffff;
+    border: 1px solid #fecdd3;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.btn-modal-foot-delete:hover {
+    background: #fff1f2;
+}
+.btn-modal-foot-vitrin {
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #334155;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: all 0.2s;
+}
+.btn-modal-foot-vitrin:hover {
+    background: #f8fafc;
+}
+.btn-modal-foot-edit {
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #ffffff;
+    background: #2563eb;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+.btn-modal-foot-edit:hover {
+    background: #1d4ed8;
+}
+.btn-modal-foot-close {
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #475569;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+.btn-modal-foot-close:hover {
+    background: #f8fafc;
+}
+
+/* ==================== ÜRÜN İLANLARI MOBİL RESPONSIVE TASARIMI ==================== */
+@@media (max-width: 767.98px) {
+    .page-head {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+    }
+    .page-head-main {
+        width: 100% !important;
+    }
+    .page-title-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+        width: 100% !important;
+    }
+    .page-head-title {
+        font-size: 1.35rem !important;
+        font-weight: 800 !important;
+        line-height: 1.25 !important;
+        width: 100% !important;
+        word-break: normal !important;
+    }
+    .page-title-badges {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 6px !important;
+        width: 100% !important;
+    }
+    .page-title-badges .status-badge {
+        font-size: 0.70rem !important;
+        padding: 3px 8px !important;
+        white-space: nowrap !important;
+    }
+    .page-head-subtitle {
+        margin-top: 6px !important;
+        font-size: 0.80rem !important;
+        line-height: 1.4 !important;
+    }
+    .page-head-actions {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+        width: 100% !important;
+    }
+    .page-head-actions a,
+    .page-head-actions button {
+        width: 100% !important;
+        justify-content: center !important;
+        text-align: center !important;
+        padding: 9px 8px !important;
+        font-size: 0.80rem !important;
+        white-space: nowrap !important;
+    }
+    .kpi-row {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+    .kpi-card {
+        padding: 12px 10px !important;
+    }
+    .kpi-value {
+        font-size: 1.25rem !important;
+    }
+
+    /* Filtreleme Alanı */
+    #listingsFilterForm {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+    }
+    #listingsFilterForm > div:first-child {
+        flex-direction: column !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        gap: 8px !important;
+    }
+    #listingsFilterForm > div:first-child > div {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+    }
+    #listingsStatusFilterNav {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 6px !important;
+        width: 100% !important;
+    }
+    #listingsStatusFilterNav .year-pill {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 7px 4px !important;
+        font-size: 0.76rem !important;
+        gap: 4px !important;
+    }
+    #listingsClearBtn {
+        grid-column: span 3 !important;
+        width: 100% !important;
+        justify-content: center !important;
+        margin-top: 2px !important;
+    }
+
+    /* Mobil Kart Tasarımı */
+    .listing-mobile-card {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 12px !important;
+        padding: 13px !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+        transition: all 0.2s ease !important;
+        cursor: pointer !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+    .listing-mobile-card:active {
+        transform: scale(0.99) !important;
+        border-color: #3b82f6 !important;
+        background: #f8fafc !important;
+    }
+
+    /* Detay Modalı Mobil 2x2 Buton Grid */
+    .listing-modal-footer-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+        width: 100% !important;
+    }
+    .listing-modal-footer-right {
+        display: contents !important;
+    }
+    .btn-modal-foot-edit {
+        order: 1 !important;
+        width: 100% !important;
+        height: 40px !important;
+        padding: 0 8px !important;
+        font-size: 0.82rem !important;
+        grid-column: span 1 !important;
+    }
+    .btn-modal-foot-vitrin {
+        order: 2 !important;
+        width: 100% !important;
+        height: 40px !important;
+        padding: 0 8px !important;
+        font-size: 0.82rem !important;
+        grid-column: span 1 !important;
+    }
+    .btn-modal-foot-delete {
+        order: 3 !important;
+        width: 100% !important;
+        height: 40px !important;
+        padding: 0 8px !important;
+        font-size: 0.82rem !important;
+        grid-column: span 1 !important;
+    }
+    .btn-modal-foot-close {
+        order: 4 !important;
+        width: 100% !important;
+        height: 40px !important;
+        padding: 0 8px !important;
+        font-size: 0.82rem !important;
+        grid-column: span 1 !important;
+    }
+
+    /* Modalların Mobilde Tam Oturması ve Taşma Koruması */
+    .ty-modal-overlay {
+        padding: 10px 10px calc(76px + env(safe-area-inset-bottom, 12px)) 10px !important;
+        background: rgba(15, 23, 42, 0.75) !important;
+        backdrop-filter: blur(4px) !important;
+        -webkit-backdrop-filter: blur(4px) !important;
+    }
+    .ty-modal-box {
+        max-width: 100% !important;
+        width: 100% !important;
+        max-height: 90vh !important;
+        border-radius: 16px !important;
+        margin: auto !important;
+    }
+    .ty-modal-box form {
+        overflow-y: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+    }
+    .ty-modal-box .overflow-y-auto {
+        max-height: calc(90vh - 120px) !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+}
 </style>
 
 <!-- ==================== SAYFA BAŞLIĞI VE AKSİYONLAR ==================== -->
 <div class="page-head">
-    <div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <h1>Ürün İlanlarım & Vitrin Kataloğu</h1>
-            <span class="status-badge badge-emerald" style="font-size: 0.75rem; padding: 3px 10px;">
-                <span class="status-dot"></span> Canlı Vitrin Entegre
-            </span>
-            @if (Model.IsIyzicoApproved)
-            {
-                <span class="status-badge badge-blue" style="font-size: 0.75rem; padding: 3px 10px; font-weight: 750;">
-                    ✓ iyzico Onaylı Satıcı
+    <div class="page-head-main">
+        <div class="page-title-row">
+            <h1 class="page-head-title">Ürün İlanlarım &amp; Vitrin Kataloğu</h1>
+            <div class="page-title-badges">
+                <span class="status-badge badge-emerald" style="font-size: 0.75rem; padding: 3px 10px;">
+                    <span class="status-dot"></span> Canlı Vitrin Entegre
                 </span>
-            }
+                @if (Model.IsIyzicoApproved)
+                {
+                    <span class="status-badge badge-blue" style="font-size: 0.75rem; padding: 3px 10px; font-weight: 750;">
+                        ✓ iyzico Onaylı Satıcı
+                    </span>
+                }
+            </div>
         </div>
-        <p>
+        <p class="page-head-subtitle">
             <span>@Model.CompanyName portföyündeki kurumsal ürünler, toptan fiyat listeleri ve stok yönetimi</span>
         </p>
     </div>
 
-    <div style="display: flex; gap: 10px; align-items: center;">
-        <a href="/#b2b-vitrin" target="_blank" class="btn-cancel" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none; font-size: 0.85rem; padding: 9px 14px;">
+    <div class="page-head-actions">
+        <a href="/#b2b-vitrin" target="_blank" class="btn-cancel btn-head-vitrin">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                 <polyline points="15 3 21 3 21 9"></polyline>
                 <line x1="10" y1="14" x2="21" y2="3"></line>
             </svg>
-            Vitrinde Gör
+            <span>Vitrinde Gör</span>
         </a>
-        <button type="button" class="btn-primary" onclick="openCreateListingModal()" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; font-size: 0.88rem; font-weight: 700;">
+        <button type="button" class="btn-primary btn-head-create" onclick="openCreateListingModal()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
-            + Yeni Ürün İlanı Ver
+            <span>+ Yeni Ürün İlanı Ver</span>
         </button>
     </div>
 </div>
@@ -233,7 +568,7 @@
                 </p>
             </div>
         </div>
-        <a href="/Dashboard/SupplierOrders" class="btn-primary" style="background: #0f172a; color: #ffffff; padding: 9px 18px; border-radius: 8px; text-decoration: none; font-size: 0.86rem; font-weight: 750; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
+        <a href="/Dashboard/SupplierOrders" class="btn-primary" style="background: #2563eb; color: #ffffff; padding: 9px 18px; border-radius: 8px; text-decoration: none; font-size: 0.86rem; font-weight: 750; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; box-shadow: 0 1px 3px rgba(37, 99, 235, 0.2);">
             <span>🛡️ iyzico Satıcı Kaydını Başlat</span> →
         </a>
     </div>
@@ -384,7 +719,7 @@
         </div>
     </header>
 
-    <div class="table-scroll-wrap">
+    <div class="table-scroll-wrap hidden md:block">
         <table class="dash-table">
             <thead>
                 <tr>
@@ -493,108 +828,375 @@
             </tbody>
         </table>
     </div>
+
+    <!-- ==================== 2. MOBİL KOMPAKT KART LİSTESİ (< 768px) ==================== -->
+    <div id="listingsMobileList" class="block md:hidden space-y-3 p-3 bg-slate-50/50">
+        @if (!Model.Listings.Any())
+        {
+            <div id="listingsMobileNoData" class="text-center py-10 px-4 bg-white rounded-xl border border-slate-200">
+                <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-400">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                </div>
+                <h4 class="text-sm font-bold text-slate-800">Henüz ürün ilanı bulunamadı</h4>
+                <p class="text-xs text-slate-500 mt-1 mb-4">Kataloğunuzda henüz bir ürün ilanı yer almıyor.</p>
+                <button type="button" class="btn-primary w-full py-2.5 text-xs font-bold justify-center" onclick="openCreateListingModal()">
+                    + İlk Ürün İlanınızı Verin
+                </button>
+            </div>
+        }
+        else
+        {
+            @foreach (var item in Model.Listings)
+            {
+                var isCrit = item.Status == "Kritik";
+                var isOut = item.Status == "Tükendi";
+                <div class="listing-mobile-card bg-white border border-slate-200/90 rounded-xl p-3.5 shadow-xs hover:border-blue-300 hover:shadow-md transition-all cursor-pointer flex flex-col gap-2.5 active:scale-[0.99]"
+                     id="mobile-listing-card-@item.ItemId"
+                     data-status="@item.Status"
+                     data-category="@item.CategoryName"
+                     onclick="openListingDetailModal(@item.ItemId)">
+                    
+                    <!-- Üst Satır: SKU, Marka ve Durum Rozeti -->
+                    <div class="flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-1.5 flex-wrap min-w-0">
+                            <span class="font-mono text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                                @item.Sku
+                            </span>
+                            @if (!string.IsNullOrWhiteSpace(item.Brand))
+                            {
+                                <span class="text-[11px] font-semibold text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200/70 truncate max-w-[120px]">
+                                    @item.Brand
+                                </span>
+                            }
+                        </div>
+                        <span class="status-badge @(isOut ? "badge-coral" : (isCrit ? "badge-amber" : "badge-emerald")) shrink-0 text-[11px] px-2 py-0.5 rounded-full font-bold">
+                            <span class="status-dot"></span>
+                            @item.Status
+                        </span>
+                    </div>
+
+                    <!-- Orta Bölüm: Fotoğraf + Başlık & Kategori -->
+                    <div class="flex items-center gap-3">
+                        <div class="relative w-14 h-14 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center justify-center overflow-hidden shrink-0">
+                            <img src="@(string.IsNullOrEmpty(item.MainImageUrl) ? "/images/default-product.svg" : item.MainImageUrl)" 
+                                 alt="@item.ItemName" 
+                                 class="w-full h-full object-contain p-1"
+                                 onerror="this.src='/images/default-product.svg'" />
+                            @if (item.Images != null && item.Images.Count > 1)
+                            {
+                                <span class="absolute bottom-0.5 right-0.5 bg-slate-900/85 text-white text-[9px] font-bold px-1 rounded leading-tight">
+                                    +@item.Images.Count
+                                </span>
+                            }
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-[13.5px] font-bold text-slate-800 leading-snug line-clamp-2">
+                                @item.ItemName
+                            </h4>
+                            <div class="mt-1 flex items-center gap-1.5">
+                                <span class="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md truncate max-w-[170px]">
+                                    📁 @item.CategoryName
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alt Satır: Birim Fiyat, Stok ve Detay Oku -->
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-slate-400 block leading-tight">Toptan Fiyat</span>
+                            <div class="flex items-baseline gap-1">
+                                <strong class="text-sm font-black text-slate-900">
+                                    @item.UnitPrice.ToString("N0", ChartHelper.Tr) ₺
+                                </strong>
+                                <span class="text-[10px] text-slate-400 font-medium">+KDV</span>
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            <span class="text-[10px] uppercase font-bold text-slate-400 block leading-tight">Hazır Stok</span>
+                            <span class="text-xs font-bold @(isOut ? "text-rose-600" : (isCrit ? "text-amber-600" : "text-slate-700"))">
+                                @item.Stock Adet
+                            </span>
+                        </div>
+
+                        <div class="flex items-center gap-1 font-bold text-blue-600 text-xs hover:text-blue-700 shrink-0">
+                            <span>Detay</span>
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+        <!-- Mobil Arama / Filtre Boş Durumu -->
+        <div id="listingsMobileEmptyState" style="display: none;" class="text-center py-10 px-4 bg-white rounded-xl border border-slate-200">
+            <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-2 text-slate-400">
+                🔍
+            </div>
+            <h4 class="text-sm font-bold text-slate-800">Kriterlere uygun ürün bulunamadı</h4>
+            <p class="text-xs text-slate-500 mt-1 mb-3">Farklı bir arama kelimesi yazabilir veya filtreleri temizleyebilirsiniz.</p>
+            <button type="button" class="btn-cancel px-3 py-1.5 text-xs font-semibold mx-auto" onclick="window.ListingsManager.reset()">
+                Filtreleri Temizle
+            </button>
+        </div>
+    </div>
 </article>
 
-<!-- ==================== MODAL: YENİ ÜRÜN İLANI VERME (DASHBOARD) ==================== -->
-<div id="dashCreateListingModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this)closeCreateListingModal()">
-    <div class="ty-modal-box" style="background: var(--card-bg, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 12px; width: 100%; max-width: 580px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;">
+<!-- ==================== MODAL: ÜRÜN İLANI AYRINTILI DETAY MODALI (MOBİL & GENEL) ==================== -->
+<div id="listingDetailModal" class="ty-modal-overlay fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4 md:p-6 overflow-y-auto" style="display: none;" onclick="if(event.target===this)closeListingDetailModal()">
+    <div class="ty-modal-box my-auto relative bg-white rounded-2xl shadow-2xl border border-slate-200/90 w-full max-w-lg max-h-[92vh] flex flex-col overflow-hidden transform transition-all">
         
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
-            <div>
-                <span class="status-badge badge-emerald" style="font-size: 0.72rem; padding: 2px 8px;">KURUMSAL TEDARİKÇİ GİRİŞİ</span>
-                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text, #0f172a); margin-top: 6px; margin-bottom: 4px;">Yeni Ürün / Fiyat İlanı Ekle</h3>
-                <p style="font-size: 0.82rem; color: var(--muted, #64748b); margin: 0;">Eklediğiniz ürün anında B2B vitrininde ve katalog listenizde yayınlanacaktır.</p>
+        <!-- Modal Başlığı -->
+        <div class="px-5 py-4 sm:px-6 sm:py-4.5 border-b border-slate-100 flex items-start justify-between bg-slate-50/80 shrink-0">
+            <div class="min-w-0 pr-3">
+                <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                    <span class="status-badge badge-blue text-[11px] font-bold px-2 py-0.5 rounded-md">ÜRÜN İLANI DETAYI</span>
+                    <span id="listingDetailCatBadge" class="text-[11px] font-semibold text-slate-600 bg-slate-200/70 px-2 py-0.5 rounded-md truncate max-w-[160px]">Kategori</span>
+                </div>
+                <h3 id="listingDetailHeaderTitle" class="text-base font-extrabold text-slate-900 truncate">Ürün Detayı</h3>
             </div>
-            <button type="button" class="modal-close-btn" onclick="closeCreateListingModal()" style="border: none; background: transparent; font-size: 1.2rem; cursor: pointer; color: var(--muted);">✕</button>
+            <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer text-base leading-none shrink-0 -mt-1 -mr-1" onclick="closeListingDetailModal()" aria-label="Kapat">✕</button>
         </div>
 
-        <form id="dashCreateListingForm" onsubmit="handleDashCreateListing(event); return false;">
-            <div class="form-group" style="margin-bottom: 12px;">
-                <label class="form-label" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Ürün İsmi / Başlığı <span class="req-star" style="color: #ef4444;">*</span></label>
-                <input type="text" id="dashListingProductName" class="form-control" placeholder="Örn: DIN 933 A2 Paslanmaz Cıvata M8x30" required style="border-radius: 6px; font-size: 0.85rem;" />
+        <!-- Modal İçeriği (Kaydırılabilir) -->
+        <div class="p-4 sm:p-6 overflow-y-auto space-y-4 text-xs flex-1">
+            <!-- Yükleniyor Durumu -->
+            <div id="listingDetailModalLoading" class="py-12 text-center text-slate-500">
+                <div class="inline-block w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+                <div class="text-xs font-semibold">Ürün detayları yükleniyor...</div>
             </div>
 
-            <div class="form-group" style="margin-bottom: 14px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <label class="form-label" style="font-size: 0.8rem; font-weight: 700; margin: 0;">Kategori Seçimi <span class="req-star" style="color: #ef4444;">*</span></label>
-                    <span style="font-size: 0.72rem; color: var(--muted);">(Ağaçtan tıklayarak seçiniz)</span>
-                </div>
-
-                <input type="hidden" id="dashListingCategory" name="CategoryName" />
-                <input type="hidden" id="dashListingCategoryId" name="CategoryID" />
-
-                <div class="b2b-cat-picker-container" style="border: 1px solid var(--border-color, #e2e8f0); border-radius: 8px; padding: 8px; background: rgba(0,0,0,0.02);">
-                    <div class="b2b-cat-picker-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <div id="dashCatSelectedDisplay" style="font-size: 0.82rem; color: var(--muted); display: flex; align-items: center; gap: 6px;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                            <span id="dashCatSelectedText">Aşağıdaki ağaçtan bir kategori seçiniz...</span>
-                        </div>
-                        <button type="button" class="btn-tree-tool" onclick="clearDashCatTreeSelection()" style="padding: 2px 8px; font-size: 0.72rem;">Temizle</button>
-                    </div>
-
-                    <div class="b2b-tree-scrollbox" id="dashCatTreeBox" style="max-height: 180px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px; background: #ffffff;">
-                        @if (ViewBag.CategoryTree != null && ((IEnumerable<satinalmaportali2.Controllers.HierarchicalCategoryItem>)ViewBag.CategoryTree).Any())
-                        {
-                            var rootCategories = (IEnumerable<satinalmaportali2.Controllers.HierarchicalCategoryItem>)ViewBag.CategoryTree;
-                            foreach (var root in rootCategories)
-                            {
-                                @RenderDashTree(root, 0)
-                            }
-                        }
-                        else
-                        {
-                            <div style="padding: 10px; text-align: center; color: var(--muted); font-size: 0.8rem;">
-                                Kategori listesi yükleniyor...
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                <div class="form-group">
-                    <label class="form-label" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Toptan Birim Fiyat (₺ + KDV) <span class="req-star" style="color: #ef4444;">*</span></label>
-                    <input type="number" id="dashListingPrice" class="form-control" placeholder="Örn: 2450" step="0.01" min="0.01" required style="border-radius: 6px; font-size: 0.85rem;" />
-                </div>
-                <div class="form-group">
-                    <label class="form-label" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Hazır Stok Miktarı <span class="req-star" style="color: #ef4444;">*</span></label>
-                    <input type="text" id="dashListingStock" class="form-control" placeholder="Örn: 500 Adet" required style="border-radius: 6px; font-size: 0.85rem;" />
-                </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom: 14px;">
-                <label class="form-label" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Tedarik & Sevkiyat Şartları / Açıklama</label>
-                <textarea id="dashListingDesc" class="form-control" rows="2" placeholder="Minimum sipariş (MOQ), termin süresi, teslimat yöntemleri..." style="border-radius: 6px; font-size: 0.82rem;"></textarea>
-            </div>
-
-            <!-- ÇOKLU GÖRSEL YÜKLEME (CLOUDINARY) -->
-            <div class="form-group" style="margin-bottom: 16px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <label class="form-label" style="font-size: 0.8rem; font-weight: 700; margin: 0;">
-                        Ürün Görselleri (<span id="dashCreateImagesCount">0</span>/10)
-                    </label>
-                    <span style="font-size: 0.72rem; color: var(--muted);">(★ Yeşil çerçeveli görsel ana görseldir)</span>
-                </div>
+            <!-- Detay İçeriği -->
+            <div id="listingDetailModalContent" class="space-y-4 hidden">
                 
-                <div class="b2b-upload-dropzone" id="dashCreateDropzone" onclick="if(event.target!==document.getElementById('dashCreateImageInput'))document.getElementById('dashCreateImageInput').click()">
-                    <div class="b2b-dropzone-inner">
-                        <div class="b2b-dropzone-icon">📷</div>
-                        <div class="b2b-dropzone-text">
-                            <strong>Resimleri seçmek veya buraya sürüklemek için tıklayın</strong>
-                            <span>JPG, PNG, WEBP veya GIF formatları desteklenir (Maks 10MB)</span>
+                <!-- 1. Görsel & Galeri Alanı -->
+                <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex flex-col items-center">
+                    <div class="relative w-full h-48 sm:h-56 bg-white border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden p-2">
+                        <img id="listingDetailMainImg" src="/images/default-product.svg" alt="Ürün Görseli" class="w-full h-full object-contain" onerror="this.src='/images/default-product.svg'" />
+                        <span id="listingDetailVitrinBadge" class="status-badge badge-emerald text-[10px] font-bold px-2 py-0.5 rounded-md shadow-xs" style="position: absolute; top: 8px; left: 8px;">
+                            <span class="status-dot"></span> Vitrinde Yayında
+                        </span>
+                    </div>
+                    <!-- Küçük Görseller Şeridi (Eğer çoklu görsel varsa görünür) -->
+                    <div id="listingDetailGalleryStrip" class="w-full flex items-center gap-2 mt-2.5 overflow-x-auto pb-1 hidden">
+                        <!-- JavaScript ile doldurulur -->
+                    </div>
+                </div>
+
+                <!-- 2. Ürün Tanımı & Kimlik Kutusu -->
+                <div class="bg-white border border-slate-200/90 rounded-xl p-3.5 space-y-2">
+                    <h4 id="listingDetailTitle" class="text-sm font-bold text-slate-900 leading-snug">Ürün Adı</h4>
+                    <div class="flex items-center gap-2 flex-wrap text-xs">
+                        <div class="flex items-center gap-1 font-mono text-[11px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                            <span>SKU:</span>
+                            <strong id="listingDetailSku">-</strong>
+                        </div>
+                        <span id="listingDetailBrand" class="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 truncate max-w-[150px]">
+                            Marka
+                        </span>
+                        <span id="listingDetailStatusBadge" class="status-badge badge-emerald text-[11px] font-bold px-2 py-0.5 rounded-full">
+                            Stokta
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 3. Fiyat ve Stok Finans Paneli (2 Sütunlu Grid) -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-emerald-50/70 border border-emerald-200/90 rounded-xl p-3">
+                        <span class="text-[10px] uppercase font-bold text-emerald-800 tracking-wider block">Toptan Birim Fiyat</span>
+                        <div class="text-base font-black text-emerald-700 mt-0.5" id="listingDetailUnitPrice">0 ₺</div>
+                        <span class="text-[11px] font-medium text-emerald-600 block mt-0.5" id="listingDetailPriceWithKdv">+ %20 KDV: 0 ₺</span>
+                    </div>
+                    <div class="bg-blue-50/70 border border-blue-200/90 rounded-xl p-3">
+                        <span class="text-[10px] uppercase font-bold text-blue-800 tracking-wider block">Hazır Depo Stoğu</span>
+                        <div class="text-base font-black text-blue-700 mt-0.5" id="listingDetailStock">0 Adet</div>
+                        <span class="text-[11px] font-medium text-blue-600 block mt-0.5" id="listingDetailStockState">Hızlı Sevkiyata Uygun</span>
+                    </div>
+                </div>
+
+                <!-- 4. Toplam Portföy Değeri Şeridi -->
+                <div class="bg-slate-50 border border-slate-200/80 rounded-xl px-3.5 py-2.5 flex items-center justify-between text-xs">
+                    <span class="text-slate-600 font-semibold">Toplam Katalog / Depo Değeri:</span>
+                    <strong class="text-slate-900 font-bold" id="listingDetailTotalValue">0 ₺</strong>
+                </div>
+
+                <!-- 5. Tedarik & Sevkiyat Şartları / Açıklama -->
+                <div class="bg-white border border-slate-200/90 rounded-xl p-3.5">
+                    <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wider block mb-1">
+                        📋 Tedarik &amp; Sevkiyat Şartları / Not
+                    </span>
+                    <p id="listingDetailDesc" class="text-xs text-slate-600 leading-relaxed whitespace-pre-line bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                        -
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Alt Çubuğu (Aksiyonlar) -->
+        <div class="px-4 py-3 sm:px-6 sm:py-3.5 border-t border-slate-100 bg-slate-50/80 shrink-0">
+            <div class="listing-modal-footer-grid">
+                <button type="button" id="listingDetailDeleteBtn" class="btn-modal-foot-delete">
+                    🗑️ İlanı Sil
+                </button>
+                <div class="listing-modal-footer-right">
+                    <a href="/#b2b-vitrin" target="_blank" class="btn-modal-foot-vitrin">
+                        <span>Vitrinde Gör</span> ↗
+                    </a>
+                    <button type="button" id="listingDetailEditBtn" class="btn-modal-foot-edit">
+                        ✏️ Düzenle
+                    </button>
+                    <button type="button" class="btn-modal-foot-close" onclick="closeListingDetailModal()">
+                        Kapat
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== MODAL: YENİ ÜRÜN İLANI VERME (DASHBOARD) ==================== -->
+<div id="dashCreateListingModal" class="ty-modal-overlay fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4 md:p-6 overflow-y-auto" style="display: none;" onclick="if(event.target===this)closeCreateListingModal()">
+    <div class="ty-modal-box my-auto relative bg-white rounded-2xl shadow-2xl border border-slate-200/90 w-full max-w-xl max-h-[92vh] flex flex-col overflow-hidden transform transition-all">
+        
+        <div class="px-5 py-4 sm:px-7 sm:pt-7 sm:pb-5 border-b border-slate-100 flex items-start justify-between bg-slate-50/80">
+            <div>
+                <div class="mb-2">
+                    <span class="status-badge badge-emerald text-[11px] font-bold px-2 py-0.5 rounded-md">KURUMSAL TEDARİKÇİ GİRİŞİ</span>
+                </div>
+                <h3 class="text-base font-extrabold text-slate-900">Yeni Ürün / Fiyat İlanı Ekle</h3>
+                <p class="text-xs text-slate-500 mt-1">Eklediğiniz ürün anında B2B vitrininde ve katalog listenizde yayınlanacaktır.</p>
+            </div>
+            <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer text-base leading-none shrink-0 ml-4 -mt-1 -mr-1" onclick="closeCreateListingModal()" aria-label="Kapat">✕</button>
+        </div>
+
+        <form id="dashCreateListingForm" onsubmit="handleDashCreateListing(event); return false;" class="flex flex-col flex-1 overflow-hidden">
+            <div class="p-4 sm:p-6 overflow-y-auto space-y-3.5 text-xs">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1" for="dashListingProductName">Ürün İsmi / Başlığı <span class="text-rose-500 font-bold">*</span></label>
+                    <input type="text" id="dashListingProductName" class="form-control w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" placeholder="Örn: DIN 933 A2 Paslanmaz Cıvata M8x30" required />
+                </div>
+
+                <!-- BASİTLEŞTİRİLMİŞ & KATLANABİLİR KATEGORİ SEÇİCİ -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-semibold text-slate-700">
+                            Kategori Seçimi <span class="text-rose-500 font-bold">*</span>
+                        </label>
+                        <span class="text-[11px] text-slate-400">Aramak veya seçmek için tıklayın</span>
+                    </div>
+
+                    <input type="hidden" id="dashListingCategory" name="CategoryName" />
+                    <input type="hidden" id="dashListingCategoryId" name="CategoryID" />
+
+                    <!-- 1. Kompakt Seçim Çubuğu (Varsayılan Olarak Sadece 40px Yükseklik Kaplar) -->
+                    <div id="dashCatSelectedBanner" onclick="toggleDashCatPicker()" 
+                         class="w-full flex items-center justify-between px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl text-xs transition-all cursor-pointer shadow-2xs">
+                        <div class="flex items-center gap-2 min-w-0 pr-2">
+                            <span class="text-sm leading-none text-slate-500">📁</span>
+                            <span id="dashCatSelectedText" class="font-medium text-slate-600 truncate">
+                                Kategori Seçiniz (Tıklayın veya Arayın)...
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button type="button" id="dashCatClearBtn" style="display: none;" 
+                                    onclick="event.stopPropagation(); clearDashCatTreeSelection();" 
+                                    class="text-[11px] font-bold text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-0.5 rounded-md transition cursor-pointer">
+                                ✕ Temizle
+                            </button>
+                            <span id="dashCatChevron" class="text-slate-400 text-xs transition-transform duration-200">▼</span>
+                        </div>
+                    </div>
+
+                    <!-- 2. Açılır / Kapanır Kategori Seçim Paneli (Tıklanınca Açılır, Seçince Otomatik Kapanır) -->
+                    <div id="dashCatPickerPanel" class="hidden mt-2 border border-slate-200 rounded-xl bg-white shadow-md p-2.5 transition-all">
+                        <!-- Hızlı Arama Kutusu -->
+                        <div class="relative mb-2">
+                            <input type="text" id="dashCatSearchInput" 
+                                   oninput="filterDashCategories(this.value)" 
+                                   placeholder="🔍 Kategori ara... (örn: Cıvata, Rulman, Kablo, Motor, Boya)" 
+                                   class="form-control w-full pl-8 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                            <span class="absolute left-2.5 top-2.5 text-slate-400 text-xs">🔍</span>
+                            <button type="button" onclick="document.getElementById('dashCatSearchInput').value=''; filterDashCategories('');" class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 text-xs cursor-pointer" title="Aramayı Temizle">✕</button>
+                        </div>
+
+                        <!-- Ağaç & Kategori Listesi (Sadece ana kategoriler açık, alt kategoriler katlanabilir) -->
+                        <div class="b2b-tree-scrollbox max-h-52 overflow-y-auto border border-slate-100 rounded-lg p-1.5 bg-slate-50/40 space-y-1" id="dashCatTreeBox">
+                            @if (ViewBag.CategoryTree != null && ((IEnumerable<satinalmaportali2.Controllers.HierarchicalCategoryItem>)ViewBag.CategoryTree).Any())
+                            {
+                                var rootCategories = (IEnumerable<satinalmaportali2.Controllers.HierarchicalCategoryItem>)ViewBag.CategoryTree;
+                                foreach (var root in rootCategories)
+                                {
+                                    @RenderDashTree(root, 0)
+                                }
+                            }
+                            else
+                            {
+                                <div class="p-3 text-center text-slate-400 text-xs">
+                                    Kategori listesi yükleniyor...
+                                </div>
+                            }
+                        </div>
+                        
+                        <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                            <span>💡 Kategoriyi arayabilir veya başlıklara tıklayabilirsiniz.</span>
+                            <button type="button" class="text-blue-600 font-bold hover:underline cursor-pointer" onclick="toggleDashCatPicker(false)">Paneli Kapat ✕</button>
                         </div>
                     </div>
                 </div>
-                <input type="file" id="dashCreateImageInput" accept="image/*" multiple style="display: none;" onchange="handleDashCreateImageFiles(this.files)" />
 
-                <div class="b2b-uploaded-images-grid" id="dashCreateThumbsGrid" style="display: none;">
-                    <!-- Yüklenen görseller JavaScript ile buraya kart olarak eklenir -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="dashListingPrice">Toptan Birim Fiyat (₺ + KDV) <span class="text-rose-500 font-bold">*</span></label>
+                        <input type="number" id="dashListingPrice" class="form-control w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-semibold" placeholder="Örn: 2450" step="0.01" min="0.01" required />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="dashListingStock">Hazır Stok Miktarı <span class="text-rose-500 font-bold">*</span></label>
+                        <input type="text" id="dashListingStock" class="form-control w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" placeholder="Örn: 500 Adet" required />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1" for="dashListingDesc">Tedarik &amp; Sevkiyat Şartları / Açıklama</label>
+                    <textarea id="dashListingDesc" class="form-control w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" rows="2" placeholder="Minimum sipariş (MOQ), termin süresi, teslimat yöntemleri..."></textarea>
+                </div>
+
+                <!-- ÇOKLU GÖRSEL YÜKLEME (CLOUDINARY) -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-semibold text-slate-700">
+                            Ürün Görselleri (<span id="dashCreateImagesCount" class="font-bold text-blue-600">0</span>/10)
+                        </label>
+                        <span class="text-[11px] text-slate-400">(★ Yeşil çerçeveli görsel ana görseldir)</span>
+                    </div>
+                    
+                    <div class="b2b-upload-dropzone border-2 border-dashed border-slate-300 hover:border-blue-400 rounded-xl p-3.5 bg-slate-50/70 hover:bg-blue-50/20 transition-all cursor-pointer flex items-center justify-center" id="dashCreateDropzone" onclick="if(event.target!==document.getElementById('dashCreateImageInput'))document.getElementById('dashCreateImageInput').click()">
+                        <div class="b2b-dropzone-inner flex items-center gap-3 pointer-events-none">
+                            <div class="b2b-dropzone-icon text-2xl flex-shrink-0">📷</div>
+                            <div class="b2b-dropzone-text text-left">
+                                <strong class="block text-xs text-slate-800 font-semibold">Resimleri seçmek veya buraya sürüklemek için tıklayın</strong>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">JPG, PNG, WEBP veya GIF formatları desteklenir (Maks 10MB)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="file" id="dashCreateImageInput" accept="image/*" multiple style="display: none;" onchange="handleDashCreateImageFiles(this.files)" />
+
+                    <div class="b2b-uploaded-images-grid flex flex-wrap gap-2.5 mt-2.5 items-center" id="dashCreateThumbsGrid" style="display: none;">
+                        <!-- Yüklenen görseller JavaScript ile buraya kart olarak eklenir -->
+                    </div>
                 </div>
             </div>
 
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button type="button" class="btn-cancel" onclick="closeCreateListingModal()">Vazgeç</button>
-                <button type="submit" class="btn-primary" style="padding: 10px 20px; font-size: 0.88rem; font-weight: 700;">
+            <div class="px-6 py-3.5 border-t border-slate-100 bg-slate-50/80 flex items-center justify-end gap-2.5">
+                <button type="button" class="btn-cancel px-4 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition shadow-2xs cursor-pointer" onclick="closeCreateListingModal()">Vazgeç</button>
+                <button type="submit" class="btn-primary px-4.5 py-2 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-xs shadow-blue-600/20 transition cursor-pointer">
                     İlanı Yayına Al
                 </button>
             </div>
@@ -603,70 +1205,74 @@
 </div>
 
 <!-- ==================== MODAL: ÜRÜN & GÖRSEL DÜZENLEME (DASHBOARD) ==================== -->
-<div id="dashEditListingModal" class="ty-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this)closeEditListingModal()">
-    <div class="ty-modal-box" style="background: var(--card-bg, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 14px; width: 100%; max-width: 580px; padding: 24px; box-shadow: 0 20px 30px -5px rgba(0,0,0,0.25); max-height: 90vh; overflow-y: auto; overflow-x: hidden; box-sizing: border-box;">
+<div id="dashEditListingModal" class="ty-modal-overlay fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4 md:p-6 overflow-y-auto" style="display: none;" onclick="if(event.target===this)closeEditListingModal()">
+    <div class="ty-modal-box my-auto relative bg-white rounded-2xl shadow-2xl border border-slate-200/90 w-full max-w-xl max-h-[92vh] flex flex-col overflow-hidden transform transition-all">
         
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+        <div class="px-5 py-4 sm:px-7 sm:pt-7 sm:pb-5 border-b border-slate-100 flex items-start justify-between bg-slate-50/80">
             <div>
-                <span class="status-badge badge-blue" style="font-size: 0.72rem; padding: 2px 8px;">ÜRÜN VE GÖRSEL YÖNETİMİ</span>
-                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text, #0f172a); margin-top: 6px; margin-bottom: 4px;">Ürün İlanını Düzenle</h3>
-                <p style="font-size: 0.82rem; color: var(--muted, #64748b); margin: 0;">Fiyat, stok ve Cloudinary ürün görsellerini güncelleyebilirsiniz.</p>
+                <div class="mb-2">
+                    <span class="status-badge badge-blue text-[11px] font-bold px-2 py-0.5 rounded-md">ÜRÜN VE GÖRSEL YÖNETİMİ</span>
+                </div>
+                <h3 class="text-base font-extrabold text-slate-900">Ürün İlanını Düzenle</h3>
+                <p class="text-xs text-slate-500 mt-1">Fiyat, stok ve Cloudinary ürün görsellerini güncelleyebilirsiniz.</p>
             </div>
-            <button type="button" class="modal-close-btn" onclick="closeEditListingModal()" style="border: none; background: transparent; font-size: 1.3rem; cursor: pointer; color: var(--muted);">✕</button>
+            <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer text-base leading-none shrink-0 ml-4 -mt-1 -mr-1" onclick="closeEditListingModal()" aria-label="Kapat">✕</button>
         </div>
 
-        <form id="dashEditListingForm" onsubmit="saveEditListing(event); return false;">
+        <form id="dashEditListingForm" onsubmit="saveEditListing(event); return false;" class="flex flex-col flex-1 overflow-hidden">
             <input type="hidden" id="dashEditItemId" />
 
-            <div class="form-group" style="margin-bottom: 12px;">
-                <label class="form-label" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Ürün İsmi / Başlığı <span class="req-star" style="color: #ef4444;">*</span></label>
-                <input type="text" id="dashEditProductName" class="form-control" required style="border-radius: 6px; font-size: 0.85rem;" />
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                <div class="form-group">
-                    <label class="form-label" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Toptan Birim Fiyat (₺ + KDV) <span class="req-star" style="color: #ef4444;">*</span></label>
-                    <input type="number" id="dashEditPrice" class="form-control" step="0.01" min="0.01" required style="border-radius: 6px; font-size: 0.85rem;" />
-                </div>
-                <div class="form-group">
-                    <label class="form-label" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Hazır Stok Miktarı <span class="req-star" style="color: #ef4444;">*</span></label>
-                    <input type="number" id="dashEditStock" class="form-control" min="0" required style="border-radius: 6px; font-size: 0.85rem;" />
-                </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom: 14px;">
-                <label class="form-label" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Ürün Açıklaması / Sevkiyat Notu</label>
-                <textarea id="dashEditDesc" class="form-control" rows="2" placeholder="Termin süresi, ambalaj, teknik standartlar..." style="border-radius: 6px; font-size: 0.82rem;"></textarea>
-            </div>
-
-            <!-- ÇOKLU GÖRSEL YÖNETİMİ -->
-            <div class="form-group" style="margin-bottom: 18px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <label class="form-label" style="font-size: 0.82rem; font-weight: 800; margin: 0; color: #0f172a;">
-                        Ürün Görselleri & Carousel (<span id="dashEditImagesCount">0</span>/10)
-                    </label>
-                    <span style="font-size: 0.72rem; color: var(--muted);">(★ Yeşil çerçeveli görsel ana görseldir)</span>
+            <div class="p-4 sm:p-6 overflow-y-auto space-y-3.5 text-xs">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1" for="dashEditProductName">Ürün İsmi / Başlığı <span class="text-rose-500 font-bold">*</span></label>
+                    <input type="text" id="dashEditProductName" class="form-control w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" required />
                 </div>
 
-                <div class="b2b-upload-dropzone" id="dashEditDropzone" onclick="if(event.target!==document.getElementById('dashEditImageInput'))document.getElementById('dashEditImageInput').click()" style="border: 2px dashed #cbd5e1; border-radius: 10px; padding: 12px 16px; background: #f8fafc; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center;">
-                    <div class="b2b-dropzone-inner" style="display: flex; align-items: center; gap: 12px; pointer-events: none;">
-                        <div class="b2b-dropzone-icon" style="font-size: 1.5rem; flex-shrink: 0;">📷</div>
-                        <div class="b2b-dropzone-text" style="text-align: left;">
-                            <strong style="display: block; font-size: 0.82rem; color: #1e293b;">Yeni görsel eklemek için tıklayın veya sürükleyin</strong>
-                            <span style="display: block; font-size: 0.72rem; color: #64748b; margin-top: 1px;">JPG, PNG, WEBP veya GIF (Maks. 10MB) • Değişiklikleri kaydettiğinizde yüklenecektir</span>
-                        </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="dashEditPrice">Toptan Birim Fiyat (₺ + KDV) <span class="text-rose-500 font-bold">*</span></label>
+                        <input type="number" id="dashEditPrice" class="form-control w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-semibold" step="0.01" min="0.01" required />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="dashEditStock">Hazır Stok Miktarı <span class="text-rose-500 font-bold">*</span></label>
+                        <input type="number" id="dashEditStock" class="form-control w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" min="0" required />
                     </div>
                 </div>
-                <input type="file" id="dashEditImageInput" accept="image/*" multiple style="display: none;" onchange="handleDashEditImageFiles(this.files)" />
 
-                <div class="b2b-uploaded-images-grid" id="dashEditThumbsGrid" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; align-items: center;">
-                    <!-- Mevcut ve yeni yüklenen resimler burada listelenir -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1" for="dashEditDesc">Ürün Açıklaması / Sevkiyat Notu</label>
+                    <textarea id="dashEditDesc" class="form-control w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" rows="2" placeholder="Termin süresi, ambalaj, teknik standartlar..."></textarea>
+                </div>
+
+                <!-- ÇOKLU GÖRSEL YÖNETİMİ -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-semibold text-slate-700">
+                            Ürün Görselleri &amp; Carousel (<span id="dashEditImagesCount" class="font-bold text-blue-600">0</span>/10)
+                        </label>
+                        <span class="text-[11px] text-slate-400">(★ Yeşil çerçeveli görsel ana görseldir)</span>
+                    </div>
+
+                    <div class="b2b-upload-dropzone border-2 border-dashed border-slate-300 hover:border-blue-400 rounded-xl p-3.5 bg-slate-50/70 hover:bg-blue-50/20 transition-all cursor-pointer flex items-center justify-center" id="dashEditDropzone" onclick="if(event.target!==document.getElementById('dashEditImageInput'))document.getElementById('dashEditImageInput').click()">
+                        <div class="b2b-dropzone-inner flex items-center gap-3 pointer-events-none">
+                            <div class="b2b-dropzone-icon text-2xl flex-shrink-0">📷</div>
+                            <div class="b2b-dropzone-text text-left">
+                                <strong class="block text-xs text-slate-800 font-semibold">Yeni görsel eklemek için tıklayın veya sürükleyin</strong>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">JPG, PNG, WEBP veya GIF (Maks. 10MB) • Değişiklikleri kaydettiğinizde yüklenecektir</span>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="file" id="dashEditImageInput" accept="image/*" multiple style="display: none;" onchange="handleDashEditImageFiles(this.files)" />
+
+                    <div class="b2b-uploaded-images-grid flex flex-wrap gap-2.5 mt-2.5 items-center" id="dashEditThumbsGrid">
+                        <!-- Mevcut ve yeni yüklenen resimler burada listelenir -->
+                    </div>
                 </div>
             </div>
 
-            <div style="display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid #f1f5f9; padding-top: 14px;">
-                <button type="button" class="btn-cancel" onclick="closeEditListingModal()">Vazgeç</button>
-                <button type="submit" id="dashEditSubmitBtn" class="btn-primary" style="padding: 10px 22px; font-size: 0.88rem; font-weight: 700;">
+            <div class="px-6 py-3.5 border-t border-slate-100 bg-slate-50/80 flex items-center justify-end gap-2.5">
+                <button type="button" class="btn-cancel px-4 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition shadow-2xs cursor-pointer" onclick="closeEditListingModal()">Vazgeç</button>
+                <button type="submit" id="dashEditSubmitBtn" class="btn-primary px-4.5 py-2 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-xs shadow-blue-600/20 transition cursor-pointer">
                     Değişiklikleri Kaydet
                 </button>
             </div>
@@ -678,28 +1284,75 @@
     public Microsoft.AspNetCore.Html.IHtmlContent RenderDashTree(satinalmaportali2.Controllers.HierarchicalCategoryItem node, int depth)
     {
         var sb = new System.Text.StringBuilder();
-        var indent = depth * 16;
         var hasChildren = node.Children != null && node.Children.Any();
         var encodedName = System.Net.WebUtility.HtmlEncode(node.CategoryName ?? "");
         var safeJsName = (node.CategoryName ?? "").Replace("'", "\\'");
-        
-        sb.Append($"<div class=\"cat-tree-node level-{Math.Min(depth, 3)}\" style=\"margin-left: {indent}px; margin-bottom: 2px;\">");
-        sb.Append($"<div class=\"cat-node-row {(depth == 0 ? "is-root" : "")}\" id=\"dashCatRow-{node.CategoryID}\" onclick=\"selectDashCategory({node.CategoryID}, '{safeJsName}')\" style=\"display: flex; align-items: center; padding: 6px 10px; border-radius: 6px; background: #ffffff; border: 1px solid #f1f5f9; cursor: pointer; transition: all 0.15s;\">");
-        sb.Append("<div class=\"cat-node-left\" style=\"display: flex; align-items: center; gap: 8px;\">");
-        sb.Append("<span class=\"cat-tree-bullet\" style=\"color: #94a3b8; font-size: 0.9rem;\">•</span>");
-        sb.Append($"<span class=\"cat-node-title\" style=\"font-size: 0.84rem; font-weight: 600; color: #1e293b;\">{encodedName}</span>");
-        sb.Append("</div>");
-        sb.Append("</div>");
+        var childCount = node.Children?.Count ?? 0;
 
-        if (hasChildren && node.Children != null)
+        if (depth == 0)
         {
-            foreach (var child in node.Children)
+            // KÖK (ANA) KATEGORİ: Katlanabilir Akordeon Konteyner
+            sb.Append($"<div class=\"cat-root-container mb-1\" id=\"dashCatRootContainer-{node.CategoryID}\">");
+            sb.Append($"<div class=\"cat-node-row cat-root-row flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200/90 hover:border-blue-300 hover:bg-blue-50/20 transition cursor-pointer\" id=\"dashCatRow-{node.CategoryID}\">");
+            
+            if (hasChildren)
             {
-                sb.Append(RenderDashTree(child, depth + 1).ToString());
+                // Sol: Açma/Kapama Oku + Başlık + Alt Adet
+                sb.Append($"<div class=\"flex items-center gap-2 flex-1 min-w-0 pr-2\" onclick=\"toggleDashCategoryGroup({node.CategoryID}, event)\">");
+                sb.Append($"<span class=\"cat-expand-arrow w-4 h-4 rounded flex items-center justify-center bg-slate-100 text-slate-600 text-[10px] font-bold shrink-0 transition-transform\" id=\"dashCatArrow-{node.CategoryID}\">▸</span>");
+                sb.Append($"<span class=\"cat-node-title text-xs font-bold text-slate-800 truncate\">{encodedName}</span>");
+                sb.Append($"<span class=\"text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full shrink-0\">{childCount}</span>");
+                sb.Append("</div>");
+                
+                // Sağ: Doğrudan Bu Ana Kategoriyi Seç
+                sb.Append($"<button type=\"button\" class=\"btn-select-cat shrink-0 text-[11px] font-bold text-blue-600 hover:text-white hover:bg-blue-600 border border-blue-200 px-2 py-0.5 rounded-md transition cursor-pointer\" onclick=\"selectDashCategory({node.CategoryID}, '{safeJsName}')\" title=\"Bu kategoriyi seç\">Seç</button>");
+            }
+            else
+            {
+                sb.Append($"<div class=\"flex items-center justify-between w-full\" onclick=\"selectDashCategory({node.CategoryID}, '{safeJsName}')\">");
+                sb.Append($"<span class=\"cat-node-title text-xs font-bold text-slate-800 truncate\">📁 {encodedName}</span>");
+                sb.Append($"<button type=\"button\" class=\"btn-select-cat shrink-0 text-[11px] font-bold text-blue-600 hover:text-white hover:bg-blue-600 border border-blue-200 px-2 py-0.5 rounded-md transition cursor-pointer\">Seç</button>");
+                sb.Append("</div>");
+            }
+            
+            sb.Append("</div>");
+
+            // Alt Kategoriler Kutusu (Varsayılan Olarak KAPALI - hidden)
+            if (hasChildren && node.Children != null)
+            {
+                sb.Append($"<div class=\"cat-children-box hidden pl-2.5 border-l-2 border-blue-100 ml-2.5 my-1 space-y-1\" id=\"dashCatChildren-{node.CategoryID}\">");
+                foreach (var child in node.Children)
+                {
+                    sb.Append(RenderDashTree(child, depth + 1).ToString());
+                }
+                sb.Append("</div>");
+            }
+
+            sb.Append("</div>");
+        }
+        else
+        {
+            // ALT KATEGORİ (Seviye 1, 2, ...)
+            var indent = Math.Max(0, (depth - 1) * 8);
+            sb.Append($"<div class=\"cat-node-row flex items-center justify-between p-1.5 px-2 rounded-md bg-white border border-slate-100 hover:border-blue-200 hover:bg-blue-50/20 transition cursor-pointer\" id=\"dashCatRow-{node.CategoryID}\" onclick=\"selectDashCategory({node.CategoryID}, '{safeJsName}')\" style=\"margin-left: {indent}px;\">");
+            sb.Append("<div class=\"flex items-center gap-1.5 min-w-0 pr-2\">");
+            sb.Append("<span class=\"text-slate-300 text-[10px]\">•</span>");
+            sb.Append($"<span class=\"cat-node-title text-[11.5px] font-medium text-slate-700 truncate\">{encodedName}</span>");
+            sb.Append("</div>");
+            sb.Append($"<span class=\"text-[10px] font-semibold text-blue-600 shrink-0\">Seç →</span>");
+            sb.Append("</div>");
+
+            if (hasChildren && node.Children != null)
+            {
+                sb.Append("<div class=\"space-y-1 my-0.5\">");
+                foreach (var child in node.Children)
+                {
+                    sb.Append(RenderDashTree(child, depth + 1).ToString());
+                }
+                sb.Append("</div>");
             }
         }
 
-        sb.Append("</div>");
         return new Microsoft.AspNetCore.Html.HtmlString(sb.ToString());
     }
 }
@@ -772,6 +1425,8 @@
                                      (this.category === 'Tümü' || this.category === 'Tüm Kategoriler' || !this.category) &&
                                      !this.search;
 
+                const cards = document.querySelectorAll('#listingsMobileList .listing-mobile-card');
+
                 rows.forEach(row => {
                     if (isAllDefault) {
                         row.style.display = '';
@@ -816,6 +1471,56 @@
                         row.style.display = 'none';
                     }
                 });
+
+                // Mobil Kartları Senkronize Filtrele
+                cards.forEach(card => {
+                    if (isAllDefault) {
+                        card.style.display = '';
+                        return;
+                    }
+
+                    const cardStatus = (card.getAttribute('data-status') || '').trim().toLowerCase();
+                    const cardCategory = (card.getAttribute('data-category') || '').trim().toLowerCase();
+
+                    let matchStatus = false;
+                    if (this.status === 'Tümü' || !this.status) {
+                        matchStatus = true;
+                    } else if (this.status.toLowerCase() === 'stokta') {
+                        matchStatus = (cardStatus === 'stokta');
+                    } else if (this.status.toLowerCase() === 'kritik') {
+                        matchStatus = (cardStatus === 'kritik' || cardStatus === 'tükendi');
+                    } else {
+                        matchStatus = (cardStatus === this.status.toLowerCase());
+                    }
+
+                    let matchCategory = false;
+                    if (this.category === 'Tümü' || this.category === 'Tüm Kategoriler' || !this.category) {
+                        matchCategory = true;
+                    } else {
+                        matchCategory = (cardCategory === this.category.toLowerCase());
+                    }
+
+                    let matchSearch = true;
+                    if (this.search) {
+                        const cardText = (card.innerText || card.textContent || '').toLowerCase();
+                        matchSearch = cardText.includes(this.search);
+                    }
+
+                    if (matchStatus && matchCategory && matchSearch) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                const mobileEmptyState = document.getElementById('listingsMobileEmptyState');
+                if (mobileEmptyState) {
+                    if (cards.length > 0 && visibleCount === 0) {
+                        mobileEmptyState.style.display = 'block';
+                    } else {
+                        mobileEmptyState.style.display = 'none';
+                    }
+                }
 
                 const headTitle = document.getElementById('listingsHeaderTitle');
                 if (headTitle) {
@@ -961,6 +1666,241 @@
             }
         }
 
+        // =========================================================================
+        // ÜRÜN DETAY MODALI (MOBİL DETAY GÖRÜNTÜLEME & HIZLI AKSİYONLAR)
+        // =========================================================================
+        let currentDetailListingId = null;
+
+        function openListingDetailModal(itemId) {
+            if (!itemId) return;
+            currentDetailListingId = itemId;
+
+            const modal = document.getElementById('listingDetailModal');
+            const loading = document.getElementById('listingDetailModalLoading');
+            const content = document.getElementById('listingDetailModalContent');
+            if (!modal) return;
+
+            document.getElementById('dashboardBottomBar')?.classList.add('hidden');
+            modal.style.display = 'flex';
+            if (loading) loading.style.display = 'block';
+            if (content) content.classList.add('hidden');
+
+            // 1. Önce DOM'daki kart veya tablodan anında ön bilgileri doldur (gecikmesiz his)
+            populateListingDetailFromDom(itemId);
+
+            // 2. Sunucudan tam ve güncel verileri çek (Çoklu Cloudinary görselleri, detaylar vb.)
+            fetch('/Dashboard/GetProductDetails?id=' + itemId)
+                .then(res => {
+                    if (!res.ok) throw new Error('Ürün verisi yüklenemedi');
+                    return res.json();
+                })
+                .then(data => {
+                    if (data && data.success && data.product) {
+                        populateListingDetailModal(data.product);
+                    }
+                })
+                .catch(err => {
+                    console.warn('Detay modalı sunucu verisi uyarısı:', err);
+                })
+                .finally(() => {
+                    if (loading) loading.style.display = 'none';
+                    if (content) content.classList.remove('hidden');
+                });
+        }
+
+        function closeListingDetailModal() {
+            const modal = document.getElementById('listingDetailModal');
+            if (modal) modal.style.display = 'none';
+            currentDetailListingId = null;
+            document.getElementById('dashboardBottomBar')?.classList.remove('hidden');
+        }
+
+        function populateListingDetailFromDom(itemId) {
+            const card = document.getElementById('mobile-listing-card-' + itemId);
+            const row = document.getElementById('listing-row-' + itemId);
+
+            let name = '', sku = '', brand = '', category = '', price = 0, stock = 0, status = 'Stokta', desc = '-', imgUrl = '';
+
+            if (card) {
+                sku = card.querySelector('.font-mono')?.textContent?.trim() || '';
+                brand = card.querySelector('.truncate')?.textContent?.trim() || '';
+                status = (card.getAttribute('data-status') || '').trim();
+                category = (card.getAttribute('data-category') || '').trim();
+                name = card.querySelector('h4')?.textContent?.trim() || '';
+                imgUrl = card.querySelector('img')?.getAttribute('src') || '';
+                const priceText = card.querySelector('strong.text-sm')?.textContent || '';
+                price = parseFloat(priceText.replace(/[^\d.,]/g, '').replace(/\./g, '').replace(',', '.')) || 0;
+                const stockText = card.querySelector('.text-xs.font-bold')?.textContent || '';
+                stock = parseInt(stockText.replace(/\D/g, ''), 10) || 0;
+            } else if (row) {
+                name = row.querySelector('.req-title-cell strong')?.textContent?.trim() || '';
+                sku = row.querySelector('.req-code')?.textContent?.trim() || '';
+                brand = row.querySelector('.req-title-cell small:last-child')?.textContent?.trim() || '';
+                category = (row.getAttribute('data-category') || '').trim();
+                status = (row.getAttribute('data-status') || '').trim();
+                imgUrl = row.querySelector('img')?.getAttribute('src') || '';
+                desc = row.querySelector('td:nth-child(6) span')?.textContent?.trim() || '-';
+                const stockText = row.querySelector('td:nth-child(3) strong')?.textContent || '';
+                stock = parseInt(stockText.replace(/\D/g, ''), 10) || 0;
+                const priceText = row.querySelector('td:nth-child(4) strong')?.textContent || '';
+                price = parseFloat(priceText.replace(/[^\d.,]/g, '').replace(/\./g, '').replace(',', '.')) || 0;
+            }
+
+            populateListingDetailModal({
+                itemId: itemId,
+                itemName: name,
+                sku: sku,
+                brand: brand,
+                categoryName: category,
+                status: status,
+                unitPrice: price,
+                stock: stock,
+                itemDescription: desc,
+                mainImageUrl: imgUrl,
+                images: imgUrl ? [{ imageUrl: imgUrl, isMain: true }] : []
+            });
+        }
+
+        function populateListingDetailModal(p) {
+            const itemId = p.itemId || currentDetailListingId;
+            const name = p.productName || p.itemName || 'Ürün';
+            const sku = p.sku || '-';
+            const brand = p.brand || '';
+            const category = p.categoryName || '-';
+            const unitPrice = Number(p.unitPrice ?? p.price ?? 0);
+            const stock = Number(p.stockQuantity ?? p.stock ?? 0);
+            const desc = (p.itemDescription || p.description || '').trim();
+
+            const isOut = stock <= 0;
+            const isCrit = stock > 0 && stock <= 10;
+            const statusText = p.status || (isOut ? 'Tükendi' : (isCrit ? 'Kritik' : 'Stokta'));
+            const statusBadgeCls = isOut ? 'badge-coral' : (isCrit ? 'badge-amber' : 'badge-emerald');
+
+            // Başlık ve Rozetler
+            const headTitle = document.getElementById('listingDetailHeaderTitle');
+            if (headTitle) headTitle.textContent = name;
+
+            const catBadge = document.getElementById('listingDetailCatBadge');
+            if (catBadge) catBadge.textContent = '📁 ' + category;
+
+            const titleEl = document.getElementById('listingDetailTitle');
+            if (titleEl) titleEl.textContent = name;
+
+            const skuEl = document.getElementById('listingDetailSku');
+            if (skuEl) skuEl.textContent = sku;
+
+            const brandEl = document.getElementById('listingDetailBrand');
+            if (brandEl) {
+                if (brand) {
+                    brandEl.textContent = '🏷️ ' + brand;
+                    brandEl.style.display = 'inline-block';
+                } else {
+                    brandEl.style.display = 'none';
+                }
+            }
+
+            const statusEl = document.getElementById('listingDetailStatusBadge');
+            if (statusEl) {
+                statusEl.className = 'status-badge ' + statusBadgeCls + ' text-[11px] font-bold px-2 py-0.5 rounded-full';
+                statusEl.innerHTML = '<span class="status-dot"></span> ' + statusText;
+            }
+
+            // Finans ve Stok
+            const priceEl = document.getElementById('listingDetailUnitPrice');
+            if (priceEl) {
+                priceEl.textContent = (typeof formatCurrency === 'function' ? formatCurrency(unitPrice) : (unitPrice.toLocaleString('tr-TR') + ' ₺'));
+            }
+
+            const kdvPrice = unitPrice * 1.20;
+            const kdvEl = document.getElementById('listingDetailPriceWithKdv');
+            if (kdvEl) {
+                kdvEl.textContent = '+ %20 KDV: ' + (typeof formatCurrency === 'function' ? formatCurrency(kdvPrice) : (kdvPrice.toLocaleString('tr-TR') + ' ₺'));
+            }
+
+            const stockEl = document.getElementById('listingDetailStock');
+            if (stockEl) {
+                stockEl.textContent = stock.toLocaleString('tr-TR') + ' Adet';
+                stockEl.className = 'text-base font-black ' + (isOut ? 'text-rose-600' : (isCrit ? 'text-amber-600' : 'text-blue-700')) + ' mt-0.5';
+            }
+
+            const stockStateEl = document.getElementById('listingDetailStockState');
+            if (stockStateEl) {
+                stockStateEl.textContent = isOut ? '⚠️ Stok Tükendi (Satışa Kapalı)' : (isCrit ? '⚠️ Kritik Stok Seviyesi' : '✅ Hızlı Sevkiyata Uygun');
+                stockStateEl.className = 'text-[11px] font-medium block mt-0.5 ' + (isOut ? 'text-rose-600' : (isCrit ? 'text-amber-600' : 'text-blue-600'));
+            }
+
+            const totalValue = unitPrice * stock;
+            const totalValEl = document.getElementById('listingDetailTotalValue');
+            if (totalValEl) {
+                totalValEl.textContent = typeof formatCurrency === 'function' ? formatCurrency(totalValue) : (totalValue.toLocaleString('tr-TR') + ' ₺');
+            }
+
+            // Açıklama / Şartname
+            const descEl = document.getElementById('listingDetailDesc');
+            if (descEl) {
+                descEl.textContent = desc || 'Bu ürün için özel bir teslimat veya şartname notu girilmemiştir.';
+            }
+
+            // Görseller & Galeri
+            const mainImg = document.getElementById('listingDetailMainImg');
+            const galleryStrip = document.getElementById('listingDetailGalleryStrip');
+            const images = p.images || [];
+
+            let mainUrl = p.mainImageUrl || (images.length > 0 ? (images.find(x => x.isMain)?.imageUrl || images[0].imageUrl) : '/images/default-product.svg');
+            if (mainImg) mainImg.src = mainUrl || '/images/default-product.svg';
+
+            if (galleryStrip) {
+                if (images.length > 1) {
+                    galleryStrip.classList.remove('hidden');
+                    galleryStrip.innerHTML = images.map((img, idx) => `
+                        <div class="relative w-12 h-12 rounded-lg border-2 ${img.imageUrl === mainUrl ? 'border-blue-600' : 'border-slate-200'} bg-white overflow-hidden shrink-0 cursor-pointer hover:opacity-90 transition-all p-0.5"
+                             onclick="switchListingDetailMainImage('${img.imageUrl}', this)"
+                             title="Görseli Büyüt">
+                            <img src="${img.imageUrl}" alt="Görsel ${idx+1}" class="w-full h-full object-contain" onerror="this.src='/images/default-product.svg'" />
+                        </div>
+                    `).join('');
+                } else {
+                    galleryStrip.classList.add('hidden');
+                    galleryStrip.innerHTML = '';
+                }
+            }
+
+            // Aksiyon Butonları Bağlantıları
+            const editBtn = document.getElementById('listingDetailEditBtn');
+            if (editBtn) {
+                editBtn.onclick = function() {
+                    closeListingDetailModal();
+                    openEditListingModal(itemId);
+                };
+            }
+
+            const delBtn = document.getElementById('listingDetailDeleteBtn');
+            if (delBtn) {
+                delBtn.onclick = function() {
+                    closeListingDetailModal();
+                    deleteListing(itemId, name);
+                };
+            }
+        }
+
+        function switchListingDetailMainImage(url, thumbEl) {
+            const mainImg = document.getElementById('listingDetailMainImg');
+            if (mainImg && url) {
+                mainImg.src = url;
+            }
+            if (thumbEl) {
+                const strip = document.getElementById('listingDetailGalleryStrip');
+                if (strip) {
+                    strip.querySelectorAll('div').forEach(d => {
+                        d.classList.remove('border-blue-600');
+                        d.classList.add('border-slate-200');
+                    });
+                }
+                thumbEl.classList.remove('border-slate-200');
+                thumbEl.classList.add('border-blue-600');
+            }
+        }
+
         // Yeni İlan Modalı Aç / Kapa
         function openCreateListingModal() {
             var isIyzicoApproved = @(Model.IsIyzicoApproved ? "true" : "false");
@@ -987,6 +1927,7 @@
 
             var modal = document.getElementById('dashCreateListingModal');
             if (modal) {
+                document.getElementById('dashboardBottomBar')?.classList.add('hidden');
                 modal.style.display = 'flex';
                 document.getElementById('dashListingProductName')?.focus();
             }
@@ -995,6 +1936,7 @@
         function closeCreateListingModal() {
             var modal = document.getElementById('dashCreateListingModal');
             if (modal) modal.style.display = 'none';
+            document.getElementById('dashboardBottomBar')?.classList.remove('hidden');
             (dashCreateUploadedImages || []).forEach(img => {
                 if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
                     try { URL.revokeObjectURL(img.previewUrl); } catch(e) {}
@@ -1004,42 +1946,156 @@
             renderDashCreateImages();
         }
 
+        function toggleDashCatPicker(forceState) {
+            const panel = document.getElementById('dashCatPickerPanel');
+            const chevron = document.getElementById('dashCatChevron');
+            if (!panel) return;
+
+            const isCurrentlyOpen = !panel.classList.contains('hidden');
+            const shouldOpen = typeof forceState === 'boolean' ? forceState : !isCurrentlyOpen;
+
+            if (shouldOpen) {
+                panel.classList.remove('hidden');
+                if (chevron) chevron.style.transform = 'rotate(180deg)';
+                const searchInput = document.getElementById('dashCatSearchInput');
+                if (searchInput) setTimeout(() => searchInput.focus(), 60);
+            } else {
+                panel.classList.add('hidden');
+                if (chevron) chevron.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        function toggleDashCategoryGroup(categoryId, e) {
+            if (e) e.stopPropagation();
+            const childrenBox = document.getElementById('dashCatChildren-' + categoryId);
+            const arrow = document.getElementById('dashCatArrow-' + categoryId);
+            if (!childrenBox) return;
+
+            const isHidden = childrenBox.classList.contains('hidden');
+            if (isHidden) {
+                childrenBox.classList.remove('hidden');
+                childrenBox.dataset.manuallyExpanded = 'true';
+                if (arrow) arrow.textContent = '▾';
+            } else {
+                childrenBox.classList.add('hidden');
+                delete childrenBox.dataset.manuallyExpanded;
+                if (arrow) arrow.textContent = '▸';
+            }
+        }
+
+        function filterDashCategories(query) {
+            const q = (query || '').trim().toLowerCase();
+            const rootContainers = document.querySelectorAll('#dashCatTreeBox .cat-root-container');
+
+            if (!q) {
+                // Arama kutusu temizlendiğinde: Kökleri aç, alt grupları eski kapalı durumuna getir
+                rootContainers.forEach(container => {
+                    container.style.display = '';
+                    const rows = container.querySelectorAll('.cat-node-row');
+                    rows.forEach(r => r.style.display = '');
+
+                    const childrenBox = container.querySelector('.cat-children-box');
+                    const arrow = container.querySelector('.cat-expand-arrow');
+                    if (childrenBox && !childrenBox.dataset.manuallyExpanded) {
+                        childrenBox.classList.add('hidden');
+                        if (arrow) arrow.textContent = '▸';
+                    }
+                });
+                return;
+            }
+
+            // Arama yapılıyorsa: Eşleşenleri anında filtrele ve görünür kıl
+            rootContainers.forEach(container => {
+                let hasMatch = false;
+                const rows = container.querySelectorAll('.cat-node-row');
+
+                rows.forEach(row => {
+                    const title = (row.querySelector('.cat-node-title')?.textContent || '').toLowerCase();
+                    if (title.includes(q)) {
+                        row.style.display = '';
+                        hasMatch = true;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                const childrenBox = container.querySelector('.cat-children-box');
+                const arrow = container.querySelector('.cat-expand-arrow');
+
+                if (hasMatch) {
+                    container.style.display = '';
+                    if (childrenBox) {
+                        childrenBox.classList.remove('hidden');
+                        if (arrow) arrow.textContent = '▾';
+                    }
+                } else {
+                    container.style.display = 'none';
+                }
+            });
+        }
+
         function selectDashCategory(id, name) {
             document.getElementById('dashListingCategoryId').value = id;
             document.getElementById('dashListingCategory').value = name;
-            var textEl = document.getElementById('dashCatSelectedText');
-            if (textEl) {
-                textEl.innerHTML = '<strong style="color: #0284c7;">' + name + '</strong>';
-            }
 
+            const banner = document.getElementById('dashCatSelectedBanner');
+            const textEl = document.getElementById('dashCatSelectedText');
+            const clearBtn = document.getElementById('dashCatClearBtn');
+
+            if (textEl) {
+                textEl.innerHTML = '<span class="font-bold text-emerald-700">✓ ' + (typeof escapeHtml === 'function' ? escapeHtml(name) : name) + '</span>';
+            }
+            if (banner) {
+                banner.classList.remove('bg-slate-50', 'border-slate-200');
+                banner.classList.add('bg-emerald-50/80', 'border-emerald-300');
+            }
+            if (clearBtn) clearBtn.style.display = 'inline-block';
+
+            // Ağaçta seçilen satırı vurgula
             document.querySelectorAll('#dashCatTreeBox .cat-node-row').forEach(function(row) {
-                row.style.background = '#ffffff';
-                row.style.borderColor = '#f1f5f9';
-                var title = row.querySelector('.cat-node-title');
-                if (title) { title.style.color = '#1e293b'; title.style.fontWeight = '600'; }
+                row.classList.remove('bg-emerald-50', 'border-emerald-300');
             });
 
             var target = document.getElementById('dashCatRow-' + id);
             if (target) {
-                target.style.background = '#eff6ff';
-                target.style.borderColor = '#3b82f6';
-                var title = target.querySelector('.cat-node-title');
-                if (title) { title.style.color = '#1d4ed8'; title.style.fontWeight = '800'; }
+                target.classList.add('bg-emerald-50', 'border-emerald-300');
+            }
+
+            // Kategori seçildikten sonra paneli hemen kapat (kullanıcı alttaki fiyat ve stoğa devam edebilsin)
+            toggleDashCatPicker(false);
+
+            if (typeof showRealtimeToast === 'function') {
+                showRealtimeToast('Kategori seçildi: ' + name, 'info');
             }
         }
 
         function clearDashCatTreeSelection() {
             document.getElementById('dashListingCategoryId').value = '';
             document.getElementById('dashListingCategory').value = '';
-            var textEl = document.getElementById('dashCatSelectedText');
-            if (textEl) textEl.textContent = 'Aşağıdaki ağaçtan bir kategori seçiniz...';
 
+            const banner = document.getElementById('dashCatSelectedBanner');
+            const textEl = document.getElementById('dashCatSelectedText');
+            const clearBtn = document.getElementById('dashCatClearBtn');
+
+            if (textEl) {
+                textEl.innerHTML = '<span class="font-medium text-slate-500">Kategori Seçiniz (Tıklayın veya Arayın)...</span>';
+            }
+            if (banner) {
+                banner.classList.remove('bg-emerald-50/80', 'border-emerald-300');
+                banner.classList.add('bg-slate-50', 'border-slate-200');
+            }
+            if (clearBtn) clearBtn.style.display = 'none';
+
+            // Ağaç vurgusunu ve aramasını temizle
             document.querySelectorAll('#dashCatTreeBox .cat-node-row').forEach(function(row) {
-                row.style.background = '#ffffff';
-                row.style.borderColor = '#f1f5f9';
-                var title = row.querySelector('.cat-node-title');
-                if (title) { title.style.color = '#1e293b'; title.style.fontWeight = '600'; }
+                row.classList.remove('bg-emerald-50', 'border-emerald-300');
             });
+
+            const searchInput = document.getElementById('dashCatSearchInput');
+            if (searchInput) {
+                searchInput.value = '';
+                filterDashCategories('');
+            }
         }
 
         async function handleDashCreateListing(e) {
@@ -1183,6 +2239,93 @@
                         tbody.insertAdjacentHTML('afterbegin', newRowHtml);
                     }
 
+                    const mobileList = document.getElementById('listingsMobileList');
+                    if (mobileList) {
+                        const noDataMobile = document.getElementById('listingsMobileNoData');
+                        if (noDataMobile) noDataMobile.remove();
+
+                        const formattedPrice = typeof formatCurrency === 'function' ? formatCurrency(itemPrice) : (itemPrice.toLocaleString('tr-TR') + ' ₺');
+                        const isCrit = itemStock > 0 && itemStock <= 10;
+                        const isOut = itemStock <= 0;
+                        const statusCls = isOut ? 'badge-coral' : (isCrit ? 'badge-amber' : 'badge-emerald');
+                        const statusText = isOut ? 'Tükendi' : (isCrit ? 'Kritik' : 'Stokta');
+                        const safeNameAttr = typeof escapeHtml === 'function' ? escapeHtml(productName.trim()) : productName.trim();
+                        const safeCatAttr = typeof escapeHtml === 'function' ? escapeHtml(catName) : catName;
+
+                        const newMobileCardHtml = `
+                            <div class="listing-mobile-card bg-white border border-slate-200/90 rounded-xl p-3.5 shadow-xs hover:border-blue-300 hover:shadow-md transition-all cursor-pointer flex flex-col gap-2.5 active:scale-[0.99] realtime-updated"
+                                 id="mobile-listing-card-${itemId}"
+                                 data-status="${statusText}"
+                                 data-category="${safeCatAttr}"
+                                 onclick="openListingDetailModal(${itemId})">
+                                
+                                <div class="flex items-center justify-between text-xs">
+                                    <div class="flex items-center gap-1.5 flex-wrap min-w-0">
+                                        <span class="font-mono text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                                            ${typeof escapeHtml === 'function' ? escapeHtml(sku) : sku}
+                                        </span>
+                                        ${brand ? `
+                                            <span class="text-[11px] font-semibold text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200/70 truncate max-w-[120px]">
+                                                ${typeof escapeHtml === 'function' ? escapeHtml(brand) : brand}
+                                            </span>
+                                        ` : ''}
+                                    </div>
+                                    <span class="status-badge ${statusCls} shrink-0 text-[11px] px-2 py-0.5 rounded-full font-bold">
+                                        <span class="status-dot"></span>
+                                        ${statusText}
+                                    </span>
+                                </div>
+
+                                <div class="flex items-center gap-3">
+                                    <div class="relative w-14 h-14 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center justify-center overflow-hidden shrink-0">
+                                        <img src="${rowImg}" 
+                                             alt="${safeNameAttr}" 
+                                             class="w-full h-full object-contain p-1"
+                                             onerror="this.src='/images/default-product.svg'" />
+                                        ${dashCreateUploadedImages.length > 1 ? `<span class="absolute bottom-0.5 right-0.5 bg-slate-900/85 text-white text-[9px] font-bold px-1 rounded leading-tight">+${dashCreateUploadedImages.length}</span>` : ''}
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h4 class="text-[13.5px] font-bold text-slate-800 leading-snug line-clamp-2">
+                                            ${safeNameAttr}
+                                        </h4>
+                                        <div class="mt-1 flex items-center gap-1.5">
+                                            <span class="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md truncate max-w-[170px]">
+                                                📁 ${safeCatAttr}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                                    <div>
+                                        <span class="text-[10px] uppercase font-bold text-slate-400 block leading-tight">Toptan Fiyat</span>
+                                        <div class="flex items-baseline gap-1">
+                                            <strong class="text-sm font-black text-slate-900">
+                                                ${formattedPrice}
+                                            </strong>
+                                            <span class="text-[10px] text-slate-400 font-medium">+KDV</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="text-center">
+                                        <span class="text-[10px] uppercase font-bold text-slate-400 block leading-tight">Hazır Stok</span>
+                                        <span class="text-xs font-bold ${isOut ? 'text-rose-600' : (isCrit ? 'text-amber-600' : 'text-slate-700')}">
+                                            ${itemStock} Adet
+                                        </span>
+                                    </div>
+
+                                    <div class="flex items-center gap-1 font-bold text-blue-600 text-xs hover:text-blue-700 shrink-0">
+                                        <span>Detay</span>
+                                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <polyline points="9 18 15 12 9 6"></polyline>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        mobileList.insertAdjacentHTML('afterbegin', newMobileCardHtml);
+                    }
+
                     const kpiCount = document.getElementById('kpiTotalListings');
                     if (kpiCount) {
                         const cur = parseInt(kpiCount.textContent.replace(/\D/g, '') || '0', 10);
@@ -1306,7 +2449,10 @@
                 setupDashboardDropzones();
 
                 const modal = document.getElementById('dashEditListingModal');
-                if (modal) modal.style.display = 'flex';
+                if (modal) {
+                    document.getElementById('dashboardBottomBar')?.classList.add('hidden');
+                    modal.style.display = 'flex';
+                }
             } catch(err) {
                 console.error('GetProductDetails error:', err);
                 if (typeof showRealtimeToast === 'function') showRealtimeToast('Bağlantı hatası: ' + err.message, 'error');
@@ -1316,6 +2462,7 @@
         function closeEditListingModal() {
             const modal = document.getElementById('dashEditListingModal');
             if (modal) modal.style.display = 'none';
+            document.getElementById('dashboardBottomBar')?.classList.remove('hidden');
             (dashEditUploadedImages || []).forEach(img => {
                 if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
                     try { URL.revokeObjectURL(img.previewUrl); } catch(e) {}
@@ -1549,6 +2696,38 @@
                         row.classList.add('realtime-updated');
                         setTimeout(() => row.classList.remove('realtime-updated'), 2000);
                     }
+
+                    // Mobil kartı da anlık güncelle
+                    const mobileCard = document.getElementById('mobile-listing-card-' + itemId);
+                    if (mobileCard) {
+                        const mainImg = result.mainImageUrl || (dashEditUploadedImages.find(x => x.isMain) || dashEditUploadedImages[0])?.imageUrl || '/images/default-product.svg';
+                        const imgEl = mobileCard.querySelector('img');
+                        if (imgEl) imgEl.src = mainImg;
+
+                        const nameEl = mobileCard.querySelector('h4');
+                        if (nameEl) nameEl.textContent = productName.trim();
+
+                        const priceEl = mobileCard.querySelector('strong.text-sm');
+                        if (priceEl) priceEl.textContent = (price.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })) + ' ₺';
+
+                        const stockEl = mobileCard.querySelector('.text-xs.font-bold');
+                        const isCrit = stock > 0 && stock <= 10;
+                        const isOut = stock <= 0;
+                        if (stockEl) {
+                            stockEl.textContent = stock + ' Adet';
+                            stockEl.className = 'text-xs font-bold ' + (isOut ? 'text-rose-600' : (isCrit ? 'text-amber-600' : 'text-slate-700'));
+                        }
+
+                        const statusBadge = mobileCard.querySelector('.status-badge');
+                        if (statusBadge) {
+                            statusBadge.className = 'status-badge ' + (isOut ? 'badge-coral' : (isCrit ? 'badge-amber' : 'badge-emerald')) + ' shrink-0 text-[11px] px-2 py-0.5 rounded-full font-bold';
+                            statusBadge.innerHTML = '<span class="status-dot"></span>' + (isOut ? 'Tükendi' : (isCrit ? 'Kritik' : 'Stokta'));
+                        }
+                        mobileCard.setAttribute('data-status', isOut ? 'Tükendi' : (isCrit ? 'Kritik' : 'Stokta'));
+
+                        mobileCard.classList.add('realtime-updated');
+                        setTimeout(() => mobileCard.classList.remove('realtime-updated'), 2000);
+                    }
                 } else {
                     if (typeof showRealtimeToast === 'function') showRealtimeToast("Hata: " + (result.message || "Güncelleme başarısız."), "error");
                     else alert("Hata: " + (result.message || "Güncelleme başarısız."));
@@ -1585,6 +2764,17 @@
                         row.style.transform = 'translateX(20px)';
                         setTimeout(function() {
                             row.remove();
+                            window.ListingsManager.apply();
+                        }, 300);
+                    }
+
+                    const mobileCard = document.getElementById('mobile-listing-card-' + id);
+                    if (mobileCard) {
+                        mobileCard.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                        mobileCard.style.opacity = '0';
+                        mobileCard.style.transform = 'translateX(20px)';
+                        setTimeout(function() {
+                            mobileCard.remove();
                             window.ListingsManager.apply();
                         }, 300);
                     }

@@ -7,10 +7,10 @@
 }
 
 <!-- ==================== SAYFA BAŞLIĞI VE DÖNEM SEÇİMİ ==================== -->
-<div class="page-head">
+<div class="page-head flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
     <div>
-        <h1>Tedarikçi Satış & RFQ Yönetimi</h1>
-        <p>
+        <h1 class="text-xl sm:text-2xl font-black tracking-tight text-slate-900">Tedarikçi Satış &amp; RFQ Yönetimi</h1>
+        <p class="text-xs text-slate-500 mt-1">
             @if (Model.State == satinalmaportali2.Models.DataState.Ok) {
                 <span>@Model.SelectedYear dönemi · mağaza performansı, teklif ve açık ihaleler</span>
             } else {
@@ -20,9 +20,9 @@
     </div>
 
     @if (Model.AvailableYears.Count > 0) {
-        <nav class="year-filter" aria-label="Dönem seçimi">
+        <nav class="year-filter flex items-center gap-1.5 p-1 bg-white border border-slate-200/90 rounded-xl shadow-xs" aria-label="Dönem seçimi">
             @foreach (var year in Model.AvailableYears) {
-                <a class="year-pill @(year == Model.SelectedYear ? "is-active" : "")"
+                <a class="year-pill px-3 py-1.5 rounded-lg text-xs font-semibold transition-all @(year == Model.SelectedYear ? "is-active bg-blue-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50")"
                    asp-action="Supplier" asp-route-yil="@year"
                    onclick="switchDashboardYear('@year', event)"
                    aria-current="@(year == Model.SelectedYear ? "page" : null)">@year</a>
@@ -32,117 +32,117 @@
 </div>
 
 <!-- ==================== 4 BÜYÜK TEDARİKÇİ KPI KARTI ==================== -->
-<section class="kpi-row" aria-label="Tedarikçi Göstergeleri">
+<section class="kpi-row grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" aria-label="Tedarikçi Göstergeleri">
 
     <!-- KPI 1: Gelen Yeni RFQ -->
-    <article class="card kpi-card">
-        <div class="kpi-top">
-            <span class="kpi-label">Gelen Yeni RFQ</span>
-            <span class="kpi-icon accent">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+    <article class="card kpi-card bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
+        <div class="kpi-top flex items-center justify-between">
+            <span class="kpi-label text-xs font-bold text-slate-500 uppercase tracking-wider">Gelen Yeni RFQ</span>
+            <span class="kpi-icon accent w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-xs">
+                <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <polyline points="3 17 9 11 13 15 21 7"></polyline>
                     <polyline points="14 7 21 7 21 14"></polyline>
                 </svg>
             </span>
         </div>
-        <p class="kpi-value">@Model.Summary.NewIncomingRfqs</p>
-        <p class="kpi-delta is-good">
+        <p class="kpi-value text-3xl font-black tracking-tight text-slate-900 my-2">@Model.Summary.NewIncomingRfqs</p>
+        <p class="kpi-delta text-xs font-medium flex items-center gap-1.5 is-good text-emerald-600 font-semibold">
             <span aria-hidden="true">▲</span>
             <span>+@Model.Summary.NewRfqsThisWeek bu hafta</span>
-            <span class="kpi-delta-note">· @Model.Summary.RfqsAwaitingResponse cevap bekliyor</span>
+            <span class="kpi-delta-note text-slate-400 font-normal">· @Model.Summary.RfqsAwaitingResponse cevap bekliyor</span>
         </p>
     </article>
 
     <!-- KPI 2: Aktif Teklifler -->
-    <article class="card kpi-card">
-        <div class="kpi-top">
-            <span class="kpi-label">Aktif Teklifler</span>
-            <span class="kpi-icon accent">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+    <article class="card kpi-card bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
+        <div class="kpi-top flex items-center justify-between">
+            <span class="kpi-label text-xs font-bold text-slate-500 uppercase tracking-wider">Aktif Teklifler</span>
+            <span class="kpi-icon accent w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-xs">
+                <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                     <polyline points="14 2 14 8 20 8"></polyline>
                     <line x1="16" y1="13" x2="8" y2="13"></line>
                 </svg>
             </span>
         </div>
-        <p class="kpi-value">@Model.Summary.ActiveBids</p>
-        <p class="kpi-delta is-flat">
-            <span class="kpi-delta-note">toplam değer: @Model.Summary.ActiveBidsValue.ToString("N0", ChartHelper.Tr) ₺</span>
+        <p class="kpi-value text-3xl font-black tracking-tight text-slate-900 my-2">@Model.Summary.ActiveBids</p>
+        <p class="kpi-delta text-xs font-medium is-flat text-slate-500">
+            <span class="kpi-delta-note text-slate-400 font-normal">toplam değer: @Model.Summary.ActiveBidsValue.ToString("N0", ChartHelper.Tr) ₺</span>
         </p>
     </article>
 
     <!-- KPI 3: Kazanılan İhaleler -->
-    <article class="card kpi-card">
-        <div class="kpi-top">
-            <span class="kpi-label">Kazanılan İhaleler</span>
-            <span class="kpi-icon good">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+    <article class="card kpi-card bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
+        <div class="kpi-top flex items-center justify-between">
+            <span class="kpi-label text-xs font-bold text-slate-500 uppercase tracking-wider">Kazanılan İhaleler</span>
+            <span class="kpi-icon good w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-xs">
+                <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <circle cx="12" cy="8" r="7"></circle>
                     <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
                 </svg>
             </span>
         </div>
-        <p class="kpi-value">@Model.Summary.WonAuctions</p>
-        <p class="kpi-delta is-good">
+        <p class="kpi-value text-3xl font-black tracking-tight text-slate-900 my-2">@Model.Summary.WonAuctions</p>
+        <p class="kpi-delta text-xs font-medium flex items-center gap-1.5 is-good text-emerald-600 font-semibold">
             <span aria-hidden="true">★</span>
             <span>%@Model.Summary.WinRatePercent.ToString("0.0") Kazanma Oranı</span>
-            <span class="kpi-delta-note">(@Model.Summary.WonTotalRevenue.ToString("N0", ChartHelper.Tr) ₺ ciro)</span>
+            <span class="kpi-delta-note text-slate-400 font-normal">(@Model.Summary.WonTotalRevenue.ToString("N0", ChartHelper.Tr) ₺ ciro)</span>
         </p>
     </article>
 
     <!-- KPI 4: Katalog Stok Değeri -->
-    <article class="card kpi-card">
-        <div class="kpi-top">
-            <span class="kpi-label">Katalog Stok Değeri</span>
-            <span class="kpi-icon @(Model.Summary.LowStockAlertCount > 0 ? "warn" : "accent")">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+    <article class="card kpi-card bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
+        <div class="kpi-top flex items-center justify-between">
+            <span class="kpi-label text-xs font-bold text-slate-500 uppercase tracking-wider">Katalog Stok Değeri</span>
+            <span class="kpi-icon w-10 h-10 rounded-xl flex items-center justify-center shadow-xs @(Model.Summary.LowStockAlertCount > 0 ? "warn bg-amber-50 text-amber-600" : "accent bg-blue-50 text-blue-600")">
+                <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
                     <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
                 </svg>
             </span>
         </div>
-        <p class="kpi-value">@Model.Summary.CatalogStockValue.ToString("N0", ChartHelper.Tr) ₺</p>
-        <p class="kpi-delta is-flat">
-            <span class="kpi-delta-note">@Model.Summary.ActiveSkuCount ürün · harcama değil, katalog değeri</span>
+        <p class="kpi-value text-3xl font-black tracking-tight text-slate-900 my-2">@Model.Summary.CatalogStockValue.ToString("N0", ChartHelper.Tr) ₺</p>
+        <p class="kpi-delta text-xs font-medium is-flat text-slate-500">
+            <span class="kpi-delta-note text-slate-400 font-normal">@Model.Summary.ActiveSkuCount aktif ürün kataloğu</span>
         </p>
     </article>
 
 </section>
 
 <!-- ==================== 2 BÜYÜK GÖRSEL MODÜL (AÇIK RFQ'LAR & KAZANÇ TRENDİ) ==================== -->
-<section class="grid-equal mt-4" aria-label="Tedarikçi Modülleri">
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6" aria-label="Tedarikçi Modülleri">
 
     <!-- MODÜL 1: Açık RFQ'lar Tablosu -->
-    <article class="card table-card" id="acik-rfqlar">
-        <header class="card-head">
+    <article class="card table-card bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col justify-between" id="acik-rfqlar">
+        <header class="card-head flex items-start justify-between pb-3 border-b border-slate-100 mb-3">
             <div>
-                <h2>Açık RFQ'lar (Teklif Bekleyenler)</h2>
-                <p class="card-subhead">Kurumsal alıcıların yayınladığı güncel alım talepleri</p>
+                <h2 class="text-sm font-bold text-slate-800">Açık RFQ'lar (Teklif Bekleyenler)</h2>
+                <p class="card-subhead text-xs text-slate-400 mt-0.5">Kurumsal alıcıların yayınladığı güncel alım talepleri</p>
             </div>
-            <div class="table-filter-pills">
-                <button type="button" class="tab-pill is-active" onclick="filterRfqTable('all', this)">Tümü</button>
-                <button type="button" class="tab-pill" onclick="filterRfqTable('Cevap Bekliyor', this)">Cevap Bekleyen</button>
-                <button type="button" class="tab-pill" onclick="filterRfqTable('Teklif Verildi', this)">Teklif Verilen</button>
+            <div class="table-filter-pills flex items-center gap-1 p-1 bg-slate-100 rounded-lg text-xs">
+                <button type="button" class="tab-pill px-2.5 py-1 rounded-md font-semibold text-slate-600 transition-all is-active bg-white text-blue-600 shadow-xs" onclick="filterRfqTable('all', this)">Tümü</button>
+                <button type="button" class="tab-pill px-2.5 py-1 rounded-md font-semibold text-slate-600 hover:text-slate-900 transition-all" onclick="filterRfqTable('Cevap Bekliyor', this)">Cevap Bekleyen</button>
+                <button type="button" class="tab-pill px-2.5 py-1 rounded-md font-semibold text-slate-600 hover:text-slate-900 transition-all" onclick="filterRfqTable('Teklif Verildi', this)">Teklif Verilen</button>
             </div>
         </header>
 
-        <div class="table-scroll-wrap">
-            <table class="dash-table" id="supplierRfqTable">
+        <div class="table-scroll-wrap overflow-x-auto">
+            <table class="dash-table w-full text-left text-xs border-collapse" id="supplierRfqTable">
                 <thead>
-                    <tr>
-                        <th>Alıcı / RFQ</th>
-                        <th>Talep Edilen Ürün</th>
-                        <th>Miktar</th>
-                        <th>Son Tarih</th>
-                        <th>Durum</th>
-                        <th class="text-right">Aksiyon</th>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[11px]">
+                        <th class="p-2.5">Alıcı / RFQ</th>
+                        <th class="p-2.5">Talep Edilen Ürün</th>
+                        <th class="p-2.5">Miktar</th>
+                        <th class="p-2.5">Son Tarih</th>
+                        <th class="p-2.5">Durum</th>
+                        <th class="text-right p-2.5">Aksiyon</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="divide-y divide-slate-100">
                     @if (!Model.OpenRfqs.Any())
                     {
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 36px 16px; color: var(--muted);">
+                            <td colspan="6" class="text-center py-8 text-slate-400">
                                 Şu anda açık bir satın alma talebi (RFQ) bulunmuyor.
                             </td>
                         </tr>
@@ -152,45 +152,45 @@
                         @foreach (var rfq in Model.OpenRfqs)
                         {
                             var rfqStatusCls = rfq.Status switch {
-                                "Cevap Bekliyor" => "badge-amber",
-                                "Teklif Verildi" => "badge-blue",
-                                "İncelemede" => "badge-purple",
-                                "Onaylandı" => "badge-emerald",
-                                "Kabul Edildi" => "badge-emerald",
-                                _ => "badge-gray"
+                                "Cevap Bekliyor" => "bg-amber-50 text-amber-700 border border-amber-200/60",
+                                "Teklif Verildi" => "bg-blue-50 text-blue-700 border border-blue-200/60",
+                                "İncelemede" => "bg-purple-50 text-purple-700 border border-purple-200/60",
+                                "Onaylandı" => "bg-emerald-50 text-emerald-700 border border-emerald-200/60",
+                                "Kabul Edildi" => "bg-emerald-50 text-emerald-700 border border-emerald-200/60",
+                                _ => "bg-slate-100 text-slate-600 border border-slate-200/60"
                             };
 
-                            <tr data-status="@rfq.Status" data-request-id="@rfq.RequestID" data-rfq-code="@rfq.RfqCode">
-                                <td>
-                                    <div class="req-title-cell">
-                                        <strong class="vendor-name">@rfq.BuyerCompany</strong>
-                                        <span class="req-code">@rfq.RfqCode</span>
+                            <tr data-status="@rfq.Status" data-request-id="@rfq.RequestID" data-rfq-code="@rfq.RfqCode" class="hover:bg-slate-50/80 transition-colors">
+                                <td class="p-2.5">
+                                    <div class="req-title-cell flex flex-col gap-0.5">
+                                        <strong class="vendor-name text-xs font-bold text-slate-800">@rfq.BuyerCompany</strong>
+                                        <span class="req-code text-[11px] font-mono text-slate-400">@rfq.RfqCode</span>
                                     </div>
                                 </td>
-                                <td>
-                                    <span class="req-name" title="@rfq.ProductName">@rfq.ProductName</span>
+                                <td class="p-2.5">
+                                    <span class="req-name text-xs font-semibold text-slate-800 truncate max-w-xs block" title="@rfq.ProductName">@rfq.ProductName</span>
                                 </td>
-                                <td>
-                                    <strong>@rfq.Quantity @rfq.Unit</strong>
+                                <td class="p-2.5">
+                                    <strong class="text-xs text-slate-800">@rfq.Quantity @rfq.Unit</strong>
                                 </td>
-                                <td>
-                                    <div class="deadline-cell @(rfq.DaysLeft <= 2 ? "is-urgent" : "")">
-                                        <span>@rfq.Deadline.ToString("dd MMM yyyy")</span>
-                                        <small class="days-left-pill">
+                                <td class="p-2.5">
+                                    <div class="deadline-cell flex flex-col gap-0.5 @(rfq.DaysLeft <= 2 ? "is-urgent text-rose-600 font-bold" : "text-slate-600")">
+                                        <span class="text-xs">@rfq.Deadline.ToString("dd MMM yyyy")</span>
+                                        <small class="days-left-pill text-[10px] text-slate-400">
                                             @(rfq.DaysLeft == 1 ? "Son 1 Gün" : $"{rfq.DaysLeft} gün kaldı")
                                         </small>
                                     </div>
                                 </td>
-                                <td>
-                                    <span class="status-badge @rfqStatusCls" data-rfq-status-badge="@rfq.RequestID">
-                                        <span class="status-dot"></span>
+                                <td class="p-2.5">
+                                    <span class="status-badge inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold @rfqStatusCls" data-rfq-status-badge="@rfq.RequestID">
+                                        <span class="status-dot w-1.5 h-1.5 rounded-full bg-current"></span>
                                         @rfq.Status
                                     </span>
                                 </td>
-                                <td class="text-right" data-rfq-action-cell="@rfq.RequestID">
+                                <td class="text-right p-2.5" data-rfq-action-cell="@rfq.RequestID">
                                     @if (rfq.IsOwner)
                                     {
-                                        <span style="display: inline-block; padding: 4px 8px; font-size: 0.75rem; font-weight: 700; color: #2563EB; background: #EFF6FF; border-radius: 6px; border: 1px solid rgba(37, 99, 235, 0.2);">
+                                        <span class="inline-block px-2.5 py-1 text-xs font-bold text-blue-700 bg-blue-50 rounded-md border border-blue-200">
                                             Kendi Talebiniz
                                         </span>
                                     }
@@ -198,38 +198,38 @@
                                     {
                                         @if (rfq.MyBidStatus == "Kabul Edildi" || rfq.MyBidStatus == "Onaylandı")
                                         {
-                                            <span style="display: inline-block; padding: 4px 8px; font-size: 0.75rem; font-weight: 700; color: #059669; background: #ECFDF5; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.2);" title="Teklifiniz onaylanmıştır ve kilitlidir.">
+                                            <span class="inline-block px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 rounded-md border border-emerald-200" title="Teklifiniz onaylanmıştır ve kilitlidir.">
                                                 Onaylandı
                                             </span>
                                         }
                                         else if (rfq.MyBidStatus == "Reddedildi")
                                         {
-                                            <span style="display: inline-block; padding: 4px 8px; font-size: 0.75rem; font-weight: 700; color: #DC2626; background: #FEF2F2; border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.2); cursor: help;" title="Reddetme Sebebi: @(rfq.MyBidRejectionReason ?? "Talep için başka bir tedarikçinin teklifi kabul edildi.")">
+                                            <span class="inline-block px-2.5 py-1 text-xs font-bold text-rose-700 bg-rose-50 rounded-md border border-rose-200 cursor-help" title="Reddetme Sebebi: @(rfq.MyBidRejectionReason ?? "Talep için başka bir tedarikçinin teklifi kabul edildi.")">
                                                 Reddedildi
                                             </span>
                                         }
                                         else if (rfq.Status == "Onaylandı" || rfq.Status == "Kabul Edildi" || rfq.Status == "Tamamlandı" || rfq.Status == "İptal Edildi")
                                         {
-                                            <span style="display: inline-block; padding: 4px 8px; font-size: 0.75rem; font-weight: 700; color: #64748B; background: #F1F5F9; border-radius: 6px; border: 1px solid #E2E8F0;" title="Talep sonuçlandığı için teklif kilitlenmiştir.">
+                                            <span class="inline-block px-2.5 py-1 text-xs font-bold text-slate-500 bg-slate-100 rounded-md border border-slate-200" title="Talep sonuçlandığı için teklif kilitlenmiştir.">
                                                 Kilitli
                                             </span>
                                         }
                                         else
                                         {
-                                            <button type="button" class="btn-table-action is-secondary" onclick="openOfferModal('@rfq.RfqCode', '@rfq.ProductName', '@rfq.MyBidAmount')">
+                                            <button type="button" class="btn-table-action inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition" onclick="openOfferModal('@rfq.RfqCode', '@rfq.ProductName', '@rfq.MyBidAmount')">
                                                 Düzenle
                                             </button>
                                         }
                                     }
                                     else if (rfq.Status == "Onaylandı" || rfq.Status == "Kabul Edildi" || rfq.Status == "Tamamlandı" || rfq.Status == "İptal Edildi")
                                     {
-                                        <span style="display: inline-block; padding: 4px 8px; font-size: 0.75rem; font-weight: 700; color: #64748B; background: #F1F5F9; border-radius: 6px; border: 1px solid #E2E8F0;">
+                                        <span class="inline-block px-2.5 py-1 text-xs font-bold text-slate-500 bg-slate-100 rounded-md border border-slate-200">
                                             Sonuçlandı
                                         </span>
                                     }
                                     else
                                     {
-                                        <button type="button" class="btn-table-action is-primary-action" onclick="openOfferModal('@rfq.RfqCode', '@rfq.ProductName', '')">
+                                        <button type="button" class="btn-table-action inline-flex items-center px-3 py-1 rounded-md text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition shadow-xs" onclick="openOfferModal('@rfq.RfqCode', '@rfq.ProductName', '')">
                                             Teklif Ver
                                         </button>
                                     }
@@ -243,23 +243,23 @@
     </article>
 
     <!-- MODÜL 2: Kazanç Trendi Çizgi Grafiği -->
-    <article class="card chart-card" id="kazanclarim">
-        <header class="card-head">
+    <article class="card chart-card bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col justify-between" id="kazanclarim">
+        <header class="card-head flex items-start justify-between pb-3 border-b border-slate-100 mb-2">
             <div>
-                <h2>Kazanç Trendi</h2>
-                <p class="card-subhead">@Model.SelectedYear · aylık ciro ve teklif hacmi</p>
+                <h2 class="text-sm font-bold text-slate-800">Kazanç Trendi</h2>
+                <p class="card-subhead text-xs text-slate-400 mt-0.5">@Model.SelectedYear · aylık ciro ve teklif hacmi</p>
             </div>
-            <div class="chart-legend-box">
-                <span class="chart-legend-item">
-                    <span class="legend-swatch is-blue"></span> Onaylanan Ciro
+            <div class="chart-legend-box flex items-center gap-3 text-xs text-slate-500 font-medium">
+                <span class="chart-legend-item flex items-center gap-1.5">
+                    <span class="legend-swatch w-2.5 h-2.5 rounded-full bg-blue-600"></span> Onaylanan Ciro
                 </span>
-                <span class="chart-legend-item">
-                    <span class="legend-swatch is-dashed"></span> Teklif Pipeline
+                <span class="chart-legend-item flex items-center gap-1.5">
+                    <span class="legend-swatch w-3 h-0.5 border-t-2 border-dashed border-slate-400"></span> Teklif Pipeline
                 </span>
             </div>
         </header>
 
-        <div class="chart-body-container">
+        <div class="chart-body-container w-full my-2">
             @{
                 var months = Model.EarningsTrend.Months;
                 var earningsValues = Model.EarningsTrend.MonthlyEarnings;
@@ -301,11 +301,11 @@
                 }
             }
 
-            <svg viewBox="0 0 @ChartHelper.N(sW) @ChartHelper.N(sH)" class="spend-svg-chart" preserveAspectRatio="none">
+            <svg viewBox="0 0 @ChartHelper.N(sW) @ChartHelper.N(sH)" class="spend-svg-chart w-full h-52 overflow-visible" preserveAspectRatio="none">
                 <defs>
                     <linearGradient id="earnGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#2563EB" stop-opacity="0.25" />
-                        <stop offset="100%" stop-color="#2563EB" stop-opacity="0.0" />
+                        <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.22" />
+                        <stop offset="100%" stop-color="#3B82F6" stop-opacity="0.0" />
                     </linearGradient>
                 </defs>
 
@@ -313,7 +313,7 @@
                 @foreach (var tick in ChartHelper.Ticks(eTop, 4))
                 {
                     var yPos = getY(tick);
-                    <line x1="@ChartHelper.N(pL)" y1="@ChartHelper.N(yPos)" x2="@ChartHelper.N(sW - pR)" y2="@ChartHelper.N(yPos)" class="svg-grid-line" />
+                    <line x1="@ChartHelper.N(pL)" y1="@ChartHelper.N(yPos)" x2="@ChartHelper.N(sW - pR)" y2="@ChartHelper.N(yPos)" class="stroke-slate-100" stroke-width="1" />
                     @ChartHelper.SvgText(pL - 8, yPos + 4, tick >= 1000 ? (tick / 1000).ToString("0") + "k" : tick.ToString("0"), "svg-axis-text", "end")
                 }
 
@@ -326,13 +326,13 @@
                 <!-- Pipeline Çizgisi -->
                 @if (pipePts.Count > 0)
                 {
-                    <polyline points="@ChartHelper.PolylinePoints(pipePts)" class="svg-budget-line" fill="none" />
+                    <polyline points="@ChartHelper.PolylinePoints(pipePts)" class="stroke-slate-300" stroke-width="1.6" stroke-dasharray="4 4" stroke-linecap="round" fill="none" />
                 }
 
                 <!-- Satış Ciro Eğrisi -->
                 @if (earnPts.Count > 0)
                 {
-                    <polyline points="@ChartHelper.PolylinePoints(earnPts)" class="svg-spend-line" fill="none" />
+                    <polyline points="@ChartHelper.PolylinePoints(earnPts)" class="stroke-blue-600" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
                 }
 
                 <!-- Noktalar & Tooltipler -->
@@ -342,55 +342,52 @@
                     var val = i < earningsValues.Count ? earningsValues[i] : 0;
                     var mName = months[i];
 
-                    <g class="chart-point-group" tabindex="0">
-                        <circle cx="@ChartHelper.N(pt.X)" cy="@ChartHelper.N(pt.Y)" r="4" class="chart-point-circle" />
+                    <g class="chart-point-group cursor-pointer focus:outline-none" tabindex="0">
+                        <circle cx="@ChartHelper.N(pt.X)" cy="@ChartHelper.N(pt.Y)" r="4" class="fill-white stroke-blue-600 transition-all hover:r-6" stroke-width="2.2" />
                         @ChartHelper.SvgText(pt.X, sH - 8, mName, "svg-x-text", "middle")
                         
-                        <g class="chart-tooltip-group">
-                            <rect x="@ChartHelper.N(pt.X - 55)" y="@ChartHelper.N(pt.Y - 36)" width="110" height="24" rx="5" class="tooltip-bg" />
-                            @ChartHelper.SvgText(pt.X, pt.Y - 20, val.ToString("N0", ChartHelper.Tr) + " ₺ Ciro", "tooltip-text", "middle")
+                        <g class="chart-tooltip-group opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
+                            <rect x="@ChartHelper.N(pt.X - 55)" y="@ChartHelper.N(pt.Y - 34)" width="110" height="24" rx="6" class="fill-slate-900 shadow-lg" />
+                            @ChartHelper.SvgText(pt.X, pt.Y - 18, val.ToString("N0", ChartHelper.Tr) + " ₺ Ciro", "fill-white text-[10px] font-bold", "middle")
                         </g>
                     </g>
                 }
             </svg>
         </div>
 
-        <div class="chart-foot-summary">
-            <span class="chart-foot-item">Toplam Ciro: <strong>@Model.EarningsTrend.MonthlyEarnings.Sum().ToString("N0", ChartHelper.Tr) ₺</strong></span>
-            <span class="chart-foot-item">Aylık Ortalama: <strong>@((Model.EarningsTrend.MonthlyEarnings.Sum() / 12m).ToString("N0", ChartHelper.Tr)) ₺</strong></span>
+        <div class="chart-foot-summary flex items-center justify-between pt-3 border-t border-slate-100 text-xs text-slate-500">
+            <span class="chart-foot-item">Toplam Ciro: <strong class="text-slate-800 font-bold ml-1">@Model.EarningsTrend.MonthlyEarnings.Sum().ToString("N0", ChartHelper.Tr) ₺</strong></span>
+            <span class="chart-foot-item">Aylık Ortalama: <strong class="text-slate-800 font-bold ml-1">@((Model.EarningsTrend.MonthlyEarnings.Sum() / 12m).ToString("N0", ChartHelper.Tr)) ₺</strong></span>
         </div>
     </article>
 
 </section>
 
 <!-- ==================== 'İLGİLENMENİZ GEREKENLER' VE KATALOG MODÜLÜ ==================== -->
-<section class="grid-equal mt-4" aria-label="Eylem Listesi ve Katalog">
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6" aria-label="Eylem Listesi ve Katalog">
 
     <!-- MODÜL 3: 'İlgilenmeniz Gerekenler' Eylem Listesi -->
-    <article class="card">
-        <header class="card-head">
-            <div class="head-with-icon">
-                <span class="blue-accent-x">✕</span>
-                <h2>İlgilenmeniz Gerekenler</h2>
-            </div>
-            <span class="badge-count-pill">@Model.ActionItems.Count Görev</span>
+    <article class="card bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+        <header class="card-head flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+            <h2 class="text-sm font-bold text-slate-800">İlgilenmeniz Gerekenler</h2>
+            <span class="badge-count-pill px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200/60">@Model.ActionItems.Count Görev</span>
         </header>
 
-        <div class="action-list-body">
+        <div class="action-list-body divide-y divide-slate-100 my-auto">
             @foreach (var item in Model.ActionItems)
             {
                 var badgeCls = item.BadgeType switch {
-                    "danger" => "badge-coral",
-                    "amber" => "badge-amber",
-                    "green" => "badge-emerald",
-                    _ => "badge-blue"
+                    "danger" => "bg-rose-50 text-rose-700 border border-rose-200/60",
+                    "amber" => "bg-amber-50 text-amber-700 border border-amber-200/60",
+                    "green" => "bg-emerald-50 text-emerald-700 border border-emerald-200/60",
+                    _ => "bg-blue-50 text-blue-700 border border-blue-200/60"
                 };
 
-                <div class="action-row">
-                    <div class="action-left">
-                        <div class="action-icon-box @item.BadgeType">
+                <div class="action-row py-3 flex items-center justify-between gap-3">
+                    <div class="action-left flex items-start gap-3">
+                        <div class="action-icon-box w-8 h-8 rounded-lg flex items-center justify-center shrink-0 @(item.BadgeType == "danger" ? "bg-rose-50 text-rose-600" : item.BadgeType == "amber" ? "bg-amber-50 text-amber-600" : item.BadgeType == "green" ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600")">
                             @if (item.Type == "pricing") {
-                                <span>₺</span>
+                                <span class="font-bold text-xs">₺</span>
                             } else if (item.Type == "stock") {
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
                             } else if (item.Type == "urgent_rfq") {
@@ -400,29 +397,29 @@
                             }
                         </div>
                         <div class="action-info">
-                            <div class="action-info-head">
-                                <strong>@item.Title</strong>
-                                <span class="status-badge @badgeCls">@item.BadgeText</span>
+                            <div class="action-info-head flex items-center gap-2">
+                                <strong class="text-xs font-bold text-slate-800">@item.Title</strong>
+                                <span class="status-badge px-2 py-0.5 rounded-full text-[10px] font-semibold @badgeCls">@item.BadgeText</span>
                             </div>
-                            <p class="action-info-desc">@item.Description</p>
+                            <p class="action-info-desc text-xs text-slate-400 mt-0.5">@item.Description</p>
                         </div>
                     </div>
-                    <div>
+                    <div class="shrink-0">
                         @if (item.Type == "pricing" || item.Type == "stock")
                         {
-                            <button type="button" class="btn-table-action" onclick="openPriceModal()">
+                            <button type="button" class="btn-table-action inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition shadow-2xs" onclick="openPriceModal()">
                                 @item.ActionText →
                             </button>
                         }
                         else if (item.Type == "urgent_rfq")
                         {
-                            <a href="#acik-rfqlar" class="btn-table-action">
+                            <a href="#acik-rfqlar" class="btn-table-action inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition">
                                 @item.ActionText →
                             </a>
                         }
                         else
                         {
-                            <a href="/Seller/@(Model.CompanyID ?? 1)" target="_blank" class="btn-table-action" style="font-weight: 700; color: #d97706;">
+                            <a href="/Seller/@(Model.CompanyID ?? 1)" target="_blank" class="btn-table-action inline-flex items-center px-3 py-1 rounded-md text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition">
                                 Satıcı Sayfasını Gör →
                             </a>
                         }
@@ -433,42 +430,32 @@
     </article>
 
     <!-- MODÜL 4: Katalog & Stok Tablosu -->
-    <article class="card" id="katalog-yonetimi">
-        <header class="card-head">
-            <div class="head-with-icon">
-                <span class="blue-accent-x">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="7" height="7"></rect>
-                        <rect x="14" y="3" width="7" height="7"></rect>
-                        <rect x="14" y="14" width="7" height="7"></rect>
-                        <rect x="3" y="14" width="7" height="7"></rect>
-                    </svg>
-                </span>
-                <h2>Katalog & İlan Özeti</h2>
-            </div>
-            <div style="display: flex; gap: 8px; align-items: center;">
-                <a asp-action="Listings" class="link-all-btn" style="text-decoration: none; color: var(--accent); font-weight: 600;">Tüm İlanları Yönet →</a>
-                <button type="button" class="link-all-btn" onclick="openPriceModal()">+ Hızlı Fiyat Güncelle</button>
+    <article class="card bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col justify-between" id="katalog-yonetimi">
+        <header class="card-head flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+            <h2 class="text-sm font-bold text-slate-800">Katalog &amp; İlan Özeti</h2>
+            <div class="flex items-center gap-3">
+                <a asp-action="Listings" class="text-xs font-semibold text-blue-600 hover:underline">Tüm İlanları Yönet →</a>
+                <button type="button" class="text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-md transition" onclick="openPriceModal()">+ Hızlı Fiyat Güncelle</button>
             </div>
         </header>
 
-        <div class="table-scroll-wrap">
-            <table class="dash-table">
+        <div class="table-scroll-wrap overflow-x-auto">
+            <table class="dash-table w-full text-left text-xs border-collapse">
                 <thead>
-                    <tr>
-                        <th>Ürün Adı</th>
-                        <th>Kategori</th>
-                        <th>Stok</th>
-                        <th>Birim Fiyat</th>
-                        <th>Durum</th>
-                        <th class="text-right">Aksiyon</th>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[11px]">
+                        <th class="p-2.5">Ürün Adı</th>
+                        <th class="p-2.5">Kategori</th>
+                        <th class="p-2.5">Stok</th>
+                        <th class="p-2.5">Birim Fiyat</th>
+                        <th class="p-2.5">Durum</th>
+                        <th class="text-right p-2.5">Aksiyon</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="divide-y divide-slate-100">
                     @if (!Model.FeaturedProducts.Any())
                     {
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 28px 16px; color: var(--muted);">
+                            <td colspan="6" class="text-center py-8 text-slate-400">
                                 Henüz katalogda listelenmiş ürününüz bulunmamaktadır.
                             </td>
                         </tr>
@@ -478,28 +465,28 @@
                         @foreach (var prod in Model.FeaturedProducts)
                         {
                             var isCrit = prod.Status == "Kritik";
-                            <tr>
-                                <td>
-                                    <div class="req-title-cell">
-                                        <strong>@prod.ItemName</strong>
-                                        <small class="req-code">@prod.Sku</small>
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                <td class="p-2.5">
+                                    <div class="req-title-cell flex flex-col gap-0.5">
+                                        <strong class="text-xs font-bold text-slate-800 truncate max-w-xs" title="@prod.ItemName">@prod.ItemName</strong>
+                                        <small class="req-code text-[11px] font-mono text-slate-400">@prod.Sku</small>
                                     </div>
                                 </td>
-                                <td><span class="category-tag">@prod.Category</span></td>
-                                <td>
-                                    <strong class="@(isCrit ? "text-danger" : "")">@prod.Stock Adet</strong>
+                                <td class="p-2.5"><span class="category-tag px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700">@prod.Category</span></td>
+                                <td class="p-2.5">
+                                    <strong class="text-xs font-bold @(isCrit ? "text-rose-600" : "text-slate-800")">@prod.Stock Adet</strong>
                                 </td>
-                                <td>
-                                    <strong>@prod.UnitPrice.ToString("N0", ChartHelper.Tr) ₺</strong>
+                                <td class="p-2.5">
+                                    <strong class="text-xs font-extrabold text-slate-900">@prod.UnitPrice.ToString("N0", ChartHelper.Tr) ₺</strong>
                                 </td>
-                                <td>
-                                    <span class="status-badge @(isCrit ? "badge-coral" : "badge-emerald")">
-                                        <span class="status-dot"></span>
+                                <td class="p-2.5">
+                                    <span class="status-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold @(isCrit ? "bg-rose-50 text-rose-700 border border-rose-200/60" : "bg-emerald-50 text-emerald-700 border border-emerald-200/60")">
+                                        <span class="status-dot w-1.5 h-1.5 rounded-full bg-current"></span>
                                         @prod.Status
                                     </span>
                                 </td>
-                                <td class="text-right">
-                                    <button type="button" class="btn-table-action" onclick="openPriceModal(@prod.ItemId, '@Html.Raw(prod.ItemName.Replace("'", "\\'"))', @prod.UnitPrice, @prod.Stock)">
+                                <td class="text-right p-2.5">
+                                    <button type="button" class="btn-table-action inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition shadow-2xs" onclick="openPriceModal(@prod.ItemId, '@Html.Raw(prod.ItemName.Replace("'", "\\'"))', @prod.UnitPrice, @prod.Stock)">
                                         Fiyat Düzenle
                                     </button>
                                 </td>
@@ -516,7 +503,6 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Eğer modelden gelen FeaturedProducts varsa modal dropdown'unu güncelle
             var products = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FeaturedProducts.Select(p => new {
                 id = p.ItemId,
                 name = p.ItemName,
@@ -544,4 +530,3 @@
         });
     </script>
 }
-

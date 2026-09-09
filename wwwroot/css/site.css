@@ -6438,33 +6438,25 @@ html, body {
 }
 
 .btn-profile-edit-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 24px;
-    background: rgba(255, 255, 255, 0.95);
-    color: #1e40af;
-    border: 1.5px solid rgba(255, 255, 255, 0.4);
-    border-radius: 30px;
-    font-size: 0.92rem;
-    font-weight: 750;
     cursor: pointer;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    backdrop-filter: blur(8px);
-    transition: all 0.25s ease;
+    transition: all 0.2s ease;
 }
 
 .btn-profile-edit-toggle:hover {
-    background: #ffffff;
-    color: #2563eb;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
 }
 
 .btn-profile-edit-toggle.is-editing {
-    background: #f1f5f9;
-    color: #475569;
-    border-color: #cbd5e1;
+    background: rgba(255, 255, 255, 0.15) !important;
+    background-image: none !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    backdrop-filter: blur(8px);
+}
+
+.btn-profile-edit-toggle.is-editing:hover {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
 }
 
 .btn-card-edit-shortcut {
